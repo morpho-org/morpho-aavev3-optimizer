@@ -1,5 +1,32 @@
 {
-  "dependencies": {
+  "name": "morpho-v1.5",
+  "version": "1.0.0",
+  "description": "Core contracts of Morpho's protocol v1.5",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "forge test",
+    "postinstall": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morpho-dao/morpho-v1.5.git"
+  },
+  "keywords": [
+    "defi",
+    "protocol",
+    "smart-contracts"
+  ],
+  "author": "Morpho Labs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/morpho-dao/morpho-v1.5/issues"
+  },
+  "homepage": "https://github.com/morpho-dao/morpho-v1.5#readme",
+  "devDependencies": {
     "husky": "^8.0.2"
   }
 }
