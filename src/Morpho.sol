@@ -1,20 +1,34 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "solmate/tokens/ERC1155.sol";
+import "openzeppelin-contracts/token/ERC1155/ERC1155.sol";
 
 contract Morpho is ERC1155 {
+    /// ERRORS ///
+
+    error SomethingWentWrong();
+    error CannotTransferBorrow();
+
+    /// ENUMS ///
+
+    enum TokenType {
+        SUPPLY_POOL,
+        SUPPLY_P2P,
+        BORROW_POOL,
+        BORROW_P2P
+    }
+
     /// STRUCTS ///
 
     struct Balance {
-        uint128 inP2P;
         uint128 onPool;
+        uint128 inP2P;
     }
 
     /// STORAGE ///
 
-    mapping(address => mapping(address => Balance)) public supplyScaledBalance;
-    mapping(address => mapping(address => Balance)) public borrowScaledBalance;
+    mapping(address => mapping(address => Balance)) public supplyScaledBalance; // underlying => user => balance
+    mapping(address => mapping(address => Balance)) public borrowScaledBalance; // underlying => user => balance
 
     /// EXTERNAL ///
 
@@ -97,9 +111,73 @@ contract Morpho is ERC1155 {
         // ...
     }
 
-    /// ERC11555 ///
+    function _getUnderlyingAndPositionTypeFromId(uint256 _id)
+        internal
+        pure
+        returns (address poolToken, TokenType tokenType)
+    {
+        poolToken = address(uint160(_id));
+        uint256 firstTwoBits = _id >> 254;
+        if (firstTwoBits == 0) {
+            tokenType = TokenType.SUPPLY_POOL;
+        } else if (firstTwoBits == 1) {
+            tokenType = TokenType.SUPPLY_P2P;
+        } else if (firstTwoBits == 2) {
+            tokenType = TokenType.BORROW_POOL;
+        } else if (firstTwoBits == 3) {
+            tokenType = TokenType.BORROW_P2P;
+        } else {
+            revert SomethingWentWrong();
+        }
+    }
+
+    /// ERC1155 ///
 
     function uri(uint256 id) public pure override returns (string memory) {
-        return "https://morpho.xyz/supercoolnft/";
+        return "https://morpho.xyz/supercooluri/";
+    }
+
+    function balanceOf(address _owner, uint256 _id) public view override returns (uint256) {
+        (address poolToken, TokenType tokenType) = _getUnderlyingAndPositionTypeFromId(_id);
+        if (tokenType == TokenType.SUPPLY_POOL) {
+            return supplyScaledBalance[poolToken][_owner].onPool;
+        } else if (tokenType == TokenType.SUPPLY_P2P) {
+            return supplyScaledBalance[poolToken][_owner].inP2P;
+        } else if (tokenType == TokenType.BORROW_POOL) {
+            return borrowScaledBalance[poolToken][_owner].onPool;
+        } else {
+            return borrowScaledBalance[poolToken][_owner].inP2P;
+        }
+    }
+
+    function setApprovalForAll(address _operator, bool _approved) public override {
+        // ...
+        super.setApprovalForAll(_operator, _approved);
+    }
+
+    function safeTransferFrom(address _from, address _to, uint256 id, uint256 _amount, bytes calldata _data)
+        public
+        override
+    {
+        // ...
+        super.safeTransferFrom(_from, _to, id, _amount, _data);
+    }
+
+    // function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids)
+    //     public
+    //     view
+    //     override
+    //     returns (uint256[] memory)
+    // {}
+
+    function safeBatchTransferFrom(
+        address _from,
+        address _to,
+        uint256[] calldata _ids,
+        uint256[] calldata _amounts,
+        bytes calldata _data
+    ) public override {
+        // ...
+        super.safeBatchTransferFrom(_from, _to, _ids, _amounts, _data);
     }
 }
