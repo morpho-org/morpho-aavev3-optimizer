@@ -30,6 +30,10 @@ contract Morpho is ERC1155 {
     mapping(address => mapping(address => Balance)) public supplyScaledBalance; // underlying => user => balance
     mapping(address => mapping(address => Balance)) public borrowScaledBalance; // underlying => user => balance
 
+    /// CONSTRUCTOR ///
+
+    constructor() ERC1155("https://morpho.xyz/metadata/") {}
+
     /// EXTERNAL ///
 
     function supply(address _underlying, uint256 _amount, address _from, address _to)
@@ -133,7 +137,7 @@ contract Morpho is ERC1155 {
 
     /// ERC1155 ///
 
-    function uri(uint256 id) public pure override returns (string memory) {
+    function uri(uint256 _id) public pure override returns (string memory) {
         return "https://morpho.xyz/supercooluri/";
     }
 
@@ -155,29 +159,35 @@ contract Morpho is ERC1155 {
         super.setApprovalForAll(_operator, _approved);
     }
 
-    function safeTransferFrom(address _from, address _to, uint256 id, uint256 _amount, bytes calldata _data)
-        public
+    function _safeTransferFrom(address _from, address _to, uint256 _id, uint256 _amount, bytes memory _data)
+        internal
         override
     {
-        // ...
-        super.safeTransferFrom(_from, _to, id, _amount, _data);
-    }
+        (address poolToken, TokenType tokenType) = _getUnderlyingAndPositionTypeFromId(_id);
+        uint128 amount = uint128(_amount); // TODO: Safe cast
 
-    // function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids)
-    //     public
-    //     view
-    //     override
-    //     returns (uint256[] memory)
-    // {}
+        if (tokenType == TokenType.SUPPLY_POOL) {
+            supplyScaledBalance[poolToken][_from].onPool -= amount;
+            supplyScaledBalance[poolToken][_to].onPool += amount;
+        } else if (tokenType == TokenType.SUPPLY_P2P) {
+            supplyScaledBalance[poolToken][_from].inP2P -= amount;
+            supplyScaledBalance[poolToken][_to].inP2P += amount;
+        } else {
+            // TODO: Check approval...
 
-    function safeBatchTransferFrom(
-        address _from,
-        address _to,
-        uint256[] calldata _ids,
-        uint256[] calldata _amounts,
-        bytes calldata _data
-    ) public override {
-        // ...
-        super.safeBatchTransferFrom(_from, _to, _ids, _amounts, _data);
+            if (tokenType == TokenType.BORROW_POOL) {
+                borrowScaledBalance[poolToken][_from].onPool -= amount;
+                borrowScaledBalance[poolToken][_to].onPool += amount;
+            } else if (tokenType == TokenType.BORROW_P2P) {
+                borrowScaledBalance[poolToken][_from].inP2P -= amount;
+                borrowScaledBalance[poolToken][_to].inP2P += amount;
+            } else {
+                revert SomethingWentWrong();
+            }
+
+            require(_liquidityCheck(_to));
+        }
+
+        // TODO: Update DS...
     }
 }
