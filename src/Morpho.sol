@@ -11,11 +11,9 @@ contract Morpho is ERC1155 {
 
     /// ENUMS ///
 
-    enum TokenType {
-        SUPPLY_POOL,
-        SUPPLY_P2P,
-        BORROW_POOL,
-        BORROW_P2P
+    enum PositionType {
+        SUPPLY,
+        BORROW
     }
 
     /// STRUCTS ///
@@ -118,18 +116,14 @@ contract Morpho is ERC1155 {
     function _getUnderlyingAndPositionTypeFromId(uint256 _id)
         internal
         pure
-        returns (address poolToken, TokenType tokenType)
+        returns (address poolToken, PositionType positionType)
     {
         poolToken = address(uint160(_id));
-        uint256 firstTwoBits = _id >> 254;
-        if (firstTwoBits == 0) {
-            tokenType = TokenType.SUPPLY_POOL;
-        } else if (firstTwoBits == 1) {
-            tokenType = TokenType.SUPPLY_P2P;
-        } else if (firstTwoBits == 2) {
-            tokenType = TokenType.BORROW_POOL;
-        } else if (firstTwoBits == 3) {
-            tokenType = TokenType.BORROW_P2P;
+        uint256 firstBit = _id >> 255;
+        if (firstBit == 0) {
+            positionType = PositionType.SUPPLY;
+        } else if (firstBit == 1) {
+            positionType = PositionType.BORROW;
         } else {
             revert SomethingWentWrong();
         }
@@ -142,16 +136,18 @@ contract Morpho is ERC1155 {
     }
 
     function balanceOf(address _owner, uint256 _id) public view override returns (uint256) {
-        (address poolToken, TokenType tokenType) = _getUnderlyingAndPositionTypeFromId(_id);
-        if (tokenType == TokenType.SUPPLY_POOL) {
-            return supplyScaledBalance[poolToken][_owner].onPool;
-        } else if (tokenType == TokenType.SUPPLY_P2P) {
-            return supplyScaledBalance[poolToken][_owner].inP2P;
-        } else if (tokenType == TokenType.BORROW_POOL) {
-            return borrowScaledBalance[poolToken][_owner].onPool;
+        (address poolToken, PositionType positionType) = _getUnderlyingAndPositionTypeFromId(_id);
+        Balance memory balance;
+
+        if (positionType == PositionType.SUPPLY) {
+            balance = supplyScaledBalance[poolToken][_owner];
+        } else if (positionType == PositionType.BORROW) {
+            balance = borrowScaledBalance[poolToken][_owner];
         } else {
-            return borrowScaledBalance[poolToken][_owner].inP2P;
+            revert SomethingWentWrong();
         }
+
+        return balance.onPool + balance.inP2P;
     }
 
     function setApprovalForAll(address _operator, bool _approved) public override {
@@ -163,22 +159,20 @@ contract Morpho is ERC1155 {
         internal
         override
     {
-        (address poolToken, TokenType tokenType) = _getUnderlyingAndPositionTypeFromId(_id);
+        (address poolToken, PositionType positionType) = _getUnderlyingAndPositionTypeFromId(_id);
         uint128 amount = uint128(_amount); // TODO: Safe cast
 
-        if (tokenType == TokenType.SUPPLY_POOL) {
+        if (positionType == PositionType.SUPPLY) {
             supplyScaledBalance[poolToken][_from].onPool -= amount;
             supplyScaledBalance[poolToken][_to].onPool += amount;
-        } else if (tokenType == TokenType.SUPPLY_P2P) {
             supplyScaledBalance[poolToken][_from].inP2P -= amount;
             supplyScaledBalance[poolToken][_to].inP2P += amount;
         } else {
             // TODO: Check approval...
 
-            if (tokenType == TokenType.BORROW_POOL) {
+            if (positionType == PositionType.BORROW) {
                 borrowScaledBalance[poolToken][_from].onPool -= amount;
                 borrowScaledBalance[poolToken][_to].onPool += amount;
-            } else if (tokenType == TokenType.BORROW_P2P) {
                 borrowScaledBalance[poolToken][_from].inP2P -= amount;
                 borrowScaledBalance[poolToken][_to].inP2P += amount;
             } else {
