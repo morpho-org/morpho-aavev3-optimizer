@@ -1,13 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
+import {ThreeHeapOrdering} from "morpho-data-structures/ThreeHeapOrdering.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
+import {Types} from "./libraries/Types.sol";
 
 import {ERC1155Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract Morpho is ERC1155Upgradeable, OwnableUpgradeable {
+    using ThreeHeapOrdering for ThreeHeapOrdering.Heap;
+
+    /// STORAGE ///
+
+    mapping(address => Types.Market) internal markets;
+
     /// EXTERNAL ///
 
     function supply(address _underlying, uint256 _amount, address _from, address _to, uint256 _nbOfLoops)
