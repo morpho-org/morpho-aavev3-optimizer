@@ -32,12 +32,12 @@ contract Morpho is ERC1155Upgradeable, OwnableUpgradeable {
         returns (uint256 borrowed)
     {}
 
-    function repay(address _underlying, uint256 _amount, address _from, address _to, uint256 _nbOfLoops)
+    function repay(address _underlying, uint256 _amount, address _from, address _to)
         external
         returns (uint256 repaid)
     {}
 
-    function withdraw(address _underlying, uint256 _amount, address _from, address _to, uint256 _nbOfLoops)
+    function withdraw(address _underlying, uint256 _amount, address _from, address _to)
         external
         returns (uint256 withdrawn)
     {}
