@@ -10,7 +10,7 @@ import {ERC1155Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC11
 import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 contract Morpho is ERC1155Upgradeable, OwnableUpgradeable {
-    using ThreeHeapOrdering for ThreeHeapOrdering.Heap;
+    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
 
     /// STORAGE ///
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {Heap} from "morpho-data-structures/ThreeHeapOrdering.sol";
+import {ThreeHeapOrdering} from "morpho-data-structures/ThreeHeapOrdering.sol";
 
 library Types {
     /// ENUMS ///
@@ -14,9 +14,9 @@ library Types {
     /// STRUCTS ///
 
     struct Market {
-        mapping(address => Heap) suppliersP2P;
-        mapping(address => Heap) suppliersPool;
-        mapping(address => Heap) borrowersP2P;
-        mapping(address => Heap) borrowersPool;
+        mapping(address => ThreeHeapOrdering.HeapArray) suppliersP2P;
+        mapping(address => ThreeHeapOrdering.HeapArray) suppliersPool;
+        mapping(address => ThreeHeapOrdering.HeapArray) borrowersP2P;
+        mapping(address => ThreeHeapOrdering.HeapArray) borrowersPool;
     }
 }
