@@ -21,23 +21,19 @@ contract Morpho is ERC1155Upgradeable, OwnableUpgradeable {
     function supply(
         address _underlying,
         uint256 _amount,
-        address _from,
-        address _for,
+        address _onBehalf,
         uint256 _nbOfLoops,
         Types.PositionType _type
     ) external returns (uint256 supplied) {}
 
-    function borrow(address _underlying, uint256 _amount, address _from, address _to, uint256 _nbOfLoops)
+    function borrow(address _underlying, uint256 _amount, address _onBehalf, uint256 _nbOfLoops)
         external
         returns (uint256 borrowed)
     {}
 
-    function repay(address _underlying, uint256 _amount, address _from, address _for)
-        external
-        returns (uint256 repaid)
-    {}
+    function repay(address _underlying, uint256 _amount, address _onBehalf) external returns (uint256 repaid) {}
 
-    function withdraw(address _underlying, uint256 _amount, address _from, address _to)
+    function withdraw(address _underlying, uint256 _amount, address _onBehalf, address _to)
         external
         returns (uint256 withdrawn)
     {}
