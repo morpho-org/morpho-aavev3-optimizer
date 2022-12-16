@@ -24,7 +24,7 @@ contract Morpho is ERC1155Upgradeable, OwnableUpgradeable {
         address _from,
         address _for,
         uint256 _nbOfLoops,
-        Types.SupplyType _type
+        Types.PositionType _type
     ) external returns (uint256 supplied) {}
 
     function borrow(address _underlying, uint256 _amount, address _from, address _to, uint256 _nbOfLoops)
@@ -46,4 +46,28 @@ contract Morpho is ERC1155Upgradeable, OwnableUpgradeable {
         external
         returns (uint256 repaid, uint256 seized)
     {}
+
+    /// PUBLIC ///
+
+    function decodeId(uint256 _id) public pure returns (address underlying, Types.PositionType positionType) {
+        underlying = address(uint160(_id));
+        positionType = Types.PositionType(_id & 0xf);
+    }
+
+    /// ERC1155 ///
+
+    function balanceOf(address _user, uint256 _id) public view virtual override returns (uint256) {
+        (address underlying, Types.PositionType positionType) = decodeId(_id);
+        Types.Market storage market = markets[underlying];
+
+        if (positionType == Types.PositionType.COLLATERAL) {
+            return market.collateralScaledBalance[_user];
+        } else if (positionType == Types.PositionType.SUPPLY) {
+            return market.suppliersP2P.getValueOf(_user) + market.suppliersP2P.getValueOf(_user); // TODO: take into account indexes.
+        } else if (positionType == Types.PositionType.BORROW) {
+            return market.borrowersP2P.getValueOf(_user) + market.borrowersP2P.getValueOf(_user); // TODO: take into account indexes.
+        } else {
+            return 0;
+        }
+    }
 }

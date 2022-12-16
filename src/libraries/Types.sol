@@ -6,17 +6,19 @@ import {ThreeHeapOrdering} from "morpho-data-structures/ThreeHeapOrdering.sol";
 library Types {
     /// ENUMS ///
 
-    enum SupplyType {
-        PURE,
-        COLLATERAL
+    enum PositionType {
+        SUPPLY,
+        COLLATERAL,
+        BORROW
     }
 
     /// STRUCTS ///
 
     struct Market {
-        mapping(address => ThreeHeapOrdering.HeapArray) suppliersP2P;
-        mapping(address => ThreeHeapOrdering.HeapArray) suppliersPool;
-        mapping(address => ThreeHeapOrdering.HeapArray) borrowersP2P;
-        mapping(address => ThreeHeapOrdering.HeapArray) borrowersPool;
+        ThreeHeapOrdering.HeapArray suppliersP2P;
+        ThreeHeapOrdering.HeapArray suppliersPool;
+        ThreeHeapOrdering.HeapArray borrowersP2P;
+        ThreeHeapOrdering.HeapArray borrowersPool;
+        mapping(address => uint256) collateralScaledBalance;
     }
 }
