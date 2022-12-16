@@ -1,20 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {ThreeHeapOrdering} from "morpho-data-structures/ThreeHeapOrdering.sol";
-import {Events} from "./libraries/Events.sol";
-import {Errors} from "./libraries/Errors.sol";
-import {Types} from "./libraries/Types.sol";
+import {Types, Events, Errors, MarketLib} from "./libraries/Libraries.sol";
 
-import {ERC1155Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {MorphoGettersAndSetters} from "./MorphoGettersAndSetters.sol";
 
-contract Morpho is ERC1155Upgradeable, OwnableUpgradeable {
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+// import {IERC1155} from "./interfaces/IERC1155.sol";
+// import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-    /// STORAGE ///
-
-    mapping(address => Types.Market) internal markets;
+// @note: To add: IERC1155, Ownable
+contract Morpho is MorphoGettersAndSetters {
+    using MarketLib for Types.MarketBalances;
+    using MarketLib for Types.Market;
 
     /// EXTERNAL ///
 
@@ -42,28 +39,4 @@ contract Morpho is ERC1155Upgradeable, OwnableUpgradeable {
         external
         returns (uint256 repaid, uint256 seized)
     {}
-
-    /// PUBLIC ///
-
-    function decodeId(uint256 _id) public pure returns (address underlying, Types.PositionType positionType) {
-        underlying = address(uint160(_id));
-        positionType = Types.PositionType(_id & 0xf);
-    }
-
-    /// ERC1155 ///
-
-    function balanceOf(address _user, uint256 _id) public view virtual override returns (uint256) {
-        (address underlying, Types.PositionType positionType) = decodeId(_id);
-        Types.Market storage market = markets[underlying];
-
-        if (positionType == Types.PositionType.COLLATERAL) {
-            return market.collateralScaledBalance[_user];
-        } else if (positionType == Types.PositionType.SUPPLY) {
-            return market.suppliersP2P.getValueOf(_user) + market.suppliersP2P.getValueOf(_user); // TODO: take into account indexes.
-        } else if (positionType == Types.PositionType.BORROW) {
-            return market.borrowersP2P.getValueOf(_user) + market.borrowersP2P.getValueOf(_user); // TODO: take into account indexes.
-        } else {
-            return 0;
-        }
-    }
 }
