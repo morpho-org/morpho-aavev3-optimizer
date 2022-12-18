@@ -21,12 +21,6 @@ library Types {
         uint256 p2pBorrowAmount; // Sum of all stored peer-to-peer borrow (in peer-to-peer borrow unit).
     }
 
-    struct PoolIndexes {
-        uint32 lastUpdateTimestamp; // The last time the local pool and peer-to-peer indexes were updated.
-        uint112 poolSupplyIndex; // Last pool supply index (in ray).
-        uint112 poolBorrowIndex; // Last pool borrow index (in ray).
-    }
-
     struct PauseStatuses {
         bool isP2PDisabled;
         bool isSupplyPaused;
