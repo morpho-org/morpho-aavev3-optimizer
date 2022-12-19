@@ -16,8 +16,8 @@ abstract contract MatchingEngine is MorphoInternal {
     {
         Types.Market storage market = _market[poolToken];
         return _matchOrUnmatch(
-            _marketBalances[poolToken].suppliersPool,
-            _marketBalances[poolToken].suppliersP2P,
+            _marketBalances[poolToken].poolSuppliers,
+            _marketBalances[poolToken].p2pSuppliers,
             Types.MatchVars({
                 poolToken: poolToken,
                 poolIndex: market.poolSupplyIndex,
@@ -36,8 +36,8 @@ abstract contract MatchingEngine is MorphoInternal {
     {
         Types.Market storage market = _market[poolToken];
         return _matchOrUnmatch(
-            _marketBalances[poolToken].borrowersPool,
-            _marketBalances[poolToken].borrowersP2P,
+            _marketBalances[poolToken].poolBorrowers,
+            _marketBalances[poolToken].p2pBorrowers,
             Types.MatchVars({
                 poolToken: poolToken,
                 poolIndex: market.poolBorrowIndex,
@@ -56,8 +56,8 @@ abstract contract MatchingEngine is MorphoInternal {
     {
         Types.Market storage market = _market[poolToken];
         (unmatched,) = _matchOrUnmatch(
-            _marketBalances[poolToken].suppliersPool,
-            _marketBalances[poolToken].suppliersP2P,
+            _marketBalances[poolToken].poolSuppliers,
+            _marketBalances[poolToken].p2pSuppliers,
             Types.MatchVars({
                 poolToken: poolToken,
                 poolIndex: market.poolSupplyIndex,
@@ -76,8 +76,8 @@ abstract contract MatchingEngine is MorphoInternal {
     {
         Types.Market storage market = _market[poolToken];
         (unmatched,) = _matchOrUnmatch(
-            _marketBalances[poolToken].borrowersPool,
-            _marketBalances[poolToken].borrowersP2P,
+            _marketBalances[poolToken].poolBorrowers,
+            _marketBalances[poolToken].p2pBorrowers,
             Types.MatchVars({
                 poolToken: poolToken,
                 poolIndex: market.poolBorrowIndex,

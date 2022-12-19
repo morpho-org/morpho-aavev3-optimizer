@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {Types, Events, Errors, MarketLib} from "./libraries/Libraries.sol";
+import {Types, Events, Errors, MarketBalanceLib} from "./libraries/Libraries.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MorphoGettersAndSetters is MorphoInternal {
-    using MarketLib for Types.MarketBalances;
-    using MarketLib for Types.Market;
+    using MarketBalanceLib for Types.MarketBalances;
 
     /// STORAGE ///
 

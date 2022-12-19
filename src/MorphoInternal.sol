@@ -8,6 +8,7 @@ import {
     Events,
     Errors,
     MarketLib,
+    MarketBalanceLib,
     MarketMaskLib,
     WadRayMath,
     Math,
@@ -21,7 +22,7 @@ import {IPriceOracleGetter, IVariableDebtToken, IAToken, IPriceOracleSentinel} f
 
 abstract contract MorphoInternal is MorphoStorage {
     using MarketLib for Types.Market;
-    using MarketLib for Types.MarketBalances;
+    using MarketBalanceLib for Types.MarketBalances;
     using MarketMaskLib for Types.UserMarkets;
     using WadRayMath for uint256;
     using Math for uint256;
@@ -237,8 +238,8 @@ abstract contract MorphoInternal is MorphoStorage {
         _updateInDS(
             poolToken,
             user,
-            _marketBalances[poolToken].suppliersPool,
-            _marketBalances[poolToken].suppliersP2P,
+            _marketBalances[poolToken].poolSuppliers,
+            _marketBalances[poolToken].p2pSuppliers,
             onPool,
             inP2P
         );
@@ -248,8 +249,8 @@ abstract contract MorphoInternal is MorphoStorage {
         _updateInDS(
             _market[poolToken].variableDebtToken,
             user,
-            _marketBalances[poolToken].borrowersPool,
-            _marketBalances[poolToken].borrowersP2P,
+            _marketBalances[poolToken].poolBorrowers,
+            _marketBalances[poolToken].p2pBorrowers,
             onPool,
             inP2P
         );

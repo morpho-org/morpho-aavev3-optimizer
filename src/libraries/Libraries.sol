@@ -5,6 +5,7 @@ import {Types} from "./Types.sol";
 import {Events} from "./Events.sol";
 import {Errors} from "./Errors.sol";
 import {MarketLib} from "./MarketLib.sol";
+import {MarketBalanceLib} from "./MarketBalanceLib.sol";
 import {MarketMaskLib} from "./MarketMaskLib.sol";
 import {PoolInteractions} from "./PoolInteractions.sol";
 

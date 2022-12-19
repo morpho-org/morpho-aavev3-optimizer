@@ -52,10 +52,10 @@ library Types {
 
     // Contains storage-only dynamic arrays and mappings.
     struct MarketBalances {
-        ThreeHeapOrdering.HeapArray suppliersP2P; // in scaled unit
-        ThreeHeapOrdering.HeapArray suppliersPool; // in scaled unit
-        ThreeHeapOrdering.HeapArray borrowersP2P; // in scaled unit
-        ThreeHeapOrdering.HeapArray borrowersPool; // in scaled unit
+        ThreeHeapOrdering.HeapArray p2pSuppliers; // in scaled unit
+        ThreeHeapOrdering.HeapArray poolSuppliers; // in scaled unit
+        ThreeHeapOrdering.HeapArray p2pBorrowers; // in scaled unit
+        ThreeHeapOrdering.HeapArray poolBorrowers; // in scaled unit
         mapping(address => uint256) collateral; // in scaled unit
     }
 

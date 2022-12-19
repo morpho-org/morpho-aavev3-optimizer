@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {Types, Events, Errors, MarketLib} from "./libraries/Libraries.sol";
+import {Types, Events, Errors, MarketLib, MarketBalanceLib} from "./libraries/Libraries.sol";
 
 import {MorphoGettersAndSetters} from "./MorphoGettersAndSetters.sol";
 
@@ -10,7 +10,7 @@ import {MorphoGettersAndSetters} from "./MorphoGettersAndSetters.sol";
 
 // @note: To add: IERC1155, Ownable
 contract Morpho is MorphoGettersAndSetters {
-    using MarketLib for Types.MarketBalances;
+    using MarketBalanceLib for Types.MarketBalances;
     using MarketLib for Types.Market;
 
     /// EXTERNAL ///
