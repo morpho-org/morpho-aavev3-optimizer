@@ -1,5 +1,10 @@
-ds-test/=lib/forge-std/lib/ds-test/src/
-forge-std/=lib/forge-std/src/
-openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts
-morpho-data-structures/=lib/morpho-data-structures/contracts/
+@ds-test/=lib/forge-std/lib/ds-test/src/
+@forge-std/=lib/forge-std/src/
+
+@morpho-data-structures/=lib/morpho-data-structures/contracts/
+@morpho-utils/=lib/morpho-utils/src/
+
+@openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts
 @openzeppelin/=node_modules/@openzeppelin/
+@aave/core-v3/=lib/aave-v3-core/
+@aave/periphery-v3/=lib/aave-v3-periphery/
