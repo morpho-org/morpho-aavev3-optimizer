@@ -8,6 +8,7 @@ import {MarketLib} from "./MarketLib.sol";
 import {MarketBalanceLib} from "./MarketBalanceLib.sol";
 import {MarketMaskLib} from "./MarketMaskLib.sol";
 import {PoolInteractions} from "./PoolInteractions.sol";
+import {InterestRatesModel} from "./InterestRatesModel.sol";
 
 import {WadRayMath} from "morpho-utils/math/WadRayMath.sol";
 import {Math} from "morpho-utils/math/Math.sol";
