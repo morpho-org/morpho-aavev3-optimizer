@@ -40,15 +40,19 @@ library Types {
         bool isDeprecated;
     }
 
+    struct Indexes {
+        uint128 poolSupplyIndex;
+        uint128 poolBorrowIndex;
+        uint128 p2pSupplyIndex;
+        uint128 p2pBorrowIndex;
+    }
+
     /// STORAGE STRUCTS ///
 
     // This market struct is able to be passed into memory.
     struct Market {
         // SLOT 0-1
-        uint128 poolSupplyIndex; // 128 bits
-        uint128 poolBorrowIndex; // 128 bits
-        uint128 p2pSupplyIndex; // 128 bits
-        uint128 p2pBorrowIndex; // 128 bits
+        Indexes indexes;
         // SLOT 2
         BorrowMask borrowMask; // 256 bits
         // SLOT 3-6
