@@ -47,15 +47,28 @@ abstract contract MorphoInternal is MorphoStorage {
     address poolToken,
     address user
   ) internal view returns (uint256) {
-    Types.MarketBalances storage marketBalances = _marketBalances[poolToken];
-    Types.Market storage market = _market[poolToken];
+    (uint256 poolSupplyIndex, , uint256 p2pSupplyIndex, ) = _computeIndexes(
+      poolToken
+    );
     return
-      marketBalances.scaledP2PSupplyBalance(user).rayMul(
-        market.p2pSupplyIndex
-      ) +
-      marketBalances.scaledPoolSupplyBalance(user).rayMul(
-        market.poolSupplyIndex
+      _getUserSupplyBalanceFromIndexes(
+        poolToken,
+        user,
+        poolSupplyIndex,
+        p2pSupplyIndex
       );
+  }
+
+  function _getUserSupplyBalanceFromIndexes(
+    address poolToken,
+    address user,
+    uint256 poolSupplyIndex,
+    uint256 p2pSupplyIndex
+  ) internal view returns (uint256) {
+    Types.MarketBalances storage marketBalances = _marketBalances[poolToken];
+    return
+      marketBalances.scaledPoolSupplyBalance(user).rayMul(poolSupplyIndex) +
+      marketBalances.scaledP2PSupplyBalance(user).rayMul(p2pSupplyIndex);
   }
 
   /// @dev Returns the borrow balance of `_user` in the `_poolToken` market.
@@ -67,15 +80,28 @@ abstract contract MorphoInternal is MorphoStorage {
     address poolToken,
     address user
   ) internal view returns (uint256) {
-    Types.MarketBalances storage marketBalances = _marketBalances[poolToken];
-    Types.Market storage market = _market[poolToken];
+    (, uint256 poolBorrowIndex, , uint256 p2pBorrowIndex) = _computeIndexes(
+      poolToken
+    );
     return
-      marketBalances.scaledP2PBorrowBalance(user).rayMul(
-        market.p2pBorrowIndex
-      ) +
-      marketBalances.scaledPoolBorrowBalance(user).rayMul(
-        market.poolBorrowIndex
+      _getUserBorrowBalanceFromIndexes(
+        poolToken,
+        user,
+        poolBorrowIndex,
+        p2pBorrowIndex
       );
+  }
+
+  function _getUserBorrowBalanceFromIndexes(
+    address poolToken,
+    address user,
+    uint256 poolBorrowIndex,
+    uint256 p2pBorrowIndex
+  ) internal view returns (uint256) {
+    Types.MarketBalances storage marketBalances = _marketBalances[poolToken];
+    return
+      marketBalances.scaledPoolBorrowBalance(user).rayMul(poolBorrowIndex) +
+      marketBalances.scaledP2PBorrowBalance(user).rayMul(p2pBorrowIndex);
   }
 
   /// @dev Calculates the value of the collateral.
@@ -86,12 +112,10 @@ abstract contract MorphoInternal is MorphoStorage {
   function _collateralValue(
     address poolToken,
     address user,
+    uint256 poolSupplyIndex,
     uint256 underlyingPrice,
     uint256 tokenUnit
   ) internal view returns (uint256) {
-    uint256 poolSupplyIndex = _pool.getReserveNormalizedIncome(
-      _market[poolToken].underlying
-    );
     return
       (_marketBalances[poolToken].scaledCollateralBalance(user).rayMul(
         poolSupplyIndex
@@ -106,13 +130,18 @@ abstract contract MorphoInternal is MorphoStorage {
   function _debtValue(
     address poolToken,
     address user,
+    uint256 poolBorrowIndex,
+    uint256 p2pBorrowIndex,
     uint256 underlyingPrice,
     uint256 tokenUnit
   ) internal view returns (uint256) {
     return
-      (_getUserBorrowBalance(poolToken, user) * underlyingPrice).divUp(
-        tokenUnit
-      );
+      (_getUserBorrowBalanceFromIndexes(
+        poolToken,
+        user,
+        poolBorrowIndex,
+        p2pBorrowIndex
+      ) * underlyingPrice).divUp(tokenUnit);
   }
 
   /// @dev Calculates the total value of the collateral, debt, and LTV/LT value depending on the calculation type.
@@ -149,9 +178,6 @@ abstract contract MorphoInternal is MorphoStorage {
           withdrawnSingle = amountWithdrawn;
           borrowedSingle = amountBorrowed;
         }
-        // else {
-        //     _updateIndexes(currentMarket);
-        // }
 
         Types.AssetLiquidityData
           memory assetLiquidityData = _assetLiquidityData(
@@ -185,11 +211,19 @@ abstract contract MorphoInternal is MorphoStorage {
     uint256 amountWithdrawn
   ) internal view returns (Types.LiquidityData memory liquidityData) {
     Types.Market storage market = _market[poolToken];
+    (
+      uint256 poolSupplyIndex,
+      uint256 poolBorrowIndex,
+      ,
+      uint256 p2pBorrowIndex
+    ) = _computeIndexes(poolToken);
 
     if (userMarkets.isBorrowing(market.borrowMask)) {
       liquidityData.debt += _debtValue(
         poolToken,
         user,
+        poolBorrowIndex,
+        p2pBorrowIndex,
         assetLiquidityData.underlyingPrice,
         assetLiquidityData.tokenUnit
       );
@@ -201,6 +235,7 @@ abstract contract MorphoInternal is MorphoStorage {
       assetCollateralValue = _collateralValue(
         poolToken,
         user,
+        poolSupplyIndex,
         assetLiquidityData.underlyingPrice,
         assetLiquidityData.tokenUnit
       );
@@ -352,15 +387,18 @@ abstract contract MorphoInternal is MorphoStorage {
   function _updateIndexes(address poolToken) internal {
     Types.Market storage market = _market[poolToken];
     (
-      uint256 newPoolSupplyIndex,
-      uint256 newPoolBorrowIndex,
-      uint256 newP2PSupplyIndex,
-      uint256 newP2PBorrowIndex
+      uint256 poolSupplyIndex,
+      uint256 poolBorrowIndex,
+      uint256 p2pSupplyIndex,
+      uint256 p2pBorrowIndex
     ) = _computeIndexes(poolToken);
-    market.poolSupplyIndex = newPoolSupplyIndex.toUint128();
-    market.poolBorrowIndex = newPoolBorrowIndex.toUint128();
-    market.p2pSupplyIndex = newP2PSupplyIndex.toUint128();
-    market.p2pBorrowIndex = newP2PBorrowIndex.toUint128();
+
+    market.setIndexes(
+      poolSupplyIndex,
+      poolBorrowIndex,
+      p2pSupplyIndex,
+      p2pBorrowIndex
+    );
   }
 
   function _computeIndexes(
@@ -369,50 +407,33 @@ abstract contract MorphoInternal is MorphoStorage {
     internal
     view
     returns (
-      uint256 newPoolSupplyIndex,
-      uint256 newPoolBorrowIndex,
-      uint256 newP2PSupplyIndex,
-      uint256 newP2PBorrowIndex
+      uint256 poolSupplyIndex,
+      uint256 poolBorrowIndex,
+      uint256 p2pSupplyIndex,
+      uint256 p2pBorrowIndex
     )
   {
     Types.Market storage market = _market[poolToken];
-    if (block.timestamp == market.lastUpdateTimestamp) {
-      return (
-        market.poolSupplyIndex,
-        market.poolBorrowIndex,
-        market.p2pSupplyIndex,
-        market.p2pBorrowIndex
-      );
-    }
+    if (block.timestamp == market.lastUpdateTimestamp)
+      return market.getIndexes();
 
-    (newPoolSupplyIndex, newPoolBorrowIndex) = _pool.getCurrentPoolIndexes(
+    (poolSupplyIndex, poolBorrowIndex) = _pool.getCurrentPoolIndexes(
       market.underlying
     );
 
-    (newP2PSupplyIndex, newP2PBorrowIndex) = InterestRatesModel
-      .computeP2PIndexes(
-        Types.IRMParams({
-          lastP2PSupplyIndex: market.p2pSupplyIndex,
-          lastP2PBorrowIndex: market.p2pBorrowIndex,
-          poolSupplyIndex: newPoolSupplyIndex,
-          poolBorrowIndex: newPoolBorrowIndex,
-          lastPoolSupplyIndex: market.poolSupplyIndex,
-          lastPoolBorrowIndex: market.poolBorrowIndex,
-          reserveFactor: market.reserveFactor,
-          p2pIndexCursor: market.p2pIndexCursor,
-          deltas: market.deltas
-        })
-      );
-  }
-
-  function _getCurrentPoolIndexes(
-    address poolToken
-  ) internal view returns (uint256 poolSupplyIndex, uint256 poolBorrowIndex) {
-    IPool pool = _pool;
-    address underlying = _market[poolToken].underlying;
-
-    poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
-    poolBorrowIndex = pool.getReserveNormalizedVariableDebt(underlying);
+    (p2pSupplyIndex, p2pBorrowIndex) = InterestRatesModel.computeP2PIndexes(
+      Types.IRMParams({
+        lastPoolSupplyIndex: market.poolSupplyIndex,
+        lastPoolBorrowIndex: market.poolBorrowIndex,
+        lastP2PSupplyIndex: market.p2pSupplyIndex,
+        lastP2PBorrowIndex: market.p2pBorrowIndex,
+        poolSupplyIndex: poolSupplyIndex,
+        poolBorrowIndex: poolBorrowIndex,
+        reserveFactor: market.reserveFactor,
+        p2pIndexCursor: market.p2pIndexCursor,
+        deltas: market.deltas
+      })
+    );
   }
 
   function _borrowAllowed(

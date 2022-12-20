@@ -44,10 +44,9 @@ library Types {
 
   // This market struct is able to be passed into memory.
   struct Market {
-    // SLOT 0
+    // SLOT 0-1
     uint128 poolSupplyIndex; // 128 bits
     uint128 poolBorrowIndex; // 128 bits
-    // SLOT 1
     uint128 p2pSupplyIndex; // 128 bits
     uint128 p2pBorrowIndex; // 128 bits
     // SLOT 2
@@ -101,15 +100,15 @@ library Types {
   }
 
   struct IRMParams {
-    uint256 lastP2PSupplyIndex; // The peer-to-peer supply index at last update.
-    uint256 lastP2PBorrowIndex; // The peer-to-peer borrow index at last update.
+    uint256 lastPoolSupplyIndex;
+    uint256 lastPoolBorrowIndex;
+    uint256 lastP2PSupplyIndex;
+    uint256 lastP2PBorrowIndex;
     uint256 poolSupplyIndex; // The current pool supply index.
     uint256 poolBorrowIndex; // The current pool borrow index.
-    uint256 lastPoolSupplyIndex; // The pool supply index at last update.
-    uint256 lastPoolBorrowIndex; // The pool borrow index at last update.
     uint256 reserveFactor; // The reserve factor percentage (10 000 = 100%).
     uint256 p2pIndexCursor; // The peer-to-peer index cursor (10 000 = 100%).
-    Types.Delta deltas; // The deltas and peer-to-peer amounts.
+    Delta deltas; // The deltas and peer-to-peer amounts.
   }
 
   struct GrowthFactors {
