@@ -9,12 +9,11 @@ import {Constants} from "./libraries/Constants.sol";
 contract MorphoStorage {
     /// CONSTANTS ///
 
-    uint256 internal constant DEFAULT_LIQUIDATION_CLOSE_FACTOR = Constants.DEFAULT_LIQUIDATION_CLOSE_FACTOR;
-    uint256 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD; // Health factor below which the positions can be liquidated.
-    uint256 internal constant MAX_NB_OF_MARKETS = Constants.MAX_NB_OF_MARKETS;
-    uint256 internal constant MAX_LIQUIDATION_CLOSE_FACTOR = Constants.MAX_LIQUIDATION_CLOSE_FACTOR; // 100% in basis points.
-    uint256 internal constant MINIMUM_HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
-        Constants.MINIMUM_HEALTH_FACTOR_LIQUIDATION_THRESHOLD; // Health factor below which the positions can be liquidated, whether or not the price oracle sentinel allows the liquidation.
+    uint256 internal constant DEFAULT_CLOSE_FACTOR = Constants.DEFAULT_CLOSE_FACTOR;
+    uint256 internal constant DEFAULT_LIQUIDATION_THRESHOLD = Constants.DEFAULT_LIQUIDATION_THRESHOLD; // Health factor below which the positions can be liquidated.
+    uint256 internal constant MAX_NB_MARKETS = Constants.MAX_NB_MARKETS;
+    uint256 internal constant MAX_CLOSE_FACTOR = Constants.MAX_CLOSE_FACTOR; // 100% in basis points.
+    uint256 internal constant MIN_LIQUIDATION_THRESHOLD = Constants.MIN_LIQUIDATION_THRESHOLD; // Health factor below which the positions can be liquidated, whether or not the price oracle sentinel allows the liquidation.
     bytes32 internal constant BORROWING_MASK = Constants.BORROWING_MASK;
     bytes32 internal constant ONE = Constants.ONE;
 

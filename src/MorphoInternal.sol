@@ -383,7 +383,7 @@ abstract contract MorphoInternal is MorphoStorage {
             return false;
         }
 
-        return _getUserHealthFactor(user, poolToken, withdrawnAmount) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+        return _getUserHealthFactor(user, poolToken, withdrawnAmount) >= DEFAULT_LIQUIDATION_THRESHOLD;
     }
 
     function _liquidationAllowed(address user, bool isDeprecated)
@@ -393,27 +393,25 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         if (isDeprecated) {
             liquidationAllowed = true;
-            closeFactor = MAX_LIQUIDATION_CLOSE_FACTOR; // Allow liquidation of the whole debt.
+            closeFactor = MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
         } else {
             uint256 healthFactor = _getUserHealthFactor(user, address(0), 0);
             address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
 
             if (priceOracleSentinel != address(0)) {
                 liquidationAllowed = (
-                    healthFactor < MINIMUM_HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+                    healthFactor < MIN_LIQUIDATION_THRESHOLD
                         || (
                             IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
-                                && healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+                                && healthFactor < DEFAULT_LIQUIDATION_THRESHOLD
                         )
                 );
             } else {
-                liquidationAllowed = healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+                liquidationAllowed = healthFactor < DEFAULT_LIQUIDATION_THRESHOLD;
             }
 
             if (liquidationAllowed) {
-                closeFactor = healthFactor > MINIMUM_HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-                    ? DEFAULT_LIQUIDATION_CLOSE_FACTOR
-                    : MAX_LIQUIDATION_CLOSE_FACTOR;
+                closeFactor = healthFactor > MIN_LIQUIDATION_THRESHOLD ? DEFAULT_CLOSE_FACTOR : MAX_CLOSE_FACTOR;
             }
         }
     }
