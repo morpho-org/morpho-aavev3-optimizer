@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {MorphoStorage} from "./MorphoStorage.sol";
+import {
+    IPool, IPriceOracleGetter, IVariableDebtToken, IAToken, IPriceOracleSentinel
+} from "./interfaces/Interfaces.sol";
 
 import {
     Types,
@@ -21,9 +23,8 @@ import {
     UserConfiguration,
     ThreeHeapOrdering
 } from "./libraries/Libraries.sol";
-import {
-    IPool, IPriceOracleGetter, IVariableDebtToken, IAToken, IPriceOracleSentinel
-} from "./interfaces/Interfaces.sol";
+
+import {MorphoStorage} from "./MorphoStorage.sol";
 
 abstract contract MorphoInternal is MorphoStorage {
     using MarketLib for Types.Market;
@@ -392,7 +393,7 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         if (isDeprecated) {
             liquidationAllowed = true;
-            closeFactor = MAX_BASIS_POINTS; // Allow liquidation of the whole debt.
+            closeFactor = MAX_LIQUIDATION_CLOSE_FACTOR; // Allow liquidation of the whole debt.
         } else {
             uint256 healthFactor = _getUserHealthFactor(user, address(0), 0);
             address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();

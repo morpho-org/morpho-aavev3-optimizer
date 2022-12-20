@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {Types} from "./Types.sol";
-import {WadRayMath} from "morpho-utils/math/WadRayMath.sol";
-import {Math} from "morpho-utils/math/Math.sol";
-import {PercentageMath} from "morpho-utils/math/PercentageMath.sol";
+import {Types, Math, WadRayMath, PercentageMath} from "./Libraries.sol";
 
 library InterestRatesModel {
     using WadRayMath for uint256;

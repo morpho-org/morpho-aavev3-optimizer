@@ -5,8 +5,8 @@ import {Types, Events, Errors, MarketLib, MarketBalanceLib} from "./libraries/Li
 
 import {MorphoGettersAndSetters} from "./MorphoGettersAndSetters.sol";
 
-// import {IERC1155} from "./interfaces/IERC1155.sol";
-// import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {IERC1155} from "./interfaces/IERC1155.sol";
+import {OwnableUpgradeable} from "@openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 // @note: To add: IERC1155, Ownable
 contract Morpho is MorphoGettersAndSetters {

@@ -99,7 +99,6 @@ abstract contract MatchingEngine is MorphoInternal {
 
         uint256 remainingToMatch = vars.amount;
 
-        // prettier-ignore
         // This function will be used to decide whether to use the algorithm for matching or for unmatching.
         function(uint256, uint256, uint256, uint256, uint256)
             pure returns (uint256, uint256, uint256) f;
