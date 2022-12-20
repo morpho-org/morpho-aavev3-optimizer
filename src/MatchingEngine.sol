@@ -22,8 +22,8 @@ abstract contract MatchingEngine is MorphoInternal {
             _marketBalances[poolToken].p2pSuppliers,
             Types.MatchVars({
                 poolToken: poolToken,
-                poolIndex: market.poolSupplyIndex,
-                p2pIndex: market.p2pSupplyIndex,
+                poolIndex: market.indexes.poolSupplyIndex,
+                p2pIndex: market.indexes.p2pSupplyIndex,
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
@@ -42,8 +42,8 @@ abstract contract MatchingEngine is MorphoInternal {
             _marketBalances[poolToken].p2pBorrowers,
             Types.MatchVars({
                 poolToken: poolToken,
-                poolIndex: market.poolBorrowIndex,
-                p2pIndex: market.p2pBorrowIndex,
+                poolIndex: market.indexes.poolBorrowIndex,
+                p2pIndex: market.indexes.p2pBorrowIndex,
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
@@ -62,8 +62,8 @@ abstract contract MatchingEngine is MorphoInternal {
             _marketBalances[poolToken].p2pSuppliers,
             Types.MatchVars({
                 poolToken: poolToken,
-                poolIndex: market.poolSupplyIndex,
-                p2pIndex: market.p2pSupplyIndex,
+                poolIndex: market.indexes.poolSupplyIndex,
+                p2pIndex: market.indexes.p2pSupplyIndex,
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
@@ -82,8 +82,8 @@ abstract contract MatchingEngine is MorphoInternal {
             _marketBalances[poolToken].p2pBorrowers,
             Types.MatchVars({
                 poolToken: poolToken,
-                poolIndex: market.poolBorrowIndex,
-                p2pIndex: market.p2pBorrowIndex,
+                poolIndex: market.indexes.poolBorrowIndex,
+                p2pIndex: market.indexes.p2pBorrowIndex,
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,

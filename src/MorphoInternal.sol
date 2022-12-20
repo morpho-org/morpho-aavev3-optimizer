@@ -108,7 +108,7 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 tokenUnit
     ) internal view returns (uint256) {
         return (_marketBalances[poolToken].scaledCollateralBalance(user).rayMul(poolSupplyIndex) * underlyingPrice)
-            / tokenUnit; // TODO: Multiply by an index or make collateral balance unscaled
+            / tokenUnit;
     }
 
     /// @dev Calculates the value of the debt.
@@ -336,10 +336,10 @@ abstract contract MorphoInternal is MorphoStorage {
 
         (p2pSupplyIndex, p2pBorrowIndex) = InterestRatesModel.computeP2PIndexes(
             Types.IRMParams({
-                lastPoolSupplyIndex: market.poolSupplyIndex,
-                lastPoolBorrowIndex: market.poolBorrowIndex,
-                lastP2PSupplyIndex: market.p2pSupplyIndex,
-                lastP2PBorrowIndex: market.p2pBorrowIndex,
+                lastPoolSupplyIndex: market.indexes.poolSupplyIndex,
+                lastPoolBorrowIndex: market.indexes.poolBorrowIndex,
+                lastP2PSupplyIndex: market.indexes.p2pSupplyIndex,
+                lastP2PBorrowIndex: market.indexes.p2pBorrowIndex,
                 poolSupplyIndex: poolSupplyIndex,
                 poolBorrowIndex: poolBorrowIndex,
                 reserveFactor: market.reserveFactor,

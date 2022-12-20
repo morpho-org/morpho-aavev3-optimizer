@@ -20,10 +20,10 @@ library MarketLib {
         view
         returns (uint256 poolSupplyIndex, uint256 poolBorrowIndex, uint256 p2pSupplyIndex, uint256 p2pBorrowIndex)
     {
-        poolSupplyIndex = uint256(market.poolSupplyIndex);
-        poolBorrowIndex = uint256(market.poolBorrowIndex);
-        p2pSupplyIndex = uint256(market.p2pSupplyIndex);
-        p2pBorrowIndex = uint256(market.p2pBorrowIndex);
+        poolSupplyIndex = uint256(market.indexes.poolSupplyIndex);
+        poolBorrowIndex = uint256(market.indexes.poolBorrowIndex);
+        p2pSupplyIndex = uint256(market.indexes.p2pSupplyIndex);
+        p2pBorrowIndex = uint256(market.indexes.p2pBorrowIndex);
     }
 
     function setIndexes(
@@ -33,9 +33,9 @@ library MarketLib {
         uint256 p2pSupplyIndex,
         uint256 p2pBorrowIndex
     ) internal {
-        market.poolSupplyIndex = poolSupplyIndex.toUint128();
-        market.poolBorrowIndex = poolBorrowIndex.toUint128();
-        market.p2pSupplyIndex = p2pSupplyIndex.toUint128();
-        market.p2pBorrowIndex = p2pBorrowIndex.toUint128();
+        market.indexes.poolSupplyIndex = poolSupplyIndex.toUint128();
+        market.indexes.poolBorrowIndex = poolBorrowIndex.toUint128();
+        market.indexes.p2pSupplyIndex = p2pSupplyIndex.toUint128();
+        market.indexes.p2pBorrowIndex = p2pBorrowIndex.toUint128();
     }
 }
