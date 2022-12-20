@@ -32,4 +32,13 @@ library PoolInteractions {
 
         pool.repay(underlying, amount, Constants.VARIABLE_INTEREST_MODE, address(this)); // Reverts if debt is 0.
     }
+
+    function getCurrentPoolIndexes(IPool pool, address underlying)
+        internal
+        view
+        returns (uint256 poolSupplyIndex, uint256 poolBorrowIndex)
+    {
+        poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
+        poolBorrowIndex = pool.getReserveNormalizedVariableDebt(underlying);
+    }
 }

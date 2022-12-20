@@ -14,6 +14,14 @@ library Types {
 
     /// NESTED STRUCTS ///
 
+    struct UserMarkets {
+        bytes32 data;
+    }
+
+    struct BorrowMask {
+        bytes32 data;
+    }
+
     struct Delta {
         uint256 p2pSupplyDelta; // Difference between the stored peer-to-peer supply amount and the real peer-to-peer supply amount (in pool supply unit).
         uint256 p2pBorrowDelta; // Difference between the stored peer-to-peer borrow amount and the real peer-to-peer borrow amount (in pool borrow unit).
@@ -32,22 +40,31 @@ library Types {
         bool isDeprecated;
     }
 
+    struct Indexes {
+        uint128 poolSupplyIndex;
+        uint128 poolBorrowIndex;
+        uint128 p2pSupplyIndex;
+        uint128 p2pBorrowIndex;
+    }
+
     /// STORAGE STRUCTS ///
 
     // This market struct is able to be passed into memory.
     struct Market {
-        uint256 p2pSupplyIndex; // 256 bits
-        uint256 p2pBorrowIndex; // 256 bits
+        // SLOT 0-1
+        Indexes indexes;
+        // SLOT 2
         BorrowMask borrowMask; // 256 bits
+        // SLOT 3-6
         Delta deltas; // 1024 bits
-        uint32 lastUpdateTimestamp; // 32 bits
-        uint112 poolSupplyIndex; // 112 bits
-        uint112 poolBorrowIndex; // 112 bits
+        // SLOT 7
         address underlying; // 168 bits
+        PauseStatuses pauseStatuses; // 64 bits
+        // SLOT 8
         address variableDebtToken; // 168 bits
+        uint32 lastUpdateTimestamp; // 32 bits
         uint16 reserveFactor; // 16 bits
         uint16 p2pIndexCursor; // 16 bits
-        PauseStatuses pauseStatuses; // 64 bits
     }
 
     // Contains storage-only dynamic arrays and mappings.
@@ -59,13 +76,7 @@ library Types {
         mapping(address => uint256) collateral; // in scaled unit
     }
 
-    struct UserMarkets {
-        bytes32 data;
-    }
-
-    struct BorrowMask {
-        bytes32 data;
-    }
+    /// STACK AND RETURN STRUCTS ///
 
     struct AssetLiquidityData {
         uint256 decimals; // The number of decimals of the underlying token.
@@ -93,14 +104,21 @@ library Types {
     }
 
     struct IRMParams {
-        uint256 lastP2PSupplyIndex; // The peer-to-peer supply index at last update.
-        uint256 lastP2PBorrowIndex; // The peer-to-peer borrow index at last update.
+        uint256 lastPoolSupplyIndex;
+        uint256 lastPoolBorrowIndex;
+        uint256 lastP2PSupplyIndex;
+        uint256 lastP2PBorrowIndex;
         uint256 poolSupplyIndex; // The current pool supply index.
         uint256 poolBorrowIndex; // The current pool borrow index.
-        uint256 lastPoolSupplyIndex; // The pool supply index at last update.
-        uint256 lastPoolBorrowIndex; // The pool borrow index at last update.
         uint256 reserveFactor; // The reserve factor percentage (10 000 = 100%).
         uint256 p2pIndexCursor; // The peer-to-peer index cursor (10 000 = 100%).
-        Types.Delta delta; // The deltas and peer-to-peer amounts.
+        Delta deltas; // The deltas and peer-to-peer amounts.
+    }
+
+    struct GrowthFactors {
+        uint256 poolSupplyGrowthFactor; // The pool's supply index growth factor (in ray).
+        uint256 poolBorrowGrowthFactor; // The pool's borrow index growth factor (in ray).
+        uint256 p2pSupplyGrowthFactor; // Peer-to-peer supply index growth factor (in ray).
+        uint256 p2pBorrowGrowthFactor; // Peer-to-peer borrow index growth factor (in ray).
     }
 }
