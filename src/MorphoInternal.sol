@@ -6,9 +6,6 @@ import {
 } from "./interfaces/Interfaces.sol";
 
 import {
-    Types,
-    Events,
-    Errors,
     MarketLib,
     MarketBalanceLib,
     MarketMaskLib,
@@ -23,6 +20,10 @@ import {
     UserConfiguration,
     ThreeHeapOrdering
 } from "./libraries/Libraries.sol";
+import {Types} from "./libraries/Types.sol";
+import {Events} from "./libraries/Events.sol";
+import {Errors} from "./libraries/Errors.sol";
+import {Constants} from "./libraries/Constants.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 
@@ -383,7 +384,7 @@ abstract contract MorphoInternal is MorphoStorage {
             return false;
         }
 
-        return _getUserHealthFactor(user, poolToken, withdrawnAmount) >= DEFAULT_LIQUIDATION_THRESHOLD;
+        return _getUserHealthFactor(user, poolToken, withdrawnAmount) >= Constants.DEFAULT_LIQUIDATION_THRESHOLD;
     }
 
     function _liquidationAllowed(address user, bool isDeprecated)
@@ -393,25 +394,27 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         if (isDeprecated) {
             liquidationAllowed = true;
-            closeFactor = MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
+            closeFactor = Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
         } else {
             uint256 healthFactor = _getUserHealthFactor(user, address(0), 0);
             address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
 
             if (priceOracleSentinel != address(0)) {
                 liquidationAllowed = (
-                    healthFactor < MIN_LIQUIDATION_THRESHOLD
+                    healthFactor < Constants.MIN_LIQUIDATION_THRESHOLD
                         || (
                             IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
-                                && healthFactor < DEFAULT_LIQUIDATION_THRESHOLD
+                                && healthFactor < Constants.DEFAULT_LIQUIDATION_THRESHOLD
                         )
                 );
             } else {
-                liquidationAllowed = healthFactor < DEFAULT_LIQUIDATION_THRESHOLD;
+                liquidationAllowed = healthFactor < Constants.DEFAULT_LIQUIDATION_THRESHOLD;
             }
 
             if (liquidationAllowed) {
-                closeFactor = healthFactor > MIN_LIQUIDATION_THRESHOLD ? DEFAULT_CLOSE_FACTOR : MAX_CLOSE_FACTOR;
+                closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
+                    ? Constants.DEFAULT_CLOSE_FACTOR
+                    : Constants.MAX_CLOSE_FACTOR;
             }
         }
     }

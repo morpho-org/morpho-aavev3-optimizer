@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {WadRayMath, PercentageMath} from "./Libraries.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
+import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 library Constants {
     uint8 internal constant NO_REFERRAL_CODE = 0;
