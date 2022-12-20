@@ -27,4 +27,12 @@ library Errors {
     error MarketIsNotListedOnAave();
     error MarketAlreadyCreated();
     error MaxSortedUsersCannotBeZero();
+
+    error LengthMismatch();
+    error InsufficientBalance();
+    error UnauthorisedTransfer();
+    error TransferRejected();
+    error BatchTransferRejected();
+    error TransferCallbackNonImplemented();
+    error BatchTransferCallbackNonImplemented();
 }

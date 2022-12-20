@@ -30,4 +30,8 @@ contract MorphoStorage {
 
     address internal _treasuryVault;
     bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
+
+    /// ERC1155 ///
+
+    mapping(address => mapping(address => mapping(address => bool))) _isApprovedForBy; // market -> owner -> operator -> approval
 }

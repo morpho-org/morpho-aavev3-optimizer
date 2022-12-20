@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IERC1155} from "./interfaces/IERC1155.sol";
+
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {Types} from "./libraries/Types.sol";
@@ -20,13 +22,22 @@ import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-abstract contract MorphoSetters is MorphoInternal, Initializable, OwnableUpgradeable {
+abstract contract MorphoSetters is IERC1155, MorphoInternal, Initializable, OwnableUpgradeable {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using SafeTransferLib for ERC20;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    /// SETTERS ///
+    /// ERC1155 ///
+
+    /// @inheritdoc IERC1155
+    function setApprovalForAll(address _operator, bool _approved) external {
+        for (uint256 i; i < _marketsCreated.length; ++i) {
+            _isApprovedForBy[_marketsCreated[i]][msg.sender][_operator] = _approved;
+        }
+    }
+
+    /// GOVERNANCE ///
 
     function initialize(
         address newEntryPositionsManager,

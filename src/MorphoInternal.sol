@@ -2,7 +2,12 @@
 pragma solidity ^0.8.17;
 
 import {
-    IPool, IPriceOracleGetter, IVariableDebtToken, IAToken, IPriceOracleSentinel
+    IPool,
+    IPriceOracleGetter,
+    IVariableDebtToken,
+    IAToken,
+    IPriceOracleSentinel,
+    IERC1155TokenReceiver
 } from "./interfaces/Interfaces.sol";
 
 import {
@@ -49,9 +54,9 @@ abstract contract MorphoInternal is MorphoStorage {
         _;
     }
 
-    function _decodeId(uint256 _id) internal pure returns (address underlying, Types.PositionType positionType) {
-        underlying = address(uint160(_id));
-        positionType = Types.PositionType(_id & 0xf);
+    function _decodeId(uint256 _id) internal view returns (address underlying, Types.PositionType positionType) {
+        underlying = _market[_marketsCreated[_id % Constants.MAX_NB_MARKETS]].underlying;
+        positionType = Types.PositionType(_id / Constants.MAX_NB_MARKETS);
     }
 
     /// @dev Returns the supply balance of `user` in the `underlying` market.
@@ -73,6 +78,25 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         return marketBalances.scaledPoolSupplyBalance(user).rayMul(poolSupplyIndex)
             + marketBalances.scaledP2PSupplyBalance(user).rayMul(p2pSupplyIndex);
+    }
+
+    /// @dev Returns the collateral balance of `user` in the `underlying` market.
+    /// @dev Note: Computes the result with the stored indexes, which are not always the most up to date ones.
+    /// @param user The address of the user.
+    /// @param underlying The market where to get the collateral amount.
+    /// @return The collateral balance of the user (in underlying).
+    function _getUserCollateralBalance(address underlying, address user) internal view returns (uint256) {
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
+        return _getUserCollateralBalanceFromIndex(underlying, user, indexes.poolSupplyIndex);
+    }
+
+    function _getUserCollateralBalanceFromIndex(address underlying, address user, uint256 poolSupplyIndex)
+        internal
+        view
+        returns (uint256)
+    {
+        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+        return marketBalances.scaledCollateralBalance(user).rayMul(poolSupplyIndex);
     }
 
     /// @dev Returns the borrow balance of `user` in the `underlying` market.
@@ -259,6 +283,41 @@ abstract contract MorphoInternal is MorphoStorage {
         );
     }
 
+    function _transferInDS(
+        address underlying,
+        address from,
+        address to,
+        ThreeHeapOrdering.HeapArray storage marketOnPool,
+        ThreeHeapOrdering.HeapArray storage marketInP2P
+    ) internal {
+        _updateInDS(
+            underlying,
+            to,
+            marketOnPool,
+            marketInP2P,
+            marketOnPool.getValueOf(to) + marketOnPool.getValueOf(from),
+            marketInP2P.getValueOf(to) + marketInP2P.getValueOf(from)
+        );
+        _updateInDS(underlying, from, marketOnPool, marketInP2P, 0, 0);
+    }
+
+    function _transferSupply(address underlying, address from, address to) internal {
+        _transferInDS(
+            underlying, from, to, _marketBalances[underlying].poolSuppliers, _marketBalances[underlying].p2pSuppliers
+        );
+    }
+
+    function _transferCollateral(address underlying, address from, address to) internal {
+        _marketBalances[underlying].collateral[to] += _marketBalances[underlying].collateral[from];
+        _marketBalances[underlying].collateral[from] = 0;
+    }
+
+    function _transferBorrow(address underlying, address from, address to) internal {
+        _transferInDS(
+            underlying, from, to, _marketBalances[underlying].poolBorrowers, _marketBalances[underlying].p2pBorrowers
+        );
+    }
+
     function _setPauseStatus(address underlying, bool isPaused) internal {
         Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
 
@@ -320,5 +379,67 @@ abstract contract MorphoInternal is MorphoStorage {
         return liquidityData.debt > 0
             ? liquidityData.liquidationThresholdValue.wadDiv(liquidityData.debt)
             : type(uint256).max;
+    }
+
+    /// ERC1155 ///
+
+    function _balanceOf(address _user, address _underlying, Types.PositionType _positionType)
+        internal
+        view
+        returns (uint256)
+    {
+        if (_positionType == Types.PositionType.SUPPLY) {
+            return _getUserSupplyBalance(_underlying, _user) > 0 ? 1 : 0;
+        } else if (_positionType == Types.PositionType.COLLATERAL) {
+            return _getUserCollateralBalance(_underlying, _user) > 0 ? 1 : 0;
+        } else if (_positionType == Types.PositionType.BORROW) {
+            return _getUserBorrowBalance(_underlying, _user) > 0 ? 1 : 0;
+        }
+
+        return 0;
+    }
+
+    function _doSafeTransferAcceptanceCheck(
+        address _from,
+        address _to,
+        uint256 _id,
+        uint256 _amount,
+        bytes memory _data
+    ) internal {
+        if (_to.code.length > 0) {
+            try IERC1155TokenReceiver(_to).onERC1155Received(msg.sender, _from, _id, _amount, _data) returns (
+                bytes4 response
+            ) {
+                if (response != IERC1155TokenReceiver.onERC1155Received.selector) {
+                    revert Errors.TransferRejected();
+                }
+            } catch Error(string memory reason) {
+                revert(reason);
+            } catch {
+                revert Errors.TransferCallbackNonImplemented();
+            }
+        }
+    }
+
+    function _doSafeBatchTransferAcceptanceCheck(
+        address _from,
+        address _to,
+        uint256[] memory _ids,
+        uint256[] memory _amounts,
+        bytes memory _data
+    ) internal {
+        if (_to.code.length > 0) {
+            try IERC1155TokenReceiver(_to).onERC1155BatchReceived(msg.sender, _from, _ids, _amounts, _data) returns (
+                bytes4 response
+            ) {
+                if (response != IERC1155TokenReceiver.onERC1155BatchReceived.selector) {
+                    revert Errors.BatchTransferRejected();
+                }
+            } catch Error(string memory reason) {
+                revert(reason);
+            } catch {
+                revert Errors.BatchTransferCallbackNonImplemented();
+            }
+        }
     }
 }

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {IERC1155} from "./IERC1155.sol";
+import {IERC1155TokenReceiver} from "./IERC1155TokenReceiver.sol";
 import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol";
 import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
 import {IPriceOracleSentinel} from "@aave/core-v3/contracts/interfaces/IPriceOracleSentinel.sol";
