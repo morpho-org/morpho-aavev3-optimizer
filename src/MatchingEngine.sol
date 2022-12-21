@@ -94,7 +94,7 @@ abstract contract MatchingEngine is MorphoInternal {
         uint256 remainingToPromote = vars.amount;
 
         // prettier-ignore
-        // This function will be used to decide whether to use the algorithm for promoting or for demoteing.
+        // This function will be used to decide whether to use the algorithm for promoting or for demoting.
         function(uint256, uint256, uint256, uint256, uint256)
             pure returns (uint256, uint256, uint256) f;
         ThreeHeapOrdering.HeapArray storage workingHeap;
