@@ -18,7 +18,7 @@ abstract contract MatchingEngine is MorphoInternal {
         return _promoteOrDemote(
             _marketBalances[poolToken].poolSuppliers,
             _marketBalances[poolToken].p2pSuppliers,
-            Types.promoteVars({
+            Types.PromoteVars({
                 poolToken: poolToken,
                 poolIndex: market.indexes.poolSupplyIndex,
                 p2pIndex: market.indexes.p2pSupplyIndex,
@@ -38,7 +38,7 @@ abstract contract MatchingEngine is MorphoInternal {
         return _promoteOrDemote(
             _marketBalances[poolToken].poolBorrowers,
             _marketBalances[poolToken].p2pBorrowers,
-            Types.promoteVars({
+            Types.PromoteVars({
                 poolToken: poolToken,
                 poolIndex: market.indexes.poolBorrowIndex,
                 p2pIndex: market.indexes.p2pBorrowIndex,
@@ -55,7 +55,7 @@ abstract contract MatchingEngine is MorphoInternal {
         (demoted,) = _promoteOrDemote(
             _marketBalances[poolToken].poolSuppliers,
             _marketBalances[poolToken].p2pSuppliers,
-            Types.promoteVars({
+            Types.PromoteVars({
                 poolToken: poolToken,
                 poolIndex: market.indexes.poolSupplyIndex,
                 p2pIndex: market.indexes.p2pSupplyIndex,
@@ -72,7 +72,7 @@ abstract contract MatchingEngine is MorphoInternal {
         (demoted,) = _promoteOrDemote(
             _marketBalances[poolToken].poolBorrowers,
             _marketBalances[poolToken].p2pBorrowers,
-            Types.promoteVars({
+            Types.PromoteVars({
                 poolToken: poolToken,
                 poolIndex: market.indexes.poolBorrowIndex,
                 p2pIndex: market.indexes.p2pBorrowIndex,
@@ -87,7 +87,7 @@ abstract contract MatchingEngine is MorphoInternal {
     function _promoteOrDemote(
         ThreeHeapOrdering.HeapArray storage heapOnPool,
         ThreeHeapOrdering.HeapArray storage heapInP2P,
-        Types.promoteVars memory vars
+        Types.PromoteVars memory vars
     ) internal returns (uint256 promoted, uint256 loopsDone) {
         if (vars.maxLoops == 0) return (0, 0);
 
@@ -108,7 +108,6 @@ abstract contract MatchingEngine is MorphoInternal {
         }
 
         for (; loopsDone < vars.maxLoops; ++loopsDone) {
-            // Safe unchecked because `gasLeftAtTheBeginning` >= gas left now.
             address firstUser = workingHeap.getHead();
             if (firstUser == address(0)) break;
 
@@ -132,8 +131,7 @@ abstract contract MatchingEngine is MorphoInternal {
             emit Events.PositionUpdated(vars.borrow, firstUser, vars.poolToken, onPool, inP2P);
         }
 
-        // Safe unchecked because `gasLeftAtTheBeginning` >= gas left now.
-        // And _amount >= remainingToPromote.
+        // Safe unchecked because vars.amount >= remainingToPromote.
         unchecked {
             promoted = vars.amount - remainingToPromote;
         }

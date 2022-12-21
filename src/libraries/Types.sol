@@ -93,14 +93,14 @@ library Types {
         uint256 debt; // The debt value (In base currency in wad).
     }
 
-    struct MatchVars {
+    struct PromoteVars {
         address poolToken;
         uint256 poolIndex;
         uint256 p2pIndex;
         uint256 amount;
         uint256 maxLoops;
         bool borrow;
-        bool matching; // True for match, False for unmatch
+        bool promoting; // True for promote, False for demote
     }
 
     struct IRMParams {
