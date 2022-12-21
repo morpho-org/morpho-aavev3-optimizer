@@ -97,6 +97,8 @@ abstract contract MatchingEngine is MorphoInternal {
 
         uint256 remaining = vars.amount;
         ThreeHeapOrdering.HeapArray storage workingHeap = vars.promoting ? heapOnPool : heapInP2P;
+        function (address, address, uint256, uint256) internal _updateDS =
+            vars.borrow ? _updateBorrowerInDS : _updateSupplierInDS;
 
         for (; loopsDone < vars.maxLoops; ++loopsDone) {
             address firstUser = workingHeap.getHead();
@@ -113,12 +115,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 remaining
             );
 
-            if (!vars.borrow) {
-                _updateSupplierInDS(vars.poolToken, firstUser, onPool, inP2P);
-            } else {
-                _updateBorrowerInDS(vars.poolToken, firstUser, onPool, inP2P);
-            }
-
+            _updateDS(vars.poolToken, firstUser, onPool, inP2P);
             emit Events.PositionUpdated(vars.borrow, firstUser, vars.poolToken, onPool, inP2P);
         }
 
