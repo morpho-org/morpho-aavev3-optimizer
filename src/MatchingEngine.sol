@@ -95,7 +95,7 @@ abstract contract MatchingEngine is MorphoInternal {
     ) internal returns (uint256 promoted, uint256 loopsDone) {
         if (vars.maxLoops == 0) return (0, 0);
 
-        uint256 remainingToPromote = vars.amount;
+        uint256 remaining = vars.amount;
         ThreeHeapOrdering.HeapArray storage workingHeap = vars.promoting ? heapOnPool : heapInP2P;
 
         for (; loopsDone < vars.maxLoops; ++loopsDone) {
@@ -105,12 +105,12 @@ abstract contract MatchingEngine is MorphoInternal {
             uint256 onPool;
             uint256 inP2P;
 
-            (onPool, inP2P, remainingToPromote) = vars.f(
+            (onPool, inP2P, remaining) = vars.f(
                 heapOnPool.getValueOf(firstUser),
                 heapInP2P.getValueOf(firstUser),
                 vars.poolIndex,
                 vars.p2pIndex,
-                remainingToPromote
+                remaining
             );
 
             if (!vars.borrow) {
@@ -122,9 +122,9 @@ abstract contract MatchingEngine is MorphoInternal {
             emit Events.PositionUpdated(vars.borrow, firstUser, vars.poolToken, onPool, inP2P);
         }
 
-        // Safe unchecked because vars.amount >= remainingToPromote.
+        // Safe unchecked because vars.amount >= remaining.
         unchecked {
-            promoted = vars.amount - remainingToPromote;
+            promoted = vars.amount - remaining;
         }
     }
 
