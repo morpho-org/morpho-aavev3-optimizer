@@ -100,6 +100,7 @@ library Types {
         uint256 amount;
         uint256 maxLoops;
         bool borrow;
+        function (address, address, uint256, uint256) updateDS; // This function will be used to update the data-structure.
         bool promoting; // True for promote, False for demote
         function(uint256, uint256, uint256, uint256, uint256)
             pure returns (uint256, uint256, uint256) step; // This function will be used to decide whether to use the algorithm for promoting or for demoting.

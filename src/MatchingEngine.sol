@@ -25,6 +25,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
+                updateDS: _updateSupplierInDS,
                 promoting: true,
                 step: _promote
             })
@@ -46,6 +47,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
+                updateDS: _updateBorrowerInDS,
                 promoting: true,
                 step: _promote
             })
@@ -64,6 +66,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
+                updateDS: updateSupplierInDS,
                 promoting: false,
                 step: _demote
             })
@@ -82,6 +85,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
+                updateDS: updateBorrowerInDS,
                 promoting: false,
                 step: _demote
             })
@@ -97,8 +101,6 @@ abstract contract MatchingEngine is MorphoInternal {
 
         uint256 remaining = vars.amount;
         ThreeHeapOrdering.HeapArray storage workingHeap = vars.promoting ? heapOnPool : heapInP2P;
-        function (address, address, uint256, uint256) internal _updateDS =
-            vars.borrow ? _updateBorrowerInDS : _updateSupplierInDS;
 
         for (; loopsDone < vars.maxLoops; ++loopsDone) {
             address firstUser = workingHeap.getHead();
@@ -115,7 +117,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 remaining
             );
 
-            _updateDS(vars.poolToken, firstUser, onPool, inP2P);
+            updateDS(vars.poolToken, firstUser, onPool, inP2P);
             emit Events.PositionUpdated(vars.borrow, firstUser, vars.poolToken, onPool, inP2P);
         }
 
