@@ -105,7 +105,7 @@ abstract contract MatchingEngine is MorphoInternal {
             uint256 onPool;
             uint256 inP2P;
 
-            (onPool, inP2P, remaining) = vars.f(
+            (onPool, inP2P, remaining) = vars.step(
                 heapOnPool.getValueOf(firstUser),
                 heapInP2P.getValueOf(firstUser),
                 vars.poolIndex,
