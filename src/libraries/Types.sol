@@ -102,7 +102,7 @@ library Types {
         bool borrow;
         bool promoting; // True for promote, False for demote
         function(uint256, uint256, uint256, uint256, uint256)
-            pure returns (uint256, uint256, uint256) f; // This function will be used to decide whether to use the algorithm for promoting or for demoting.
+            pure returns (uint256, uint256, uint256) step; // This function will be used to decide whether to use the algorithm for promoting or for demoting.
     }
 
     struct IRMParams {

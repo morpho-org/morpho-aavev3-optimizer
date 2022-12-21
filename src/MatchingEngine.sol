@@ -26,7 +26,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 maxLoops: maxLoops,
                 borrow: false,
                 promoting: true,
-                f: _promoteStep
+                step: _promote
             })
         );
     }
@@ -47,7 +47,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 maxLoops: maxLoops,
                 borrow: true,
                 promoting: true,
-                f: _promoteStep
+                step: _promote
             })
         );
     }
@@ -65,7 +65,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 maxLoops: maxLoops,
                 borrow: false,
                 promoting: false,
-                f: _demoteStep
+                step: _demote
             })
         );
     }
@@ -83,7 +83,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 maxLoops: maxLoops,
                 borrow: true,
                 promoting: false,
-                f: _demoteStep
+                step: _demote
             })
         );
     }
@@ -128,26 +128,22 @@ abstract contract MatchingEngine is MorphoInternal {
         }
     }
 
-    function _promoteStep(
-        uint256 poolBalance,
-        uint256 p2pBalance,
-        uint256 poolIndex,
-        uint256 p2pIndex,
-        uint256 remaining
-    ) internal pure returns (uint256 newPoolBalance, uint256 newP2PBalance, uint256 newRemaining) {
+    function _promote(uint256 poolBalance, uint256 p2pBalance, uint256 poolIndex, uint256 p2pIndex, uint256 remaining)
+        internal
+        pure
+        returns (uint256 newPoolBalance, uint256 newP2PBalance, uint256 newRemaining)
+    {
         uint256 toProcess = Math.min(poolBalance.rayMul(poolIndex), remaining);
         newRemaining = remaining - toProcess;
         newPoolBalance = poolBalance - toProcess.rayDiv(poolIndex);
         newP2PBalance = p2pBalance + toProcess.rayDiv(p2pIndex);
     }
 
-    function _demoteStep(
-        uint256 poolBalance,
-        uint256 p2pBalance,
-        uint256 poolIndex,
-        uint256 p2pIndex,
-        uint256 remaining
-    ) internal pure returns (uint256 newPoolBalance, uint256 newP2PBalance, uint256 newRemaining) {
+    function _demote(uint256 poolBalance, uint256 p2pBalance, uint256 poolIndex, uint256 p2pIndex, uint256 remaining)
+        internal
+        pure
+        returns (uint256 newPoolBalance, uint256 newP2PBalance, uint256 newRemaining)
+    {
         uint256 toProcess = Math.min(p2pBalance.rayMul(p2pIndex), remaining);
         newRemaining = remaining - toProcess;
         newPoolBalance = poolBalance + toProcess.rayDiv(poolIndex);
