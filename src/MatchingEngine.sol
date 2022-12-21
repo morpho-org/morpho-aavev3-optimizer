@@ -25,7 +25,8 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
-                promoting: true
+                promoting: true,
+                f: _promoteStep
             })
         );
     }
@@ -45,7 +46,8 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
-                promoting: true
+                promoting: true,
+                f: _promoteStep
             })
         );
     }
@@ -62,7 +64,8 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
-                promoting: false
+                promoting: false,
+                f: _demoteStep
             })
         );
     }
@@ -79,7 +82,8 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
-                promoting: false
+                promoting: false,
+                f: _demoteStep
             })
         );
     }
@@ -92,20 +96,7 @@ abstract contract MatchingEngine is MorphoInternal {
         if (vars.maxLoops == 0) return (0, 0);
 
         uint256 remainingToPromote = vars.amount;
-
-        // prettier-ignore
-        // This function will be used to decide whether to use the algorithm for promoting or for demoting.
-        function(uint256, uint256, uint256, uint256, uint256)
-            pure returns (uint256, uint256, uint256) f;
-        ThreeHeapOrdering.HeapArray storage workingHeap;
-
-        if (vars.promoting) {
-            workingHeap = heapOnPool;
-            f = _promoteStep;
-        } else {
-            workingHeap = heapInP2P;
-            f = _demoteStep;
-        }
+        ThreeHeapOrdering.HeapArray storage workingHeap = vars.promoting ? heapOnPool : heapInP2P;
 
         for (; loopsDone < vars.maxLoops; ++loopsDone) {
             address firstUser = workingHeap.getHead();
@@ -114,7 +105,7 @@ abstract contract MatchingEngine is MorphoInternal {
             uint256 onPool;
             uint256 inP2P;
 
-            (onPool, inP2P, remainingToPromote) = f(
+            (onPool, inP2P, remainingToPromote) = vars.f(
                 heapOnPool.getValueOf(firstUser),
                 heapInP2P.getValueOf(firstUser),
                 vars.poolIndex,
