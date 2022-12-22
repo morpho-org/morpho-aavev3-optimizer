@@ -31,8 +31,8 @@ contract RewardsManager is OwnableUpgradeable {
 
     /// IMMUTABLES ///
 
-    IMorpho public morpho;
-    IPool public pool;
+    IMorpho public immutable morpho;
+    IPool public immutable pool;
 
     /// STORAGE ///
 
@@ -74,17 +74,11 @@ contract RewardsManager is OwnableUpgradeable {
 
     /// @notice Constructs the contract.
     /// @dev The contract is automatically marked as initialized when deployed so that nobody can highjack the implementation contract.
-    constructor() initializer {}
-
-    /// UPGRADE ///
-
-    /// @notice Initializes the RewardsManager contract.
-    /// @param _morpho The address of Morpho's main contract's proxy.
-    function initialize(address _morpho) external initializer {
-        __Ownable_init();
+    constructor(address _morpho, address _pool) {
+        _disableInitializers();
 
         morpho = IMorpho(_morpho);
-        pool = IPool(morpho.pool());
+        pool = IPool(_pool);
     }
 
     /// EXTERNAL ///
