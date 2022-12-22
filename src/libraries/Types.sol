@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {ThreeHeapOrdering} from "morpho-data-structures/ThreeHeapOrdering.sol";
+import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
 library Types {
     /// ENUMS ///

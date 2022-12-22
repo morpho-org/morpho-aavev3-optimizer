@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {Types, Events, ThreeHeapOrdering, Math, WadRayMath} from "./libraries/Libraries.sol";
+import {ThreeHeapOrdering, Math, WadRayMath} from "./libraries/Libraries.sol";
+import {Types} from "./libraries/Types.sol";
+import {Events} from "./libraries/Events.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
@@ -99,7 +101,6 @@ abstract contract MatchingEngine is MorphoInternal {
 
         uint256 remainingToMatch = vars.amount;
 
-        // prettier-ignore
         // This function will be used to decide whether to use the algorithm for matching or for unmatching.
         function(uint256, uint256, uint256, uint256, uint256)
             pure returns (uint256, uint256, uint256) f;

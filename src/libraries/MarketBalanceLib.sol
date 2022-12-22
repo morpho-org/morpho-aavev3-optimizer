@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {Types} from "./Types.sol";
-import {ThreeHeapOrdering} from "morpho-data-structures/ThreeHeapOrdering.sol";
+import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
 library MarketBalanceLib {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
