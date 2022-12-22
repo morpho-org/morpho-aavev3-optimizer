@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GNU AGPLv3
 pragma solidity ^0.8.0;
 
-import {PoolToken, IScaledBalanceToken} from "./interfaces/Interfaces.sol";
+import {
+    IPoolToken, IScaledBalanceToken, IAaveIncentivesController, IIncentivizedERC20
+} from "./interfaces/Interfaces.sol";
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
@@ -41,17 +43,13 @@ contract RewardsManager is OwnableUpgradeable {
     /// EVENTS ///
 
     /// @dev Emitted when rewards of an asset are accrued on behalf of a user.
-    /// @param _asset The address of the incentivized asset.
-    /// @param _reward The address of the reward token.
-    /// @param _user The address of the user that rewards are accrued on behalf of.
-    /// @param _assetIndex The reward index for the asset (same as the user's index for this asset when the event is logged).
-    /// @param _rewardsAccrued The amount of rewards accrued.
+    /// @param asset The address of the incentivized asset.
+    /// @param reward The address of the reward token.
+    /// @param user The address of the user that rewards are accrued on behalf of.
+    /// @param assetIndex The reward index for the asset (same as the user's index for this asset when the event is logged).
+    /// @param rewardsAccrued The amount of rewards accrued.
     event Accrued(
-        address indexed _asset,
-        address indexed _reward,
-        address indexed _user,
-        uint256 _assetIndex,
-        uint256 _rewardsAccrued
+        address indexed asset, address indexed reward, address indexed user, uint256 assetIndex, uint256 rewardsAccrued
     );
 
     /// ERRORS ///
