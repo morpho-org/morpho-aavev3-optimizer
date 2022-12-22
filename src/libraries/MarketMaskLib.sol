@@ -68,28 +68,20 @@ library MarketMaskLib {
     /// @param userMarkets The bitmask encoding the markets entered by the user.
     /// @param borrowMask The borrow mask of the market to mark as borrowed.
     /// @param borrowing True if the user is borrowing, false otherwise.
-    /// @return  The new user bitmask.
-    function setBorrowing(Types.UserMarkets memory userMarkets, Types.BorrowMask memory borrowMask, bool borrowing)
+    function setBorrowing(Types.UserMarkets storage userMarkets, Types.BorrowMask memory borrowMask, bool borrowing)
         internal
-        pure
-        returns (Types.UserMarkets memory)
     {
         userMarkets.data = borrowing ? userMarkets.data | borrowMask.data : userMarkets.data & (~borrowMask.data);
-        return userMarkets;
     }
 
     /// @notice Sets if the user is supplying on a market.
     /// @param userMarkets The bitmask encoding the markets entered by the user.
     /// @param borrowMask The borrow mask of the market to mark as supplied.
     /// @param supplying True if the user is supplying, false otherwise.
-    /// @return  The new user bitmask.
-    function setSupplying(Types.UserMarkets memory userMarkets, Types.BorrowMask memory borrowMask, bool supplying)
+    function setSupplying(Types.UserMarkets storage userMarkets, Types.BorrowMask memory borrowMask, bool supplying)
         internal
-        pure
-        returns (Types.UserMarkets memory)
     {
         userMarkets.data =
             supplying ? userMarkets.data | (borrowMask.data << 1) : userMarkets.data & (~(borrowMask.data << 1));
-        return userMarkets;
     }
 }

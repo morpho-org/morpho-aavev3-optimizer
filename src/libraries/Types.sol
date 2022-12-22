@@ -121,4 +121,11 @@ library Types {
         uint256 p2pSupplyGrowthFactor; // Peer-to-peer supply index growth factor (in ray).
         uint256 p2pBorrowGrowthFactor; // Peer-to-peer borrow index growth factor (in ray).
     }
+
+    struct IndexesMem {
+        uint256 poolSupplyIndex;
+        uint256 poolBorrowIndex;
+        uint256 p2pSupplyIndex;
+        uint256 p2pBorrowIndex;
+    }
 }

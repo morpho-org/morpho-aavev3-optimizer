@@ -8,3 +8,4 @@
 @openzeppelin/=node_modules/@openzeppelin/
 @aave/core-v3/=lib/aave-v3-core/
 @aave/periphery-v3/=lib/aave-v3-periphery/
+@solmate/=lib/solmate/src/
