@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: GNU AGPLv3
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.17;
 
-import {
-    IPoolToken, IScaledBalanceToken, IAaveIncentivesController, IIncentivizedERC20
-} from "./interfaces/Interfaces.sol";
+import {IPool} from "./interfaces/aave/IPool.sol";
+import {IPoolToken} from "./interfaces/aave/IPoolToken.sol";
+import {IScaledBalanceToken} from "@aave/core-v3/contracts/interfaces/IScaledBalanceToken.sol";
+import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol";
+import {IRewardsDistributor} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsDistributor.sol";
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {DataTypes} from "./libraries/aave/DataTypes.sol";
 
 /// @title RewardsManager.
 /// @author Morpho Labs.
 /// @custom:contact security@morpho.xyz
 /// @notice Contract managing Aave's protocol rewards.
-contract RewardsManager is OwnableUpgradeable {
+contract RewardsManager {
     /// STRUCTS ///
 
     struct UserAssetBalance {
@@ -33,7 +35,8 @@ contract RewardsManager is OwnableUpgradeable {
 
     /// IMMUTABLES ///
 
-    IMorpho public immutable morpho;
+    address public immutable rewardsController; // TODO: check how this address could be changed on Aave.
+    address public immutable morpho;
     IPool public immutable pool;
 
     /// STORAGE ///
@@ -70,32 +73,29 @@ contract RewardsManager is OwnableUpgradeable {
 
     /// CONSTRUCTOR ///
 
-    /// @notice Constructs the contract.
-    /// @dev The contract is automatically marked as initialized when deployed so that nobody can highjack the implementation contract.
-    constructor(address _morpho, address _pool) {
-        _disableInitializers();
-
-        morpho = IMorpho(_morpho);
+    /// @notice TODO: add NATSPEC.
+    constructor(address _rewardsController, address _morpho, address _pool) {
+        rewardsController = _rewardsController;
+        morpho = _morpho;
         pool = IPool(_pool);
     }
 
     /// EXTERNAL ///
 
     /// @notice Accrues unclaimed rewards for the given assets and returns the total unclaimed rewards.
-    /// @param _rewardsController The rewards controller used to query active rewards.
     /// @param _assets The assets for which to accrue rewards (aToken or variable debt token).
     /// @param _user The address of the user.
     /// @return rewardsList The list of reward tokens.
     /// @return claimedAmounts The list of claimed reward amounts.
-    function claimRewards(IRewardsController _rewardsController, address[] calldata _assets, address _user)
+    function claimRewards(address[] calldata _assets, address _user)
         external
         onlyMorpho
         returns (address[] memory rewardsList, uint256[] memory claimedAmounts)
     {
-        rewardsList = _rewardsController.getRewardsList();
+        rewardsList = IRewardsDistributor(rewardsController).getRewardsList();
         claimedAmounts = new uint256[](rewardsList.length);
 
-        _updateDataMultiple(_rewardsController, _user, _getUserAssetBalances(_assets, _user));
+        _updateDataMultiple(rewardsController, _user, _getUserAssetBalances(_assets, _user));
 
         for (uint256 i; i < _assets.length; ++i) {
             address asset = _assets[i];
@@ -113,19 +113,15 @@ contract RewardsManager is OwnableUpgradeable {
 
     /// @notice Updates the unclaimed rewards of a user.
     /// @dev Only called by Morpho at positions updates in the data structure.
-    /// @param _rewardsController The rewards controller used to query active rewards.
     /// @param _user The address of the user.
     /// @param _asset The address of the reference asset of the distribution (aToken or variable debt token).
     /// @param _userBalance The current user asset balance.
     /// @param _totalSupply The current total supply of underlying assets for this distribution.
-    function updateUserAssetAndAccruedRewards(
-        IRewardsController _rewardsController,
-        address _user,
-        address _asset,
-        uint256 _userBalance,
-        uint256 _totalSupply
-    ) external onlyMorpho {
-        _updateData(_rewardsController, _user, _asset, _userBalance, _totalSupply);
+    function updateUserAssetAndAccruedRewards(address _user, address _asset, uint256 _userBalance, uint256 _totalSupply)
+        external
+        onlyMorpho
+    {
+        _updateData(rewardsController, _user, _asset, _userBalance, _totalSupply);
     }
 
     /// @notice Returns user's accrued rewards for the specified assets and reward token
@@ -155,7 +151,7 @@ contract RewardsManager is OwnableUpgradeable {
         returns (address[] memory rewardsList, uint256[] memory unclaimedAmounts)
     {
         UserAssetBalance[] memory userAssetBalances = _getUserAssetBalances(_assets, _user);
-        rewardsList = morpho.rewardsController().getRewardsList();
+        rewardsList = IRewardsDistributor(rewardsController).getRewardsList();
         uint256 rewardsListLength = rewardsList.length;
         unclaimedAmounts = new uint256[](rewardsListLength);
 
@@ -180,7 +176,6 @@ contract RewardsManager is OwnableUpgradeable {
     function getUserRewards(address[] calldata _assets, address _user, address _reward)
         external
         view
-        override
         returns (uint256)
     {
         return _getUserReward(_user, _reward, _getUserAssetBalances(_assets, _user));
@@ -191,12 +186,7 @@ contract RewardsManager is OwnableUpgradeable {
     /// @param _asset The address of the reference asset of the distribution (aToken or variable debt token).
     /// @param _reward The address of the reward token.
     /// @return The user's index.
-    function getUserAssetIndex(address _user, address _asset, address _reward)
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function getUserAssetIndex(address _user, address _asset, address _reward) external view returns (uint256) {
         return localAssetData[_asset][_reward].usersData[_user].index;
     }
 
@@ -221,7 +211,7 @@ contract RewardsManager is OwnableUpgradeable {
         (oldIndex, newIndex) = _getAssetIndex(_localRewardData, _asset, _reward, _totalSupply, _assetUnit);
 
         if (newIndex != oldIndex) {
-            require(newIndex <= type(uint128).max, "INDEX_OVERFLOW");
+            require(newIndex <= type(uint128).max, "INDEX_OVERFLOW"); // TODO: replace with custom error.
 
             indexUpdated = true;
 
@@ -271,17 +261,17 @@ contract RewardsManager is OwnableUpgradeable {
     /// @param _userBalance The current user asset balance.
     /// @param _totalSupply The total supply of the asset.
     function _updateData(
-        IRewardsController _rewardsController,
+        address _rewardsController,
         address _user,
         address _asset,
         uint256 _userBalance,
         uint256 _totalSupply
     ) internal {
-        address[] memory availableRewards = _rewardsController.getRewardsByAsset(_asset);
+        address[] memory availableRewards = IRewardsController(_rewardsController).getRewardsByAsset(_asset);
         if (availableRewards.length == 0) return;
 
         unchecked {
-            uint256 assetUnit = 10 ** _rewardsController.getAssetDecimals(_asset);
+            uint256 assetUnit = 10 ** IRewardsController(_rewardsController).getAssetDecimals(_asset);
 
             for (uint128 i; i < availableRewards.length; ++i) {
                 address reward = availableRewards[i];
@@ -304,7 +294,7 @@ contract RewardsManager is OwnableUpgradeable {
     /// @param _user The address of the user.
     /// @param _userAssetBalances The list of structs with the user balance and total supply of a set of assets.
     function _updateDataMultiple(
-        IRewardsController _rewardsController,
+        address _rewardsController,
         address _user,
         UserAssetBalance[] memory _userAssetBalances
     ) internal {
@@ -355,7 +345,7 @@ contract RewardsManager is OwnableUpgradeable {
 
         uint256 assetUnit;
         unchecked {
-            assetUnit = 10 ** morpho.rewardsController().getAssetDecimals(_userAssetBalance.asset);
+            assetUnit = 10 ** IRewardsController(rewardsController).getAssetDecimals(_userAssetBalance.asset);
         }
 
         (, uint256 nextIndex) =
@@ -402,7 +392,7 @@ contract RewardsManager is OwnableUpgradeable {
         }
 
         (uint256 rewardIndex, uint256 emissionPerSecond, uint256 lastUpdateTimestamp, uint256 distributionEnd) =
-            morpho.rewardsController().getRewardsData(_asset, _reward);
+            IRewardsController(rewardsController).getRewardsData(_asset, _reward);
 
         if (
             emissionPerSecond == 0 || _totalSupply == 0 || lastUpdateTimestamp == currentTimestamp
@@ -437,9 +427,9 @@ contract RewardsManager is OwnableUpgradeable {
                 pool.getReserveData(IPoolToken(userAssetBalances[i].asset).UNDERLYING_ASSET_ADDRESS());
 
             if (asset == reserve.aTokenAddress) {
-                userAssetBalances[i].balance = morpho.supplyBalanceInOf(reserve.aTokenAddress, _user).onPool;
+                // TODO: userAssetBalances[i].balance = morpho.supplyBalanceInOf(reserve.aTokenAddress, _user).onPool;
             } else if (asset == reserve.variableDebtTokenAddress) {
-                userAssetBalances[i].balance = morpho.borrowBalanceInOf(reserve.aTokenAddress, _user).onPool;
+                // TODO: userAssetBalances[i].balance = morpho.borrowBalanceInOf(reserve.aTokenAddress, _user).onPool;
             } else {
                 revert InvalidAsset();
             }
