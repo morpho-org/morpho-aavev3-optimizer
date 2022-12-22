@@ -28,5 +28,6 @@
   "homepage": "https://github.com/morpho-dao/morpho-v1.5#readme",
   "devDependencies": {
     "husky": "^8.0.2"
-  }
+  },
+  "dependencies": {}
 }
