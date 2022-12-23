@@ -80,6 +80,9 @@ contract ExitPositionsManager is PositionsManagerInternal {
     ) external {
         LiquidateVars memory vars;
 
+        _updateIndexes(poolTokenBorrowed);
+        _updateIndexes(poolTokenCollateral);
+
         vars.closeFactor = _validateLiquidate(poolTokenBorrowed, poolTokenCollateral, borrower);
 
         vars.amountToLiquidate = Math.min(
