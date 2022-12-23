@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {
-    Types,
-    Events,
-    Errors,
-    ThreeHeapOrdering,
-    Math,
-    WadRayMath,
-    MarketBalanceLib,
-    MarketLib,
-    MarketMaskLib,
-    ReserveConfiguration,
-    DataTypes
-} from "./libraries/Libraries.sol";
+import {Types} from "./libraries/Types.sol";
+import {Constants} from "./libraries/Constants.sol";
+import {Events} from "./libraries/Events.sol";
+import {Errors} from "./libraries/Errors.sol";
+import {MarketLib} from "./libraries/MarketLib.sol";
+import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
+import {MarketMaskLib} from "./libraries/MarketMaskLib.sol";
+
+import {DataTypes} from "./libraries/aave/DataTypes.sol";
+import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
+
+import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
+import {Math} from "@morpho-utils/math/Math.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
+
 import {IPriceOracleSentinel} from "./interfaces/Interfaces.sol";
 
 import {MatchingEngine} from "./MatchingEngine.sol";
@@ -289,7 +291,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
             revert Errors.PriceOracleSentinelBorrowPaused();
         }
-        if (_getUserHealthFactor(supplier, poolToken, amount) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
+        if (_getUserHealthFactor(supplier, poolToken, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
             revert Errors.WithdrawUnauthorized();
         }
     }

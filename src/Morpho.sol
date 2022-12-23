@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {Types, Events, Errors, MarketLib, MarketBalanceLib} from "./libraries/Libraries.sol";
+import {MarketLib, MarketBalanceLib} from "./libraries/Libraries.sol";
+import {Types} from "./libraries/Types.sol";
+import {Events} from "./libraries/Events.sol";
+import {Errors} from "./libraries/Errors.sol";
 
 import {MorphoGettersAndSetters} from "./MorphoGettersAndSetters.sol";
 
-// import {IERC1155} from "./interfaces/IERC1155.sol";
-// import {OwnableUpgradeable} from "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {IERC1155} from "./interfaces/IERC1155.sol";
+// import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 // @note: To add: IERC1155, Ownable
 contract Morpho is MorphoGettersAndSetters {

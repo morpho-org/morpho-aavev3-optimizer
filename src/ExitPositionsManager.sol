@@ -1,8 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {Types, Events, Errors, MarketLib, Math, PoolInteractions} from "./libraries/Libraries.sol";
-import {IPool} from "./interfaces/Interfaces.sol";
+import {IPool} from "./interfaces/aave/IPool.sol";
+
+import {MarketLib} from "./libraries/Libraries.sol";
+import {Types} from "./libraries/Types.sol";
+import {Events} from "./libraries/Events.sol";
+import {Errors} from "./libraries/Errors.sol";
+import {MarketLib} from "./libraries/MarketLib.sol";
+import {PoolInteractions} from "./libraries/PoolInteractions.sol";
+import {Math} from "@morpho-utils/math/Math.sol";
 
 import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";

@@ -4,8 +4,6 @@ import {Types} from "./Types.sol";
 import {Constants} from "./Constants.sol";
 
 library MarketMaskLib {
-    bytes32 internal constant BORROWING_MASK = Constants.BORROWING_MASK;
-
     /// @dev Returns if a user has been borrowing or supplying on a given market.
     /// @param userMarkets The bitmask encoding the markets entered by the user.
     /// @param borrowMask The borrow mask of the market to check.
@@ -46,7 +44,7 @@ library MarketMaskLib {
     /// @param userMarkets The bitmask encoding the markets entered by the user.
     /// @return True if the user has been borrowing on any market, false otherwise.
     function isBorrowingAny(Types.UserMarkets memory userMarkets) internal pure returns (bool) {
-        return userMarkets.data & BORROWING_MASK != 0;
+        return userMarkets.data & Constants.BORROWING_MASK != 0;
     }
 
     /// @dev Returns if a user is borrowing on a given market and supplying on another given market.

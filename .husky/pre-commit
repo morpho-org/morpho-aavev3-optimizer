@@ -7,11 +7,13 @@ CHANGED_FILES=$(git diff --staged --name-only --diff-filter=d | grep -e "\.ts$" 
 
 if [ -n "$CHANGED_FILES" ]; then
     printf "Running ${BWHITE}forge fmt${NC}... \n"
+
     if forge fmt &>/dev/null; then
         printf "${GREEN}Formatted!${NC} \n"
     else
         printf "${RED}error running ${BWHITE}forge fmt${NC} \n"
         exit 1
     fi
+
     git add $CHANGED_FILES
 fi
