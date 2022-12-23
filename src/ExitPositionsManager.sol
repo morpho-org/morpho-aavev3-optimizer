@@ -7,9 +7,11 @@ import {MarketLib} from "./libraries/Libraries.sol";
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
+import {Constants} from "./libraries/Constants.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {PoolInteractions} from "./libraries/PoolInteractions.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
+import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
@@ -17,6 +19,7 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 contract ExitPositionsManager is PositionsManagerInternal {
     using SafeTransferLib for ERC20;
     using PoolInteractions for IPool;
+    using PercentageMath for uint256;
 
     function withdrawLogic(address poolToken, address supplier, address receiver, uint256 amount, uint256 maxLoops)
         external
@@ -58,120 +61,54 @@ contract ExitPositionsManager is PositionsManagerInternal {
         emit Events.Repaid(repayer, onBehalf, poolToken, amount, onPool, inP2P);
     }
 
-    //   /// @notice Liquidates a position.
-    //   /// @param _poolTokenBorrowed The address of the pool token the liquidator wants to repay.
-    //   /// @param _poolTokenCollateral The address of the collateral pool token the liquidator wants to seize.
-    //   /// @param _borrower The address of the borrower to liquidate.
-    //   /// @param _amount The amount of token (in underlying) to repay.
-    //   function liquidateLogic(
-    //     address _poolTokenBorrowed,
-    //     address _poolTokenCollateral,
-    //     address _borrower,
-    //     uint256 _amount
-    //   ) external {
-    //     Types.Market memory collateralMarket = market[_poolTokenCollateral];
-    //     if (!collateralMarket.isCreatedMemory()) revert MarketNotCreated();
-    //     if (collateralMarket.isLiquidateCollateralPaused) {
-    //       revert LiquidateCollateralIsPaused();
-    //     }
-    //     Types.Market memory borrowedMarket = market[_poolTokenBorrowed];
-    //     if (!borrowedMarket.isCreatedMemory()) revert MarketNotCreated();
-    //     if (borrowedMarket.isLiquidateBorrowPaused) {
-    //       revert LiquidateBorrowIsPaused();
-    //     }
+    struct LiquidateVars {
+        uint256 closeFactor;
+        uint256 amountToLiquidate;
+        uint256 amountToSeize;
+        uint256 toSupply;
+        uint256 toRepay;
+        uint256 toBorrow;
+        uint256 toWithdraw;
+    }
 
-    //     if (
-    //       !_isBorrowingAndSupplying(
-    //         userMarkets[_borrower],
-    //         borrowMask[_poolTokenBorrowed],
-    //         borrowMask[_poolTokenCollateral]
-    //       )
-    //     ) revert UserNotMemberOfMarket();
+    function liquidateLogic(
+        address poolTokenBorrowed,
+        address poolTokenCollateral,
+        address borrower,
+        uint256 amount,
+        uint256 maxLoops
+    ) external {
+        LiquidateVars memory vars;
+        Types.IndexesMem memory borrowIndexes = _updateIndexes(poolTokenBorrowed);
+        Types.IndexesMem memory collateralIndexes = _updateIndexes(poolTokenCollateral);
 
-    //     _updateIndexes(_poolTokenBorrowed);
-    //     _updateIndexes(_poolTokenCollateral);
+        vars.closeFactor = _validateLiquidate(poolTokenBorrowed, poolTokenCollateral, borrower);
 
-    //     Types.LiquidateVars memory vars;
-    //     (vars.liquidationAllowed, vars.closeFactor) = _liquidationAllowed(
-    //       _borrower,
-    //       borrowedMarket.isDeprecated
-    //     );
-    //     if (!vars.liquidationAllowed) revert UnauthorisedLiquidate();
+        vars.amountToLiquidate = Math.min(
+            amount,
+            _getUserBorrowBalance(poolTokenBorrowed, borrower).percentMul(vars.closeFactor) // Max liquidatable debt.
+        );
+        vars.amountToSeize;
 
-    //     vars.amountToLiquidate = Math.min(
-    //       _amount,
-    //       _getUserBorrowBalanceInOf(_poolTokenBorrowed, _borrower).percentMul(
-    //         vars.closeFactor
-    //       ) // Max liquidatable debt.
-    //     );
+        (vars.amountToLiquidate, vars.amountToSeize) =
+            _calculateAmountToSeize(poolTokenBorrowed, poolTokenCollateral, borrower, vars.amountToLiquidate);
 
-    //     IPool poolMem = pool;
-    //     (, , vars.liquidationBonus, vars.collateralReserveDecimals, , ) = poolMem
-    //       .getConfiguration(collateralMarket.underlyingToken)
-    //       .getParams();
-    //     (, , , vars.borrowedReserveDecimals, , ) = poolMem
-    //       .getConfiguration(borrowedMarket.underlyingToken)
-    //       .getParams();
+        ERC20(_market[poolTokenBorrowed].underlying).safeTransferFrom(msg.sender, address(this), vars.amountToLiquidate);
 
-    //     unchecked {
-    //       vars.collateralTokenUnit = 10 ** vars.collateralReserveDecimals;
-    //       vars.borrowedTokenUnit = 10 ** vars.borrowedReserveDecimals;
-    //     }
+        (,, vars.toSupply, vars.toRepay) =
+            _executeRepay(poolTokenBorrowed, borrower, vars.amountToLiquidate, borrowIndexes, maxLoops);
+        (,, vars.toBorrow, vars.toWithdraw) =
+            _executeWithdraw(poolTokenCollateral, borrower, vars.amountToSeize, collateralIndexes, maxLoops);
 
-    //     IPriceOracleGetter oracle = IPriceOracleGetter(
-    //       addressesProvider.getPriceOracle()
-    //     );
-    //     vars.borrowedTokenPrice = oracle.getAssetPrice(
-    //       borrowedMarket.underlyingToken
-    //     );
-    //     vars.collateralPrice = oracle.getAssetPrice(
-    //       collateralMarket.underlyingToken
-    //     );
-    //     vars.amountToSeize = ((vars.amountToLiquidate *
-    //       vars.borrowedTokenPrice *
-    //       vars.collateralTokenUnit) /
-    //       (vars.borrowedTokenUnit * vars.collateralPrice)).percentMul(
-    //         vars.liquidationBonus
-    //       );
+        _pool.supplyToPool(_market[poolTokenBorrowed].underlying, vars.toSupply);
+        _pool.repayToPool(_market[poolTokenBorrowed].underlying, vars.toRepay);
+        _pool.borrowFromPool(_market[poolTokenCollateral].underlying, vars.toBorrow);
+        _pool.withdrawFromPool(_market[poolTokenCollateral].underlying, poolTokenCollateral, vars.toWithdraw);
 
-    //     vars.collateralBalance = _getUserSupplyBalanceInOf(
-    //       _poolTokenCollateral,
-    //       _borrower
-    //     );
+        ERC20(_market[poolTokenCollateral].underlying).safeTransfer(msg.sender, vars.amountToSeize);
 
-    //     if (vars.amountToSeize > vars.collateralBalance) {
-    //       vars.amountToSeize = vars.collateralBalance;
-    //       vars.amountToLiquidate = ((vars.collateralBalance *
-    //         vars.collateralPrice *
-    //         vars.borrowedTokenUnit) /
-    //         (vars.borrowedTokenPrice * vars.collateralTokenUnit)).percentDiv(
-    //           vars.liquidationBonus
-    //         );
-    //     }
-
-    //     _unsafeRepayLogic(
-    //       _poolTokenBorrowed,
-    //       msg.sender,
-    //       _borrower,
-    //       vars.amountToLiquidate,
-    //       0
-    //     );
-    //     _unsafeWithdrawLogic(
-    //       _poolTokenCollateral,
-    //       vars.amountToSeize,
-    //       _borrower,
-    //       msg.sender,
-    //       0
-    //     );
-    //     ERC20(market.underlying).safeTransfer(receiver, toWithdraw);
-
-    //     emit Liquidated(
-    //       msg.sender,
-    //       _borrower,
-    //       _poolTokenBorrowed,
-    //       vars.amountToLiquidate,
-    //       _poolTokenCollateral,
-    //       vars.amountToSeize
-    //     );
-    //   }
+        emit Events.Liquidated(
+            msg.sender, borrower, poolTokenBorrowed, vars.amountToLiquidate, poolTokenCollateral, vars.amountToSeize
+            );
+    }
 }

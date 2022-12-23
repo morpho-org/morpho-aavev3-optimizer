@@ -11,10 +11,12 @@ import {MarketMaskLib} from "./libraries/MarketMaskLib.sol";
 
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
+import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
 
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
+import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {IPriceOracleSentinel} from "./interfaces/Interfaces.sol";
 
@@ -26,6 +28,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using MarketLib for Types.Market;
     using MarketMaskLib for Types.UserMarkets;
     using WadRayMath for uint256;
+    using PercentageMath for uint256;
     using Math for uint256;
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
 
@@ -378,5 +381,85 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         if (inP2P == 0 && onPool == 0) _userMarkets[user].setSupplying(market.borrowMask, false);
+    }
+
+    function _validateLiquidate(address poolTokenBorrowed, address poolTokenCollateral, address borrower)
+        internal
+        view
+        returns (uint256 closeFactor)
+    {
+        Types.Market storage borrowMarket = _market[poolTokenBorrowed];
+        Types.Market storage collateralMarket = _market[poolTokenCollateral];
+
+        if (!collateralMarket.isCreated() || !borrowMarket.isCreated()) {
+            revert Errors.MarketNotCreated();
+        }
+        if (collateralMarket.pauseStatuses.isLiquidateCollateralPaused) {
+            revert Errors.LiquidateCollateralIsPaused();
+        }
+        if (borrowMarket.pauseStatuses.isLiquidateBorrowPaused) {
+            revert Errors.LiquidateBorrowIsPaused();
+        }
+        if (_userMarkets[borrower].isBorrowingAndSupplying(borrowMarket.borrowMask, collateralMarket.borrowMask)) {
+            revert Errors.UserNotMemberOfMarket();
+        }
+
+        if (borrowMarket.pauseStatuses.isDeprecated) {
+            return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
+        } else {
+            uint256 healthFactor = _getUserHealthFactor(borrower, address(0), 0);
+            address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
+
+            if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
+            {
+                if (healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD) {
+                    revert Errors.UnauthorisedLiquidate();
+                }
+            } else {
+                if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+                    revert Errors.UnauthorisedLiquidate();
+                }
+            }
+
+            closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
+                ? Constants.DEFAULT_CLOSE_FACTOR
+                : Constants.MAX_CLOSE_FACTOR;
+        }
+    }
+
+    function _calculateAmountToSeize(
+        address poolTokenBorrowed,
+        address poolTokenCollateral,
+        address borrower,
+        uint256 maxToLiquidate
+    ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
+        Types.Market storage borrowMarket = _market[poolTokenBorrowed];
+        Types.Market storage collateralMarket = _market[poolTokenCollateral];
+
+        amountToLiquidate = maxToLiquidate;
+        (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
+            _pool.getConfiguration(collateralMarket.underlying).getParams();
+        (,,, uint256 borrowTokenUnit,,) = _pool.getConfiguration(borrowMarket.underlying).getParams();
+
+        unchecked {
+            collateralTokenUnit = 10 ** collateralTokenUnit;
+            borrowTokenUnit = 10 ** borrowTokenUnit;
+        }
+
+        IPriceOracleGetter oracle = IPriceOracleGetter(_addressesProvider.getPriceOracle());
+        uint256 borrowPrice = oracle.getAssetPrice(borrowMarket.underlying);
+        uint256 collateralPrice = oracle.getAssetPrice(collateralMarket.underlying);
+
+        amountToSeize = ((amountToLiquidate * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
+            .percentMul(liquidationBonus);
+
+        uint256 collateralBalance = _getUserSupplyBalance(poolTokenCollateral, borrower);
+
+        if (amountToSeize > collateralBalance) {
+            amountToSeize = collateralBalance;
+            amountToLiquidate = (
+                (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
+            ).percentDiv(liquidationBonus);
+        }
     }
 }

@@ -14,4 +14,8 @@ library Errors {
     error WithdrawIsPaused();
     error PriceOracleSentinelBorrowPaused();
     error WithdrawUnauthorized();
+    error LiquidateCollateralIsPaused();
+    error LiquidateBorrowIsPaused();
+    error UserNotMemberOfMarket();
+    error UnauthorisedLiquidate();
 }

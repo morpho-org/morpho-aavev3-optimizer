@@ -37,6 +37,15 @@ library Events {
         uint256 _balanceInP2P
     );
 
+    event Liquidated(
+        address indexed _liquidator,
+        address indexed _borrower,
+        address _poolTokenBorrowed,
+        uint256 _amountLiquidated,
+        address _poolTokenCollateral,
+        uint256 _amountSeized
+    );
+
     event PositionUpdated(
         bool borrow, address indexed user, address indexed poolToken, uint256 balanceOnPool, uint256 balanceInP2P
     );
