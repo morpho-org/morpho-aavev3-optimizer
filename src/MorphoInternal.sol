@@ -362,36 +362,4 @@ abstract contract MorphoInternal is MorphoStorage {
             ? liquidityData.liquidationThresholdValue.wadDiv(liquidityData.debt)
             : type(uint256).max;
     }
-
-    function _liquidationAllowed(address user, bool isDeprecated)
-        internal
-        view
-        returns (bool liquidationAllowed, uint256 closeFactor)
-    {
-        if (isDeprecated) {
-            liquidationAllowed = true;
-            closeFactor = Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
-        } else {
-            uint256 healthFactor = _getUserHealthFactor(user, address(0), 0);
-            address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
-
-            if (priceOracleSentinel != address(0)) {
-                liquidationAllowed = (
-                    healthFactor < Constants.MIN_LIQUIDATION_THRESHOLD
-                        || (
-                            IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
-                                && healthFactor < Constants.DEFAULT_LIQUIDATION_THRESHOLD
-                        )
-                );
-            } else {
-                liquidationAllowed = healthFactor < Constants.DEFAULT_LIQUIDATION_THRESHOLD;
-            }
-
-            if (liquidationAllowed) {
-                closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
-                    ? Constants.DEFAULT_CLOSE_FACTOR
-                    : Constants.MAX_CLOSE_FACTOR;
-            }
-        }
-    }
 }

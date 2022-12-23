@@ -24,12 +24,12 @@ contract ExitPositionsManager is PositionsManagerInternal {
     function withdrawLogic(address poolToken, address supplier, address receiver, uint256 amount, uint256 maxLoops)
         external
     {
-        Types.IndexesMem memory indexes = _updateIndexes(poolToken);
+        _updateIndexes(poolToken);
         amount = Math.min(_getUserSupplyBalance(poolToken, supplier), amount);
         _validateWithdraw(poolToken, supplier, receiver, amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
-            _executeWithdraw(poolToken, supplier, amount, indexes, maxLoops);
+            _executeWithdraw(poolToken, supplier, amount, maxLoops);
 
         address underlying = _market[poolToken].underlying;
         if (toWithdraw > 0) {
@@ -45,7 +45,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         external
     {
         Types.Market storage market = _market[poolToken];
-        Types.IndexesMem memory indexes = _updateIndexes(poolToken);
+        _updateIndexes(poolToken);
         amount = Math.min(_getUserBorrowBalance(poolToken, onBehalf), amount);
         _validateRepay(poolToken, amount);
 
@@ -53,7 +53,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         underlyingToken.safeTransferFrom(repayer, address(this), amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
-            _executeRepay(poolToken, onBehalf, amount, indexes, maxLoops);
+            _executeRepay(poolToken, onBehalf, amount, maxLoops);
 
         if (toRepay > 0) _pool.repayToPool(market.underlying, toRepay);
         if (toSupply > 0) _pool.supplyToPool(market.underlying, toSupply);
@@ -79,8 +79,6 @@ contract ExitPositionsManager is PositionsManagerInternal {
         uint256 maxLoops
     ) external {
         LiquidateVars memory vars;
-        Types.IndexesMem memory borrowIndexes = _updateIndexes(poolTokenBorrowed);
-        Types.IndexesMem memory collateralIndexes = _updateIndexes(poolTokenCollateral);
 
         vars.closeFactor = _validateLiquidate(poolTokenBorrowed, poolTokenCollateral, borrower);
 
@@ -95,10 +93,9 @@ contract ExitPositionsManager is PositionsManagerInternal {
 
         ERC20(_market[poolTokenBorrowed].underlying).safeTransferFrom(msg.sender, address(this), vars.amountToLiquidate);
 
-        (,, vars.toSupply, vars.toRepay) =
-            _executeRepay(poolTokenBorrowed, borrower, vars.amountToLiquidate, borrowIndexes, maxLoops);
+        (,, vars.toSupply, vars.toRepay) = _executeRepay(poolTokenBorrowed, borrower, vars.amountToLiquidate, maxLoops);
         (,, vars.toBorrow, vars.toWithdraw) =
-            _executeWithdraw(poolTokenCollateral, borrower, vars.amountToSeize, collateralIndexes, maxLoops);
+            _executeWithdraw(poolTokenCollateral, borrower, vars.amountToSeize, maxLoops);
 
         _pool.supplyToPool(_market[poolTokenBorrowed].underlying, vars.toSupply);
         _pool.repayToPool(_market[poolTokenBorrowed].underlying, vars.toRepay);

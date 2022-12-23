@@ -24,14 +24,14 @@ contract EntryPositionsManager is PositionsManagerInternal {
         external
     {
         address underlying = _market[poolToken].underlying;
-        Types.IndexesMem memory indexes = _updateIndexes(poolToken);
+        _updateIndexes(poolToken);
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
 
         _validateSupply(poolToken, onBehalf, amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) =
-            _executeSupply(poolToken, onBehalf, amount, indexes, maxLoops);
+            _executeSupply(poolToken, onBehalf, amount, maxLoops);
 
         if (toRepay > 0) _pool.repayToPool(underlying, toRepay);
         if (toSupply > 0) _pool.supplyToPool(underlying, toSupply);
@@ -40,11 +40,11 @@ contract EntryPositionsManager is PositionsManagerInternal {
     }
 
     function borrowLogic(address poolToken, uint256 amount, uint256 maxLoops) external {
-        Types.IndexesMem memory indexes = _updateIndexes(poolToken);
+        _updateIndexes(poolToken);
         _validateBorrow(poolToken, msg.sender, amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
-            _executeBorrow(poolToken, msg.sender, amount, indexes, maxLoops);
+            _executeBorrow(poolToken, msg.sender, amount, maxLoops);
 
         address underlying = _market[poolToken].underlying;
         if (toBorrow > 0) _pool.borrowFromPool(underlying, toBorrow);
