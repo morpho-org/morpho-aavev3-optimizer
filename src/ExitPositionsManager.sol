@@ -21,8 +21,9 @@ contract ExitPositionsManager is PositionsManagerInternal {
     using PoolInteractions for IPool;
     using PercentageMath for uint256;
 
-    function withdrawLogic(address poolToken, address supplier, address receiver, uint256 amount, uint256 maxLoops)
+    function withdrawLogic(address poolToken, uint256 amount, address supplier, address receiver, uint256 maxLoops)
         external
+        returns (uint256 withdrawn)
     {
         _updateIndexes(poolToken);
         amount = Math.min(_getUserSupplyBalance(poolToken, supplier), amount);
@@ -39,10 +40,20 @@ contract ExitPositionsManager is PositionsManagerInternal {
         ERC20(underlying).safeTransfer(receiver, amount);
 
         emit Events.Withdrawn(supplier, receiver, poolToken, amount, onPool, inP2P);
+        return amount;
     }
 
-    function repayLogic(address poolToken, address repayer, address onBehalf, uint256 amount, uint256 maxLoops)
+    // TODO: Implement
+    function withdrawCollateralLogic(address poolToken, uint256 amount, address supplier, address receiver)
         external
+        returns (uint256 withdrawn)
+    {
+        return 0;
+    }
+
+    function repayLogic(address poolToken, uint256 amount, address repayer, address onBehalf, uint256 maxLoops)
+        external
+        returns (uint256 repaid)
     {
         Types.Market storage market = _market[poolToken];
         _updateIndexes(poolToken);
@@ -59,6 +70,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         if (toSupply > 0) _pool.supplyToPool(market.underlying, toSupply);
 
         emit Events.Repaid(repayer, onBehalf, poolToken, amount, onPool, inP2P);
+        return amount;
     }
 
     struct LiquidateVars {
@@ -74,10 +86,10 @@ contract ExitPositionsManager is PositionsManagerInternal {
     function liquidateLogic(
         address poolTokenBorrowed,
         address poolTokenCollateral,
-        address borrower,
         uint256 amount,
-        uint256 maxLoops
-    ) external {
+        address borrower,
+        address liquidator
+    ) external returns (uint256 liquidated, uint256 seized) {
         LiquidateVars memory vars;
 
         _updateIndexes(poolTokenBorrowed);
@@ -94,21 +106,21 @@ contract ExitPositionsManager is PositionsManagerInternal {
         (vars.amountToLiquidate, vars.amountToSeize) =
             _calculateAmountToSeize(poolTokenBorrowed, poolTokenCollateral, borrower, vars.amountToLiquidate);
 
-        ERC20(_market[poolTokenBorrowed].underlying).safeTransferFrom(msg.sender, address(this), vars.amountToLiquidate);
+        ERC20(_market[poolTokenBorrowed].underlying).safeTransferFrom(liquidator, address(this), vars.amountToLiquidate);
 
-        (,, vars.toSupply, vars.toRepay) = _executeRepay(poolTokenBorrowed, borrower, vars.amountToLiquidate, maxLoops);
-        (,, vars.toBorrow, vars.toWithdraw) =
-            _executeWithdraw(poolTokenCollateral, borrower, vars.amountToSeize, maxLoops);
+        (,, vars.toSupply, vars.toRepay) = _executeRepay(poolTokenBorrowed, borrower, vars.amountToLiquidate, 0);
+        (,, vars.toBorrow, vars.toWithdraw) = _executeWithdraw(poolTokenCollateral, borrower, vars.amountToSeize, 0);
 
         _pool.supplyToPool(_market[poolTokenBorrowed].underlying, vars.toSupply);
         _pool.repayToPool(_market[poolTokenBorrowed].underlying, vars.toRepay);
         _pool.borrowFromPool(_market[poolTokenCollateral].underlying, vars.toBorrow);
         _pool.withdrawFromPool(_market[poolTokenCollateral].underlying, poolTokenCollateral, vars.toWithdraw);
 
-        ERC20(_market[poolTokenCollateral].underlying).safeTransfer(msg.sender, vars.amountToSeize);
+        ERC20(_market[poolTokenCollateral].underlying).safeTransfer(liquidator, vars.amountToSeize);
 
         emit Events.Liquidated(
-            msg.sender, borrower, poolTokenBorrowed, vars.amountToLiquidate, poolTokenCollateral, vars.amountToSeize
+            liquidator, borrower, poolTokenBorrowed, vars.amountToLiquidate, poolTokenCollateral, vars.amountToSeize
             );
+        return (vars.amountToLiquidate, vars.amountToSeize);
     }
 }

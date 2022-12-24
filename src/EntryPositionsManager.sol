@@ -10,6 +10,7 @@ import {MarketLib} from "./libraries/MarketLib.sol";
 import {PoolInteractions} from "./libraries/PoolInteractions.sol";
 
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
@@ -19,16 +20,18 @@ contract EntryPositionsManager is PositionsManagerInternal {
     using PoolInteractions for IPool;
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using SafeTransferLib for ERC20;
+    using WadRayMath for uint256;
 
-    function supplyLogic(address poolToken, address from, address onBehalf, uint256 amount, uint256 maxLoops)
+    function supplyLogic(address poolToken, uint256 amount, address from, address onBehalf, uint256 maxLoops)
         external
+        returns (uint256 supplied)
     {
         address underlying = _market[poolToken].underlying;
         _updateIndexes(poolToken);
 
-        ERC20(underlying).safeTransferFrom(from, address(this), amount);
-
         _validateSupply(poolToken, onBehalf, amount);
+
+        ERC20(underlying).safeTransferFrom(from, address(this), amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) =
             _executeSupply(poolToken, onBehalf, amount, maxLoops);
@@ -37,22 +40,44 @@ contract EntryPositionsManager is PositionsManagerInternal {
         if (toSupply > 0) _pool.supplyToPool(underlying, toSupply);
 
         emit Events.Supplied(from, onBehalf, poolToken, amount, onPool, inP2P);
+        return amount;
     }
 
-    function borrowLogic(address poolToken, uint256 amount, uint256 maxLoops) external {
+    function supplyCollateralLogic(address poolToken, uint256 amount, address from, address onBehalf)
+        external
+        returns (uint256 supplied)
+    {
+        address underlying = _market[poolToken].underlying;
+        Types.IndexesMem memory indexes = _updateIndexes(poolToken);
+
+        _validateSupply(poolToken, onBehalf, amount);
+
+        ERC20(underlying).safeTransferFrom(from, address(this), amount);
+
+        _pool.supplyToPool(underlying, amount);
+
+        _marketBalances[poolToken].collateral[onBehalf] += amount.rayDiv(indexes.poolSupplyIndex);
+        return amount;
+    }
+
+    function borrowLogic(address poolToken, uint256 amount, address borrower, address receiver, uint256 maxLoops)
+        external
+        returns (uint256 borrowed)
+    {
         _updateIndexes(poolToken);
-        _validateBorrow(poolToken, msg.sender, amount);
+        _validateBorrow(poolToken, borrower, amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
-            _executeBorrow(poolToken, msg.sender, amount, maxLoops);
+            _executeBorrow(poolToken, borrower, amount, maxLoops);
 
         address underlying = _market[poolToken].underlying;
         if (toBorrow > 0) _pool.borrowFromPool(underlying, toBorrow);
         if (toWithdraw > 0) {
             _pool.withdrawFromPool(underlying, poolToken, toWithdraw);
         }
-        ERC20(underlying).safeTransfer(msg.sender, amount);
+        ERC20(underlying).safeTransfer(receiver, amount);
 
-        emit Events.Borrowed(msg.sender, poolToken, amount, onPool, inP2P);
+        emit Events.Borrowed(borrower, poolToken, amount, onPool, inP2P);
+        return amount;
     }
 }
