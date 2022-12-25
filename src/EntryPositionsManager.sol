@@ -39,7 +39,7 @@ contract EntryPositionsManager is PositionsManagerInternal {
         if (toRepay > 0) _pool.repayToPool(underlying, toRepay);
         if (toSupply > 0) _pool.supplyToPool(underlying, toSupply);
 
-        emit Events.Supplied(from, onBehalf, poolToken, amount, onPool, inP2P);
+        emit Events.Supplied(from, onBehalf, poolToken, amount, onPool, inP2P, false);
         return amount;
     }
 
@@ -54,9 +54,13 @@ contract EntryPositionsManager is PositionsManagerInternal {
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
 
+        _marketBalances[poolToken].collateral[onBehalf] += amount.rayDiv(indexes.poolSupplyIndex);
+
         _pool.supplyToPool(underlying, amount);
 
-        _marketBalances[poolToken].collateral[onBehalf] += amount.rayDiv(indexes.poolSupplyIndex);
+        emit Events.Supplied(
+            from, onBehalf, poolToken, amount, _marketBalances[poolToken].collateral[onBehalf], 0, true
+            );
         return amount;
     }
 

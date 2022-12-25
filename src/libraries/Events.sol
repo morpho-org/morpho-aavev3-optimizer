@@ -3,47 +3,45 @@ pragma solidity ^0.8.0;
 
 library Events {
     event Supplied(
-        address indexed _from,
-        address indexed _onBehalf,
-        address indexed _poolToken,
-        uint256 _amount,
-        uint256 _balanceOnPool,
-        uint256 _balanceInP2P
+        address indexed from,
+        address indexed onBehalf,
+        address indexed poolToken,
+        uint256 amount,
+        uint256 balanceOnPool,
+        uint256 balanceInP2P,
+        bool asCollateral
     );
 
     event Borrowed(
-        address indexed _borrower,
-        address indexed _poolToken,
-        uint256 _amount,
-        uint256 _balanceOnPool,
-        uint256 _balanceInP2P
+        address indexed borrower, address indexed poolToken, uint256 amount, uint256 balanceOnPool, uint256 balanceInP2P
     );
 
     event Withdrawn(
-        address indexed _supplier,
-        address indexed _receiver,
-        address indexed _poolToken,
-        uint256 _amount,
-        uint256 _balanceOnPool,
-        uint256 _balanceInP2P
+        address indexed supplier,
+        address indexed receiver,
+        address indexed poolToken,
+        uint256 amount,
+        uint256 balanceOnPool,
+        uint256 balanceInP2P,
+        bool asCollateral
     );
 
     event Repaid(
-        address indexed _repayer,
-        address indexed _onBehalf,
-        address indexed _poolToken,
-        uint256 _amount,
-        uint256 _balanceOnPool,
-        uint256 _balanceInP2P
+        address indexed repayer,
+        address indexed onBehalf,
+        address indexed poolToken,
+        uint256 amount,
+        uint256 balanceOnPool,
+        uint256 balanceInP2P
     );
 
     event Liquidated(
-        address indexed _liquidator,
-        address indexed _borrower,
-        address _poolTokenBorrowed,
-        uint256 _amountLiquidated,
-        address _poolTokenCollateral,
-        uint256 _amountSeized
+        address indexed liquidator,
+        address indexed borrower,
+        address poolTokenBorrowed,
+        uint256 amountLiquidated,
+        address poolTokenCollateral,
+        uint256 amountSeized
     );
 
     event PositionUpdated(
