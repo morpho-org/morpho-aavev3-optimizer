@@ -14,14 +14,6 @@ library Types {
 
     /// NESTED STRUCTS ///
 
-    struct UserMarkets {
-        bytes32 data;
-    }
-
-    struct BorrowMask {
-        bytes32 data;
-    }
-
     struct Delta {
         uint256 p2pSupplyDelta; // Difference between the stored peer-to-peer supply amount and the real peer-to-peer supply amount (in pool supply unit).
         uint256 p2pBorrowDelta; // Difference between the stored peer-to-peer borrow amount and the real peer-to-peer borrow amount (in pool borrow unit).
@@ -55,15 +47,13 @@ library Types {
     struct Market {
         // SLOT 0-1
         Indexes indexes;
-        // SLOT 2
-        BorrowMask borrowMask; // 256 bits
-        // SLOT 3-6
+        // SLOT 2-5
         Delta deltas; // 1024 bits
+        // SLOT 6
+        address underlying; // 160 bits
+        PauseStatuses pauseStatuses; // 64 bits
         // SLOT 7
-        address underlying; // 168 bits
-        PauseStatuses pauseStatuses; // 80 bits
-        // SLOT 8
-        address variableDebtToken; // 168 bits
+        address variableDebtToken; // 160 bits
         uint32 lastUpdateTimestamp; // 32 bits
         uint16 reserveFactor; // 16 bits
         uint16 p2pIndexCursor; // 16 bits

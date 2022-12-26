@@ -37,10 +37,6 @@ abstract contract MorphoGettersAndSetters is MorphoInternal {
         return _marketBalances[poolToken].scaledCollateralBalance(user);
     }
 
-    function userMarkets(address user) external view returns (Types.UserMarkets memory) {
-        return _userMarkets[user];
-    }
-
     function maxSortedUsers() external view returns (uint256) {
         return _maxSortedUsers;
     }

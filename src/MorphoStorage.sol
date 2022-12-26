@@ -5,6 +5,7 @@ import {IPool, IPoolAddressesProvider} from "./interfaces/Interfaces.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Constants} from "./libraries/Constants.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 contract MorphoStorage {
     /// STORAGE ///
@@ -12,7 +13,8 @@ contract MorphoStorage {
     address[] internal _marketsCreated; // Keeps track of the created markets.
     mapping(address => Types.Market) internal _market;
     mapping(address => Types.MarketBalances) internal _marketBalances;
-    mapping(address => Types.UserMarkets) internal _userMarkets; // The markets entered by a user as a bitmask.
+    mapping(address => EnumerableSet.AddressSet) internal _userCollaterals; // The markets entered by a user.
+    mapping(address => EnumerableSet.AddressSet) internal _userBorrows; // The markets entered by a user.
 
     uint256 internal _maxSortedUsers; // The max number of users to sort in the data structure.
 
