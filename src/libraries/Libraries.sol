@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 
 import {MarketLib} from "./MarketLib.sol";
 import {MarketBalanceLib} from "./MarketBalanceLib.sol";
-import {MarketMaskLib} from "./MarketMaskLib.sol";
 import {PoolInteractions} from "./PoolInteractions.sol";
 import {InterestRatesModel} from "./InterestRatesModel.sol";
 

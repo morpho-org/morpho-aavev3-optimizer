@@ -7,7 +7,6 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
-import {MarketMaskLib} from "./libraries/MarketMaskLib.sol";
 
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
@@ -21,16 +20,18 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {IPriceOracleSentinel} from "./interfaces/Interfaces.sol";
 
 import {MatchingEngine} from "./MatchingEngine.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 
 abstract contract PositionsManagerInternal is MatchingEngine {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using MarketBalanceLib for Types.MarketBalances;
     using MarketLib for Types.Market;
-    using MarketMaskLib for Types.UserMarkets;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
     using Math for uint256;
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     function _validateSupply(address poolToken, address user, uint256 amount) internal view {
         Types.Market storage market = _market[poolToken];
@@ -53,7 +54,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         onPool = marketBalances.scaledPoolSupplyBalance(user);
         inP2P = marketBalances.scaledP2PSupplyBalance(user);
 
-        _userMarkets[user].setSupplying(market.borrowMask, true);
+        _userCollaterals[user].add(poolToken);
 
         /// Peer-to-peer supply ///
 
@@ -124,7 +125,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Delta storage deltas = market.deltas;
         Types.IndexesMem memory indexes = market.getIndexes();
 
-        _userMarkets[user].setBorrowing(market.borrowMask, true);
+        _userBorrows[user].add(poolToken);
         onPool = marketBalances.scaledPoolBorrowBalance(user);
         inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
@@ -202,7 +203,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
                 _updateBorrowerInDS(poolToken, user, onPool, inP2P);
 
                 if (inP2P == 0 && onPool == 0) {
-                    _userMarkets[user].setBorrowing(market.borrowMask, false);
+                    _userBorrows[user].remove(poolToken);
                 }
 
                 return (onPool, inP2P, toSupply, toRepay);
@@ -274,7 +275,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             toSupply = amount;
         }
 
-        if (inP2P == 0 && onPool == 0) _userMarkets[user].setBorrowing(market.borrowMask, false);
+        if (inP2P == 0 && onPool == 0) _userBorrows[user].remove(poolToken);
     }
 
     function _validateWithdraw(address poolToken, address supplier, address receiver, uint256 amount) internal view {
@@ -318,7 +319,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
                 _updateSupplierInDS(poolToken, user, onPool, inP2P);
 
                 if (inP2P == 0 && onPool == 0) {
-                    _userMarkets[user].setSupplying(market.borrowMask, false);
+                    _userCollaterals[user].remove(poolToken);
                 }
 
                 return (onPool, inP2P, toBorrow, toWithdraw);
@@ -373,7 +374,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             toBorrow = amount;
         }
 
-        if (inP2P == 0 && onPool == 0) _userMarkets[user].setSupplying(market.borrowMask, false);
+        if (inP2P == 0 && onPool == 0) _userCollaterals[user].remove(poolToken);
     }
 
     function _validateLiquidate(address poolTokenBorrowed, address poolTokenCollateral, address borrower)
@@ -393,7 +394,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (borrowMarket.pauseStatuses.isLiquidateBorrowPaused) {
             revert Errors.LiquidateBorrowIsPaused();
         }
-        if (_userMarkets[borrower].isBorrowingAndSupplying(borrowMarket.borrowMask, collateralMarket.borrowMask)) {
+        if (!_userCollaterals[borrower].contains(poolTokenCollateral) || !_userBorrows[borrower].contains(poolTokenBorrowed)) {
             revert Errors.UserNotMemberOfMarket();
         }
 
