@@ -133,7 +133,7 @@ abstract contract MorphoInternal is MorphoStorage {
         }
 
         for (uint256 i; i < userBorrows.length; ++i) {
-                        Types.IndexesMem memory indexes = _computeIndexes(userBorrows[i]);
+            Types.IndexesMem memory indexes = _computeIndexes(userBorrows[i]);
 
             (uint256 underlyingPrice,,, uint256 tokenUnit) =
                 _assetLiquidityData(_market[userBorrows[i]].underlying, oracle, morphoPoolConfig);

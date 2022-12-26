@@ -22,7 +22,6 @@ import {IPriceOracleSentinel} from "./interfaces/Interfaces.sol";
 import {MatchingEngine} from "./MatchingEngine.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-
 abstract contract PositionsManagerInternal is MatchingEngine {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using MarketBalanceLib for Types.MarketBalances;
@@ -394,7 +393,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (borrowMarket.pauseStatuses.isLiquidateBorrowPaused) {
             revert Errors.LiquidateBorrowIsPaused();
         }
-        if (!_userCollaterals[borrower].contains(poolTokenCollateral) || !_userBorrows[borrower].contains(poolTokenBorrowed)) {
+        if (
+            !_userCollaterals[borrower].contains(poolTokenCollateral)
+                || !_userBorrows[borrower].contains(poolTokenBorrowed)
+        ) {
             revert Errors.UserNotMemberOfMarket();
         }
 
