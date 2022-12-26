@@ -114,13 +114,16 @@ abstract contract MorphoInternal is MorphoStorage {
 
         for (uint256 i; i < userCollaterals.length; ++i) {
             (uint256 poolSupplyIndex,,,) = _computeIndexes(userCollaterals[i]);
-            Types.AssetLiquidityData memory assetLiquidityData =
+            (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
                 _assetLiquidityData(_market[userCollaterals[i]].underlying, oracle, morphoPoolConfig);
             (uint256 collateralValue, uint256 maxDebtValue, uint256 liquidationThresholdValue) =
             _liquidityDataCollateral(
                 userCollaterals[i],
                 user,
-                assetLiquidityData,
+                underlyingPrice,
+                ltv,
+                liquidationThreshold,
+                tokenUnit,
                 poolSupplyIndex,
                 poolToken == userCollaterals[i] ? amountWithdrawn : 0
             );
@@ -132,12 +135,13 @@ abstract contract MorphoInternal is MorphoStorage {
         for (uint256 i; i < userBorrows.length; ++i) {
             (, uint256 poolBorrowIndex,, uint256 p2pBorrowIndex) = _computeIndexes(userBorrows[i]);
 
-            Types.AssetLiquidityData memory assetLiquidityData =
+            (uint256 underlyingPrice, , , uint256 tokenUnit) =
                 _assetLiquidityData(_market[userBorrows[i]].underlying, oracle, morphoPoolConfig);
             liquidityData.debt += _liquidityDataDebt(
                 userBorrows[i],
                 user,
-                assetLiquidityData,
+                underlyingPrice,
+                tokenUnit,
                 poolBorrowIndex,
                 p2pBorrowIndex,
                 poolToken == userBorrows[i] ? amountBorrowed : 0
@@ -148,59 +152,65 @@ abstract contract MorphoInternal is MorphoStorage {
     function _liquidityDataCollateral(
         address poolToken,
         address user,
-        Types.AssetLiquidityData memory assetLiquidityData,
+        uint256 underlyingPrice,
+        uint256 ltv,
+        uint256 liquidationThreshold,
+        uint256 tokenUnit,
         uint256 poolSupplyIndex,
         uint256 amountWithdrawn
     ) internal view returns (uint256 collateral, uint256 maxDebt, uint256 liquidationThresholdValue) {
         collateral = (
             (_marketBalances[poolToken].scaledCollateralBalance(user).rayMul(poolSupplyIndex) - amountWithdrawn)
-                * assetLiquidityData.underlyingPrice / assetLiquidityData.tokenUnit
+                * underlyingPrice / tokenUnit
         );
 
         // Calculate LTV for borrow.
-        maxDebt += collateral.percentMul(assetLiquidityData.ltv);
+        maxDebt += collateral.percentMul(ltv);
 
         // Update LT variable for withdraw.
-        liquidationThresholdValue += collateral.percentMul(assetLiquidityData.liquidationThreshold);
+        liquidationThresholdValue += collateral.percentMul(liquidationThreshold);
     }
 
     function _liquidityDataDebt(
         address poolToken,
         address user,
-        Types.AssetLiquidityData memory assetLiquidityData,
+        uint256 underlyingPrice,
+        uint256 tokenUnit,
         uint256 poolBorrowIndex,
         uint256 p2pBorrowIndex,
         uint256 amountBorrowed
     ) internal view returns (uint256 debt) {
         debt = (
-            (_getUserBorrowBalanceFromIndexes(poolToken, user, poolBorrowIndex, p2pBorrowIndex) - amountBorrowed)
-                * assetLiquidityData.underlyingPrice
-        ).divUp(assetLiquidityData.tokenUnit);
+            (_getUserBorrowBalanceFromIndexes(poolToken, user, poolBorrowIndex, p2pBorrowIndex) + amountBorrowed)
+                * underlyingPrice
+        ).divUp(tokenUnit);
     }
 
     function _assetLiquidityData(
         address underlying,
         IPriceOracleGetter oracle,
         DataTypes.UserConfigurationMap memory morphoPoolConfig
-    ) internal view returns (Types.AssetLiquidityData memory assetLiquidityData) {
-        assetLiquidityData.underlyingPrice = oracle.getAssetPrice(underlying);
+    ) internal view returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) {
+        underlyingPrice = oracle.getAssetPrice(underlying);
+        
+        uint256 decimals;
 
-        (assetLiquidityData.ltv, assetLiquidityData.liquidationThreshold,, assetLiquidityData.decimals,,) =
+        (ltv, liquidationThreshold,, decimals,,) =
             _pool.getConfiguration(underlying).getParams();
 
         // LTV should be zero if Morpho has not enabled this asset as collateral
         if (!morphoPoolConfig.isUsingAsCollateral(_pool.getReserveData(underlying).id)) {
-            assetLiquidityData.ltv = 0;
+            ltv = 0;
         }
 
         // If a LTV has been reduced to 0 on Aave v3, the other assets of the collateral are frozen.
         // In response, Morpho disables the asset as collateral and sets its liquidation threshold to 0.
-        if (assetLiquidityData.ltv == 0) {
-            assetLiquidityData.liquidationThreshold = 0;
+        if (ltv == 0) {
+            liquidationThreshold = 0;
         }
 
         unchecked {
-            assetLiquidityData.tokenUnit = 10 ** assetLiquidityData.decimals;
+            tokenUnit = 10 ** decimals;
         }
     }
 
