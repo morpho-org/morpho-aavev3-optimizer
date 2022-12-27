@@ -2,12 +2,7 @@
 # yarn lockfile v1
 
 
-"@openzeppelin/contracts@^4.8.0":
-  "integrity" "sha512-AGuwhRRL+NaKx73WKRNzeCxOCOCxpaqF+kp8TJ89QzAipSwZy/NoflkWaL9bywXFRhIzXt8j38sfF7KBKCPWLw=="
-  "resolved" "https://registry.npmjs.org/@openzeppelin/contracts/-/contracts-4.8.0.tgz"
-  "version" "4.8.0"
-
-"husky@^8.0.2":
-  "integrity" "sha512-Tkv80jtvbnkK3mYWxPZePGFpQ/tT3HNSs/sasF9P2YfkMezDl3ON37YN6jUUI4eTg5LcyVynlb6r4eyvOmspvg=="
-  "resolved" "https://registry.npmjs.org/husky/-/husky-8.0.2.tgz"
-  "version" "8.0.2"
+husky@^8.0.2:
+  version "8.0.2"
+  resolved "https://registry.npmjs.org/husky/-/husky-8.0.2.tgz"
+  integrity sha512-Tkv80jtvbnkK3mYWxPZePGFpQ/tT3HNSs/sasF9P2YfkMezDl3ON37YN6jUUI4eTg5LcyVynlb6r4eyvOmspvg==

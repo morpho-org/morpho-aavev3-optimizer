@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {Types, Events, Errors, MarketBalanceLib} from "./libraries/Libraries.sol";
+import {MarketBalanceLib} from "./libraries/Libraries.sol";
+import {Types} from "./libraries/Types.sol";
+import {Events} from "./libraries/Events.sol";
+import {Errors} from "./libraries/Errors.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 

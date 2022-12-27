@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {Types, Events, ThreeHeapOrdering, Math, WadRayMath} from "./libraries/Libraries.sol";
+import {ThreeHeapOrdering, Math, WadRayMath} from "./libraries/Libraries.sol";
+import {Types} from "./libraries/Types.sol";
+import {Events} from "./libraries/Events.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
@@ -66,7 +68,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
-                updateDS: updateSupplierInDS,
+                updateDS: _updateSupplierInDS,
                 promoting: false,
                 step: _demote
             })
@@ -85,7 +87,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
-                updateDS: updateBorrowerInDS,
+                updateDS: _updateBorrowerInDS,
                 promoting: false,
                 step: _demote
             })
@@ -117,7 +119,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 remaining
             );
 
-            updateDS(vars.poolToken, firstUser, onPool, inP2P);
+            vars.updateDS(vars.poolToken, firstUser, onPool, inP2P);
             emit Events.PositionUpdated(vars.borrow, firstUser, vars.poolToken, onPool, inP2P);
         }
 

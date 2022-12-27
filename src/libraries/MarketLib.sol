@@ -2,8 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {Types} from "./Types.sol";
-import {ThreeHeapOrdering} from "morpho-data-structures/ThreeHeapOrdering.sol";
-import {SafeCastUpgradeable as SafeCast} from "@openzeppelin-contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 library MarketLib {
     using SafeCast for uint256;

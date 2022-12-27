@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {MorphoStorage} from "./MorphoStorage.sol";
-
 import {
     IPool, IPriceOracleGetter, IVariableDebtToken, IAToken, IPriceOracleSentinel
 } from "./interfaces/Interfaces.sol";
+
 import {
-    Types,
-    Events,
-    Errors,
     MarketLib,
     MarketBalanceLib,
     MarketMaskLib,
@@ -24,6 +20,12 @@ import {
     UserConfiguration,
     ThreeHeapOrdering
 } from "./libraries/Libraries.sol";
+import {Types} from "./libraries/Types.sol";
+import {Events} from "./libraries/Events.sol";
+import {Errors} from "./libraries/Errors.sol";
+import {Constants} from "./libraries/Constants.sol";
+
+import {MorphoStorage} from "./MorphoStorage.sol";
 
 abstract contract MorphoInternal is MorphoStorage {
     using MarketLib for Types.Market;
@@ -382,7 +384,7 @@ abstract contract MorphoInternal is MorphoStorage {
             return false;
         }
 
-        return _getUserHealthFactor(user, poolToken, withdrawnAmount) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+        return _getUserHealthFactor(user, poolToken, withdrawnAmount) >= Constants.DEFAULT_LIQUIDATION_THRESHOLD;
     }
 
     function _liquidationAllowed(address user, bool isDeprecated)
@@ -392,27 +394,27 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         if (isDeprecated) {
             liquidationAllowed = true;
-            closeFactor = MAX_BASIS_POINTS; // Allow liquidation of the whole debt.
+            closeFactor = Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
         } else {
             uint256 healthFactor = _getUserHealthFactor(user, address(0), 0);
             address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
 
             if (priceOracleSentinel != address(0)) {
                 liquidationAllowed = (
-                    healthFactor < MINIMUM_HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+                    healthFactor < Constants.MIN_LIQUIDATION_THRESHOLD
                         || (
                             IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
-                                && healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+                                && healthFactor < Constants.DEFAULT_LIQUIDATION_THRESHOLD
                         )
                 );
             } else {
-                liquidationAllowed = healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+                liquidationAllowed = healthFactor < Constants.DEFAULT_LIQUIDATION_THRESHOLD;
             }
 
             if (liquidationAllowed) {
-                closeFactor = healthFactor > MINIMUM_HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-                    ? DEFAULT_LIQUIDATION_CLOSE_FACTOR
-                    : MAX_LIQUIDATION_CLOSE_FACTOR;
+                closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
+                    ? Constants.DEFAULT_CLOSE_FACTOR
+                    : Constants.MAX_CLOSE_FACTOR;
             }
         }
     }
