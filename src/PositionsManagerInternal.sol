@@ -41,14 +41,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
     }
 
-    function _executeSupply(address poolToken, address user, uint256 amount, uint256 maxLoops)
-        internal
-        returns (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay)
-    {
+    function _executeSupply(
+        address poolToken,
+        address user,
+        uint256 amount,
+        uint256 maxLoops,
+        Types.Indexes256 memory indexes
+    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) {
         Types.Market storage market = _market[poolToken];
         Types.MarketBalances storage marketBalances = _marketBalances[poolToken];
         Types.Delta storage deltas = market.deltas;
-        Types.IndexesMem memory indexes = market.getIndexes();
 
         onPool = marketBalances.scaledPoolSupplyBalance(user);
         inP2P = marketBalances.scaledP2PSupplyBalance(user);
@@ -115,14 +117,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (values.debt > values.maxDebt) revert Errors.UnauthorisedBorrow();
     }
 
-    function _executeBorrow(address poolToken, address user, uint256 amount, uint256 maxLoops)
-        internal
-        returns (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw)
-    {
+    function _executeBorrow(
+        address poolToken,
+        address user,
+        uint256 amount,
+        uint256 maxLoops,
+        Types.Indexes256 memory indexes
+    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) {
         Types.Market storage market = _market[poolToken];
         Types.MarketBalances storage marketBalances = _marketBalances[poolToken];
         Types.Delta storage deltas = market.deltas;
-        Types.IndexesMem memory indexes = market.getIndexes();
 
         _userBorrows[user].add(poolToken);
         onPool = marketBalances.scaledPoolBorrowBalance(user);
@@ -177,14 +181,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
     }
 
-    function _executeRepay(address poolToken, address user, uint256 amount, uint256 maxLoops)
-        internal
-        returns (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay)
-    {
+    function _executeRepay(
+        address poolToken,
+        address user,
+        uint256 amount,
+        uint256 maxLoops,
+        Types.Indexes256 memory indexes
+    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) {
         Types.Market storage market = _market[poolToken];
         Types.MarketBalances storage marketBalances = _marketBalances[poolToken];
         Types.Delta storage deltas = market.deltas;
-        Types.IndexesMem memory indexes = market.getIndexes();
 
         onPool = marketBalances.scaledPoolBorrowBalance(user);
         inP2P = marketBalances.scaledP2PBorrowBalance(user);
@@ -305,14 +311,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
     }
 
-    function _executeWithdraw(address poolToken, address user, uint256 amount, uint256 maxLoops)
-        internal
-        returns (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw)
-    {
+    function _executeWithdraw(
+        address poolToken,
+        address user,
+        uint256 amount,
+        uint256 maxLoops,
+        Types.Indexes256 memory indexes
+    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) {
         Types.Market storage market = _market[poolToken];
         Types.MarketBalances storage marketBalances = _marketBalances[poolToken];
         Types.Delta storage deltas = market.deltas;
-        Types.IndexesMem memory indexes = market.getIndexes();
+        Types.Indexes256 memory indexes = market.getIndexes();
 
         onPool = marketBalances.scaledPoolSupplyBalance(user);
         inP2P = marketBalances.scaledP2PSupplyBalance(user);

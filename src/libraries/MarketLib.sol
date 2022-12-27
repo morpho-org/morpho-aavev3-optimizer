@@ -15,14 +15,14 @@ library MarketLib {
         return market.underlying != address(0);
     }
 
-    function getIndexes(Types.Market storage market) internal view returns (Types.IndexesMem memory indexes) {
+    function getIndexes(Types.Market storage market) internal view returns (Types.Indexes256 memory indexes) {
         indexes.poolSupplyIndex = uint256(market.indexes.poolSupplyIndex);
         indexes.poolBorrowIndex = uint256(market.indexes.poolBorrowIndex);
         indexes.p2pSupplyIndex = uint256(market.indexes.p2pSupplyIndex);
         indexes.p2pBorrowIndex = uint256(market.indexes.p2pBorrowIndex);
     }
 
-    function setIndexes(Types.Market storage market, Types.IndexesMem memory indexes) internal {
+    function setIndexes(Types.Market storage market, Types.Indexes256 memory indexes) internal {
         market.indexes.poolSupplyIndex = indexes.poolSupplyIndex.toUint128();
         market.indexes.poolBorrowIndex = indexes.poolBorrowIndex.toUint128();
         market.indexes.p2pSupplyIndex = indexes.p2pSupplyIndex.toUint128();

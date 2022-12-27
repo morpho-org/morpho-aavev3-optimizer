@@ -60,7 +60,7 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param poolToken The market where to get the supply amount.
     /// @return The supply balance of the user (in underlying).
     function _getUserSupplyBalance(address poolToken, address user) internal view returns (uint256) {
-        Types.IndexesMem memory indexes = _computeIndexes(poolToken);
+        Types.Indexes256 memory indexes = _computeIndexes(poolToken);
         return _getUserSupplyBalanceFromIndexes(poolToken, user, indexes.poolSupplyIndex, indexes.p2pSupplyIndex);
     }
 
@@ -81,7 +81,7 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param poolToken The market where to get the borrow amount.
     /// @return The borrow balance of the user (in underlying).
     function _getUserBorrowBalance(address poolToken, address user) internal view returns (uint256) {
-        Types.IndexesMem memory indexes = _computeIndexes(poolToken);
+        Types.Indexes256 memory indexes = _computeIndexes(poolToken);
         return _getUserBorrowBalanceFromIndexes(poolToken, user, indexes.poolBorrowIndex, indexes.p2pBorrowIndex);
     }
 
@@ -113,7 +113,7 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _pool.getUserConfiguration(address(this));
 
         for (uint256 i; i < userCollaterals.length; ++i) {
-            Types.IndexesMem memory indexes = _computeIndexes(userCollaterals[i]);
+            Types.Indexes256 memory indexes = _computeIndexes(userCollaterals[i]);
             (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
                 _assetLiquidityData(_market[userCollaterals[i]].underlying, oracle, morphoPoolConfig);
             (uint256 collateralValue, uint256 maxDebtValue, uint256 liquidationThresholdValue) =
@@ -133,7 +133,7 @@ abstract contract MorphoInternal is MorphoStorage {
         }
 
         for (uint256 i; i < userBorrows.length; ++i) {
-            Types.IndexesMem memory indexes = _computeIndexes(userBorrows[i]);
+            Types.Indexes256 memory indexes = _computeIndexes(userBorrows[i]);
 
             (uint256 underlyingPrice,,, uint256 tokenUnit) =
                 _assetLiquidityData(_market[userBorrows[i]].underlying, oracle, morphoPoolConfig);
@@ -277,14 +277,14 @@ abstract contract MorphoInternal is MorphoStorage {
         emit Events.IsLiquidateBorrowPausedSet(poolToken, isPaused);
     }
 
-    function _updateIndexes(address poolToken) internal returns (Types.IndexesMem memory indexes) {
+    function _updateIndexes(address poolToken) internal returns (Types.Indexes256 memory indexes) {
         Types.Market storage market = _market[poolToken];
         indexes = _computeIndexes(poolToken);
 
         market.setIndexes(indexes);
     }
 
-    function _computeIndexes(address poolToken) internal view returns (Types.IndexesMem memory indexes) {
+    function _computeIndexes(address poolToken) internal view returns (Types.Indexes256 memory indexes) {
         Types.Market storage market = _market[poolToken];
         if (block.timestamp == market.lastUpdateTimestamp) {
             return market.getIndexes();

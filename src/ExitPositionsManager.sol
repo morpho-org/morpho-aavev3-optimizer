@@ -25,16 +25,16 @@ contract ExitPositionsManager is PositionsManagerInternal {
     using MarketBalanceLib for Types.MarketBalances;
     using WadRayMath for uint256;
 
-    function withdrawLogic(address poolToken, uint256 amount, address supplier, address receiver, uint256 maxLoops)
+    function withdrawLogic(address poolToken, uint256 amount, address supplier, address receiver)
         external
         returns (uint256 withdrawn)
     {
-        _updateIndexes(poolToken);
+        Types.Indexes256 memory indexes = _updateIndexes(poolToken);
         amount = Math.min(_getUserSupplyBalance(poolToken, supplier), amount);
         _validateWithdraw(poolToken, receiver, amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
-            _executeWithdraw(poolToken, supplier, amount, maxLoops);
+            _executeWithdraw(poolToken, supplier, amount, 0, indexes); // TODO: Replace max loops once default max is implemented
 
         address underlying = _market[poolToken].underlying;
         if (toWithdraw > 0) {
@@ -69,12 +69,12 @@ contract ExitPositionsManager is PositionsManagerInternal {
         return amount;
     }
 
-    function repayLogic(address poolToken, uint256 amount, address repayer, address onBehalf, uint256 maxLoops)
+    function repayLogic(address poolToken, uint256 amount, address repayer, address onBehalf)
         external
         returns (uint256 repaid)
     {
         Types.Market storage market = _market[poolToken];
-        _updateIndexes(poolToken);
+        Types.Indexes256 memory indexes = _updateIndexes(poolToken);
         amount = Math.min(_getUserBorrowBalance(poolToken, onBehalf), amount);
         _validateRepay(poolToken, amount);
 
@@ -82,7 +82,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         underlyingToken.safeTransferFrom(repayer, address(this), amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
-            _executeRepay(poolToken, onBehalf, amount, maxLoops);
+            _executeRepay(poolToken, onBehalf, amount, 0, indexes); // TODO: Update max loops
 
         if (toRepay > 0) _pool.repayToPool(market.underlying, toRepay);
         if (toSupply > 0) _pool.supplyToPool(market.underlying, toSupply);
@@ -110,8 +110,8 @@ contract ExitPositionsManager is PositionsManagerInternal {
     ) external returns (uint256 liquidated, uint256 seized) {
         LiquidateVars memory vars;
 
-        _updateIndexes(poolTokenBorrowed);
-        _updateIndexes(poolTokenCollateral);
+        Types.Indexes256 memory borrowIndexes = _updateIndexes(poolTokenBorrowed);
+        Types.Indexes256 memory collateralIndexes = _updateIndexes(poolTokenCollateral);
 
         vars.closeFactor = _validateLiquidate(poolTokenBorrowed, poolTokenCollateral, borrower);
 
@@ -126,8 +126,10 @@ contract ExitPositionsManager is PositionsManagerInternal {
 
         ERC20(_market[poolTokenBorrowed].underlying).safeTransferFrom(liquidator, address(this), vars.amountToLiquidate);
 
-        (,, vars.toSupply, vars.toRepay) = _executeRepay(poolTokenBorrowed, borrower, vars.amountToLiquidate, 0);
-        (,, vars.toBorrow, vars.toWithdraw) = _executeWithdraw(poolTokenCollateral, borrower, vars.amountToSeize, 0);
+        (,, vars.toSupply, vars.toRepay) =
+            _executeRepay(poolTokenBorrowed, borrower, vars.amountToLiquidate, 0, borrowIndexes); // TODO: Update max loops
+        (,, vars.toBorrow, vars.toWithdraw) =
+            _executeWithdraw(poolTokenCollateral, borrower, vars.amountToSeize, 0, collateralIndexes); // TODO: Update max loops
 
         _pool.supplyToPool(_market[poolTokenBorrowed].underlying, vars.toSupply);
         _pool.repayToPool(_market[poolTokenBorrowed].underlying, vars.toRepay);

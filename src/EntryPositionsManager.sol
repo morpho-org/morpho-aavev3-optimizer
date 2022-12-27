@@ -27,14 +27,14 @@ contract EntryPositionsManager is PositionsManagerInternal {
         returns (uint256 supplied)
     {
         address underlying = _market[poolToken].underlying;
-        _updateIndexes(poolToken);
+        Types.Indexes256 memory indexes = _updateIndexes(poolToken);
 
         _validateSupply(poolToken, onBehalf, amount);
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) =
-            _executeSupply(poolToken, onBehalf, amount, maxLoops);
+            _executeSupply(poolToken, onBehalf, amount, maxLoops, indexes);
 
         if (toRepay > 0) _pool.repayToPool(underlying, toRepay);
         if (toSupply > 0) _pool.supplyToPool(underlying, toSupply);
@@ -48,7 +48,7 @@ contract EntryPositionsManager is PositionsManagerInternal {
         returns (uint256 supplied)
     {
         address underlying = _market[poolToken].underlying;
-        Types.IndexesMem memory indexes = _updateIndexes(poolToken);
+        Types.Indexes256 memory indexes = _updateIndexes(poolToken);
 
         _validateSupply(poolToken, onBehalf, amount);
 
@@ -68,11 +68,11 @@ contract EntryPositionsManager is PositionsManagerInternal {
         external
         returns (uint256 borrowed)
     {
-        _updateIndexes(poolToken);
+        Types.Indexes256 memory indexes = _updateIndexes(poolToken);
         _validateBorrow(poolToken, borrower, amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
-            _executeBorrow(poolToken, borrower, amount, maxLoops);
+            _executeBorrow(poolToken, borrower, amount, maxLoops, indexes);
 
         address underlying = _market[poolToken].underlying;
         if (toBorrow > 0) _pool.borrowFromPool(underlying, toBorrow);
