@@ -71,4 +71,22 @@ library Events {
     event P2PAmountsUpdated(address indexed poolToken, uint256 p2pSupplyAmount, uint256 p2pBorrowAmount);
 
     event P2PSupplyDeltaUpdated(address indexed poolToken, uint256 p2pSupplyDelta);
+
+    event MarketCreated(address indexed poolToken, uint16 reserveFactor, uint16 p2pIndexCursor);
+
+    event MaxSortedUsersSet(uint256 maxSortedUsers);
+
+    event DefaultMaxLoopsForMatchingSet(uint64 supply, uint64 borrow, uint64 repay, uint64 withdraw);
+
+    event EntryPositionsManagerSet(address entryPositionsManager);
+
+    event ExitPositionsManagerSet(address exitPositionsManager);
+
+    event ReserveFactorSet(address indexed poolToken, uint16 reserveFactor);
+
+    event P2PIndexCursorSet(address indexed poolToken, uint16 p2pIndexCursor);
+
+    event IsP2PDisabledSet(address indexed poolToken, bool isP2PDisabled);
+
+    event IsDeprecatedSet(address indexed poolToken, bool isDeprecated);
 }
