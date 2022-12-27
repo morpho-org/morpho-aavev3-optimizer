@@ -43,7 +43,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         if (toBorrow > 0) _pool.borrowFromPool(underlying, toBorrow);
         ERC20(underlying).safeTransfer(receiver, amount);
 
-        emit Events.Withdrawn(supplier, receiver, poolToken, amount, onPool, inP2P, false);
+        emit Events.Withdrawn(supplier, receiver, poolToken, amount, onPool, inP2P);
         return amount;
     }
 
@@ -51,7 +51,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         external
         returns (uint256 withdrawn)
     {
-        Types.IndexesMem memory indexes = _updateIndexes(poolToken);
+        Types.Indexes256 memory indexes = _updateIndexes(poolToken);
         amount = Math.min(
             _marketBalances[poolToken].scaledCollateralBalance(supplier).rayMul(indexes.poolSupplyIndex), amount
         );
@@ -63,8 +63,8 @@ contract ExitPositionsManager is PositionsManagerInternal {
         _pool.withdrawFromPool(underlying, poolToken, amount);
         ERC20(underlying).safeTransfer(receiver, amount);
 
-        emit Events.Withdrawn(
-            supplier, receiver, poolToken, amount, _marketBalances[poolToken].collateral[supplier], 0, true
+        emit Events.CollateralWithdrawn(
+            supplier, receiver, poolToken, amount, _marketBalances[poolToken].collateral[supplier]
             );
         return amount;
     }

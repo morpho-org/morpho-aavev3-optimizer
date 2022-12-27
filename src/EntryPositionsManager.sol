@@ -39,7 +39,7 @@ contract EntryPositionsManager is PositionsManagerInternal {
         if (toRepay > 0) _pool.repayToPool(underlying, toRepay);
         if (toSupply > 0) _pool.supplyToPool(underlying, toSupply);
 
-        emit Events.Supplied(from, onBehalf, poolToken, amount, onPool, inP2P, false);
+        emit Events.Supplied(from, onBehalf, poolToken, amount, onPool, inP2P);
         return amount;
     }
 
@@ -58,8 +58,8 @@ contract EntryPositionsManager is PositionsManagerInternal {
 
         _pool.supplyToPool(underlying, amount);
 
-        emit Events.Supplied(
-            from, onBehalf, poolToken, amount, _marketBalances[poolToken].collateral[onBehalf], 0, true
+        emit Events.CollateralSupplied(
+            from, onBehalf, poolToken, amount, _marketBalances[poolToken].collateral[onBehalf]
             );
         return amount;
     }

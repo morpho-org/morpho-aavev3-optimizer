@@ -8,8 +8,11 @@ library Events {
         address indexed poolToken,
         uint256 amount,
         uint256 balanceOnPool,
-        uint256 balanceInP2P,
-        bool asCollateral
+        uint256 balanceInP2P
+    );
+
+    event CollateralSupplied(
+        address indexed from, address indexed onBehalf, address indexed poolToken, uint256 amount, uint256 balance
     );
 
     event Borrowed(
@@ -22,8 +25,11 @@ library Events {
         address indexed poolToken,
         uint256 amount,
         uint256 balanceOnPool,
-        uint256 balanceInP2P,
-        bool asCollateral
+        uint256 balanceInP2P
+    );
+
+    event CollateralWithdrawn(
+        address indexed supplier, address indexed receiver, address indexed poolToken, uint256 amount, uint256 balance
     );
 
     event Repaid(
