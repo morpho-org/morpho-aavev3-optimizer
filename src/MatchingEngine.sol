@@ -12,141 +12,124 @@ abstract contract MatchingEngine is MorphoInternal {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using WadRayMath for uint256;
 
-    function _matchSuppliers(address poolToken, uint256 amount, uint256 maxLoops)
+    function _promoteSuppliers(address poolToken, uint256 amount, uint256 maxLoops)
         internal
-        returns (uint256 matched, uint256 loopsDone)
+        returns (uint256 promoted, uint256 loopsDone)
     {
         Types.Market storage market = _market[poolToken];
-        return _matchOrUnmatch(
+        return _promoteOrDemote(
             _marketBalances[poolToken].poolSuppliers,
             _marketBalances[poolToken].p2pSuppliers,
-            Types.MatchVars({
+            Types.PromoteVars({
                 poolToken: poolToken,
                 poolIndex: market.indexes.poolSupplyIndex,
                 p2pIndex: market.indexes.p2pSupplyIndex,
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
-                matching: true
+                updateDS: _updateSupplierInDS,
+                promoting: true,
+                step: _promote
             })
         );
     }
 
-    function _matchBorrowers(address poolToken, uint256 amount, uint256 maxLoops)
+    function _promoteBorrowers(address poolToken, uint256 amount, uint256 maxLoops)
         internal
-        returns (uint256 matched, uint256 loopsDone)
+        returns (uint256 promoted, uint256 loopsDone)
     {
         Types.Market storage market = _market[poolToken];
-        return _matchOrUnmatch(
+        return _promoteOrDemote(
             _marketBalances[poolToken].poolBorrowers,
             _marketBalances[poolToken].p2pBorrowers,
-            Types.MatchVars({
+            Types.PromoteVars({
                 poolToken: poolToken,
                 poolIndex: market.indexes.poolBorrowIndex,
                 p2pIndex: market.indexes.p2pBorrowIndex,
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
-                matching: true
+                updateDS: _updateBorrowerInDS,
+                promoting: true,
+                step: _promote
             })
         );
     }
 
-    function _unmatchSuppliers(address poolToken, uint256 amount, uint256 maxLoops)
-        internal
-        returns (uint256 unmatched)
-    {
+    function _demoteSuppliers(address poolToken, uint256 amount, uint256 maxLoops) internal returns (uint256 demoted) {
         Types.Market storage market = _market[poolToken];
-        (unmatched,) = _matchOrUnmatch(
+        (demoted,) = _promoteOrDemote(
             _marketBalances[poolToken].poolSuppliers,
             _marketBalances[poolToken].p2pSuppliers,
-            Types.MatchVars({
+            Types.PromoteVars({
                 poolToken: poolToken,
                 poolIndex: market.indexes.poolSupplyIndex,
                 p2pIndex: market.indexes.p2pSupplyIndex,
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
-                matching: false
+                updateDS: _updateSupplierInDS,
+                promoting: false,
+                step: _demote
             })
         );
     }
 
-    function _unmatchBorrowers(address poolToken, uint256 amount, uint256 maxLoops)
-        internal
-        returns (uint256 unmatched)
-    {
+    function _demoteBorrowers(address poolToken, uint256 amount, uint256 maxLoops) internal returns (uint256 demoted) {
         Types.Market storage market = _market[poolToken];
-        (unmatched,) = _matchOrUnmatch(
+        (demoted,) = _promoteOrDemote(
             _marketBalances[poolToken].poolBorrowers,
             _marketBalances[poolToken].p2pBorrowers,
-            Types.MatchVars({
+            Types.PromoteVars({
                 poolToken: poolToken,
                 poolIndex: market.indexes.poolBorrowIndex,
                 p2pIndex: market.indexes.p2pBorrowIndex,
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
-                matching: false
+                updateDS: _updateBorrowerInDS,
+                promoting: false,
+                step: _demote
             })
         );
     }
 
-    function _matchOrUnmatch(
+    function _promoteOrDemote(
         ThreeHeapOrdering.HeapArray storage heapOnPool,
         ThreeHeapOrdering.HeapArray storage heapInP2P,
-        Types.MatchVars memory vars
-    ) internal returns (uint256 matched, uint256 loopsDone) {
+        Types.PromoteVars memory vars
+    ) internal returns (uint256 promoted, uint256 loopsDone) {
         if (vars.maxLoops == 0) return (0, 0);
 
-        uint256 remainingToMatch = vars.amount;
-
-        // This function will be used to decide whether to use the algorithm for matching or for unmatching.
-        function(uint256, uint256, uint256, uint256, uint256)
-            pure returns (uint256, uint256, uint256) f;
-        ThreeHeapOrdering.HeapArray storage workingHeap;
-
-        if (vars.matching) {
-            workingHeap = heapOnPool;
-            f = _matchStep;
-        } else {
-            workingHeap = heapInP2P;
-            f = _unmatchStep;
-        }
+        uint256 remaining = vars.amount;
+        ThreeHeapOrdering.HeapArray storage workingHeap = vars.promoting ? heapOnPool : heapInP2P;
 
         for (; loopsDone < vars.maxLoops; ++loopsDone) {
-            // Safe unchecked because `gasLeftAtTheBeginning` >= gas left now.
             address firstUser = workingHeap.getHead();
             if (firstUser == address(0)) break;
 
             uint256 onPool;
             uint256 inP2P;
 
-            (onPool, inP2P, remainingToMatch) = f(
+            (onPool, inP2P, remaining) = vars.step(
                 heapOnPool.getValueOf(firstUser),
                 heapInP2P.getValueOf(firstUser),
                 vars.poolIndex,
                 vars.p2pIndex,
-                remainingToMatch
+                remaining
             );
 
-            if (!vars.borrow) {
-                _updateSupplierInDS(vars.poolToken, firstUser, onPool, inP2P);
-            } else {
-                _updateBorrowerInDS(vars.poolToken, firstUser, onPool, inP2P);
-            }
-
+            vars.updateDS(vars.poolToken, firstUser, onPool, inP2P);
             emit Events.PositionUpdated(vars.borrow, firstUser, vars.poolToken, onPool, inP2P);
         }
 
-        // Safe unchecked because `gasLeftAtTheBeginning` >= gas left now.
-        // And _amount >= remainingToMatch.
+        // Safe unchecked because vars.amount >= remaining.
         unchecked {
-            matched = vars.amount - remainingToMatch;
+            promoted = vars.amount - remaining;
         }
     }
 
-    function _matchStep(uint256 poolBalance, uint256 p2pBalance, uint256 poolIndex, uint256 p2pIndex, uint256 remaining)
+    function _promote(uint256 poolBalance, uint256 p2pBalance, uint256 poolIndex, uint256 p2pIndex, uint256 remaining)
         internal
         pure
         returns (uint256 newPoolBalance, uint256 newP2PBalance, uint256 newRemaining)
@@ -157,13 +140,11 @@ abstract contract MatchingEngine is MorphoInternal {
         newP2PBalance = p2pBalance + toProcess.rayDiv(p2pIndex);
     }
 
-    function _unmatchStep(
-        uint256 poolBalance,
-        uint256 p2pBalance,
-        uint256 poolIndex,
-        uint256 p2pIndex,
-        uint256 remaining
-    ) internal pure returns (uint256 newPoolBalance, uint256 newP2PBalance, uint256 newRemaining) {
+    function _demote(uint256 poolBalance, uint256 p2pBalance, uint256 poolIndex, uint256 p2pIndex, uint256 remaining)
+        internal
+        pure
+        returns (uint256 newPoolBalance, uint256 newP2PBalance, uint256 newRemaining)
+    {
         uint256 toProcess = Math.min(p2pBalance.rayMul(p2pIndex), remaining);
         newRemaining = remaining - toProcess;
         newPoolBalance = poolBalance + toProcess.rayDiv(poolIndex);
