@@ -7,16 +7,15 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 
-import {MorphoGettersAndSetters} from "./MorphoGettersAndSetters.sol";
+import {MorphoGetters} from "./MorphoGetters.sol";
+import {MorphoSetters} from "./MorphoSetters.sol";
 import {EntryPositionsManager} from "./EntryPositionsManager.sol";
 import {ExitPositionsManager} from "./ExitPositionsManager.sol";
 
 import {IERC1155} from "./interfaces/IERC1155.sol";
 
-// import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-
 // @note: To add: IERC1155, Ownable
-contract Morpho is MorphoGettersAndSetters {
+contract Morpho is MorphoGetters, MorphoSetters {
     using MarketBalanceLib for Types.MarketBalances;
     using MarketLib for Types.Market;
     using DelegateCall for address;
