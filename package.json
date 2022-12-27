@@ -21,7 +21,7 @@
     "smart-contracts"
   ],
   "author": "Morpho Labs",
-  "license": "ISC",
+  "license": "AGPL-3.0-only",
   "bugs": {
     "url": "https://github.com/morpho-dao/morpho-v1.5/issues"
   },
