@@ -76,7 +76,7 @@ library Events {
 
     event MaxSortedUsersSet(uint256 maxSortedUsers);
 
-    event DefaultMaxLoopsForMatchingSet(uint64 supply, uint64 borrow, uint64 repay, uint64 withdraw);
+    event DefaultMaxLoopsSet(uint64 supply, uint64 borrow, uint64 repay, uint64 withdraw);
 
     event EntryPositionsManagerSet(address entryPositionsManager);
 

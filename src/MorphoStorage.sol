@@ -17,7 +17,7 @@ contract MorphoStorage {
     mapping(address => EnumerableSet.AddressSet) internal _userBorrows; // The markets entered by a user.
 
     uint256 internal _maxSortedUsers; // The max number of users to sort in the data structure.
-    Types.MaxLoopsForMatching internal _defaultMaxLoopsForMatching;
+    Types.MaxLoops internal _defaultMaxLoops;
 
     IPoolAddressesProvider internal _addressesProvider;
     IPool internal _pool;

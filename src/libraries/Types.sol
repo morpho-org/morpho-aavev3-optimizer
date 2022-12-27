@@ -68,7 +68,7 @@ library Types {
         mapping(address => uint256) collateral; // in scaled unit
     }
 
-    struct MaxLoopsForMatching {
+    struct MaxLoops {
         uint64 supply;
         uint64 borrow;
         uint64 repay;
