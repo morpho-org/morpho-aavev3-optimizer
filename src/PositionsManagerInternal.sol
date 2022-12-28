@@ -310,7 +310,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Market storage market = _market[poolToken];
         Types.MarketBalances storage marketBalances = _marketBalances[poolToken];
         Types.Delta storage deltas = market.deltas;
-        Types.Indexes256 memory indexes = market.getIndexes();
 
         onPool = marketBalances.scaledPoolSupplyBalance(user);
         inP2P = marketBalances.scaledP2PSupplyBalance(user);
