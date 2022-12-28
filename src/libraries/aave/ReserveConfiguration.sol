@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: GNU AGPLv3
 pragma solidity ^0.8.0;
 
 import {DataTypes} from "./DataTypes.sol";
