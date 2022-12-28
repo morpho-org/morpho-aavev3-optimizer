@@ -15,27 +15,18 @@ library MarketLib {
         return market.underlying != address(0);
     }
 
-    function getIndexes(Types.Market storage market)
-        internal
-        view
-        returns (uint256 poolSupplyIndex, uint256 poolBorrowIndex, uint256 p2pSupplyIndex, uint256 p2pBorrowIndex)
-    {
-        poolSupplyIndex = uint256(market.indexes.poolSupplyIndex);
-        poolBorrowIndex = uint256(market.indexes.poolBorrowIndex);
-        p2pSupplyIndex = uint256(market.indexes.p2pSupplyIndex);
-        p2pBorrowIndex = uint256(market.indexes.p2pBorrowIndex);
+    function getIndexes(Types.Market storage market) internal view returns (Types.Indexes256 memory indexes) {
+        indexes.poolSupplyIndex = uint256(market.indexes.poolSupplyIndex);
+        indexes.poolBorrowIndex = uint256(market.indexes.poolBorrowIndex);
+        indexes.p2pSupplyIndex = uint256(market.indexes.p2pSupplyIndex);
+        indexes.p2pBorrowIndex = uint256(market.indexes.p2pBorrowIndex);
     }
 
-    function setIndexes(
-        Types.Market storage market,
-        uint256 poolSupplyIndex,
-        uint256 poolBorrowIndex,
-        uint256 p2pSupplyIndex,
-        uint256 p2pBorrowIndex
-    ) internal {
-        market.indexes.poolSupplyIndex = poolSupplyIndex.toUint128();
-        market.indexes.poolBorrowIndex = poolBorrowIndex.toUint128();
-        market.indexes.p2pSupplyIndex = p2pSupplyIndex.toUint128();
-        market.indexes.p2pBorrowIndex = p2pBorrowIndex.toUint128();
+    function setIndexes(Types.Market storage market, Types.Indexes256 memory indexes) internal {
+        market.indexes.poolSupplyIndex = indexes.poolSupplyIndex.toUint128();
+        market.indexes.poolBorrowIndex = indexes.poolBorrowIndex.toUint128();
+        market.indexes.p2pSupplyIndex = indexes.p2pSupplyIndex.toUint128();
+        market.indexes.p2pBorrowIndex = indexes.p2pBorrowIndex.toUint128();
+        market.lastUpdateTimestamp = block.timestamp.toUint32();
     }
 }

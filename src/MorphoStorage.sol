@@ -20,8 +20,8 @@ contract MorphoStorage {
 
     IPoolAddressesProvider internal _addressesProvider;
     IPool internal _pool;
-    // IEntryPositionsManager internal _entryPositionsManager;
-    // IExitPositionsManager internal _exitPositionsManager;
+    address internal _entryPositionsManager;
+    address internal _exitPositionsManager;
     // IInterestRatesManager internal _interestRatesManager;
     // IRewardsController internal _rewardsController;
     // IIncentivesVault internal _incentivesVault;

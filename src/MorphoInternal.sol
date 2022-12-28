@@ -60,8 +60,8 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param poolToken The market where to get the supply amount.
     /// @return The supply balance of the user (in underlying).
     function _getUserSupplyBalance(address poolToken, address user) internal view returns (uint256) {
-        (uint256 poolSupplyIndex,, uint256 p2pSupplyIndex,) = _computeIndexes(poolToken);
-        return _getUserSupplyBalanceFromIndexes(poolToken, user, poolSupplyIndex, p2pSupplyIndex);
+        Types.Indexes256 memory indexes = _computeIndexes(poolToken);
+        return _getUserSupplyBalanceFromIndexes(poolToken, user, indexes.poolSupplyIndex, indexes.p2pSupplyIndex);
     }
 
     function _getUserSupplyBalanceFromIndexes(
@@ -81,8 +81,8 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param poolToken The market where to get the borrow amount.
     /// @return The borrow balance of the user (in underlying).
     function _getUserBorrowBalance(address poolToken, address user) internal view returns (uint256) {
-        (, uint256 poolBorrowIndex,, uint256 p2pBorrowIndex) = _computeIndexes(poolToken);
-        return _getUserBorrowBalanceFromIndexes(poolToken, user, poolBorrowIndex, p2pBorrowIndex);
+        Types.Indexes256 memory indexes = _computeIndexes(poolToken);
+        return _getUserBorrowBalanceFromIndexes(poolToken, user, indexes.poolBorrowIndex, indexes.p2pBorrowIndex);
     }
 
     function _getUserBorrowBalanceFromIndexes(
@@ -97,12 +97,12 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Calculates the total value of the collateral, debt, and LTV/LT value depending on the calculation type.
-    /// @param user The user address.
     /// @param poolToken The pool token that is being borrowed or withdrawn.
+    /// @param user The user address.
     /// @param amountWithdrawn The amount that is being withdrawn.
     /// @param amountBorrowed The amount that is being borrowed.
     /// @return liquidityData The struct containing health factor, collateral, debt, ltv, liquidation threshold values.
-    function _liquidityData(address user, address poolToken, uint256 amountWithdrawn, uint256 amountBorrowed)
+    function _liquidityData(address poolToken, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
         internal
         view
         returns (Types.LiquidityData memory liquidityData)
@@ -113,7 +113,7 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _pool.getUserConfiguration(address(this));
 
         for (uint256 i; i < userCollaterals.length; ++i) {
-            (uint256 poolSupplyIndex,,,) = _computeIndexes(userCollaterals[i]);
+            Types.Indexes256 memory indexes = _computeIndexes(userCollaterals[i]);
             (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
                 _assetLiquidityData(_market[userCollaterals[i]].underlying, oracle, morphoPoolConfig);
             (uint256 collateralValue, uint256 maxDebtValue, uint256 liquidationThresholdValue) =
@@ -124,7 +124,7 @@ abstract contract MorphoInternal is MorphoStorage {
                 ltv,
                 liquidationThreshold,
                 tokenUnit,
-                poolSupplyIndex,
+                indexes.poolSupplyIndex,
                 poolToken == userCollaterals[i] ? amountWithdrawn : 0
             );
             liquidityData.collateral += collateralValue;
@@ -133,7 +133,7 @@ abstract contract MorphoInternal is MorphoStorage {
         }
 
         for (uint256 i; i < userBorrows.length; ++i) {
-            (, uint256 poolBorrowIndex,, uint256 p2pBorrowIndex) = _computeIndexes(userBorrows[i]);
+            Types.Indexes256 memory indexes = _computeIndexes(userBorrows[i]);
 
             (uint256 underlyingPrice,,, uint256 tokenUnit) =
                 _assetLiquidityData(_market[userBorrows[i]].underlying, oracle, morphoPoolConfig);
@@ -142,8 +142,8 @@ abstract contract MorphoInternal is MorphoStorage {
                 user,
                 underlyingPrice,
                 tokenUnit,
-                poolBorrowIndex,
-                p2pBorrowIndex,
+                indexes.poolBorrowIndex,
+                indexes.p2pBorrowIndex,
                 poolToken == userBorrows[i] ? amountBorrowed : 0
             );
         }
@@ -277,51 +277,34 @@ abstract contract MorphoInternal is MorphoStorage {
         emit Events.IsLiquidateBorrowPausedSet(poolToken, isPaused);
     }
 
-    function _updateIndexes(address poolToken) internal {
+    function _updateIndexes(address poolToken) internal returns (Types.Indexes256 memory indexes) {
         Types.Market storage market = _market[poolToken];
-        (uint256 poolSupplyIndex, uint256 poolBorrowIndex, uint256 p2pSupplyIndex, uint256 p2pBorrowIndex) =
-            _computeIndexes(poolToken);
+        indexes = _computeIndexes(poolToken);
 
-        market.setIndexes(poolSupplyIndex, poolBorrowIndex, p2pSupplyIndex, p2pBorrowIndex);
+        market.setIndexes(indexes);
     }
 
-    function _computeIndexes(address poolToken)
-        internal
-        view
-        returns (uint256 poolSupplyIndex, uint256 poolBorrowIndex, uint256 p2pSupplyIndex, uint256 p2pBorrowIndex)
-    {
+    function _computeIndexes(address poolToken) internal view returns (Types.Indexes256 memory indexes) {
         Types.Market storage market = _market[poolToken];
         if (block.timestamp == market.lastUpdateTimestamp) {
             return market.getIndexes();
         }
 
-        (poolSupplyIndex, poolBorrowIndex) = _pool.getCurrentPoolIndexes(market.underlying);
+        (indexes.poolSupplyIndex, indexes.poolBorrowIndex) = _pool.getCurrentPoolIndexes(market.underlying);
 
-        (p2pSupplyIndex, p2pBorrowIndex) = InterestRatesModel.computeP2PIndexes(
+        (indexes.p2pSupplyIndex, indexes.p2pBorrowIndex) = InterestRatesModel.computeP2PIndexes(
             Types.IRMParams({
                 lastPoolSupplyIndex: market.indexes.poolSupplyIndex,
                 lastPoolBorrowIndex: market.indexes.poolBorrowIndex,
                 lastP2PSupplyIndex: market.indexes.p2pSupplyIndex,
                 lastP2PBorrowIndex: market.indexes.p2pBorrowIndex,
-                poolSupplyIndex: poolSupplyIndex,
-                poolBorrowIndex: poolBorrowIndex,
+                poolSupplyIndex: indexes.poolSupplyIndex,
+                poolBorrowIndex: indexes.poolBorrowIndex,
                 reserveFactor: market.reserveFactor,
                 p2pIndexCursor: market.p2pIndexCursor,
                 deltas: market.deltas
             })
         );
-    }
-
-    function _borrowAllowed(address user, address poolToken, uint256 borrowedAmount) internal view returns (bool) {
-        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
-        // In response, Morpho mirrors this behavior.
-        address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
-        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
-            return false;
-        }
-
-        Types.LiquidityData memory values = _liquidityData(user, poolToken, 0, borrowedAmount);
-        return values.debt <= values.maxDebt;
     }
 
     function _getUserHealthFactor(address user, address poolToken, uint256 withdrawnAmount)
@@ -332,53 +315,10 @@ abstract contract MorphoInternal is MorphoStorage {
         // If the user is not borrowing any asset, return an infinite health factor.
         if (_userBorrows[user].length() == 0) return type(uint256).max;
 
-        Types.LiquidityData memory liquidityData = _liquidityData(user, poolToken, withdrawnAmount, 0);
+        Types.LiquidityData memory liquidityData = _liquidityData(poolToken, user, withdrawnAmount, 0);
 
         return liquidityData.debt > 0
             ? liquidityData.liquidationThresholdValue.wadDiv(liquidityData.debt)
             : type(uint256).max;
-    }
-
-    function _withdrawAllowed(address user, address poolToken, uint256 withdrawnAmount) internal view returns (bool) {
-        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
-        // For safety concerns and as a withdraw on Morpho can trigger a borrow on pool, Morpho prevents withdrawals in such circumstances.
-        address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
-        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
-            return false;
-        }
-
-        return _getUserHealthFactor(user, poolToken, withdrawnAmount) >= Constants.DEFAULT_LIQUIDATION_THRESHOLD;
-    }
-
-    function _liquidationAllowed(address user, bool isDeprecated)
-        internal
-        view
-        returns (bool liquidationAllowed, uint256 closeFactor)
-    {
-        if (isDeprecated) {
-            liquidationAllowed = true;
-            closeFactor = Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
-        } else {
-            uint256 healthFactor = _getUserHealthFactor(user, address(0), 0);
-            address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
-
-            if (priceOracleSentinel != address(0)) {
-                liquidationAllowed = (
-                    healthFactor < Constants.MIN_LIQUIDATION_THRESHOLD
-                        || (
-                            IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
-                                && healthFactor < Constants.DEFAULT_LIQUIDATION_THRESHOLD
-                        )
-                );
-            } else {
-                liquidationAllowed = healthFactor < Constants.DEFAULT_LIQUIDATION_THRESHOLD;
-            }
-
-            if (liquidationAllowed) {
-                closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
-                    ? Constants.DEFAULT_CLOSE_FACTOR
-                    : Constants.MAX_CLOSE_FACTOR;
-            }
-        }
     }
 }
