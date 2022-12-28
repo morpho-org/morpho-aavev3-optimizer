@@ -14,14 +14,6 @@ library Types {
 
     /// NESTED STRUCTS ///
 
-    struct UserMarkets {
-        bytes32 data;
-    }
-
-    struct BorrowMask {
-        bytes32 data;
-    }
-
     struct Delta {
         uint256 p2pSupplyDelta; // Difference between the stored peer-to-peer supply amount and the real peer-to-peer supply amount (in pool supply unit).
         uint256 p2pBorrowDelta; // Difference between the stored peer-to-peer borrow amount and the real peer-to-peer borrow amount (in pool borrow unit).
@@ -53,14 +45,12 @@ library Types {
     struct Market {
         // SLOT 0-1
         Indexes indexes;
-        // SLOT 2
-        BorrowMask borrowMask; // 256 bits
-        // SLOT 3-6
+        // SLOT 2-5
         Delta deltas; // 1024 bits
-        // SLOT 7
+        // SLOT 6
         address underlying; // 168 bits
         PauseStatuses pauseStatuses; // 64 bits
-        // SLOT 8
+        // SLOT 7
         address variableDebtToken; // 168 bits
         uint32 lastUpdateTimestamp; // 32 bits
         uint16 reserveFactor; // 16 bits
@@ -77,14 +67,6 @@ library Types {
     }
 
     /// STACK AND RETURN STRUCTS ///
-
-    struct AssetLiquidityData {
-        uint256 decimals; // The number of decimals of the underlying token.
-        uint256 tokenUnit; // The token unit considering its decimals.
-        uint256 liquidationThreshold; // The liquidation threshold applied on this token (in basis point).
-        uint256 ltv; // The LTV applied on this token (in basis point).
-        uint256 underlyingPrice; // The price of the token (In base currency in wad).
-    }
 
     struct LiquidityData {
         uint256 collateral; // The collateral value (In base currency in wad).
