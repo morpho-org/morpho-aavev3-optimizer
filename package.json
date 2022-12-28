@@ -1,5 +1,5 @@
 {
-  "name": "morpho-aave-v3",
+  "name": "morpho-v1.5",
   "version": "1.0.0",
   "description": "Core contracts of Morpho-AaveV3's protocol",
   "author": "Morpho Labs <security@morpho.xyz>",
@@ -26,19 +26,7 @@
     "postinstall": "husky install"
   },
   "devDependencies": {
-    "@commitlint/cli": "17.3.0",
-    "@commitlint/config-conventional": "^17.3.0",
-    "husky": "8.0.2",
-    "lint-staged": "^13.1.0",
-    "prettier": "^2.8.1"
+    "husky": "^8.0.2"
   },
-  "lint-staged": {
-    "*.sol": "forge fmt",
-    "*.json": "yarn prettier"
-  },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ]
-  }
+  "dependencies": {}
 }
