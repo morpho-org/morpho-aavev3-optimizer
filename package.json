@@ -1,32 +1,44 @@
 {
-  "name": "morpho-v1.5",
+  "name": "morpho-aave-v3",
   "version": "1.0.0",
-  "description": "Core contracts of Morpho's protocol v1.5",
+  "description": "Core contracts of Morpho-AaveV3's protocol",
   "author": "Morpho Labs <security@morpho.xyz>",
   "license": "AGPL-3.0-only",
-  "directories": {
-    "lib": "lib",
-    "test": "test"
+  "keywords": [
+    "defi",
+    "protocol",
+    "smart-contracts",
+    "aave-v3",
+    "morpho",
+    "lending"
+  ],
+  "bugs": {
+    "url": "https://github.com/morpho-dao/morpho-aave-v3/issues",
+    "email": "security@morpho.xyz"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/morpho-dao/morpho-aave-v3.git"
+  },
+  "homepage": "https://github.com/morpho-dao/morpho-aave-v3#readme",
   "scripts": {
     "test": "forge test",
     "postinstall": "husky install"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/morpho-dao/morpho-v1.5.git"
-  },
-  "keywords": [
-    "defi",
-    "protocol",
-    "smart-contracts"
-  ],
-  "bugs": {
-    "url": "https://github.com/morpho-dao/morpho-v1.5/issues"
-  },
-  "homepage": "https://github.com/morpho-dao/morpho-v1.5#readme",
   "devDependencies": {
-    "husky": "^8.0.2"
+    "@commitlint/cli": "17.3.0",
+    "@commitlint/config-conventional": "^17.3.0",
+    "husky": "8.0.2",
+    "lint-staged": "^13.1.0",
+    "prettier": "^2.8.1"
   },
-  "dependencies": {}
+  "lint-staged": {
+    "*.sol": "forge fmt",
+    "*.json": "yarn prettier"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  }
 }
