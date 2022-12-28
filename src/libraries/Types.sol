@@ -68,14 +68,6 @@ library Types {
 
     /// STACK AND RETURN STRUCTS ///
 
-    struct AssetLiquidityData {
-        uint256 decimals; // The number of decimals of the underlying token.
-        uint256 tokenUnit; // The token unit considering its decimals.
-        uint256 liquidationThreshold; // The liquidation threshold applied on this token (in basis point).
-        uint256 ltv; // The LTV applied on this token (in basis point).
-        uint256 underlyingPrice; // The price of the token (In base currency in wad).
-    }
-
     struct LiquidityData {
         uint256 collateral; // The collateral value (In base currency in wad).
         uint256 maxDebt; // The max debt value (In base currency in wad).
