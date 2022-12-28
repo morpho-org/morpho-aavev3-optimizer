@@ -2,7 +2,8 @@
   "name": "morpho-v1.5",
   "version": "1.0.0",
   "description": "Core contracts of Morpho's protocol v1.5",
-  "main": "index.js",
+  "author": "Morpho Labs <security@morpho.xyz>",
+  "license": "AGPL-3.0-only",
   "directories": {
     "lib": "lib",
     "test": "test"
@@ -20,8 +21,6 @@
     "protocol",
     "smart-contracts"
   ],
-  "author": "Morpho Labs",
-  "license": "AGPL-3.0-only",
   "bugs": {
     "url": "https://github.com/morpho-dao/morpho-v1.5/issues"
   },
