@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 
 import {IPool} from "./interfaces/aave/IPool.sol";
 
-import {MarketLib} from "./libraries/Libraries.sol";
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
@@ -11,12 +10,14 @@ import {Constants} from "./libraries/Constants.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {PoolInteractions} from "./libraries/PoolInteractions.sol";
+
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
-import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+
+import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 
 contract ExitPositionsManager is PositionsManagerInternal {
     using SafeTransferLib for ERC20;

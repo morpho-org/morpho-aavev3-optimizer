@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {IPool, IPoolAddressesProvider} from "./interfaces/Interfaces.sol";
+import {IPool, IPoolAddressesProvider} from "./interfaces/aave/IPool.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Constants} from "./libraries/Constants.sol";
+
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 contract MorphoStorage {

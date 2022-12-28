@@ -1,24 +1,27 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
+import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
+
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {Constants} from "./libraries/Constants.sol";
+
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
-import {MorphoInternal} from "./MorphoInternal.sol";
-import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
-
 import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
+
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+
+import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MorphoSetters is MorphoInternal, Initializable, OwnableUpgradeable {
     using MarketLib for Types.Market;
