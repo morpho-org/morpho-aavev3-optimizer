@@ -9,8 +9,10 @@ import {Test} from "@forge-std/Test.sol";
 
 contract TestGas is Test, MorphoInternal {
     using MarketLib for Types.Market;
-    using EnumerableSet for EnumerableSet.AddressSet;
+    using MarketMaskLib for Types.UserMarkets;
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+
+    bytes32 public constant ONE = 0x0000000000000000000000000000000000000000000000000000000000000001;
 
     address constant aave = 0x63a72806098Bd3D9520cC43356dD78afe5D386D9;
     address constant dai = 0xd586E7F844cEa2F87f50152665BCbc2C279D8d70;
@@ -71,27 +73,26 @@ contract TestGas is Test, MorphoInternal {
         market.variableDebtToken = reserveData.variableDebtTokenAddress;
         market.reserveFactor = 0;
         market.p2pIndexCursor = 5000;
+        market.borrowMask = Types.BorrowMask(ONE << (_marketsCreated.length << 1));
 
         _marketsCreated.push(poolToken);
     }
 
     function supply(address poolToken, uint256 onPool, uint256 inP2P) internal {
-        EnumerableSet.AddressSet storage set = _userCollaterals[user];
-        set.add(poolToken);
+        _userMarkets[user] = _userMarkets[user].setSupplying(_market[poolToken].borrowMask, true);
 
         _updateSupplierInDS(poolToken, user, onPool, inP2P);
+        _marketBalances[poolToken].collateral[user] = onPool + inP2P; // don't care about the true value & indexes
     }
 
     function collat(address poolToken, uint256 amount) internal {
-        EnumerableSet.AddressSet storage set = _userCollaterals[user];
-        set.add(poolToken);
+        _userMarkets[user] = _userMarkets[user].setSupplying(_market[poolToken].borrowMask, true);
 
         _marketBalances[poolToken].collateral[user] = amount;
     }
 
     function borrow(address poolToken, uint256 onPool, uint256 inP2P) internal {
-        EnumerableSet.AddressSet storage set = _userBorrows[user];
-        set.add(poolToken);
+        _userMarkets[user] = _userMarkets[user].setBorrowing(_market[poolToken].borrowMask, true);
 
         _updateBorrowerInDS(poolToken, user, onPool, inP2P);
     }
