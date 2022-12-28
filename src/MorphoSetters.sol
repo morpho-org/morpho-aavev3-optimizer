@@ -64,6 +64,7 @@ abstract contract MorphoSetters is MorphoInternal, Initializable, OwnableUpgrade
         Types.Indexes256 memory indexes;
         indexes.p2pSupplyIndex = WadRayMath.RAY;
         indexes.p2pBorrowIndex = WadRayMath.RAY;
+        // TODO: Fix for IB tokens
         indexes.poolSupplyIndex = _pool.getReserveNormalizedIncome(underlyingToken);
         indexes.poolBorrowIndex = _pool.getReserveNormalizedVariableDebt(underlyingToken);
 
