@@ -9,8 +9,10 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {Constants} from "./libraries/Constants.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
+import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {PoolInteractions} from "./libraries/PoolInteractions.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
@@ -20,6 +22,8 @@ contract ExitPositionsManager is PositionsManagerInternal {
     using SafeTransferLib for ERC20;
     using PoolInteractions for IPool;
     using PercentageMath for uint256;
+    using MarketBalanceLib for Types.MarketBalances;
+    using WadRayMath for uint256;
 
     function withdrawLogic(address poolToken, uint256 amount, address supplier, address receiver)
         external
@@ -27,7 +31,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
     {
         Types.Indexes256 memory indexes = _updateIndexes(poolToken);
         amount = Math.min(_getUserSupplyBalance(poolToken, supplier), amount);
-        _validateWithdraw(poolToken, supplier, receiver, amount);
+        _validateWithdraw(poolToken, receiver, amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
             _executeWithdraw(poolToken, supplier, amount, 0, indexes); // TODO: Replace max loops once default max is implemented
@@ -43,12 +47,26 @@ contract ExitPositionsManager is PositionsManagerInternal {
         return amount;
     }
 
-    // TODO: Implement
     function withdrawCollateralLogic(address poolToken, uint256 amount, address supplier, address receiver)
         external
         returns (uint256 withdrawn)
     {
-        return 0;
+        Types.Indexes256 memory indexes = _updateIndexes(poolToken);
+        amount = Math.min(
+            _marketBalances[poolToken].scaledCollateralBalance(supplier).rayMul(indexes.poolSupplyIndex), amount
+        );
+        _validateWithdrawCollateral(poolToken, supplier, receiver, amount);
+
+        _marketBalances[poolToken].collateral[supplier] -= amount.rayDiv(indexes.poolSupplyIndex);
+
+        address underlying = _market[poolToken].underlying;
+        _pool.withdrawFromPool(underlying, poolToken, amount);
+        ERC20(underlying).safeTransfer(receiver, amount);
+
+        emit Events.CollateralWithdrawn(
+            supplier, receiver, poolToken, amount, _marketBalances[poolToken].collateral[supplier]
+            );
+        return amount;
     }
 
     function repayLogic(address poolToken, uint256 amount, address repayer, address onBehalf)

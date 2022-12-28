@@ -54,9 +54,13 @@ contract EntryPositionsManager is PositionsManagerInternal {
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
 
+        _marketBalances[poolToken].collateral[onBehalf] += amount.rayDiv(indexes.poolSupplyIndex);
+
         _pool.supplyToPool(underlying, amount);
 
-        _marketBalances[poolToken].collateral[onBehalf] += amount.rayDiv(indexes.poolSupplyIndex);
+        emit Events.CollateralSupplied(
+            from, onBehalf, poolToken, amount, _marketBalances[poolToken].collateral[onBehalf]
+            );
         return amount;
     }
 

@@ -24,8 +24,10 @@ library Types {
     struct PauseStatuses {
         bool isP2PDisabled;
         bool isSupplyPaused;
+        bool isSupplyCollateralPaused;
         bool isBorrowPaused;
         bool isWithdrawPaused;
+        bool isWithdrawCollateralPaused;
         bool isRepayPaused;
         bool isLiquidateCollateralPaused;
         bool isLiquidateBorrowPaused;
@@ -48,10 +50,10 @@ library Types {
         // SLOT 2-5
         Delta deltas; // 1024 bits
         // SLOT 6
-        address underlying; // 168 bits
+        address underlying; // 160 bits
         PauseStatuses pauseStatuses; // 64 bits
         // SLOT 7
-        address variableDebtToken; // 168 bits
+        address variableDebtToken; // 160 bits
         uint32 lastUpdateTimestamp; // 32 bits
         uint16 reserveFactor; // 16 bits
         uint16 p2pIndexCursor; // 16 bits

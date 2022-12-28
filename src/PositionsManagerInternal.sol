@@ -283,7 +283,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (inP2P == 0 && onPool == 0) _userBorrows[user].remove(poolToken);
     }
 
-    function _validateWithdraw(address poolToken, address supplier, address receiver, uint256 amount) internal view {
+    function _validateWithdraw(address poolToken, address receiver, uint256 amount) internal view {
         Types.Market storage market = _market[poolToken];
         if (amount == 0) revert Errors.AmountIsZero();
         if (receiver == address(0)) revert Errors.AddressIsZero();
@@ -295,6 +295,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
             revert Errors.PriceOracleSentinelBorrowPaused();
         }
+    }
+
+    function _validateWithdrawCollateral(address poolToken, address supplier, address receiver, uint256 amount)
+        internal
+        view
+    {
+        Types.Market storage market = _market[poolToken];
+        if (amount == 0) revert Errors.AmountIsZero();
+        if (receiver == address(0)) revert Errors.AddressIsZero();
+        if (!market.isCreated()) revert Errors.MarketNotCreated();
+        if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
         if (_getUserHealthFactor(supplier, poolToken, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
             revert Errors.WithdrawUnauthorized();
         }
