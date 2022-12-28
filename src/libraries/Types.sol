@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
@@ -68,7 +68,7 @@ library Types {
         mapping(address => uint256) collateral; // in scaled unit
     }
 
-    struct MaxLoops {
+    struct MaxLoopsForMatching {
         uint64 supply;
         uint64 borrow;
         uint64 repay;

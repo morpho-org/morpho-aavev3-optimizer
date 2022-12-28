@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
@@ -11,7 +11,6 @@ import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
-import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
@@ -48,7 +47,7 @@ abstract contract MorphoSetters is MorphoInternal, Initializable, OwnableUpgrade
 
     function createMarket(address underlyingToken, uint16 reserveFactor, uint16 p2pIndexCursor) external onlyOwner {
         if (underlyingToken == address(0)) revert Errors.AddressIsZero();
-        if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR || reserveFactor > PercentageMath.PERCENTAGE_FACTOR) {
+        if (p2pIndexCursor > Constants.MAX_BASIS_POINTS || reserveFactor > Constants.MAX_BASIS_POINTS) {
             revert Errors.ExceedsMaxBasisPoints();
         }
 
@@ -113,7 +112,7 @@ abstract contract MorphoSetters is MorphoInternal, Initializable, OwnableUpgrade
         onlyOwner
         isMarketCreated(poolToken)
     {
-        if (newReserveFactor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
+        if (newReserveFactor > Constants.MAX_BASIS_POINTS) revert Errors.ExceedsMaxBasisPoints();
         _updateIndexes(poolToken);
 
         _market[poolToken].reserveFactor = newReserveFactor;
@@ -125,7 +124,7 @@ abstract contract MorphoSetters is MorphoInternal, Initializable, OwnableUpgrade
         onlyOwner
         isMarketCreated(poolToken)
     {
-        if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
+        if (p2pIndexCursor > Constants.MAX_BASIS_POINTS) revert Errors.ExceedsMaxBasisPoints();
         _updateIndexes(poolToken);
 
         _market[poolToken].p2pIndexCursor = p2pIndexCursor;

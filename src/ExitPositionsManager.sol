@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
 import {IPool} from "./interfaces/aave/IPool.sol";
@@ -64,7 +64,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         ERC20(underlying).safeTransfer(receiver, amount);
 
         emit Events.CollateralWithdrawn(
-            supplier, receiver, poolToken, amount, _marketBalances[poolToken].collateral[supplier]
+            supplier, receiver, poolToken, amount, _marketBalances[poolToken].collateral[supplier], 0
             );
         return amount;
     }

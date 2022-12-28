@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
 import {IPool, IPoolAddressesProvider} from "./interfaces/Interfaces.sol";
@@ -17,7 +17,7 @@ contract MorphoStorage {
     mapping(address => EnumerableSet.AddressSet) internal _userBorrows; // The markets entered by a user.
 
     uint256 internal _maxSortedUsers; // The max number of users to sort in the data structure.
-    Types.MaxLoops internal _defaultMaxLoops;
+    Types.MaxLoopsForMatching internal _defaultMaxLoopsForMatching;
 
     IPoolAddressesProvider internal _addressesProvider;
     IPool internal _pool;

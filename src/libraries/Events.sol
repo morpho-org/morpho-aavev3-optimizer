@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
 library Events {
@@ -8,11 +8,8 @@ library Events {
         address indexed poolToken,
         uint256 amount,
         uint256 balanceOnPool,
-        uint256 balanceInP2P
-    );
-
-    event CollateralSupplied(
-        address indexed from, address indexed onBehalf, address indexed poolToken, uint256 amount, uint256 balance
+        uint256 balanceInP2P,
+        bool asCollateral
     );
 
     event Borrowed(
@@ -25,11 +22,8 @@ library Events {
         address indexed poolToken,
         uint256 amount,
         uint256 balanceOnPool,
-        uint256 balanceInP2P
-    );
-
-    event CollateralWithdrawn(
-        address indexed supplier, address indexed receiver, address indexed poolToken, uint256 amount, uint256 balance
+        uint256 balanceInP2P,
+        bool asCollateral
     );
 
     event Repaid(
@@ -76,7 +70,7 @@ library Events {
 
     event MaxSortedUsersSet(uint256 maxSortedUsers);
 
-    event DefaultMaxLoopsSet(uint64 supply, uint64 borrow, uint64 repay, uint64 withdraw);
+    event DefaultMaxLoopsForMatchingSet(uint64 supply, uint64 borrow, uint64 repay, uint64 withdraw);
 
     event EntryPositionsManagerSet(address entryPositionsManager);
 
