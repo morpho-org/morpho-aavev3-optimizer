@@ -71,7 +71,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Promote pool borrowers.
         if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolBorrowers.getHead() != address(0)) {
-            (uint256 matched,) = _matchBorrowers(poolToken, amount, maxLoops); // In underlying.
+            (uint256 matched,) = _promoteBorrowers(poolToken, amount, maxLoops); // In underlying.
 
             toRepay += matched;
             amount -= matched;
@@ -149,7 +149,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             amount > 0 && !market.pauseStatuses.isP2PDisabled
                 && _marketBalances[poolToken].poolSuppliers.getHead() != address(0)
         ) {
-            (uint256 matched,) = _matchSuppliers(poolToken, amount, maxLoops); // In underlying.
+            (uint256 matched,) = _promoteSuppliers(poolToken, amount, maxLoops); // In underlying.
 
             toWithdraw += matched;
             amount -= matched;
@@ -253,7 +253,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Promote pool borrowers.
         if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolBorrowers.getHead() != address(0)) {
-            (uint256 matched, uint256 loopsDone) = _matchBorrowers(poolToken, amount, maxLoops);
+            (uint256 matched, uint256 loopsDone) = _promoteBorrowers(poolToken, amount, maxLoops);
             maxLoops = maxLoops.zeroFloorSub(loopsDone);
 
             amount -= matched;
@@ -264,7 +264,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Demote peer-to-peer suppliers.
         if (amount > 0) {
-            uint256 unmatched = _unmatchSuppliers(poolToken, amount, maxLoops);
+            uint256 unmatched = _demoteSuppliers(poolToken, amount, maxLoops);
 
             // Increase the peer-to-peer supply delta.
             if (unmatched < amount) {
@@ -363,7 +363,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Promote pool suppliers.
         if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolSuppliers.getHead() != address(0)) {
-            (uint256 matched, uint256 loopsDone) = _matchSuppliers(poolToken, amount, maxLoops);
+            (uint256 matched, uint256 loopsDone) = _promoteSuppliers(poolToken, amount, maxLoops);
             if (maxLoops <= loopsDone) {
                 maxLoops = 0;
             } else {
@@ -378,7 +378,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Demote peer-to-peer borrowers.
         if (amount > 0) {
-            uint256 unmatched = _unmatchBorrowers(poolToken, amount, maxLoops);
+            uint256 unmatched = _demoteBorrowers(poolToken, amount, maxLoops);
 
             // Increase the peer-to-peer borrow delta.
             if (unmatched < amount) {
