@@ -32,7 +32,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    function _validateSupply(address underlying, address user, uint256 amount) internal view {
+    function _validateSupply(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _market[underlying];
         if (user == address(0)) revert Errors.AddressIsZero();
         if (amount == 0) revert Errors.AmountIsZero();
@@ -43,8 +43,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
     function _executeSupply(
         address underlying,
-        address user,
         uint256 amount,
+        address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) {
@@ -97,7 +97,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateSupplierInDS(underlying, user, onPool, inP2P);
     }
 
-    function _validateBorrow(address underlying, address user, uint256 amount) internal view {
+    function _validateBorrow(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _market[underlying];
 
         if (amount == 0) revert Errors.AmountIsZero();
@@ -119,8 +119,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
     function _executeBorrow(
         address underlying,
-        address user,
         uint256 amount,
+        address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) {
@@ -183,8 +183,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
     function _executeRepay(
         address underlying,
-        address user,
         uint256 amount,
+        address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) {
@@ -283,7 +283,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (inP2P == 0 && onPool == 0) _userBorrows[user].remove(underlying);
     }
 
-    function _validateWithdraw(address underlying, address receiver, uint256 amount) internal view {
+    function _validateWithdraw(address underlying, uint256 amount, address receiver) internal view {
         Types.Market storage market = _market[underlying];
         if (amount == 0) revert Errors.AmountIsZero();
         if (receiver == address(0)) revert Errors.AddressIsZero();
@@ -297,7 +297,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
     }
 
-    function _validateWithdrawCollateral(address underlying, address supplier, address receiver, uint256 amount)
+    function _validateWithdrawCollateral(address underlying, uint256 amount, address supplier, address receiver)
         internal
         view
     {
@@ -306,15 +306,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (receiver == address(0)) revert Errors.AddressIsZero();
         if (!market.isCreated()) revert Errors.MarketNotCreated();
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
-        if (_getUserHealthFactor(supplier, underlying, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+        if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
             revert Errors.WithdrawUnauthorized();
         }
     }
 
     function _executeWithdraw(
         address underlying,
-        address user,
         uint256 amount,
+        address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) {
@@ -422,7 +422,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (borrowMarket.pauseStatuses.isDeprecated) {
             return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
         } else {
-            uint256 healthFactor = _getUserHealthFactor(borrower, address(0), 0);
+            uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
             address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
 
             if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
@@ -445,8 +445,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _calculateAmountToSeize(
         address underlyingBorrowed,
         address underlyingCollateral,
-        address borrower,
-        uint256 maxToLiquidate
+        uint256 maxToLiquidate,
+        address borrower
     ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
         amountToLiquidate = maxToLiquidate;
         (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =

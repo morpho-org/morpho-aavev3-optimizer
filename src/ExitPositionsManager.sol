@@ -31,10 +31,10 @@ contract ExitPositionsManager is PositionsManagerInternal {
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserSupplyBalance(underlying, supplier), amount);
-        _validateWithdraw(underlying, receiver, amount);
+        _validateWithdraw(underlying, amount, receiver);
 
         (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
-            _executeWithdraw(underlying, supplier, amount, 0, indexes); // TODO: Replace max loops once default max is implemented
+            _executeWithdraw(underlying, amount, supplier, 0, indexes); // TODO: Replace max loops once default max is implemented
 
         if (toWithdraw > 0) {
             _pool.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
@@ -54,7 +54,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         amount = Math.min(
             _marketBalances[underlying].scaledCollateralBalance(supplier).rayMul(indexes.poolSupplyIndex), amount
         );
-        _validateWithdrawCollateral(underlying, supplier, receiver, amount);
+        _validateWithdrawCollateral(underlying, amount, supplier, receiver);
 
         _marketBalances[underlying].collateral[supplier] -= amount.rayDiv(indexes.poolSupplyIndex);
 
@@ -79,7 +79,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         underlyingToken.safeTransferFrom(repayer, address(this), amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
-            _executeRepay(underlying, onBehalf, amount, 0, indexes); // TODO: Update max loops
+            _executeRepay(underlying, amount, onBehalf, 0, indexes); // TODO: Update max loops
 
         if (toRepay > 0) _pool.repayToPool(underlying, toRepay);
         if (toSupply > 0) _pool.supplyToPool(underlying, toSupply);
@@ -119,14 +119,14 @@ contract ExitPositionsManager is PositionsManagerInternal {
         vars.amountToSeize;
 
         (vars.amountToLiquidate, vars.amountToSeize) =
-            _calculateAmountToSeize(underlyingBorrowed, underlyingCollateral, borrower, vars.amountToLiquidate);
+            _calculateAmountToSeize(underlyingBorrowed, underlyingCollateral, vars.amountToLiquidate, borrower);
 
         ERC20(underlyingBorrowed).safeTransferFrom(liquidator, address(this), vars.amountToLiquidate);
 
         (,, vars.toSupply, vars.toRepay) =
-            _executeRepay(underlyingBorrowed, borrower, vars.amountToLiquidate, 0, borrowIndexes); // TODO: Update max loops
+            _executeRepay(underlyingBorrowed, vars.amountToLiquidate, borrower, 0, borrowIndexes); // TODO: Update max loops
         (,, vars.toBorrow, vars.toWithdraw) =
-            _executeWithdraw(underlyingCollateral, borrower, vars.amountToSeize, 0, collateralIndexes); // TODO: Update max loops
+            _executeWithdraw(underlyingCollateral, vars.amountToSeize, borrower, 0, collateralIndexes); // TODO: Update max loops
 
         _pool.supplyToPool(underlyingBorrowed, vars.toSupply);
         _pool.repayToPool(underlyingBorrowed, vars.toRepay);

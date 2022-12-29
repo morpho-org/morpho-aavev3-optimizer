@@ -307,7 +307,7 @@ abstract contract MorphoInternal is MorphoStorage {
         );
     }
 
-    function _getUserHealthFactor(address user, address underlying, uint256 withdrawnAmount)
+    function _getUserHealthFactor(address underlying, address user, uint256 withdrawnAmount)
         internal
         view
         returns (uint256)
