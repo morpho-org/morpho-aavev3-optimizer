@@ -165,10 +165,10 @@ abstract contract MorphoInternal is MorphoStorage {
         );
 
         // Calculate LTV for borrow.
-        maxDebt += collateral.percentMul(ltv);
+        maxDebt = collateral.percentMul(ltv);
 
         // Update LT variable for withdraw.
-        liquidationThresholdValue += collateral.percentMul(liquidationThreshold);
+        liquidationThresholdValue = collateral.percentMul(liquidationThreshold);
     }
 
     function _liquidityDataDebt(
