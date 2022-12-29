@@ -12,16 +12,16 @@ abstract contract MatchingEngine is MorphoInternal {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using WadRayMath for uint256;
 
-    function _promoteSuppliers(address poolToken, uint256 amount, uint256 maxLoops)
+    function _promoteSuppliers(address underlying, uint256 amount, uint256 maxLoops)
         internal
         returns (uint256 promoted, uint256 loopsDone)
     {
-        Types.Market storage market = _market[poolToken];
+        Types.Market storage market = _market[underlying];
         return _promoteOrDemote(
-            _marketBalances[poolToken].poolSuppliers,
-            _marketBalances[poolToken].p2pSuppliers,
+            _marketBalances[underlying].poolSuppliers,
+            _marketBalances[underlying].p2pSuppliers,
             Types.PromoteVars({
-                poolToken: poolToken,
+                underlying: underlying,
                 poolIndex: market.indexes.poolSupplyIndex,
                 p2pIndex: market.indexes.p2pSupplyIndex,
                 amount: amount,
@@ -34,16 +34,16 @@ abstract contract MatchingEngine is MorphoInternal {
         );
     }
 
-    function _promoteBorrowers(address poolToken, uint256 amount, uint256 maxLoops)
+    function _promoteBorrowers(address underlying, uint256 amount, uint256 maxLoops)
         internal
         returns (uint256 promoted, uint256 loopsDone)
     {
-        Types.Market storage market = _market[poolToken];
+        Types.Market storage market = _market[underlying];
         return _promoteOrDemote(
-            _marketBalances[poolToken].poolBorrowers,
-            _marketBalances[poolToken].p2pBorrowers,
+            _marketBalances[underlying].poolBorrowers,
+            _marketBalances[underlying].p2pBorrowers,
             Types.PromoteVars({
-                poolToken: poolToken,
+                underlying: underlying,
                 poolIndex: market.indexes.poolBorrowIndex,
                 p2pIndex: market.indexes.p2pBorrowIndex,
                 amount: amount,
@@ -56,13 +56,16 @@ abstract contract MatchingEngine is MorphoInternal {
         );
     }
 
-    function _demoteSuppliers(address poolToken, uint256 amount, uint256 maxLoops) internal returns (uint256 demoted) {
-        Types.Market storage market = _market[poolToken];
+    function _demoteSuppliers(address underlying, uint256 amount, uint256 maxLoops)
+        internal
+        returns (uint256 demoted)
+    {
+        Types.Market storage market = _market[underlying];
         (demoted,) = _promoteOrDemote(
-            _marketBalances[poolToken].poolSuppliers,
-            _marketBalances[poolToken].p2pSuppliers,
+            _marketBalances[underlying].poolSuppliers,
+            _marketBalances[underlying].p2pSuppliers,
             Types.PromoteVars({
-                poolToken: poolToken,
+                underlying: underlying,
                 poolIndex: market.indexes.poolSupplyIndex,
                 p2pIndex: market.indexes.p2pSupplyIndex,
                 amount: amount,
@@ -75,13 +78,16 @@ abstract contract MatchingEngine is MorphoInternal {
         );
     }
 
-    function _demoteBorrowers(address poolToken, uint256 amount, uint256 maxLoops) internal returns (uint256 demoted) {
-        Types.Market storage market = _market[poolToken];
+    function _demoteBorrowers(address underlying, uint256 amount, uint256 maxLoops)
+        internal
+        returns (uint256 demoted)
+    {
+        Types.Market storage market = _market[underlying];
         (demoted,) = _promoteOrDemote(
-            _marketBalances[poolToken].poolBorrowers,
-            _marketBalances[poolToken].p2pBorrowers,
+            _marketBalances[underlying].poolBorrowers,
+            _marketBalances[underlying].p2pBorrowers,
             Types.PromoteVars({
-                poolToken: poolToken,
+                underlying: underlying,
                 poolIndex: market.indexes.poolBorrowIndex,
                 p2pIndex: market.indexes.p2pBorrowIndex,
                 amount: amount,
@@ -119,8 +125,8 @@ abstract contract MatchingEngine is MorphoInternal {
                 remaining
             );
 
-            vars.updateDS(vars.poolToken, firstUser, onPool, inP2P);
-            emit Events.PositionUpdated(vars.borrow, firstUser, vars.poolToken, onPool, inP2P);
+            vars.updateDS(vars.underlying, firstUser, onPool, inP2P);
+            emit Events.PositionUpdated(vars.borrow, firstUser, vars.underlying, onPool, inP2P);
         }
 
         // Safe unchecked because vars.amount >= remaining.

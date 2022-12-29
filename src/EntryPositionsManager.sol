@@ -22,66 +22,63 @@ contract EntryPositionsManager is PositionsManagerInternal {
     using SafeTransferLib for ERC20;
     using WadRayMath for uint256;
 
-    function supplyLogic(address poolToken, uint256 amount, address from, address onBehalf, uint256 maxLoops)
+    function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)
         external
         returns (uint256 supplied)
     {
-        address underlying = _market[poolToken].underlying;
-        Types.Indexes256 memory indexes = _updateIndexes(poolToken);
+        Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        _validateSupply(poolToken, onBehalf, amount);
+        _validateSupply(underlying, onBehalf, amount);
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) =
-            _executeSupply(poolToken, onBehalf, amount, maxLoops, indexes);
+            _executeSupply(underlying, onBehalf, amount, maxLoops, indexes);
 
         if (toRepay > 0) _pool.repayToPool(underlying, toRepay);
         if (toSupply > 0) _pool.supplyToPool(underlying, toSupply);
 
-        emit Events.Supplied(from, onBehalf, poolToken, amount, onPool, inP2P);
+        emit Events.Supplied(from, onBehalf, underlying, amount, onPool, inP2P);
         return amount;
     }
 
-    function supplyCollateralLogic(address poolToken, uint256 amount, address from, address onBehalf)
+    function supplyCollateralLogic(address underlying, uint256 amount, address from, address onBehalf)
         external
         returns (uint256 supplied)
     {
-        address underlying = _market[poolToken].underlying;
-        Types.Indexes256 memory indexes = _updateIndexes(poolToken);
+        Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        _validateSupply(poolToken, onBehalf, amount);
+        _validateSupply(underlying, onBehalf, amount);
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
 
-        _marketBalances[poolToken].collateral[onBehalf] += amount.rayDiv(indexes.poolSupplyIndex);
+        _marketBalances[underlying].collateral[onBehalf] += amount.rayDiv(indexes.poolSupplyIndex);
 
         _pool.supplyToPool(underlying, amount);
 
         emit Events.CollateralSupplied(
-            from, onBehalf, poolToken, amount, _marketBalances[poolToken].collateral[onBehalf]
+            from, onBehalf, underlying, amount, _marketBalances[underlying].collateral[onBehalf]
             );
         return amount;
     }
 
-    function borrowLogic(address poolToken, uint256 amount, address borrower, address receiver, uint256 maxLoops)
+    function borrowLogic(address underlying, uint256 amount, address borrower, address receiver, uint256 maxLoops)
         external
         returns (uint256 borrowed)
     {
-        Types.Indexes256 memory indexes = _updateIndexes(poolToken);
-        _validateBorrow(poolToken, borrower, amount);
+        Types.Indexes256 memory indexes = _updateIndexes(underlying);
+        _validateBorrow(underlying, borrower, amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
-            _executeBorrow(poolToken, borrower, amount, maxLoops, indexes);
+            _executeBorrow(underlying, borrower, amount, maxLoops, indexes);
 
-        address underlying = _market[poolToken].underlying;
         if (toBorrow > 0) _pool.borrowFromPool(underlying, toBorrow);
         if (toWithdraw > 0) {
-            _pool.withdrawFromPool(underlying, poolToken, toWithdraw);
+            _pool.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
         }
         ERC20(underlying).safeTransfer(receiver, amount);
 
-        emit Events.Borrowed(borrower, poolToken, amount, onPool, inP2P);
+        emit Events.Borrowed(borrower, underlying, amount, onPool, inP2P);
         return amount;
     }
 }

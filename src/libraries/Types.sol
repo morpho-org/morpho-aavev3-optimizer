@@ -57,6 +57,8 @@ library Types {
         uint32 lastUpdateTimestamp; // 32 bits
         uint16 reserveFactor; // 16 bits
         uint16 p2pIndexCursor; // 16 bits
+        // SLOT 8
+        address aToken;
     }
 
     // Contains storage-only dynamic arrays and mappings.
@@ -85,7 +87,7 @@ library Types {
     }
 
     struct PromoteVars {
-        address poolToken;
+        address underlying;
         uint256 poolIndex;
         uint256 p2pIndex;
         uint256 amount;
