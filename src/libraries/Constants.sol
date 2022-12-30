@@ -16,4 +16,7 @@ library Constants {
     uint256 internal constant MAX_NB_MARKETS = 128;
     bytes32 internal constant BORROWING_MASK = 0x5555555555555555555555555555555555555555555555555555555555555555;
     bytes32 internal constant ONE = 0x0000000000000000000000000000000000000000000000000000000000000001;
+
+    bytes32 internal constant FORWARD_REQUEST_TYPEHASH =
+        keccak256("ForwardRequest(address from,address to,uint256 value,uint256 gas,uint256 nonce,bytes data)");
 }

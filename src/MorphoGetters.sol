@@ -62,6 +62,10 @@ abstract contract MorphoGetters is MorphoInternal {
         return _decodeId(id);
     }
 
+    function nonces(address user) external view returns (uint256) {
+        return _nonces[user];
+    }
+
     /// ERC1155 ///
 
     function balanceOf(address user, uint256 id) external view returns (uint256) {

@@ -24,6 +24,7 @@ import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {ECDSAUpgradeable} from "@openzeppelin-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
@@ -39,6 +40,7 @@ abstract contract MorphoInternal is MorphoStorage {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using PoolInteractions for IPool;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using ECDSAUpgradeable for bytes32;
 
     using SafeCast for uint256;
     using WadRayMath for uint256;
@@ -323,5 +325,32 @@ abstract contract MorphoInternal is MorphoStorage {
         return liquidityData.debt > 0
             ? liquidityData.liquidationThresholdValue.wadDiv(liquidityData.debt)
             : type(uint256).max;
+    }
+
+    function _msgSender() internal view virtual override returns (address sender) {
+        if (msg.sender == address(this)) {
+            assembly {
+                sender := shr(96, calldataload(sub(calldatasize(), 20)))
+            }
+        } else {
+            return msg.sender;
+        }
+    }
+
+    function _verify(Types.ForwardRequest calldata req, bytes calldata signature) internal view returns (bool) {
+        address signer = _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    Constants.FORWARD_REQUEST_TYPEHASH,
+                    req.from,
+                    req.to,
+                    req.value,
+                    req.gas,
+                    req.nonce,
+                    keccak256(req.data)
+                )
+            )
+        ).recover(signature);
+        return _nonces[req.from] == req.nonce && signer == req.from;
     }
 }

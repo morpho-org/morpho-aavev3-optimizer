@@ -38,6 +38,7 @@ abstract contract MorphoSetters is MorphoInternal {
         uint256 newMaxSortedUsers
     ) external initializer {
         if (newMaxSortedUsers == 0) revert Errors.MaxSortedUsersCannotBeZero();
+        __EIP712_init_unchained("name", "version"); // TODO: Use unique name and version
         _transferOwnership(msg.sender);
         _entryPositionsManager = newEntryPositionsManager;
         _exitPositionsManager = newExitPositionsManager;

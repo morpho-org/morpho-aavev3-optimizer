@@ -10,7 +10,9 @@ import {Constants} from "./libraries/Constants.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract MorphoStorage is Initializable, OwnableUpgradeable {
+import {EIP712Upgradeable} from "@openzeppelin-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+
+abstract contract MorphoStorage is Initializable, OwnableUpgradeable, EIP712Upgradeable {
     /// STORAGE ///
 
     address[] internal _marketsCreated; // Keeps track of the created markets.
@@ -18,6 +20,7 @@ contract MorphoStorage is Initializable, OwnableUpgradeable {
     mapping(address => Types.MarketBalances) internal _marketBalances;
     mapping(address => EnumerableSet.AddressSet) internal _userCollaterals; // The markets entered by a user.
     mapping(address => EnumerableSet.AddressSet) internal _userBorrows; // The markets entered by a user.
+    mapping(address => uint256) internal _nonces;
 
     uint256 internal _maxSortedUsers; // The max number of users to sort in the data structure.
     Types.MaxLoops internal _defaultMaxLoops;

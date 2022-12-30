@@ -124,4 +124,13 @@ library Types {
         uint256 p2pSupplyIndex;
         uint256 p2pBorrowIndex;
     }
+
+    struct ForwardRequest {
+        address from;
+        address to;
+        uint256 value;
+        uint256 gas;
+        uint256 nonce;
+        bytes data;
+    }
 }
