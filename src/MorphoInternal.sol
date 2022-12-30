@@ -412,7 +412,7 @@ abstract contract MorphoInternal is MorphoStorage {
             } catch Error(string memory reason) {
                 revert(reason);
             } catch {
-                revert Errors.TransferCallbackNonImplemented();
+                revert Errors.TransferCallbackNotImplemented();
             }
         }
     }
@@ -434,7 +434,7 @@ abstract contract MorphoInternal is MorphoStorage {
             } catch Error(string memory reason) {
                 revert(reason);
             } catch {
-                revert Errors.BatchTransferCallbackNonImplemented();
+                revert Errors.BatchTransferCallbackNotImplemented();
             }
         }
     }

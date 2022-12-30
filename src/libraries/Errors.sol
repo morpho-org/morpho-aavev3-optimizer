@@ -33,6 +33,6 @@ library Errors {
     error UnauthorisedTransfer();
     error TransferRejected();
     error BatchTransferRejected();
-    error TransferCallbackNonImplemented();
-    error BatchTransferCallbackNonImplemented();
+    error TransferCallbackNotImplemented();
+    error BatchTransferCallbackNotImplemented();
 }
