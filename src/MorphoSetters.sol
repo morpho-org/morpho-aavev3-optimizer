@@ -16,11 +16,9 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {MorphoInternal} from "./MorphoInternal.sol";
 import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
 
-import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
-import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-abstract contract MorphoSetters is MorphoInternal, Initializable, OwnableUpgradeable {
+abstract contract MorphoSetters is MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using SafeTransferLib for ERC20;
