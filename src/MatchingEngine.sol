@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-import {ThreeHeapOrdering, Math, WadRayMath} from "./libraries/Libraries.sol";
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
+
+import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
+
+import {Math} from "@morpho-utils/math/Math.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
