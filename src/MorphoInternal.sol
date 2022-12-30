@@ -1,30 +1,33 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {
-    IPool, IPriceOracleGetter, IVariableDebtToken, IAToken, IPriceOracleSentinel
-} from "./interfaces/Interfaces.sol";
+import {IPool} from "./interfaces/aave/IPool.sol";
+import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
+import {IVariableDebtToken} from "./interfaces/aave/IVariableDebtToken.sol";
+import {IAToken} from "./interfaces/aave/IAToken.sol";
+import {IPriceOracleSentinel} from "@aave/core-v3/contracts/interfaces/IPriceOracleSentinel.sol";
 
-import {
-    MarketLib,
-    MarketBalanceLib,
-    PoolInteractions,
-    InterestRatesModel,
-    WadRayMath,
-    Math,
-    PercentageMath,
-    SafeCast,
-    DataTypes,
-    ReserveConfiguration,
-    UserConfiguration,
-    ThreeHeapOrdering
-} from "./libraries/Libraries.sol";
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {Constants} from "./libraries/Constants.sol";
+import {MarketLib} from "./libraries/MarketLib.sol";
+import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
+import {PoolInteractions} from "./libraries/PoolInteractions.sol";
+import {InterestRatesModel} from "./libraries/InterestRatesModel.sol";
 
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
+import {Math} from "@morpho-utils/math/Math.sol";
+import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
+
+import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
+
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
+import {DataTypes} from "./libraries/aave/DataTypes.sol";
+import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
+import {UserConfiguration} from "./libraries/aave/UserConfiguration.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 
