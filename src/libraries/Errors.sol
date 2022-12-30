@@ -3,19 +3,28 @@ pragma solidity ^0.8.17;
 
 library Errors {
     error MarketNotCreated();
+    error UserNotMemberOfMarket();
+
     error AddressIsZero();
+    error AmountIsZero();
+
     error SupplyIsPaused();
     error BorrowIsPaused();
-    error BorrowingNotEnabled();
-    error PriceOracleSentinelBorrowDisabled();
-    error UnauthorisedBorrow();
-    error AmountIsZero();
     error RepayIsPaused();
     error WithdrawIsPaused();
-    error PriceOracleSentinelBorrowPaused();
-    error WithdrawUnauthorized();
     error LiquidateCollateralIsPaused();
     error LiquidateBorrowIsPaused();
-    error UserNotMemberOfMarket();
+
+    error BorrowingNotEnabled();
+    error PriceOracleSentinelBorrowDisabled();
+    error PriceOracleSentinelBorrowPaused();
+    error UnauthorisedBorrow();
+
+    error WithdrawUnauthorized();
     error UnauthorisedLiquidate();
+
+    error ExceedsMaxBasisPoints();
+    error MarketIsNotListedOnAave();
+    error MarketAlreadyCreated();
+    error MaxSortedUsersCannotBeZero();
 }

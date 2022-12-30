@@ -6,6 +6,7 @@
 
 @openzeppelin/=lib/openzeppelin-contracts/
 @openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
+@openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
 
 @aave/core-v3/=lib/aave-v3-core/
 @aave/periphery-v3/=lib/aave-v3-periphery/
