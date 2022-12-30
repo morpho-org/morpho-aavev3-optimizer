@@ -3,18 +3,22 @@ pragma solidity ^0.8.17;
 
 import {IERC1155} from "./interfaces/IERC1155.sol";
 
-import {MarketLib, MarketBalanceLib} from "./libraries/Libraries.sol";
+import {MarketLib} from "./libraries/MarketLib.sol";
+import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
+
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 
 import {MorphoGetters} from "./MorphoGetters.sol";
 import {MorphoSetters} from "./MorphoSetters.sol";
+import {Morpho1155} from "./Morpho1155.sol";
 import {EntryPositionsManager} from "./EntryPositionsManager.sol";
 import {ExitPositionsManager} from "./ExitPositionsManager.sol";
 
-contract Morpho is MorphoGetters, MorphoSetters {
+// @note: To add: IERC1155, Ownable
+contract Morpho is MorphoGetters, MorphoSetters, Morpho1155 {
     using MarketBalanceLib for Types.MarketBalances;
     using MarketLib for Types.Market;
     using DelegateCall for address;
@@ -105,71 +109,5 @@ contract Morpho is MorphoGetters, MorphoSetters {
             )
         );
         return (abi.decode(returnData, (uint256, uint256)));
-    }
-
-    /// ERC1155 ///
-
-    /// @inheritdoc IERC1155
-    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) external {
-        transferFrom(_from, _to, _id, _value);
-
-        _doSafeTransferAcceptanceCheck(_from, _to, _id, _value, _data);
-    }
-
-    /// @inheritdoc IERC1155
-    function safeBatchTransferFrom(
-        address _from,
-        address _to,
-        uint256[] calldata _ids,
-        uint256[] calldata _values,
-        bytes calldata _data
-    ) external {
-        batchTransferFrom(_from, _to, _ids, _values);
-
-        _doSafeBatchTransferAcceptanceCheck(_from, _to, _ids, _values, _data);
-    }
-
-    function transferFrom(address _from, address _to, uint256 _id, uint256 _value) public {
-        if (_to == address(0)) revert Errors.AddressIsZero();
-
-        _transfer(_from, _to, _id, _value);
-
-        emit IERC1155.TransferSingle(msg.sender, _from, _to, _id, _value);
-    }
-
-    function batchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values)
-        public
-    {
-        if (_to == address(0)) revert Errors.AddressIsZero();
-        if (_values.length != _ids.length) revert Errors.LengthMismatch();
-
-        for (uint256 i = 0; i < _ids.length; ++i) {
-            uint256 id = _ids[i];
-            uint256 amount = _values[i];
-
-            _transfer(_from, _to, id, amount);
-        }
-
-        emit IERC1155.TransferBatch(msg.sender, _from, _to, _ids, _values);
-    }
-
-    /// INTERNAL ///
-
-    function _transfer(address _from, address _to, uint256 _id, uint256 _amount) internal {
-        if (_amount == 0) revert Errors.AmountIsZero();
-
-        (address underlying, Types.PositionType positionType) = _decodeId(_id);
-        if (_amount <= _balanceOf(_from, underlying, positionType)) revert Errors.InsufficientBalance();
-        if (_from != msg.sender && !_isApprovedForBy[underlying][_from][msg.sender]) {
-            revert Errors.UnauthorisedTransfer();
-        }
-
-        if (positionType == Types.PositionType.SUPPLY) {
-            _transferSupply(underlying, _from, _to);
-        } else if (positionType == Types.PositionType.COLLATERAL) {
-            _transferCollateral(underlying, _from, _to);
-        } else if (positionType == Types.PositionType.BORROW) {
-            _transferBorrow(underlying, _from, _to);
-        }
     }
 }
