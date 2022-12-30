@@ -2,7 +2,7 @@
   "name": "morpho-aave-v3",
   "version": "1.0.0",
   "description": "Core contracts of Morpho-AaveV3's protocol",
-  "author": "Morpho Labs",
+  "author": "Morpho Labs <security@morpho.xyz>",
   "keywords": [
     "defi",
     "protocol",
