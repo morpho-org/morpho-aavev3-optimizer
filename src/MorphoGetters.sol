@@ -22,28 +22,28 @@ abstract contract MorphoGetters is MorphoInternal {
 
     /// STORAGE ///
 
-    function market(address poolToken) external view returns (Types.Market memory) {
-        return _market[poolToken];
+    function market(address underlying) external view returns (Types.Market memory) {
+        return _market[underlying];
     }
 
-    function scaledPoolSupplyBalance(address poolToken, address user) external view returns (uint256) {
-        return _marketBalances[poolToken].scaledPoolSupplyBalance(user);
+    function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256) {
+        return _marketBalances[underlying].scaledPoolSupplyBalance(user);
     }
 
-    function scaledP2PSupplyBalance(address poolToken, address user) external view returns (uint256) {
-        return _marketBalances[poolToken].scaledP2PSupplyBalance(user);
+    function scaledP2PSupplyBalance(address underlying, address user) external view returns (uint256) {
+        return _marketBalances[underlying].scaledP2PSupplyBalance(user);
     }
 
-    function scaledPoolBorrowBalance(address poolToken, address user) external view returns (uint256) {
-        return _marketBalances[poolToken].scaledPoolBorrowBalance(user);
+    function scaledPoolBorrowBalance(address underlying, address user) external view returns (uint256) {
+        return _marketBalances[underlying].scaledPoolBorrowBalance(user);
     }
 
-    function scaledP2PBorrowBalance(address poolToken, address user) external view returns (uint256) {
-        return _marketBalances[poolToken].scaledP2PBorrowBalance(user);
+    function scaledP2PBorrowBalance(address underlying, address user) external view returns (uint256) {
+        return _marketBalances[underlying].scaledP2PBorrowBalance(user);
     }
 
-    function scaledCollateralBalance(address poolToken, address user) external view returns (uint256) {
-        return _marketBalances[poolToken].scaledCollateralBalance(user);
+    function scaledCollateralBalance(address underlying, address user) external view returns (uint256) {
+        return _marketBalances[underlying].scaledCollateralBalance(user);
     }
 
     function maxSortedUsers() external view returns (uint256) {
@@ -56,15 +56,15 @@ abstract contract MorphoGetters is MorphoInternal {
 
     /// UTILITY ///
 
-    function decodeId(uint256 id) external pure returns (address poolToken, Types.PositionType positionType) {
+    function decodeId(uint256 id) external pure returns (address underlying, Types.PositionType positionType) {
         return _decodeId(id);
     }
 
     /// ERC1155 ///
 
     function balanceOf(address user, uint256 id) external view returns (uint256) {
-        (address poolToken, Types.PositionType positionType) = _decodeId(id);
-        Types.MarketBalances storage marketBalances = _marketBalances[poolToken];
+        (address underlying, Types.PositionType positionType) = _decodeId(id);
+        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
 
         if (positionType == Types.PositionType.COLLATERAL) {
             return marketBalances.scaledCollateralBalance(user);

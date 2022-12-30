@@ -13,9 +13,9 @@ library PoolInteractions {
         pool.supply(underlying, amount, address(this), Constants.NO_REFERRAL_CODE);
     }
 
-    function withdrawFromPool(IPool pool, address underlying, address poolToken, uint256 amount) internal {
+    function withdrawFromPool(IPool pool, address underlying, address aToken, uint256 amount) internal {
         // Withdraw only what is possible. The remaining dust is taken from the contract balance.
-        amount = Math.min(IAToken(poolToken).balanceOf(address(this)), amount);
+        amount = Math.min(IAToken(aToken).balanceOf(address(this)), amount);
         pool.withdraw(underlying, amount, address(this));
     }
 

@@ -44,18 +44,17 @@ abstract contract MorphoSetters is MorphoInternal {
         _maxSortedUsers = newMaxSortedUsers;
     }
 
-    function createMarket(address underlyingToken, uint16 reserveFactor, uint16 p2pIndexCursor) external onlyOwner {
-        if (underlyingToken == address(0)) revert Errors.AddressIsZero();
+    function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external onlyOwner {
+        if (underlying == address(0)) revert Errors.AddressIsZero();
         if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR || reserveFactor > PercentageMath.PERCENTAGE_FACTOR) {
             revert Errors.ExceedsMaxBasisPoints();
         }
 
-        if (!_pool.getConfiguration(underlyingToken).getActive()) revert Errors.MarketIsNotListedOnAave();
+        if (!_pool.getConfiguration(underlying).getActive()) revert Errors.MarketIsNotListedOnAave();
 
-        DataTypes.ReserveData memory reserveData = _pool.getReserveData(underlyingToken);
+        DataTypes.ReserveData memory reserveData = _pool.getReserveData(underlying);
 
-        address poolToken = reserveData.aTokenAddress;
-        Types.Market storage market = _market[poolToken];
+        Types.Market storage market = _market[underlying];
 
         if (market.isCreated()) revert Errors.MarketAlreadyCreated();
 
@@ -63,22 +62,23 @@ abstract contract MorphoSetters is MorphoInternal {
         indexes.p2pSupplyIndex = WadRayMath.RAY;
         indexes.p2pBorrowIndex = WadRayMath.RAY;
         // TODO: Fix for IB tokens
-        indexes.poolSupplyIndex = _pool.getReserveNormalizedIncome(underlyingToken);
-        indexes.poolBorrowIndex = _pool.getReserveNormalizedVariableDebt(underlyingToken);
+        indexes.poolSupplyIndex = _pool.getReserveNormalizedIncome(underlying);
+        indexes.poolBorrowIndex = _pool.getReserveNormalizedVariableDebt(underlying);
 
         market.setIndexes(indexes);
         market.lastUpdateTimestamp = uint32(block.timestamp);
 
-        market.underlying = underlyingToken;
+        market.underlying = underlying;
+        market.aToken = reserveData.aTokenAddress;
         market.variableDebtToken = reserveData.variableDebtTokenAddress;
         market.reserveFactor = reserveFactor;
         market.p2pIndexCursor = p2pIndexCursor;
 
-        _marketsCreated.push(poolToken);
+        _marketsCreated.push(underlying);
 
-        ERC20(underlyingToken).safeApprove(address(_pool), type(uint256).max);
+        ERC20(underlying).safeApprove(address(_pool), type(uint256).max);
 
-        emit Events.MarketCreated(poolToken, reserveFactor, p2pIndexCursor);
+        emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
     }
 
     function setMaxSortedUsers(uint256 newMaxSortedUsers) external onlyOwner {
@@ -106,70 +106,70 @@ abstract contract MorphoSetters is MorphoInternal {
         emit Events.ExitPositionsManagerSet(_exitPositionsManager);
     }
 
-    function setReserveFactor(address poolToken, uint16 newReserveFactor)
+    function setReserveFactor(address underlying, uint16 newReserveFactor)
         external
         onlyOwner
-        isMarketCreated(poolToken)
+        isMarketCreated(underlying)
     {
         if (newReserveFactor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
-        _updateIndexes(poolToken);
+        _updateIndexes(underlying);
 
-        _market[poolToken].reserveFactor = newReserveFactor;
-        emit Events.ReserveFactorSet(poolToken, newReserveFactor);
+        _market[underlying].reserveFactor = newReserveFactor;
+        emit Events.ReserveFactorSet(underlying, newReserveFactor);
     }
 
-    function setP2PIndexCursor(address poolToken, uint16 p2pIndexCursor)
+    function setP2PIndexCursor(address underlying, uint16 p2pIndexCursor)
         external
         onlyOwner
-        isMarketCreated(poolToken)
+        isMarketCreated(underlying)
     {
         if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
-        _updateIndexes(poolToken);
+        _updateIndexes(underlying);
 
-        _market[poolToken].p2pIndexCursor = p2pIndexCursor;
-        emit Events.P2PIndexCursorSet(poolToken, p2pIndexCursor);
+        _market[underlying].p2pIndexCursor = p2pIndexCursor;
+        emit Events.P2PIndexCursorSet(underlying, p2pIndexCursor);
     }
 
-    function setIsSupplyPaused(address poolToken, bool isPaused) external onlyOwner isMarketCreated(poolToken) {
-        _market[poolToken].pauseStatuses.isSupplyPaused = isPaused;
-        emit Events.IsSupplyPausedSet(poolToken, isPaused);
+    function setIsSupplyPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
+        _market[underlying].pauseStatuses.isSupplyPaused = isPaused;
+        emit Events.IsSupplyPausedSet(underlying, isPaused);
     }
 
-    function setIsBorrowPaused(address poolToken, bool isPaused) external onlyOwner isMarketCreated(poolToken) {
-        _market[poolToken].pauseStatuses.isBorrowPaused = isPaused;
-        emit Events.IsBorrowPausedSet(poolToken, isPaused);
+    function setIsBorrowPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
+        _market[underlying].pauseStatuses.isBorrowPaused = isPaused;
+        emit Events.IsBorrowPausedSet(underlying, isPaused);
     }
 
-    function setIsRepayPaused(address poolToken, bool isPaused) external onlyOwner isMarketCreated(poolToken) {
-        _market[poolToken].pauseStatuses.isRepayPaused = isPaused;
-        emit Events.IsRepayPausedSet(poolToken, isPaused);
+    function setIsRepayPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
+        _market[underlying].pauseStatuses.isRepayPaused = isPaused;
+        emit Events.IsRepayPausedSet(underlying, isPaused);
     }
 
-    function setIsWithdrawPaused(address poolToken, bool isPaused) external onlyOwner isMarketCreated(poolToken) {
-        _market[poolToken].pauseStatuses.isWithdrawPaused = isPaused;
-        emit Events.IsWithdrawPausedSet(poolToken, isPaused);
+    function setIsWithdrawPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
+        _market[underlying].pauseStatuses.isWithdrawPaused = isPaused;
+        emit Events.IsWithdrawPausedSet(underlying, isPaused);
     }
 
-    function setIsLiquidateCollateralPaused(address poolToken, bool isPaused)
+    function setIsLiquidateCollateralPaused(address underlying, bool isPaused)
         external
         onlyOwner
-        isMarketCreated(poolToken)
+        isMarketCreated(underlying)
     {
-        _market[poolToken].pauseStatuses.isLiquidateCollateralPaused = isPaused;
-        emit Events.IsLiquidateCollateralPausedSet(poolToken, isPaused);
+        _market[underlying].pauseStatuses.isLiquidateCollateralPaused = isPaused;
+        emit Events.IsLiquidateCollateralPausedSet(underlying, isPaused);
     }
 
-    function setIsLiquidateBorrowPaused(address poolToken, bool isPaused)
+    function setIsLiquidateBorrowPaused(address underlying, bool isPaused)
         external
         onlyOwner
-        isMarketCreated(poolToken)
+        isMarketCreated(underlying)
     {
-        _market[poolToken].pauseStatuses.isLiquidateBorrowPaused = isPaused;
-        emit Events.IsLiquidateBorrowPausedSet(poolToken, isPaused);
+        _market[underlying].pauseStatuses.isLiquidateBorrowPaused = isPaused;
+        emit Events.IsLiquidateBorrowPausedSet(underlying, isPaused);
     }
 
-    function setIsPaused(address poolToken, bool isPaused) external onlyOwner isMarketCreated(poolToken) {
-        _setPauseStatus(poolToken, isPaused);
+    function setIsPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
+        _setPauseStatus(underlying, isPaused);
     }
 
     function setIsPausedForAllMarkets(bool isPaused) external onlyOwner {
@@ -179,13 +179,13 @@ abstract contract MorphoSetters is MorphoInternal {
         }
     }
 
-    function setIsP2PDisabled(address poolToken, bool isP2PDisabled) external onlyOwner isMarketCreated(poolToken) {
-        _market[poolToken].pauseStatuses.isP2PDisabled = isP2PDisabled;
-        emit Events.IsP2PDisabledSet(poolToken, isP2PDisabled);
+    function setIsP2PDisabled(address underlying, bool isP2PDisabled) external onlyOwner isMarketCreated(underlying) {
+        _market[underlying].pauseStatuses.isP2PDisabled = isP2PDisabled;
+        emit Events.IsP2PDisabledSet(underlying, isP2PDisabled);
     }
 
-    function setIsDeprecated(address poolToken, bool isDeprecated) external onlyOwner isMarketCreated(poolToken) {
-        _market[poolToken].pauseStatuses.isDeprecated = isDeprecated;
-        emit Events.IsDeprecatedSet(poolToken, isDeprecated);
+    function setIsDeprecated(address underlying, bool isDeprecated) external onlyOwner isMarketCreated(underlying) {
+        _market[underlying].pauseStatuses.isDeprecated = isDeprecated;
+        emit Events.IsDeprecatedSet(underlying, isDeprecated);
     }
 }

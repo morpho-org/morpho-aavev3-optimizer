@@ -8,11 +8,11 @@ library MarketLib {
     using SafeCast for uint256;
 
     function isCreated(Types.Market storage market) internal view returns (bool) {
-        return market.underlying != address(0);
+        return market.aToken != address(0);
     }
 
     function isCreatedMem(Types.Market memory market) internal pure returns (bool) {
-        return market.underlying != address(0);
+        return market.aToken != address(0);
     }
 
     function getIndexes(Types.Market storage market) internal view returns (Types.Indexes256 memory indexes) {

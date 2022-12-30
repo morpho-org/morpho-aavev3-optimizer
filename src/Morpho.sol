@@ -22,84 +22,84 @@ contract Morpho is MorphoGetters, MorphoSetters {
 
     /// EXTERNAL ///
 
-    function supply(address poolToken, uint256 amount, address onBehalf, uint256 maxLoops)
+    function supply(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
         external
         returns (uint256 supplied)
     {
         bytes memory returnData = _entryPositionsManager.functionDelegateCall(
             abi.encodeWithSelector(
-                EntryPositionsManager.supplyLogic.selector, poolToken, amount, msg.sender, onBehalf, maxLoops
+                EntryPositionsManager.supplyLogic.selector, underlying, amount, msg.sender, onBehalf, maxLoops
             )
         );
         return (abi.decode(returnData, (uint256)));
     }
 
-    function supplyCollateral(address poolToken, uint256 amount, address onBehalf)
+    function supplyCollateral(address underlying, uint256 amount, address onBehalf)
         external
         returns (uint256 supplied)
     {
         bytes memory returnData = _entryPositionsManager.functionDelegateCall(
             abi.encodeWithSelector(
-                EntryPositionsManager.supplyCollateralLogic.selector, poolToken, amount, msg.sender, onBehalf
+                EntryPositionsManager.supplyCollateralLogic.selector, underlying, amount, msg.sender, onBehalf
             )
         );
         return (abi.decode(returnData, (uint256)));
     }
 
-    function borrow(address poolToken, uint256 amount, address receiver, uint256 maxLoops)
+    function borrow(address underlying, uint256 amount, address receiver, uint256 maxLoops)
         external
         returns (uint256 borrowed)
     {
         bytes memory returnData = _entryPositionsManager.functionDelegateCall(
             abi.encodeWithSelector(
-                EntryPositionsManager.borrowLogic.selector, poolToken, amount, msg.sender, receiver, maxLoops
+                EntryPositionsManager.borrowLogic.selector, underlying, amount, msg.sender, receiver, maxLoops
             )
         );
         return (abi.decode(returnData, (uint256)));
     }
 
-    function repay(address poolToken, uint256 amount, address onBehalf, uint256 maxLoops)
+    function repay(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
         external
         returns (uint256 repaid)
     {
         bytes memory returnData = _exitPositionsManager.functionDelegateCall(
             abi.encodeWithSelector(
-                ExitPositionsManager.repayLogic.selector, poolToken, amount, msg.sender, onBehalf, maxLoops
+                ExitPositionsManager.repayLogic.selector, underlying, amount, msg.sender, onBehalf, maxLoops
             )
         );
         return (abi.decode(returnData, (uint256)));
     }
 
-    function withdraw(address poolToken, uint256 amount, address to, uint256 maxLoops)
+    function withdraw(address underlying, uint256 amount, address to, uint256 maxLoops)
         external
         returns (uint256 withdrawn)
     {
         bytes memory returnData = _exitPositionsManager.functionDelegateCall(
             abi.encodeWithSelector(
-                ExitPositionsManager.withdrawLogic.selector, poolToken, amount, msg.sender, to, maxLoops
+                ExitPositionsManager.withdrawLogic.selector, underlying, amount, msg.sender, to, maxLoops
             )
         );
         return (abi.decode(returnData, (uint256)));
     }
 
-    function withdrawCollateral(address poolToken, uint256 amount, address to) external returns (uint256 withdrawn) {
+    function withdrawCollateral(address underlying, uint256 amount, address to) external returns (uint256 withdrawn) {
         bytes memory returnData = _exitPositionsManager.functionDelegateCall(
             abi.encodeWithSelector(
-                ExitPositionsManager.withdrawCollateralLogic.selector, poolToken, amount, msg.sender, to
+                ExitPositionsManager.withdrawCollateralLogic.selector, underlying, amount, msg.sender, to
             )
         );
         return (abi.decode(returnData, (uint256)));
     }
 
-    function liquidate(address poolTokenBorrowed, address poolTokenCollateral, address user, uint256 amount)
+    function liquidate(address underlyingBorrowed, address underlyingCollateral, address user, uint256 amount)
         external
         returns (uint256 repaid, uint256 seized)
     {
         bytes memory returnData = _exitPositionsManager.functionDelegateCall(
             abi.encodeWithSelector(
                 ExitPositionsManager.liquidateLogic.selector,
-                poolTokenBorrowed,
-                poolTokenCollateral,
+                underlyingBorrowed,
+                underlyingCollateral,
                 amount,
                 user,
                 msg.sender
