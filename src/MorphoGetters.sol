@@ -62,8 +62,12 @@ abstract contract MorphoGetters is MorphoInternal {
         return _decodeId(id);
     }
 
-    function nonces(address user) external view returns (uint256) {
-        return _nonces[user];
+    function getNonce(address from) external view returns (uint256) {
+        return _nonces[from];
+    }
+
+    function verify(Types.ForwardRequest calldata req, bytes calldata signature) external view returns (bool) {
+        return _verify(req, signature);
     }
 
     /// ERC1155 ///

@@ -110,14 +110,6 @@ contract Morpho is MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256, uint256)));
     }
 
-    function getNonce(address from) external view returns (uint256) {
-        return _nonces[from];
-    }
-
-    function verify(Types.ForwardRequest calldata req, bytes calldata signature) external view returns (bool) {
-        return _verify(req, signature);
-    }
-
     function execute(Types.ForwardRequest calldata req, bytes calldata signature)
         external
         payable
