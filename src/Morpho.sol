@@ -115,7 +115,6 @@ contract Morpho is MorphoGetters, MorphoSetters {
         payable
         returns (bool, bytes memory)
     {
-        require(req.to == address(this), "Morpho: Can only forward to Morpho");
         require(_verify(req, signature), "Morpho: bad signature");
         _nonces[req.from] = req.nonce + 1;
 

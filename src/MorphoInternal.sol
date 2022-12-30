@@ -351,6 +351,6 @@ abstract contract MorphoInternal is MorphoStorage {
                 )
             )
         ).recover(signature);
-        return _nonces[req.from] == req.nonce && signer == req.from;
+        return _nonces[req.from] == req.nonce && signer == req.from && address(this) == req.to;
     }
 }
