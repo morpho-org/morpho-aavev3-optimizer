@@ -2,13 +2,9 @@
 pragma solidity ^0.8.17;
 
 import {
-    IPool,
-    IPriceOracleGetter,
-    IVariableDebtToken,
-    IAToken,
-    IPriceOracleSentinel,
-    IERC1155TokenReceiver
+    IPool, IPriceOracleGetter, IVariableDebtToken, IAToken, IPriceOracleSentinel
 } from "./interfaces/Interfaces.sol";
+import {IERC1155TokenReceiver} from "./interfaces/IERC1155TokenReceiver.sol";
 
 import {
     MarketLib,

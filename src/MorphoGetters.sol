@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IERC1155, IPoolAddressesProvider, IPool} from "./interfaces/Interfaces.sol";
+import {IERC1155} from "./interfaces/IERC1155.sol";
+import {IPoolAddressesProvider} from "./interfaces/aave/IPoolAddressesProvider.sol";
+import {IPool} from "./interfaces/aave/IPool.sol";
 
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";

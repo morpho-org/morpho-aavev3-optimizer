@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IERC1155} from "./interfaces/Interfaces.sol";
+import {IERC1155} from "./interfaces/IERC1155.sol";
 
 import {MarketLib, MarketBalanceLib} from "./libraries/Libraries.sol";
 import {Types} from "./libraries/Types.sol";
