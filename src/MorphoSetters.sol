@@ -16,14 +16,13 @@ import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
-import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
-import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
-
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+
+import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
-abstract contract MorphoSetters is MorphoInternal, Initializable, OwnableUpgradeable {
+abstract contract MorphoSetters is MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using SafeTransferLib for ERC20;
