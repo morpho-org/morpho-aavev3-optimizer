@@ -122,10 +122,10 @@ contract ExitPositionsManager is PositionsManagerInternal {
         (,, vars.toBorrow, vars.toWithdraw) =
             _executeWithdraw(underlyingCollateral, vars.amountToSeize, borrower, 0, collateralIndexes); // TODO: Update max loops
 
-        _pool.supplyToPool(underlyingBorrowed, vars.toSupply);
         _pool.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, vars.toRepay);
-        _pool.borrowFromPool(underlyingCollateral, vars.toBorrow);
+        _pool.supplyToPool(underlyingBorrowed, vars.toSupply);
         _pool.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.toWithdraw);
+        _pool.borrowFromPool(underlyingCollateral, vars.toBorrow);
 
         ERC20(underlyingCollateral).safeTransfer(liquidator, vars.amountToSeize);
 
