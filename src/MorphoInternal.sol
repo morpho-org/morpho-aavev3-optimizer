@@ -45,12 +45,16 @@ abstract contract MorphoInternal is MorphoStorage {
     using Math for uint256;
     using PercentageMath for uint256;
 
+    /// MODIFIERS ///
+
     /// @notice Prevents to update a market not created yet.
     /// @param underlying The address of the market to check.
     modifier isMarketCreated(address underlying) {
         if (!_market[underlying].isCreated()) revert Errors.MarketNotCreated();
         _;
     }
+
+    /// INTERNAL ///
 
     function _decodeId(uint256 _id) internal pure returns (address underlying, Types.PositionType positionType) {
         underlying = address(uint160(_id));
@@ -99,7 +103,7 @@ abstract contract MorphoInternal is MorphoStorage {
             + marketBalances.scaledP2PBorrowBalance(user).rayMul(p2pBorrowIndex);
     }
 
-    /// @dev Calculates the total value of the collateral, debt, and LTV/LT value depending on the calculation type.
+    /// @dev Computes and returns the total value of the collateral, debt, and LTV/LT value depending on the calculation type.
     /// @param underlying The pool token that is being borrowed or withdrawn.
     /// @param user The user address.
     /// @param amountWithdrawn The amount that is being withdrawn.
