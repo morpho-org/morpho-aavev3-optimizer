@@ -18,8 +18,6 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
-
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MorphoSetters is MorphoInternal {
@@ -38,7 +36,9 @@ abstract contract MorphoSetters is MorphoInternal {
         uint256 newMaxSortedUsers
     ) external initializer {
         if (newMaxSortedUsers == 0) revert Errors.MaxSortedUsersCannotBeZero();
-        _transferOwnership(msg.sender);
+
+        __Ownable_init_unchained();
+
         _entryPositionsManager = newEntryPositionsManager;
         _exitPositionsManager = newExitPositionsManager;
         _addressesProvider = IPoolAddressesProvider(newAddressesProvider);
