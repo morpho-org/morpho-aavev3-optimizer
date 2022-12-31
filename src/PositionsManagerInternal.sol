@@ -33,10 +33,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     function _validateSupply(address underlying, uint256 amount, address user) internal view {
-        Types.Market storage market = _market[underlying];
         if (user == address(0)) revert Errors.AddressIsZero();
         if (amount == 0) revert Errors.AmountIsZero();
 
+        Types.Market storage market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
         if (market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
     }
@@ -94,18 +94,18 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             onPool += amount.rayDiv(indexes.poolSupplyIndex); // In scaled balance.
             toSupply = amount;
         }
+
         _updateSupplierInDS(underlying, user, onPool, inP2P);
     }
 
     function _validateBorrow(address underlying, uint256 amount, address user) internal view {
-        Types.Market storage market = _market[underlying];
-
         if (amount == 0) revert Errors.AmountIsZero();
+
+        Types.Market storage market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
         if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
-        if (!_pool.getConfiguration(underlying).getBorrowingEnabled()) {
-            revert Errors.BorrowingNotEnabled();
-        }
+        if (!_pool.getConfiguration(underlying).getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
+
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
         // In response, Morpho mirrors this behavior.
         address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
@@ -171,11 +171,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             onPool += amount.rayDiv(indexes.poolBorrowIndex); // In adUnit.
             toBorrow = amount;
         }
+
         _updateBorrowerInDS(underlying, user, onPool, inP2P);
     }
 
     function _validateRepay(address underlying, uint256 amount) internal view {
         if (amount == 0) revert Errors.AmountIsZero();
+
         Types.Market storage market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
         if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
@@ -188,8 +190,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) {
-        Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+        Types.Market storage market = _market[underlying];
         Types.Delta storage deltas = market.deltas;
 
         onPool = marketBalances.scaledPoolBorrowBalance(user);
@@ -201,8 +203,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (onPool > 0) {
             toRepay = Math.min(onPool.rayMul(indexes.poolBorrowIndex), amount);
             amount -= toRepay;
-
-            onPool -= Math.min(onPool, toRepay.rayDiv(indexes.poolBorrowIndex)); // In adUnit.
+            onPool -= Math.min(onPool, toRepay.rayDiv(indexes.poolBorrowIndex)); // In scaled balance.
 
             if (amount == 0) {
                 _updateBorrowerInDS(underlying, user, onPool, inP2P);
@@ -288,6 +289,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (receiver == address(0)) revert Errors.AddressIsZero();
         if (!market.isCreated()) revert Errors.MarketNotCreated();
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
+
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
         // For safety concerns and as a withdraw on Morpho can trigger a borrow on pool, Morpho prevents withdrawals in such circumstances.
         address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
@@ -300,9 +302,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         internal
         view
     {
-        Types.Market storage market = _market[underlying];
         if (amount == 0) revert Errors.AmountIsZero();
         if (receiver == address(0)) revert Errors.AddressIsZero();
+
+        Types.Market storage market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
         if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
@@ -317,8 +320,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) {
-        Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+        Types.Market storage market = _market[underlying];
         Types.Delta storage deltas = market.deltas;
 
         onPool = marketBalances.scaledPoolSupplyBalance(user);
@@ -363,12 +366,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Promote pool suppliers.
         if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolSuppliers.getHead() != address(0)) {
             (uint256 matched, uint256 loopsDone) = _promoteSuppliers(underlying, amount, maxLoops);
-            if (maxLoops <= loopsDone) {
-                maxLoops = 0;
-            } else {
-                maxLoops -= loopsDone;
-            }
-
+            maxLoops -= loopsDone;
             amount -= matched;
             toWithdraw += matched;
         }
@@ -424,15 +422,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
             address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
 
-            if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
-            {
-                if (healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD) {
-                    revert Errors.UnauthorisedLiquidate();
-                }
-            } else {
-                if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
-                    revert Errors.UnauthorisedLiquidate();
-                }
+            if (
+                priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
+                    && healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD
+            ) {
+                revert Errors.UnauthorisedLiquidate();
+            } else if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+                revert Errors.UnauthorisedLiquidate();
             }
 
             closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
