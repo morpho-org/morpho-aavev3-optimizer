@@ -125,8 +125,7 @@ abstract contract MorphoInternal is MorphoStorage {
                 _assetLiquidityData(_market[collateral].underlying, oracle, morphoPoolConfig);
 
             Types.Indexes256 memory indexes = _computeIndexes(collateral);
-            (uint256 collateralValue, uint256 maxDebtValue, uint256 liquidationThresholdValue) =
-            _liquidityDataCollateral(
+            (uint256 collateralValue, uint256 borrowableValue, uint256 maxDebtValue) = _liquidityDataCollateral(
                 collateral,
                 user,
                 underlyingPrice,
@@ -138,8 +137,8 @@ abstract contract MorphoInternal is MorphoStorage {
             );
 
             liquidityData.collateral += collateralValue;
+            liquidityData.borrowable += borrowableValue;
             liquidityData.maxDebt += maxDebtValue;
-            liquidityData.liquidationThresholdValue += liquidationThresholdValue;
         }
 
         for (uint256 i; i < userBorrows.length; ++i) {
@@ -169,17 +168,17 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 tokenUnit,
         uint256 poolSupplyIndex,
         uint256 amountWithdrawn
-    ) internal view returns (uint256 collateral, uint256 maxDebt, uint256 liquidationThresholdValue) {
-        collateral = (
+    ) internal view returns (uint256 collateralValue, uint256 borrowableValue, uint256 maxDebtValue) {
+        collateralValue = (
             (_marketBalances[underlying].scaledCollateralBalance(user).rayMul(poolSupplyIndex) - amountWithdrawn)
                 * underlyingPrice / tokenUnit
         );
 
-        // Calculate LTV for borrow.
-        maxDebt = collateral.percentMul(ltv);
+        // Calculate borrowable value for borrow.
+        borrowableValue = collateralValue.percentMul(ltv);
 
-        // Update LT variable for withdraw.
-        liquidationThresholdValue = collateral.percentMul(liquidationThreshold);
+        // Calculate max debt value variable for withdraw.
+        maxDebtValue = collateralValue.percentMul(liquidationThreshold);
     }
 
     function _liquidityDataDebt(
@@ -190,8 +189,8 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 poolBorrowIndex,
         uint256 p2pBorrowIndex,
         uint256 amountBorrowed
-    ) internal view returns (uint256 debt) {
-        debt = (
+    ) internal view returns (uint256 debtValue) {
+        debtValue = (
             (_getUserBorrowBalanceFromIndexes(underlying, user, poolBorrowIndex, p2pBorrowIndex) + amountBorrowed)
                 * underlyingPrice
         ).divUp(tokenUnit);
@@ -327,8 +326,6 @@ abstract contract MorphoInternal is MorphoStorage {
 
         Types.LiquidityData memory liquidityData = _liquidityData(underlying, user, withdrawnAmount, 0);
 
-        return liquidityData.debt > 0
-            ? liquidityData.liquidationThresholdValue.wadDiv(liquidityData.debt)
-            : type(uint256).max;
+        return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
     }
 }

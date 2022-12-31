@@ -114,7 +114,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         Types.LiquidityData memory values = _liquidityData(underlying, user, 0, amount);
-        if (values.debt > values.maxDebt) revert Errors.UnauthorisedBorrow();
+        if (values.debt > values.borrowable) revert Errors.UnauthorisedBorrow();
     }
 
     function _executeBorrow(
