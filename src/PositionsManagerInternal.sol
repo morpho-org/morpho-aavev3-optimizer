@@ -79,10 +79,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         if (toRepay > 0) {
-            uint256 toAddInP2P = toRepay.rayDiv(indexes.p2pBorrowIndex);
+            uint256 toAdd = toRepay.rayDiv(indexes.p2pBorrowIndex);
 
-            deltas.p2pSupplyAmount += toAddInP2P;
-            inP2P += toAddInP2P;
+            deltas.p2pSupplyAmount += toAdd;
+            inP2P += toAdd;
 
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
         }
@@ -157,10 +157,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         if (toWithdraw > 0) {
-            uint256 toAddInP2P = toWithdraw.rayDiv(indexes.p2pBorrowIndex); // In peer-to-peer unit.
+            uint256 toAdd = toWithdraw.rayDiv(indexes.p2pBorrowIndex); // In peer-to-peer unit.
 
-            deltas.p2pBorrowAmount += toAddInP2P;
-            inP2P += toAddInP2P;
+            deltas.p2pBorrowAmount += toAdd;
+            inP2P += toAdd;
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
         }
 
