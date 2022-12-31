@@ -11,10 +11,6 @@ library MarketLib {
         return market.aToken != address(0);
     }
 
-    function isCreatedMem(Types.Market memory market) internal pure returns (bool) {
-        return market.aToken != address(0);
-    }
-
     function getIndexes(Types.Market storage market) internal view returns (Types.Indexes256 memory indexes) {
         indexes.poolSupplyIndex = uint256(market.indexes.poolSupplyIndex);
         indexes.poolBorrowIndex = uint256(market.indexes.poolBorrowIndex);
