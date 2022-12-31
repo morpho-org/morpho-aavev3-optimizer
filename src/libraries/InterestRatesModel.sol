@@ -15,7 +15,7 @@ library InterestRatesModel {
         pure
         returns (uint256 newP2PSupplyIndex, uint256 newP2PBorrowIndex)
     {
-        // Compute pool growth factors
+        // Compute pool growth factors.
         Types.GrowthFactors memory growthFactors = computeGrowthFactors(
             params.poolSupplyIndex,
             params.poolBorrowIndex,

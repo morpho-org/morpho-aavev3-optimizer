@@ -23,14 +23,14 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {MatchingEngine} from "./MatchingEngine.sol";
 
 abstract contract PositionsManagerInternal is MatchingEngine {
-    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using MarketBalanceLib for Types.MarketBalances;
-    using MarketLib for Types.Market;
+    using Math for uint256;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
-    using Math for uint256;
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using MarketLib for Types.Market;
+    using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     function _validateSupply(address underlying, uint256 amount, address user) internal view {
         if (user == address(0)) revert Errors.AddressIsZero();
