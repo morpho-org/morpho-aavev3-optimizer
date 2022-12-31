@@ -32,7 +32,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         _validateWithdraw(underlying, amount, receiver);
 
         (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
-            _executeWithdraw(underlying, amount, supplier, 0, indexes); // TODO: Replace max loops once default max is implemented
+            _executeWithdraw(underlying, amount, supplier, _defaultMaxLoops.withdraw, indexes);
 
         if (toWithdraw > 0) _pool.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
         if (toBorrow > 0) _pool.borrowFromPool(underlying, toBorrow);
@@ -74,7 +74,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         ERC20(underlying).safeTransferFrom(repayer, address(this), amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
-            _executeRepay(underlying, amount, onBehalf, 0, indexes); // TODO: Update max loops
+            _executeRepay(underlying, amount, onBehalf, _defaultMaxLoops.repay, indexes);
 
         if (toRepay > 0) _pool.repayToPool(underlying, _market[underlying].variableDebtToken, toRepay);
         if (toSupply > 0) _pool.supplyToPool(underlying, toSupply);
@@ -118,9 +118,9 @@ contract ExitPositionsManager is PositionsManagerInternal {
         ERC20(underlyingBorrowed).safeTransferFrom(liquidator, address(this), vars.amountToLiquidate);
 
         (,, vars.toSupply, vars.toRepay) =
-            _executeRepay(underlyingBorrowed, vars.amountToLiquidate, borrower, 0, borrowIndexes); // TODO: Update max loops
+            _executeRepay(underlyingBorrowed, vars.amountToLiquidate, borrower, 0, borrowIndexes);
         (,, vars.toBorrow, vars.toWithdraw) =
-            _executeWithdraw(underlyingCollateral, vars.amountToSeize, borrower, 0, collateralIndexes); // TODO: Update max loops
+            _executeWithdraw(underlyingCollateral, vars.amountToSeize, borrower, 0, collateralIndexes);
 
         _pool.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, vars.toRepay);
         _pool.supplyToPool(underlyingBorrowed, vars.toSupply);
