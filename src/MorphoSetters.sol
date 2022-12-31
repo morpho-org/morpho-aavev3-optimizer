@@ -7,6 +7,7 @@ import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
+import {PoolInteractions} from "./libraries/PoolInteractions.sol";
 
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
@@ -21,6 +22,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 abstract contract MorphoSetters is MorphoInternal {
     using MarketLib for Types.Market;
     using SafeTransferLib for ERC20;
+    using PoolInteractions for IPool;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /// SETTERS ///
@@ -62,9 +64,7 @@ abstract contract MorphoSetters is MorphoInternal {
         Types.Indexes256 memory indexes;
         indexes.p2pSupplyIndex = WadRayMath.RAY;
         indexes.p2pBorrowIndex = WadRayMath.RAY;
-        // TODO: Fix for IB tokens
-        indexes.poolSupplyIndex = _pool.getReserveNormalizedIncome(underlying);
-        indexes.poolBorrowIndex = _pool.getReserveNormalizedVariableDebt(underlying);
+        (indexes.poolSupplyIndex, indexes.poolBorrowIndex) = _pool.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
         market.lastUpdateTimestamp = uint32(block.timestamp);
