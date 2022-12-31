@@ -51,7 +51,7 @@ library Types {
         Delta deltas; // 1024 bits
         // SLOT 6
         address underlying; // 160 bits
-        PauseStatuses pauseStatuses; // 64 bits
+        PauseStatuses pauseStatuses; // 80 bits
         // SLOT 7
         address variableDebtToken; // 160 bits
         uint32 lastUpdateTimestamp; // 32 bits
