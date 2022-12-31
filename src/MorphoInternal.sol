@@ -120,38 +120,42 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _pool.getUserConfiguration(address(this));
 
         for (uint256 i; i < userCollaterals.length; ++i) {
-            Types.Indexes256 memory indexes = _computeIndexes(userCollaterals[i]);
+            address collateral = userCollaterals[i];
             (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
-                _assetLiquidityData(_market[userCollaterals[i]].underlying, oracle, morphoPoolConfig);
+                _assetLiquidityData(_market[collateral].underlying, oracle, morphoPoolConfig);
+
+            Types.Indexes256 memory indexes = _computeIndexes(collateral);
             (uint256 collateralValue, uint256 maxDebtValue, uint256 liquidationThresholdValue) =
             _liquidityDataCollateral(
-                userCollaterals[i],
+                collateral,
                 user,
                 underlyingPrice,
                 ltv,
                 liquidationThreshold,
                 tokenUnit,
                 indexes.poolSupplyIndex,
-                underlying == userCollaterals[i] ? amountWithdrawn : 0
+                underlying == collateral ? amountWithdrawn : 0
             );
+
             liquidityData.collateral += collateralValue;
             liquidityData.maxDebt += maxDebtValue;
             liquidityData.liquidationThresholdValue += liquidationThresholdValue;
         }
 
         for (uint256 i; i < userBorrows.length; ++i) {
-            Types.Indexes256 memory indexes = _computeIndexes(userBorrows[i]);
-
+            address borrowed = userBorrows[i];
             (uint256 underlyingPrice,,, uint256 tokenUnit) =
-                _assetLiquidityData(_market[userBorrows[i]].underlying, oracle, morphoPoolConfig);
+                _assetLiquidityData(_market[borrowed].underlying, oracle, morphoPoolConfig);
+
+            Types.Indexes256 memory indexes = _computeIndexes(borrowed);
             liquidityData.debt += _liquidityDataDebt(
-                userBorrows[i],
+                borrowed,
                 user,
                 underlyingPrice,
                 tokenUnit,
                 indexes.poolBorrowIndex,
                 indexes.p2pBorrowIndex,
-                underlying == userBorrows[i] ? amountBorrowed : 0
+                underlying == borrowed ? amountBorrowed : 0
             );
         }
     }
@@ -201,7 +205,6 @@ abstract contract MorphoInternal is MorphoStorage {
         underlyingPrice = oracle.getAssetPrice(underlying);
 
         uint256 decimals;
-
         (ltv, liquidationThreshold,, decimals,,) = _pool.getConfiguration(underlying).getParams();
 
         // LTV should be zero if Morpho has not enabled this asset as collateral
