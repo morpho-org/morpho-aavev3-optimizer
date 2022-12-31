@@ -32,4 +32,9 @@ contract MorphoStorage is Initializable, OwnableUpgradeable {
 
     address internal _treasuryVault;
     bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
+
+    /// @dev The contract is automatically marked as initialized when deployed to prevent highjacking the implementation contract.
+    constructor() {
+        _disableInitializers();
+    }
 }
