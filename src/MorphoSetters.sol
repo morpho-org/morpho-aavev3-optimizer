@@ -3,12 +3,10 @@ pragma solidity ^0.8.17;
 
 import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
 
-import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
-import {MarketLib} from "./libraries/MarketLib.sol";
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
-import {Constants} from "./libraries/Constants.sol";
+import {MarketLib} from "./libraries/MarketLib.sol";
 
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
@@ -22,7 +20,6 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MorphoSetters is MorphoInternal {
     using MarketLib for Types.Market;
-    using MarketBalanceLib for Types.MarketBalances;
     using SafeTransferLib for ERC20;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
