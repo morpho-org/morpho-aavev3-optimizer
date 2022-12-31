@@ -5,8 +5,8 @@ import {IPool} from "../interfaces/aave/IPool.sol";
 import {IAToken} from "../interfaces/aave/IAToken.sol";
 import {IVariableDebtToken} from "../interfaces/aave/IVariableDebtToken.sol";
 
-import {Math} from "@morpho-utils/math/Math.sol";
 import {Constants} from "./Constants.sol";
+import {Math} from "@morpho-utils/math/Math.sol";
 
 library PoolInteractions {
     function supplyToPool(IPool pool, address underlying, uint256 amount) internal {
@@ -39,6 +39,7 @@ library PoolInteractions {
         view
         returns (uint256 poolSupplyIndex, uint256 poolBorrowIndex)
     {
+        // TODO: Take into account IBT.
         poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
         poolBorrowIndex = pool.getReserveNormalizedVariableDebt(underlying);
     }

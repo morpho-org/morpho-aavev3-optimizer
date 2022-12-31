@@ -3,13 +3,10 @@ pragma solidity ^0.8.17;
 
 import {IPool} from "./interfaces/aave/IPool.sol";
 
-import {MarketLib} from "./libraries/MarketLib.sol";
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
-import {Errors} from "./libraries/Errors.sol";
 import {PoolInteractions} from "./libraries/PoolInteractions.sol";
 
-import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
@@ -17,11 +14,9 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 
 contract EntryPositionsManager is PositionsManagerInternal {
-    using MarketLib for Types.Market;
-    using PoolInteractions for IPool;
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
-    using SafeTransferLib for ERC20;
     using WadRayMath for uint256;
+    using SafeTransferLib for ERC20;
+    using PoolInteractions for IPool;
 
     function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)
         external
@@ -71,9 +66,7 @@ contract EntryPositionsManager is PositionsManagerInternal {
         (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
             _executeBorrow(underlying, amount, borrower, maxLoops, indexes);
 
-        if (toWithdraw > 0) {
-            _pool.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
-        }
+        if (toWithdraw > 0) _pool.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
         if (toBorrow > 0) _pool.borrowFromPool(underlying, toBorrow);
         ERC20(underlying).safeTransfer(receiver, amount);
 

@@ -16,7 +16,7 @@ import {MorphoSetters} from "./MorphoSetters.sol";
 import {EntryPositionsManager} from "./EntryPositionsManager.sol";
 import {ExitPositionsManager} from "./ExitPositionsManager.sol";
 
-// @note: To add: IERC1155, Ownable
+// @note: To add: IERC1155
 contract Morpho is MorphoGetters, MorphoSetters {
     using MarketBalanceLib for Types.MarketBalances;
     using MarketLib for Types.Market;
