@@ -3,12 +3,6 @@ pragma solidity ^0.8.17;
 
 import {IERC1155} from "./interfaces/IERC1155.sol";
 
-import {MarketLib} from "./libraries/MarketLib.sol";
-import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
-import {Types} from "./libraries/Types.sol";
-import {Events} from "./libraries/Events.sol";
-import {Errors} from "./libraries/Errors.sol";
-
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 
 import {MorphoGetters} from "./MorphoGetters.sol";
@@ -18,8 +12,6 @@ import {ExitPositionsManager} from "./ExitPositionsManager.sol";
 
 // @note: To add: IERC1155
 contract Morpho is MorphoGetters, MorphoSetters {
-    using MarketBalanceLib for Types.MarketBalances;
-    using MarketLib for Types.Market;
     using DelegateCall for address;
 
     /// EXTERNAL ///
