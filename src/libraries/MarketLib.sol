@@ -23,6 +23,6 @@ library MarketLib {
         market.indexes.poolBorrowIndex = indexes.poolBorrowIndex.toUint128();
         market.indexes.p2pSupplyIndex = indexes.p2pSupplyIndex.toUint128();
         market.indexes.p2pBorrowIndex = indexes.p2pBorrowIndex.toUint128();
-        market.lastUpdateTimestamp = block.timestamp.toUint32();
+        market.lastUpdateTimestamp = uint32(block.timestamp);
     }
 }

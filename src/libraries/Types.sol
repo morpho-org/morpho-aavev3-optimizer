@@ -58,7 +58,7 @@ library Types {
         uint16 reserveFactor; // 16 bits
         uint16 p2pIndexCursor; // 16 bits
         // SLOT 8
-        address aToken;
+        address aToken; // 160 bits
     }
 
     // Contains storage-only dynamic arrays and mappings.
