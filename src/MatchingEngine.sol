@@ -24,7 +24,7 @@ abstract contract MatchingEngine is MorphoInternal {
         return _promoteOrDemote(
             _marketBalances[underlying].poolSuppliers,
             _marketBalances[underlying].p2pSuppliers,
-            Types.PromoteVars({
+            Types.MatchingEngineVars({
                 underlying: underlying,
                 poolIndex: indexes.poolSupplyIndex,
                 p2pIndex: indexes.p2pSupplyIndex,
@@ -46,7 +46,7 @@ abstract contract MatchingEngine is MorphoInternal {
         return _promoteOrDemote(
             _marketBalances[underlying].poolBorrowers,
             _marketBalances[underlying].p2pBorrowers,
-            Types.PromoteVars({
+            Types.MatchingEngineVars({
                 underlying: underlying,
                 poolIndex: indexes.poolBorrowIndex,
                 p2pIndex: indexes.p2pBorrowIndex,
@@ -68,7 +68,7 @@ abstract contract MatchingEngine is MorphoInternal {
         (demoted,) = _promoteOrDemote(
             _marketBalances[underlying].poolSuppliers,
             _marketBalances[underlying].p2pSuppliers,
-            Types.PromoteVars({
+            Types.MatchingEngineVars({
                 underlying: underlying,
                 poolIndex: indexes.poolSupplyIndex,
                 p2pIndex: indexes.p2pSupplyIndex,
@@ -90,7 +90,7 @@ abstract contract MatchingEngine is MorphoInternal {
         (demoted,) = _promoteOrDemote(
             _marketBalances[underlying].poolBorrowers,
             _marketBalances[underlying].p2pBorrowers,
-            Types.PromoteVars({
+            Types.MatchingEngineVars({
                 underlying: underlying,
                 poolIndex: indexes.poolBorrowIndex,
                 p2pIndex: indexes.p2pBorrowIndex,
@@ -107,8 +107,8 @@ abstract contract MatchingEngine is MorphoInternal {
     function _promoteOrDemote(
         ThreeHeapOrdering.HeapArray storage heapOnPool,
         ThreeHeapOrdering.HeapArray storage heapInP2P,
-        Types.PromoteVars memory vars
-    ) internal returns (uint256 promoted, uint256 loopsDone) {
+        Types.MatchingEngineVars memory vars
+    ) internal returns (uint256 processed, uint256 loopsDone) {
         if (vars.maxLoops == 0) return (0, 0);
 
         uint256 remaining = vars.amount;
@@ -135,7 +135,7 @@ abstract contract MatchingEngine is MorphoInternal {
 
         // Safe unchecked because vars.amount >= remaining.
         unchecked {
-            promoted = vars.amount - remaining;
+            processed = vars.amount - remaining;
         }
     }
 

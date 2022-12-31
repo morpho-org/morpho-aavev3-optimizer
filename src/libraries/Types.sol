@@ -86,7 +86,7 @@ library Types {
         uint256 debt; // The debt value (In base currency in wad).
     }
 
-    struct PromoteVars {
+    struct MatchingEngineVars {
         address underlying;
         uint256 poolIndex;
         uint256 p2pIndex;
@@ -94,7 +94,7 @@ library Types {
         uint256 maxLoops;
         bool borrow;
         function (address, address, uint256, uint256) updateDS; // This function will be used to update the data-structure.
-        bool promoting; // True for promote, False for demote
+        bool promoting; // True for promote, False for demote.
         function(uint256, uint256, uint256, uint256, uint256)
             pure returns (uint256, uint256, uint256) step; // This function will be used to decide whether to use the algorithm for promoting or for demoting.
     }

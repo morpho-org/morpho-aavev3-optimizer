@@ -71,11 +71,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Promote pool borrowers.
         if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolBorrowers.getHead() != address(0)) {
-            (uint256 matched,) = _promoteBorrowers(underlying, amount, maxLoops); // In underlying.
+            (uint256 promoted,) = _promoteBorrowers(underlying, amount, maxLoops); // In underlying.
 
-            toRepay += matched;
-            amount -= matched;
-            deltas.p2pBorrowAmount += matched.rayDiv(indexes.poolBorrowIndex);
+            toRepay += promoted;
+            amount -= promoted;
+            deltas.p2pBorrowAmount += promoted.rayDiv(indexes.poolBorrowIndex);
         }
 
         if (toRepay > 0) {
@@ -149,11 +149,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             amount > 0 && !market.pauseStatuses.isP2PDisabled
                 && _marketBalances[underlying].poolSuppliers.getHead() != address(0)
         ) {
-            (uint256 matched,) = _promoteSuppliers(underlying, amount, maxLoops); // In underlying.
+            (uint256 promoted,) = _promoteSuppliers(underlying, amount, maxLoops); // In underlying.
 
-            toWithdraw += matched;
-            amount -= matched;
-            deltas.p2pSupplyAmount += matched.rayDiv(indexes.p2pSupplyIndex);
+            toWithdraw += promoted;
+            amount -= promoted;
+            deltas.p2pSupplyAmount += promoted.rayDiv(indexes.p2pSupplyIndex);
         }
 
         if (toWithdraw > 0) {
@@ -254,26 +254,26 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Promote pool borrowers.
         if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolBorrowers.getHead() != address(0)) {
-            (uint256 matched, uint256 loopsDone) = _promoteBorrowers(underlying, amount, maxLoops);
+            (uint256 promoted, uint256 loopsDone) = _promoteBorrowers(underlying, amount, maxLoops);
             maxLoops -= loopsDone;
-            amount -= matched;
-            toRepay += matched;
+            amount -= promoted;
+            toRepay += promoted;
         }
 
         /// Breaking repay ///
 
         // Demote peer-to-peer suppliers.
         if (amount > 0) {
-            uint256 unmatched = _demoteSuppliers(underlying, amount, maxLoops);
+            uint256 demoted = _demoteSuppliers(underlying, amount, maxLoops);
 
             // Increase the peer-to-peer supply delta.
-            if (unmatched < amount) {
-                deltas.p2pSupplyDelta += (amount - unmatched).rayDiv(indexes.poolSupplyIndex);
+            if (demoted < amount) {
+                deltas.p2pSupplyDelta += (amount - demoted).rayDiv(indexes.poolSupplyIndex);
                 emit Events.P2PSupplyDeltaUpdated(underlying, deltas.p2pSupplyDelta);
             }
 
             // Math.min as the last decimal might flip.
-            deltas.p2pSupplyAmount -= Math.min(unmatched.rayDiv(indexes.p2pSupplyIndex), deltas.p2pSupplyAmount);
+            deltas.p2pSupplyAmount -= Math.min(demoted.rayDiv(indexes.p2pSupplyIndex), deltas.p2pSupplyAmount);
             deltas.p2pBorrowAmount -= Math.min(amount.rayDiv(indexes.p2pBorrowIndex), deltas.p2pBorrowAmount);
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
 
@@ -365,26 +365,26 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Promote pool suppliers.
         if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolSuppliers.getHead() != address(0)) {
-            (uint256 matched, uint256 loopsDone) = _promoteSuppliers(underlying, amount, maxLoops);
+            (uint256 promoted, uint256 loopsDone) = _promoteSuppliers(underlying, amount, maxLoops);
             maxLoops -= loopsDone;
-            amount -= matched;
-            toWithdraw += matched;
+            amount -= promoted;
+            toWithdraw += promoted;
         }
 
         /// Breaking withdraw ///
 
         // Demote peer-to-peer borrowers.
         if (amount > 0) {
-            uint256 unmatched = _demoteBorrowers(underlying, amount, maxLoops);
+            uint256 demoted = _demoteBorrowers(underlying, amount, maxLoops);
 
             // Increase the peer-to-peer borrow delta.
-            if (unmatched < amount) {
-                deltas.p2pBorrowDelta += (amount - unmatched).rayDiv(indexes.poolBorrowIndex);
+            if (demoted < amount) {
+                deltas.p2pBorrowDelta += (amount - demoted).rayDiv(indexes.poolBorrowIndex);
                 emit Events.P2PBorrowDeltaUpdated(underlying, deltas.p2pBorrowDelta);
             }
 
             deltas.p2pSupplyAmount -= Math.min(deltas.p2pSupplyAmount, amount.rayDiv(indexes.p2pSupplyIndex));
-            deltas.p2pBorrowAmount -= Math.min(deltas.p2pBorrowAmount, unmatched.rayDiv(indexes.p2pBorrowIndex));
+            deltas.p2pBorrowAmount -= Math.min(deltas.p2pBorrowAmount, demoted.rayDiv(indexes.p2pBorrowIndex));
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
             toBorrow = amount;
         }
