@@ -139,7 +139,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             uint256 matchedDelta = Math.min(deltas.p2pSupplyDelta.rayMul(indexes.poolSupplyIndex), amount); // In underlying.
 
             deltas.p2pSupplyDelta = deltas.p2pSupplyDelta.zeroFloorSub(amount.rayDiv(indexes.poolSupplyIndex));
-            toWithdraw += matchedDelta;
+            toWithdraw = matchedDelta;
             amount -= matchedDelta;
             emit Events.P2PSupplyDeltaUpdated(underlying, deltas.p2pSupplyDelta);
         }
@@ -254,8 +254,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Promote pool borrowers.
         if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolBorrowers.getHead() != address(0)) {
             (uint256 matched, uint256 loopsDone) = _promoteBorrowers(underlying, amount, maxLoops);
-            maxLoops = maxLoops.zeroFloorSub(loopsDone);
-
+            maxLoops -= loopsDone;
             amount -= matched;
             toRepay += matched;
         }
