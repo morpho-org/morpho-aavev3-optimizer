@@ -28,7 +28,6 @@ contract EntryPositionsManager is PositionsManagerInternal {
         returns (uint256 supplied)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-
         _validateSupply(underlying, amount, onBehalf);
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
@@ -48,7 +47,6 @@ contract EntryPositionsManager is PositionsManagerInternal {
         returns (uint256 supplied)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-
         _validateSupply(underlying, amount, onBehalf);
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
@@ -73,10 +71,10 @@ contract EntryPositionsManager is PositionsManagerInternal {
         (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
             _executeBorrow(underlying, amount, borrower, maxLoops, indexes);
 
-        if (toBorrow > 0) _pool.borrowFromPool(underlying, toBorrow);
         if (toWithdraw > 0) {
             _pool.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
         }
+        if (toBorrow > 0) _pool.borrowFromPool(underlying, toBorrow);
         ERC20(underlying).safeTransfer(receiver, amount);
 
         emit Events.Borrowed(borrower, underlying, amount, onPool, inP2P);
