@@ -3,46 +3,40 @@ pragma solidity ^0.8.17;
 
 import {IPool} from "./interfaces/aave/IPool.sol";
 import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
-import {IVariableDebtToken} from "./interfaces/aave/IVariableDebtToken.sol";
-import {IAToken} from "./interfaces/aave/IAToken.sol";
-import {IPriceOracleSentinel} from "@aave/core-v3/contracts/interfaces/IPriceOracleSentinel.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
-import {Constants} from "./libraries/Constants.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {PoolInteractions} from "./libraries/PoolInteractions.sol";
 import {InterestRatesModel} from "./libraries/InterestRatesModel.sol";
 
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
-import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
-import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 import {UserConfiguration} from "./libraries/aave/UserConfiguration.sol";
+import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 
 abstract contract MorphoInternal is MorphoStorage {
+    using PoolInteractions for IPool;
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
-    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using UserConfiguration for DataTypes.UserConfigurationMap;
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
-    using PoolInteractions for IPool;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using UserConfiguration for DataTypes.UserConfigurationMap;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    using SafeCast for uint256;
-    using WadRayMath for uint256;
     using Math for uint256;
+    using WadRayMath for uint256;
     using PercentageMath for uint256;
 
     /// MODIFIERS ///
