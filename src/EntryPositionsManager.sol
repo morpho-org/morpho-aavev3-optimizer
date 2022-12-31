@@ -27,7 +27,7 @@ contract EntryPositionsManager is PositionsManagerInternal {
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
 
-        (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) =
+        (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
             _executeSupply(underlying, amount, onBehalf, maxLoops, indexes);
 
         if (toRepay > 0) _pool.repayToPool(underlying, _market[underlying].variableDebtToken, toRepay);
@@ -63,7 +63,7 @@ contract EntryPositionsManager is PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         _validateBorrow(underlying, amount, borrower);
 
-        (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
+        (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) =
             _executeBorrow(underlying, amount, borrower, maxLoops, indexes);
 
         if (toWithdraw > 0) _pool.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);

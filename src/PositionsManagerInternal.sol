@@ -47,7 +47,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
-    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) {
+    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) {
         Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Delta storage deltas = market.deltas;
@@ -123,7 +123,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
-    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) {
+    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) {
         Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Delta storage deltas = market.deltas;
@@ -319,7 +319,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
-    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) {
+    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Market storage market = _market[underlying];
         Types.Delta storage deltas = market.deltas;

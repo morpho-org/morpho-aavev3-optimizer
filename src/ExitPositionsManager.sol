@@ -31,7 +31,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         amount = Math.min(_getUserSupplyBalance(underlying, supplier), amount);
         _validateWithdraw(underlying, amount, receiver);
 
-        (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
+        (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) =
             _executeWithdraw(underlying, amount, supplier, _defaultMaxLoops.withdraw, indexes);
 
         if (toWithdraw > 0) _pool.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
@@ -117,9 +117,9 @@ contract ExitPositionsManager is PositionsManagerInternal {
 
         ERC20(underlyingBorrowed).safeTransferFrom(liquidator, address(this), vars.amountToLiquidate);
 
-        (,, vars.toSupply, vars.toRepay) =
+        (,, vars.toRepay, vars.toSupply) =
             _executeRepay(underlyingBorrowed, vars.amountToLiquidate, borrower, 0, borrowIndexes);
-        (,, vars.toBorrow, vars.toWithdraw) =
+        (,, vars.toWithdraw, vars.toBorrow) =
             _executeWithdraw(underlyingCollateral, vars.amountToSeize, borrower, 0, collateralIndexes);
 
         _pool.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, vars.toRepay);
