@@ -30,7 +30,7 @@ contract EntryPositionsManager is PositionsManagerInternal {
         (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) =
             _executeSupply(underlying, amount, onBehalf, maxLoops, indexes);
 
-        if (toRepay > 0) _pool.repayToPool(underlying, toRepay);
+        if (toRepay > 0) _pool.repayToPool(underlying, _market[underlying].variableDebtToken, toRepay);
         if (toSupply > 0) _pool.supplyToPool(underlying, toSupply);
 
         emit Events.Supplied(from, onBehalf, underlying, amount, onPool, inP2P);

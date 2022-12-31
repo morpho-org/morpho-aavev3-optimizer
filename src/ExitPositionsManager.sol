@@ -76,7 +76,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
             _executeRepay(underlying, amount, onBehalf, 0, indexes); // TODO: Update max loops
 
-        if (toRepay > 0) _pool.repayToPool(underlying, toRepay);
+        if (toRepay > 0) _pool.repayToPool(underlying, _market[underlying].variableDebtToken, toRepay);
         if (toSupply > 0) _pool.supplyToPool(underlying, toSupply);
 
         emit Events.Repaid(repayer, onBehalf, underlying, amount, onPool, inP2P);
@@ -123,7 +123,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
             _executeWithdraw(underlyingCollateral, vars.amountToSeize, borrower, 0, collateralIndexes); // TODO: Update max loops
 
         _pool.supplyToPool(underlyingBorrowed, vars.toSupply);
-        _pool.repayToPool(underlyingBorrowed, vars.toRepay);
+        _pool.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, vars.toRepay);
         _pool.borrowFromPool(underlyingCollateral, vars.toBorrow);
         _pool.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.toWithdraw);
 

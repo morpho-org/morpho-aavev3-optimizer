@@ -23,13 +23,8 @@ library PoolInteractions {
         pool.borrow(underlying, amount, Constants.VARIABLE_INTEREST_MODE, Constants.NO_REFERRAL_CODE, address(this));
     }
 
-    function repayToPool(IPool pool, address underlying, uint256 amount) internal {
-        if (
-            amount == 0
-                || IVariableDebtToken(pool.getReserveData(underlying).variableDebtTokenAddress).scaledBalanceOf(
-                    address(this)
-                ) == 0
-        ) return;
+    function repayToPool(IPool pool, address underlying, address variableDebtToken, uint256 amount) internal {
+        if (amount == 0 || IVariableDebtToken(variableDebtToken).scaledBalanceOf(address(this)) == 0) return;
 
         pool.repay(underlying, amount, Constants.VARIABLE_INTEREST_MODE, address(this)); // Reverts if debt is 0.
     }
