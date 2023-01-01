@@ -1,4 +1,8 @@
 [profile.default]
 via-ir = true
+fs_permissions = [{ access = "read", path = "./"}]
+names = true
+sizes = true
+
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
