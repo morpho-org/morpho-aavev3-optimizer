@@ -24,6 +24,7 @@ contract TestSetup is Test {
     address public usdc;
     address public usdt;
     address public wbtc;
+    address public wNative;
 
     EntryPositionsManager public entryPositionsManager;
     ExitPositionsManager public exitPositionsManager;
@@ -55,6 +56,7 @@ contract TestSetup is Test {
         usdc = TestHelpers.getAddressFromJson(config, network, "USDC");
         usdt = TestHelpers.getAddressFromJson(config, network, "USDT");
         wbtc = TestHelpers.getAddressFromJson(config, network, "WBTC");
+        wNative = TestHelpers.getAddressFromJson(config, network, "wrappedNative");
 
         markets = TestHelpers.getTestMarkets(config, network);
     }
