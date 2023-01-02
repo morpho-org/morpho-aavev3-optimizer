@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Core contracts of Morpho-AaveV3's protocol",
   "author": "Morpho Labs <security@morpho.xyz>",
+  "license": "AGPL-3.0-only",
   "keywords": [
     "defi",
     "protocol",
@@ -16,7 +17,6 @@
     "url": "https://github.com/morpho-dao/morpho-aave-v3/issues",
     "email": "security@morpho.xyz"
   },
-  "license": "ISC",
   "repository": {
     "type": "git",
     "url": "https://github.com/morpho-dao/morpho-aave-v3.git"
