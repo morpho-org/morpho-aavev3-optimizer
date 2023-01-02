@@ -9,28 +9,24 @@ library TestHelpers {
     using stdJson for string;
 
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-    string private constant CONFIG_PATH = "/config/Config.json";
+    string private constant CONFIG_PATH = "/config/";
 
-    function getJsonConfig() internal view returns (string memory json) {
+    function getJsonConfig(string memory network) internal view returns (string memory json) {
         string memory root = vm.projectRoot();
-        string memory path = string(abi.encodePacked(root, CONFIG_PATH));
+        string memory path = string(abi.encodePacked(root, CONFIG_PATH, network, ".json"));
         json = vm.readFile(path);
     }
 
-    function getAddressFromJson(string memory json, string memory network, string memory key)
-        internal
-        pure
-        returns (address)
-    {
-        return json.readAddress(string(abi.encodePacked(network, ".", key)));
+    function getAddressFromJson(string memory json, string memory key) internal pure returns (address) {
+        return json.readAddress(string(abi.encodePacked(key)));
     }
 
-    function getTestMarkets(string memory json, string memory network) internal pure returns (address[] memory) {
-        string[] memory marketNames = json.readStringArray(string(abi.encodePacked(network, ".testMarkets")));
+    function getTestMarkets(string memory json) internal pure returns (address[] memory) {
+        string[] memory marketNames = json.readStringArray(string(abi.encodePacked("testMarkets")));
         address[] memory markets = new address[](marketNames.length);
 
         for (uint256 i; i < markets.length; i++) {
-            markets[i] = getAddressFromJson(json, network, marketNames[i]);
+            markets[i] = getAddressFromJson(json, marketNames[i]);
         }
         return markets;
     }
@@ -42,15 +38,13 @@ library TestHelpers {
         forkId = vm.createSelectFork(endpoint, blockNumber);
     }
 
-    function setForkFromJson(string memory json, string memory network) internal returns (uint256 forkId) {
-        bool rpcPrefixed = stdJson.readBool(json, string(abi.encodePacked(network, ".usesRpcPrefix")));
+    function setForkFromJson(string memory json) internal returns (uint256 forkId) {
+        bool rpcPrefixed = stdJson.readBool(json, string(abi.encodePacked("usesRpcPrefix")));
         string memory endpoint = rpcPrefixed
-            ? string(
-                abi.encodePacked(json.readString(string(abi.encodePacked(network, ".rpc"))), vm.envString("ALCHEMY_KEY"))
-            )
-            : json.readString(string(abi.encodePacked(network, ".rpc")));
+            ? string(abi.encodePacked(json.readString(string(abi.encodePacked("rpc"))), vm.envString("ALCHEMY_KEY")))
+            : json.readString(string(abi.encodePacked("rpc")));
 
-        forkId = vm.createSelectFork(endpoint, json.readUint(string(abi.encodePacked(network, ".", "testBlock"))));
-        vm.chainId(json.readUint(string(abi.encodePacked(network, ".chainId"))));
+        forkId = vm.createSelectFork(endpoint, json.readUint(string(abi.encodePacked("testBlock"))));
+        vm.chainId(json.readUint(string(abi.encodePacked("chainId"))));
     }
 }

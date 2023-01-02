@@ -44,21 +44,21 @@ contract TestSetup is Test {
     }
 
     function configSetUp() public {
-        string memory config = TestHelpers.getJsonConfig();
         string memory network = vm.envString("NETWORK");
+        string memory config = TestHelpers.getJsonConfig(network);
 
-        forkId = TestHelpers.setForkFromJson(config, network);
+        forkId = TestHelpers.setForkFromJson(config);
 
         addressesProvider =
-            IPoolAddressesProvider(TestHelpers.getAddressFromJson(config, network, "LendingPoolAddressesProvider"));
+            IPoolAddressesProvider(TestHelpers.getAddressFromJson(config, "LendingPoolAddressesProvider"));
         pool = IPool(addressesProvider.getPool());
-        dai = TestHelpers.getAddressFromJson(config, network, "DAI");
-        usdc = TestHelpers.getAddressFromJson(config, network, "USDC");
-        usdt = TestHelpers.getAddressFromJson(config, network, "USDT");
-        wbtc = TestHelpers.getAddressFromJson(config, network, "WBTC");
-        wNative = TestHelpers.getAddressFromJson(config, network, "wrappedNative");
+        dai = TestHelpers.getAddressFromJson(config, "DAI");
+        usdc = TestHelpers.getAddressFromJson(config, "USDC");
+        usdt = TestHelpers.getAddressFromJson(config, "USDT");
+        wbtc = TestHelpers.getAddressFromJson(config, "WBTC");
+        wNative = TestHelpers.getAddressFromJson(config, "wrappedNative");
 
-        markets = TestHelpers.getTestMarkets(config, network);
+        markets = TestHelpers.getTestMarkets(config);
     }
 
     function deployAndSet() public {
