@@ -97,7 +97,7 @@ contract RewardsManager {
         rewardsList = IRewardsDistributor(_rewardsController).getRewardsList();
         claimedAmounts = new uint256[](rewardsList.length);
 
-        _updateDataMultiple(_rewardsController, user, _getUserAssetBalances(assets, user));
+        _updateDataMultiple(user, _getUserAssetBalances(assets, user));
 
         for (uint256 i; i < assets.length; ++i) {
             address asset = assets[i];
@@ -123,7 +123,7 @@ contract RewardsManager {
         external
         onlyMorpho
     {
-        _updateData(_rewardsController, user, asset, userBalance, totalSupply);
+        _updateData(user, asset, userBalance, totalSupply);
     }
 
     /// @notice Returns user's accrued rewards for the specified assets and reward token
@@ -253,23 +253,16 @@ contract RewardsManager {
     }
 
     /// @dev Iterates and accrues all the rewards for asset of the specific user.
-    /// @param rewardsController The rewards controller used to query active rewards.
     /// @param user The user address.
     /// @param asset The address of the reference asset of the distribution.
     /// @param userBalance The current user asset balance.
     /// @param totalSupply The total supply of the asset.
-    function _updateData(
-        address rewardsController,
-        address user,
-        address asset,
-        uint256 userBalance,
-        uint256 totalSupply
-    ) internal {
-        address[] memory availableRewards = IRewardsController(rewardsController).getRewardsByAsset(asset);
+    function _updateData(address user, address asset, uint256 userBalance, uint256 totalSupply) internal {
+        address[] memory availableRewards = IRewardsController(_rewardsController).getRewardsByAsset(asset);
         if (availableRewards.length == 0) return;
 
         unchecked {
-            uint256 assetUnit = 10 ** IRewardsController(rewardsController).getAssetDecimals(asset);
+            uint256 assetUnit = 10 ** IRewardsController(_rewardsController).getAssetDecimals(asset);
 
             for (uint128 i; i < availableRewards.length; ++i) {
                 address reward = availableRewards[i];
@@ -291,16 +284,10 @@ contract RewardsManager {
     /// @dev Accrues all the rewards of the assets specified in the userAssetBalances list.
     /// @param user The address of the user.
     /// @param _userAssetBalances The list of structs with the user balance and total supply of a set of assets.
-    function _updateDataMultiple(address rewardsController, address user, UserAssetBalance[] memory _userAssetBalances)
-        internal
-    {
+    function _updateDataMultiple(address user, UserAssetBalance[] memory _userAssetBalances) internal {
         for (uint256 i; i < _userAssetBalances.length; ++i) {
             _updateData(
-                rewardsController,
-                user,
-                _userAssetBalances[i].asset,
-                _userAssetBalances[i].balance,
-                _userAssetBalances[i].totalSupply
+                user, _userAssetBalances[i].asset, _userAssetBalances[i].balance, _userAssetBalances[i].totalSupply
             );
         }
     }
