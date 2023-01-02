@@ -20,14 +20,14 @@ abstract contract MatchingEngine is MorphoInternal {
         internal
         returns (uint256 promoted, uint256 loopsDone)
     {
-        Types.Indexes memory indexes = _market[underlying].indexes;
+        Types.Market storage market = _market[underlying];
         return _promoteOrDemote(
             _marketBalances[underlying].poolSuppliers,
             _marketBalances[underlying].p2pSuppliers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                poolIndex: indexes.poolSupplyIndex,
-                p2pIndex: indexes.p2pSupplyIndex,
+                poolIndex: market.indexes.poolSupplyIndex,
+                p2pIndex: market.indexes.p2pSupplyIndex,
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
@@ -42,14 +42,14 @@ abstract contract MatchingEngine is MorphoInternal {
         internal
         returns (uint256 promoted, uint256 loopsDone)
     {
-        Types.Indexes memory indexes = _market[underlying].indexes;
+        Types.Market storage market = _market[underlying];
         return _promoteOrDemote(
             _marketBalances[underlying].poolBorrowers,
             _marketBalances[underlying].p2pBorrowers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                poolIndex: indexes.poolBorrowIndex,
-                p2pIndex: indexes.p2pBorrowIndex,
+                poolIndex: market.indexes.poolBorrowIndex,
+                p2pIndex: market.indexes.p2pBorrowIndex,
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
@@ -64,14 +64,14 @@ abstract contract MatchingEngine is MorphoInternal {
         internal
         returns (uint256 demoted)
     {
-        Types.Indexes memory indexes = _market[underlying].indexes;
+        Types.Market storage market = _market[underlying];
         (demoted,) = _promoteOrDemote(
             _marketBalances[underlying].poolSuppliers,
             _marketBalances[underlying].p2pSuppliers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                poolIndex: indexes.poolSupplyIndex,
-                p2pIndex: indexes.p2pSupplyIndex,
+                poolIndex: market.indexes.poolSupplyIndex,
+                p2pIndex: market.indexes.p2pSupplyIndex,
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
@@ -86,14 +86,14 @@ abstract contract MatchingEngine is MorphoInternal {
         internal
         returns (uint256 demoted)
     {
-        Types.Indexes memory indexes = _market[underlying].indexes;
+        Types.Market storage market = _market[underlying];
         (demoted,) = _promoteOrDemote(
             _marketBalances[underlying].poolBorrowers,
             _marketBalances[underlying].p2pBorrowers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                poolIndex: indexes.poolBorrowIndex,
-                p2pIndex: indexes.p2pBorrowIndex,
+                poolIndex: market.indexes.poolBorrowIndex,
+                p2pIndex: market.indexes.p2pBorrowIndex,
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
