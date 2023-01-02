@@ -35,7 +35,7 @@ contract RewardsManager {
 
     /// IMMUTABLES ///
 
-    address public immutable rewardsController; // TODO: check how this address could be changed on Aave.
+    address public immutable rewardsController; // The rewards controller is supposed not to change depending on the asset.
     address public immutable morpho;
     IPool public immutable pool;
 
