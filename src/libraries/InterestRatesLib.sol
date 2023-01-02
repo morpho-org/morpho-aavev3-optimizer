@@ -6,7 +6,7 @@ import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
-library InterestRatesModel {
+library InterestRatesLib {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 

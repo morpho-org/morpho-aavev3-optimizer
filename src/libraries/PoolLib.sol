@@ -8,7 +8,7 @@ import {IVariableDebtToken} from "../interfaces/aave/IVariableDebtToken.sol";
 import {Constants} from "./Constants.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 
-library PoolInteractions {
+library PoolLib {
     function supplyToPool(IPool pool, address underlying, uint256 amount) internal {
         pool.supply(underlying, amount, address(this), Constants.NO_REFERRAL_CODE);
     }

@@ -7,7 +7,7 @@ import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
-import {PoolInteractions} from "./libraries/PoolInteractions.sol";
+import {PoolLib} from "./libraries/PoolLib.sol";
 
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
@@ -22,7 +22,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 abstract contract MorphoSetters is MorphoInternal {
     using MarketLib for Types.Market;
     using SafeTransferLib for ERC20;
-    using PoolInteractions for IPool;
+    using PoolLib for IPool;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /// SETTERS ///

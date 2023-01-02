@@ -9,8 +9,8 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
-import {PoolInteractions} from "./libraries/PoolInteractions.sol";
-import {InterestRatesModel} from "./libraries/InterestRatesModel.sol";
+import {PoolLib} from "./libraries/PoolLib.sol";
+import {InterestRatesLib} from "./libraries/InterestRatesLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
@@ -27,7 +27,7 @@ import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 import {MorphoStorage} from "./MorphoStorage.sol";
 
 abstract contract MorphoInternal is MorphoStorage {
-    using PoolInteractions for IPool;
+    using PoolLib for IPool;
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -292,7 +292,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
         (indexes.poolSupplyIndex, indexes.poolBorrowIndex) = _pool.getCurrentPoolIndexes(market.underlying);
 
-        (indexes.p2pSupplyIndex, indexes.p2pBorrowIndex) = InterestRatesModel.computeP2PIndexes(
+        (indexes.p2pSupplyIndex, indexes.p2pBorrowIndex) = InterestRatesLib.computeP2PIndexes(
             Types.IRMParams({
                 lastPoolSupplyIndex: market.indexes.poolSupplyIndex,
                 lastPoolBorrowIndex: market.indexes.poolBorrowIndex,

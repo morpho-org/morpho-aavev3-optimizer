@@ -5,7 +5,7 @@ import {IPool} from "./interfaces/aave/IPool.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
-import {PoolInteractions} from "./libraries/PoolInteractions.sol";
+import {PoolLib} from "./libraries/PoolLib.sol";
 
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
@@ -16,7 +16,7 @@ import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 contract EntryPositionsManager is PositionsManagerInternal {
     using WadRayMath for uint256;
     using SafeTransferLib for ERC20;
-    using PoolInteractions for IPool;
+    using PoolLib for IPool;
 
     function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)
         external

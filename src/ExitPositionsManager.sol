@@ -6,7 +6,7 @@ import {IPool} from "./interfaces/aave/IPool.sol";
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
-import {PoolInteractions} from "./libraries/PoolInteractions.sol";
+import {PoolLib} from "./libraries/PoolLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
@@ -19,7 +19,7 @@ import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 contract ExitPositionsManager is PositionsManagerInternal {
     using WadRayMath for uint256;
     using SafeTransferLib for ERC20;
-    using PoolInteractions for IPool;
+    using PoolLib for IPool;
     using PercentageMath for uint256;
     using MarketBalanceLib for Types.MarketBalances;
 
