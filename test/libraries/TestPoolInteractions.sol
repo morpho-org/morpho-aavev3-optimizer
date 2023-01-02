@@ -24,9 +24,14 @@ contract TestPoolInteractions is TestSetup {
 
     function testSupplyToPool() public {
         ERC20(dai).approve(address(pool), 100 ether);
+
+        uint256 balanceBefore = ERC20(dai).balanceOf(address(this));
+        uint256 aBalanceBefore = ERC20(aDai).balanceOf(address(this));
+
         pool.supplyToPool(dai, 100 ether);
 
-        assertEq(ERC20(aDai).balanceOf(address(this)), 100 ether);
+        assertEq(ERC20(dai).balanceOf(address(this)), balanceBefore - 100 ether);
+        assertEq(ERC20(aDai).balanceOf(address(this)), aBalanceBefore + 100 ether);
 
         vm.expectRevert(bytes("26"));
         pool.supplyToPool(dai, 0);
@@ -35,9 +40,14 @@ contract TestPoolInteractions is TestSetup {
     function testWithdrawFromPool() public {
         ERC20(dai).approve(address(pool), 100 ether);
         pool.supplyToPool(dai, 100 ether);
+
+        uint256 balanceBefore = ERC20(dai).balanceOf(address(this));
+        uint256 aBalanceBefore = ERC20(aDai).balanceOf(address(this));
+
         pool.withdrawFromPool(dai, aDai, 100 ether);
 
-        assertEq(ERC20(aDai).balanceOf(address(this)), 0);
+        assertEq(ERC20(aDai).balanceOf(address(this)), aBalanceBefore - 100 ether);
+        assertEq(ERC20(dai).balanceOf(address(this)), balanceBefore + 100 ether);
     }
 
     function testBorrowFromPool() public {
@@ -45,10 +55,12 @@ contract TestPoolInteractions is TestSetup {
         pool.supplyToPool(dai, 100 ether);
 
         uint256 balanceBefore = ERC20(dai).balanceOf(address(this));
+        uint256 vBalanceBefore = ERC20(vDai).balanceOf(address(this));
+
         pool.borrowFromPool(dai, 50 ether);
 
         assertEq(ERC20(dai).balanceOf(address(this)), balanceBefore + 50 ether);
-        assertEq(ERC20(pool.getReserveData(dai).variableDebtTokenAddress).balanceOf(address(this)), 50 ether);
+        assertEq(ERC20(vDai).balanceOf(address(this)), vBalanceBefore + 50 ether);
 
         vm.expectRevert(bytes("26"));
         pool.borrowFromPool(dai, 0);
@@ -63,13 +75,12 @@ contract TestPoolInteractions is TestSetup {
         vm.warp(block.timestamp + 1);
 
         uint256 balanceBefore = ERC20(dai).balanceOf(address(this));
-        uint256 debtBefore = ERC20(pool.getReserveData(dai).variableDebtTokenAddress).balanceOf(address(this));
+        uint256 vBalanceBefore = ERC20(vDai).balanceOf(address(this));
 
         ERC20(dai).approve(address(pool), 50 ether);
         pool.repayToPool(dai, 50 ether);
 
-        uint256 debtAfter = ERC20(pool.getReserveData(dai).variableDebtTokenAddress).balanceOf(address(this));
         assertEq(ERC20(dai).balanceOf(address(this)), balanceBefore - 50 ether);
-        assertEq(debtBefore - debtAfter, 50 ether);
+        assertEq(ERC20(vDai).balanceOf(address(this)), vBalanceBefore - 50 ether);
     }
 }
