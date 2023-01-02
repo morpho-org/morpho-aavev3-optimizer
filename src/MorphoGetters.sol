@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IERC1155} from "./interfaces/IERC1155.sol";
 import {IPoolAddressesProvider} from "./interfaces/aave/IPoolAddressesProvider.sol";
 import {IPool} from "./interfaces/aave/IPool.sol";
+import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
 
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
@@ -11,6 +11,7 @@ import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {Constants} from "./libraries/Constants.sol";
+
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 
@@ -18,7 +19,7 @@ import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
-abstract contract MorphoGetters is IERC1155, MorphoInternal {
+abstract contract MorphoGetters is MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
@@ -55,46 +56,5 @@ abstract contract MorphoGetters is IERC1155, MorphoInternal {
 
     function isClaimRewardsPaused() external view returns (bool) {
         return _isClaimRewardsPaused;
-    }
-
-    /// UTILITY ///
-
-    function decodeId(uint256 id) external view returns (address, Types.PositionType) {
-        return _decodeId(id);
-    }
-
-    /// ERC1155 ///
-
-    /// @inheritdoc IERC1155
-    function balanceOf(address _owner, uint256 _id) public view returns (uint256) {
-        (address underlying, Types.PositionType positionType) = _decodeId(_id);
-
-        return _balanceOf(_owner, underlying, positionType);
-    }
-
-    /// @inheritdoc IERC1155
-    function balanceOfBatch(address[] memory _owners, uint256[] memory _ids)
-        external
-        view
-        returns (uint256[] memory batchBalances)
-    {
-        if (_owners.length != _ids.length) revert Errors.LengthMismatch();
-
-        batchBalances = new uint256[](_owners.length);
-
-        for (uint256 i; i < _owners.length; ++i) {
-            batchBalances[i] = balanceOf(_owners[i], _ids[i]);
-        }
-    }
-
-    /// @inheritdoc IERC1155
-    function isApprovedForAll(address _owner, address _operator) external view returns (bool) {
-        uint256 nbMarkets = _marketsCreated.length;
-
-        for (uint256 i; i < nbMarkets; ++i) {
-            if (!_isApprovedForBy[_marketsCreated[i]][_owner][_operator]) return false;
-        }
-
-        return true;
     }
 }

@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IPool} from "./interfaces/Interfaces.sol";
-import {MarketLib} from "./libraries/Libraries.sol";
+import {IPool} from "./interfaces/aave/IPool.sol";
+
+import {MarketLib} from "./libraries/MarketLib.sol";
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
-import {MarketLib} from "./libraries/MarketLib.sol";
 import {PoolInteractions} from "./libraries/PoolInteractions.sol";
 
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
-import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+
+import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 
 contract EntryPositionsManager is PositionsManagerInternal {
     using MarketLib for Types.Market;

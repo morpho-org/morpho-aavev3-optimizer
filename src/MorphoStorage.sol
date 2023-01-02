@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IPool, IPoolAddressesProvider} from "./interfaces/Interfaces.sol";
+import {IPool, IPoolAddressesProvider} from "./interfaces/aave/IPool.sol";
+import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
+import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Constants} from "./libraries/Constants.sol";
+
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract MorphoStorage {
+contract MorphoStorage is Initializable, OwnableUpgradeable {
     /// STORAGE ///
 
     address[] internal _marketsCreated; // Keeps track of the created markets.

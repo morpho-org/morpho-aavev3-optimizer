@@ -9,33 +9,24 @@ import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {Constants} from "./libraries/Constants.sol";
+
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
-import {MorphoInternal} from "./MorphoInternal.sol";
-import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
-
-import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
-import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-abstract contract MorphoSetters is IERC1155, MorphoInternal, Initializable, OwnableUpgradeable {
+import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
+
+import {MorphoInternal} from "./MorphoInternal.sol";
+
+abstract contract MorphoSetters is MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using SafeTransferLib for ERC20;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-
-    /// ERC1155 ///
-
-    /// @inheritdoc IERC1155
-    function setApprovalForAll(address _operator, bool _approved) external {
-        for (uint256 i; i < _marketsCreated.length; ++i) {
-            _isApprovedForBy[_marketsCreated[i]][msg.sender][_operator] = _approved;
-        }
-    }
 
     /// GOVERNANCE ///
 
