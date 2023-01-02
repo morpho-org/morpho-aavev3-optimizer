@@ -11,10 +11,6 @@ library MarketLib {
         return market.aToken != address(0);
     }
 
-    function isCreatedMem(Types.Market memory market) internal pure returns (bool) {
-        return market.aToken != address(0);
-    }
-
     function getIndexes(Types.Market storage market) internal view returns (Types.Indexes256 memory indexes) {
         indexes.poolSupplyIndex = uint256(market.indexes.poolSupplyIndex);
         indexes.poolBorrowIndex = uint256(market.indexes.poolBorrowIndex);
@@ -27,6 +23,6 @@ library MarketLib {
         market.indexes.poolBorrowIndex = indexes.poolBorrowIndex.toUint128();
         market.indexes.p2pSupplyIndex = indexes.p2pSupplyIndex.toUint128();
         market.indexes.p2pBorrowIndex = indexes.p2pBorrowIndex.toUint128();
-        market.lastUpdateTimestamp = block.timestamp.toUint32();
+        market.lastUpdateTimestamp = uint32(block.timestamp);
     }
 }

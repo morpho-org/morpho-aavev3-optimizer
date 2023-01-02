@@ -51,14 +51,14 @@ library Types {
         Delta deltas; // 1024 bits
         // SLOT 6
         address underlying; // 160 bits
-        PauseStatuses pauseStatuses; // 64 bits
+        PauseStatuses pauseStatuses; // 80 bits
         // SLOT 7
         address variableDebtToken; // 160 bits
         uint32 lastUpdateTimestamp; // 32 bits
         uint16 reserveFactor; // 16 bits
         uint16 p2pIndexCursor; // 16 bits
         // SLOT 8
-        address aToken;
+        address aToken; // 160 bits
     }
 
     // Contains storage-only dynamic arrays and mappings.
@@ -81,12 +81,12 @@ library Types {
 
     struct LiquidityData {
         uint256 collateral; // The collateral value (In base currency in wad).
-        uint256 maxDebt; // The max debt value (In base currency in wad).
-        uint256 liquidationThresholdValue; // The liquidation threshold value (In base currency in wad).
+        uint256 borrowable; // The maximum debt value allowed to borrow (In base currency in wad).
+        uint256 maxDebt; // The maximum debt value allowed before being liquidatable (In base currency in wad).
         uint256 debt; // The debt value (In base currency in wad).
     }
 
-    struct PromoteVars {
+    struct MatchingEngineVars {
         address underlying;
         uint256 poolIndex;
         uint256 p2pIndex;
@@ -94,7 +94,7 @@ library Types {
         uint256 maxLoops;
         bool borrow;
         function (address, address, uint256, uint256) updateDS; // This function will be used to update the data-structure.
-        bool promoting; // True for promote, False for demote
+        bool promoting; // True for promote, False for demote.
         function(uint256, uint256, uint256, uint256, uint256)
             pure returns (uint256, uint256, uint256) step; // This function will be used to decide whether to use the algorithm for promoting or for demoting.
     }

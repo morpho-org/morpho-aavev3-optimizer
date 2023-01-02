@@ -3,13 +3,10 @@ pragma solidity ^0.8.17;
 
 import {IPool} from "./interfaces/aave/IPool.sol";
 
-import {MarketLib} from "./libraries/MarketLib.sol";
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
-import {Errors} from "./libraries/Errors.sol";
-import {PoolInteractions} from "./libraries/PoolInteractions.sol";
+import {PoolLib} from "./libraries/PoolLib.sol";
 
-import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
@@ -17,26 +14,23 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 
 contract EntryPositionsManager is PositionsManagerInternal {
-    using MarketLib for Types.Market;
-    using PoolInteractions for IPool;
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
-    using SafeTransferLib for ERC20;
     using WadRayMath for uint256;
+    using SafeTransferLib for ERC20;
+    using PoolLib for IPool;
 
     function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)
         external
         returns (uint256 supplied)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-
         _validateSupply(underlying, amount, onBehalf);
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
 
-        (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) =
+        (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
             _executeSupply(underlying, amount, onBehalf, maxLoops, indexes);
 
-        if (toRepay > 0) _pool.repayToPool(underlying, toRepay);
+        if (toRepay > 0) _pool.repayToPool(underlying, _market[underlying].variableDebtToken, toRepay);
         if (toSupply > 0) _pool.supplyToPool(underlying, toSupply);
 
         emit Events.Supplied(from, onBehalf, underlying, amount, onPool, inP2P);
@@ -48,7 +42,6 @@ contract EntryPositionsManager is PositionsManagerInternal {
         returns (uint256 supplied)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-
         _validateSupply(underlying, amount, onBehalf);
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
@@ -70,13 +63,11 @@ contract EntryPositionsManager is PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         _validateBorrow(underlying, amount, borrower);
 
-        (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) =
+        (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) =
             _executeBorrow(underlying, amount, borrower, maxLoops, indexes);
 
+        if (toWithdraw > 0) _pool.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
         if (toBorrow > 0) _pool.borrowFromPool(underlying, toBorrow);
-        if (toWithdraw > 0) {
-            _pool.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
-        }
         ERC20(underlying).safeTransfer(receiver, amount);
 
         emit Events.Borrowed(borrower, underlying, amount, onPool, inP2P);

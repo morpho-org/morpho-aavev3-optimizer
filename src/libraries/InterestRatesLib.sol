@@ -6,7 +6,7 @@ import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
-library InterestRatesModel {
+library InterestRatesLib {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
@@ -15,7 +15,7 @@ library InterestRatesModel {
         pure
         returns (uint256 newP2PSupplyIndex, uint256 newP2PBorrowIndex)
     {
-        // Compute pool growth factors
+        // Compute pool growth factors.
         Types.GrowthFactors memory growthFactors = computeGrowthFactors(
             params.poolSupplyIndex,
             params.poolBorrowIndex,

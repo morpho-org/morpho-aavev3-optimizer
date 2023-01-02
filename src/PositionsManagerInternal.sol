@@ -1,42 +1,42 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
+import {IPriceOracleSentinel} from "@aave/core-v3/contracts/interfaces/IPriceOracleSentinel.sol";
+
 import {Types} from "./libraries/Types.sol";
-import {Constants} from "./libraries/Constants.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
+import {Constants} from "./libraries/Constants.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
-import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
 
-import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
-
-import {IPriceOracleSentinel} from "@aave/core-v3/contracts/interfaces/IPriceOracleSentinel.sol";
-
-import {MatchingEngine} from "./MatchingEngine.sol";
+import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+import {MatchingEngine} from "./MatchingEngine.sol";
+
 abstract contract PositionsManagerInternal is MatchingEngine {
-    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using MarketBalanceLib for Types.MarketBalances;
-    using MarketLib for Types.Market;
+    using Math for uint256;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
-    using Math for uint256;
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using MarketLib for Types.Market;
+    using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     function _validateSupply(address underlying, uint256 amount, address user) internal view {
-        Types.Market storage market = _market[underlying];
         if (user == address(0)) revert Errors.AddressIsZero();
         if (amount == 0) revert Errors.AmountIsZero();
 
+        Types.Market storage market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
         if (market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
     }
@@ -47,7 +47,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
-    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) {
+    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) {
         Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Delta storage deltas = market.deltas;
@@ -71,18 +71,18 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Promote pool borrowers.
         if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolBorrowers.getHead() != address(0)) {
-            (uint256 matched,) = _promoteBorrowers(underlying, amount, maxLoops); // In underlying.
+            (uint256 promoted,) = _promoteBorrowers(underlying, amount, maxLoops); // In underlying.
 
-            toRepay += matched;
-            amount -= matched;
-            deltas.p2pBorrowAmount += matched.rayDiv(indexes.poolBorrowIndex);
+            toRepay += promoted;
+            amount -= promoted;
+            deltas.p2pBorrowAmount += promoted.rayDiv(indexes.poolBorrowIndex);
         }
 
         if (toRepay > 0) {
-            uint256 toAddInP2P = toRepay.rayDiv(indexes.p2pBorrowIndex);
+            uint256 suppliedP2P = toRepay.rayDiv(indexes.p2pBorrowIndex);
 
-            deltas.p2pSupplyAmount += toAddInP2P;
-            inP2P += toAddInP2P;
+            deltas.p2pSupplyAmount += suppliedP2P;
+            inP2P += suppliedP2P;
 
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
         }
@@ -94,18 +94,18 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             onPool += amount.rayDiv(indexes.poolSupplyIndex); // In scaled balance.
             toSupply = amount;
         }
+
         _updateSupplierInDS(underlying, user, onPool, inP2P);
     }
 
     function _validateBorrow(address underlying, uint256 amount, address user) internal view {
-        Types.Market storage market = _market[underlying];
-
         if (amount == 0) revert Errors.AmountIsZero();
+
+        Types.Market storage market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
         if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
-        if (!_pool.getConfiguration(underlying).getBorrowingEnabled()) {
-            revert Errors.BorrowingNotEnabled();
-        }
+        if (!_pool.getConfiguration(underlying).getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
+
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
         // In response, Morpho mirrors this behavior.
         address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
@@ -114,7 +114,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         Types.LiquidityData memory values = _liquidityData(underlying, user, 0, amount);
-        if (values.debt > values.maxDebt) revert Errors.UnauthorisedBorrow();
+        if (values.debt > values.borrowable) revert Errors.UnauthorisedBorrow();
     }
 
     function _executeBorrow(
@@ -123,7 +123,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
-    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) {
+    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) {
         Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Delta storage deltas = market.deltas;
@@ -139,7 +139,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             uint256 matchedDelta = Math.min(deltas.p2pSupplyDelta.rayMul(indexes.poolSupplyIndex), amount); // In underlying.
 
             deltas.p2pSupplyDelta = deltas.p2pSupplyDelta.zeroFloorSub(amount.rayDiv(indexes.poolSupplyIndex));
-            toWithdraw += matchedDelta;
+            toWithdraw = matchedDelta;
             amount -= matchedDelta;
             emit Events.P2PSupplyDeltaUpdated(underlying, deltas.p2pSupplyDelta);
         }
@@ -149,18 +149,18 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             amount > 0 && !market.pauseStatuses.isP2PDisabled
                 && _marketBalances[underlying].poolSuppliers.getHead() != address(0)
         ) {
-            (uint256 matched,) = _promoteSuppliers(underlying, amount, maxLoops); // In underlying.
+            (uint256 promoted,) = _promoteSuppliers(underlying, amount, maxLoops); // In underlying.
 
-            toWithdraw += matched;
-            amount -= matched;
-            deltas.p2pSupplyAmount += matched.rayDiv(indexes.p2pSupplyIndex);
+            toWithdraw += promoted;
+            amount -= promoted;
+            deltas.p2pSupplyAmount += promoted.rayDiv(indexes.p2pSupplyIndex);
         }
 
         if (toWithdraw > 0) {
-            uint256 toAddInP2P = toWithdraw.rayDiv(indexes.p2pBorrowIndex); // In peer-to-peer unit.
+            uint256 borrowedP2P = toWithdraw.rayDiv(indexes.p2pBorrowIndex); // In peer-to-peer unit.
 
-            deltas.p2pBorrowAmount += toAddInP2P;
-            inP2P += toAddInP2P;
+            deltas.p2pBorrowAmount += borrowedP2P;
+            inP2P += borrowedP2P;
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
         }
 
@@ -171,11 +171,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             onPool += amount.rayDiv(indexes.poolBorrowIndex); // In adUnit.
             toBorrow = amount;
         }
+
         _updateBorrowerInDS(underlying, user, onPool, inP2P);
     }
 
     function _validateRepay(address underlying, uint256 amount) internal view {
         if (amount == 0) revert Errors.AmountIsZero();
+
         Types.Market storage market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
         if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
@@ -188,8 +190,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) {
-        Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+        Types.Market storage market = _market[underlying];
         Types.Delta storage deltas = market.deltas;
 
         onPool = marketBalances.scaledPoolBorrowBalance(user);
@@ -201,8 +203,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (onPool > 0) {
             toRepay = Math.min(onPool.rayMul(indexes.poolBorrowIndex), amount);
             amount -= toRepay;
-
-            onPool -= Math.min(onPool, toRepay.rayDiv(indexes.poolBorrowIndex)); // In adUnit.
+            onPool -= Math.min(onPool, toRepay.rayDiv(indexes.poolBorrowIndex)); // In scaled balance.
 
             if (amount == 0) {
                 _updateBorrowerInDS(underlying, user, onPool, inP2P);
@@ -253,27 +254,26 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Promote pool borrowers.
         if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolBorrowers.getHead() != address(0)) {
-            (uint256 matched, uint256 loopsDone) = _promoteBorrowers(underlying, amount, maxLoops);
-            maxLoops = maxLoops.zeroFloorSub(loopsDone);
-
-            amount -= matched;
-            toRepay += matched;
+            (uint256 promoted, uint256 loopsDone) = _promoteBorrowers(underlying, amount, maxLoops);
+            maxLoops -= loopsDone;
+            amount -= promoted;
+            toRepay += promoted;
         }
 
         /// Breaking repay ///
 
         // Demote peer-to-peer suppliers.
         if (amount > 0) {
-            uint256 unmatched = _demoteSuppliers(underlying, amount, maxLoops);
+            uint256 demoted = _demoteSuppliers(underlying, amount, maxLoops);
 
             // Increase the peer-to-peer supply delta.
-            if (unmatched < amount) {
-                deltas.p2pSupplyDelta += (amount - unmatched).rayDiv(indexes.poolSupplyIndex);
+            if (demoted < amount) {
+                deltas.p2pSupplyDelta += (amount - demoted).rayDiv(indexes.poolSupplyIndex);
                 emit Events.P2PSupplyDeltaUpdated(underlying, deltas.p2pSupplyDelta);
             }
 
             // Math.min as the last decimal might flip.
-            deltas.p2pSupplyAmount -= Math.min(unmatched.rayDiv(indexes.p2pSupplyIndex), deltas.p2pSupplyAmount);
+            deltas.p2pSupplyAmount -= Math.min(demoted.rayDiv(indexes.p2pSupplyIndex), deltas.p2pSupplyAmount);
             deltas.p2pBorrowAmount -= Math.min(amount.rayDiv(indexes.p2pBorrowIndex), deltas.p2pBorrowAmount);
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
 
@@ -289,6 +289,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (receiver == address(0)) revert Errors.AddressIsZero();
         if (!market.isCreated()) revert Errors.MarketNotCreated();
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
+
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
         // For safety concerns and as a withdraw on Morpho can trigger a borrow on pool, Morpho prevents withdrawals in such circumstances.
         address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
@@ -301,9 +302,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         internal
         view
     {
-        Types.Market storage market = _market[underlying];
         if (amount == 0) revert Errors.AmountIsZero();
         if (receiver == address(0)) revert Errors.AddressIsZero();
+
+        Types.Market storage market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
         if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
@@ -317,9 +319,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
-    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toBorrow, uint256 toWithdraw) {
-        Types.Market storage market = _market[underlying];
+    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+        Types.Market storage market = _market[underlying];
         Types.Delta storage deltas = market.deltas;
 
         onPool = marketBalances.scaledPoolSupplyBalance(user);
@@ -363,31 +365,26 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Promote pool suppliers.
         if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolSuppliers.getHead() != address(0)) {
-            (uint256 matched, uint256 loopsDone) = _promoteSuppliers(underlying, amount, maxLoops);
-            if (maxLoops <= loopsDone) {
-                maxLoops = 0;
-            } else {
-                maxLoops -= loopsDone;
-            }
-
-            amount -= matched;
-            toWithdraw += matched;
+            (uint256 promoted, uint256 loopsDone) = _promoteSuppliers(underlying, amount, maxLoops);
+            maxLoops -= loopsDone;
+            amount -= promoted;
+            toWithdraw += promoted;
         }
 
         /// Breaking withdraw ///
 
         // Demote peer-to-peer borrowers.
         if (amount > 0) {
-            uint256 unmatched = _demoteBorrowers(underlying, amount, maxLoops);
+            uint256 demoted = _demoteBorrowers(underlying, amount, maxLoops);
 
             // Increase the peer-to-peer borrow delta.
-            if (unmatched < amount) {
-                deltas.p2pBorrowDelta += (amount - unmatched).rayDiv(indexes.poolBorrowIndex);
+            if (demoted < amount) {
+                deltas.p2pBorrowDelta += (amount - demoted).rayDiv(indexes.poolBorrowIndex);
                 emit Events.P2PBorrowDeltaUpdated(underlying, deltas.p2pBorrowDelta);
             }
 
             deltas.p2pSupplyAmount -= Math.min(deltas.p2pSupplyAmount, amount.rayDiv(indexes.p2pSupplyIndex));
-            deltas.p2pBorrowAmount -= Math.min(deltas.p2pBorrowAmount, unmatched.rayDiv(indexes.p2pBorrowIndex));
+            deltas.p2pBorrowAmount -= Math.min(deltas.p2pBorrowAmount, demoted.rayDiv(indexes.p2pBorrowIndex));
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
             toBorrow = amount;
         }
@@ -425,15 +422,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
             address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
 
-            if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
-            {
-                if (healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD) {
-                    revert Errors.UnauthorisedLiquidate();
-                }
-            } else {
-                if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
-                    revert Errors.UnauthorisedLiquidate();
-                }
+            if (
+                priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
+                    && healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD
+            ) {
+                revert Errors.UnauthorisedLiquidate();
+            } else if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+                revert Errors.UnauthorisedLiquidate();
             }
 
             closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD

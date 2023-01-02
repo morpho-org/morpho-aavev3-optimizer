@@ -16,8 +16,8 @@ contract MorphoStorage is Initializable, OwnableUpgradeable {
     address[] internal _marketsCreated; // Keeps track of the created markets.
     mapping(address => Types.Market) internal _market;
     mapping(address => Types.MarketBalances) internal _marketBalances;
-    mapping(address => EnumerableSet.AddressSet) internal _userCollaterals; // The markets entered by a user.
-    mapping(address => EnumerableSet.AddressSet) internal _userBorrows; // The markets entered by a user.
+    mapping(address => EnumerableSet.AddressSet) internal _userCollaterals; // The collateral markets entered by a user.
+    mapping(address => EnumerableSet.AddressSet) internal _userBorrows; // The borrow markets entered by a user.
 
     uint256 internal _maxSortedUsers; // The max number of users to sort in the data structure.
     Types.MaxLoops internal _defaultMaxLoops;
@@ -28,9 +28,13 @@ contract MorphoStorage is Initializable, OwnableUpgradeable {
     address internal _exitPositionsManager;
     // IInterestRatesManager internal _interestRatesManager;
     // IRewardsController internal _rewardsController;
-    // IIncentivesVault internal _incentivesVault;
     // IRewardsManager internal _rewardsManager;
 
     address internal _treasuryVault;
     bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
+
+    /// @dev The contract is automatically marked as initialized when deployed to prevent highjacking the implementation contract.
+    constructor() {
+        _disableInitializers();
+    }
 }
