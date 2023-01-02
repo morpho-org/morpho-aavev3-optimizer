@@ -7,7 +7,9 @@ import {IScaledBalanceToken} from "@aave/core-v3/contracts/interfaces/IScaledBal
 import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol";
 import {IRewardsDistributor} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsDistributor.sol";
 
-import {DataTypes} from "./libraries/aave/DataTypes.sol";
+import {Types} from "./libraries/Types.sol";
+
+import {Morpho} from "./Morpho.sol";
 
 /// @title RewardsManager.
 /// @author Morpho Labs.
@@ -36,7 +38,7 @@ contract RewardsManager {
     /// IMMUTABLES ///
 
     address public immutable rewardsController; // The rewards controller is supposed not to change depending on the asset.
-    address public immutable morpho;
+    Morpho public immutable morpho;
     IPool public immutable pool;
 
     /// STORAGE ///
@@ -76,7 +78,7 @@ contract RewardsManager {
     /// @notice TODO: add NATSPEC.
     constructor(address _rewardsController, address _morpho, address _pool) {
         rewardsController = _rewardsController;
-        morpho = _morpho;
+        morpho = Morpho(_morpho);
         pool = IPool(_pool);
     }
 
@@ -423,13 +425,13 @@ contract RewardsManager {
             address asset = _assets[i];
             userAssetBalances[i].asset = asset;
 
-            DataTypes.ReserveData memory reserve =
-                pool.getReserveData(IPoolToken(userAssetBalances[i].asset).UNDERLYING_ASSET_ADDRESS());
+            Types.Market memory market =
+                morpho.market(IPoolToken(userAssetBalances[i].asset).UNDERLYING_ASSET_ADDRESS());
 
-            if (asset == reserve.aTokenAddress) {
-                // TODO: userAssetBalances[i].balance = morpho.supplyBalanceInOf(reserve.aTokenAddress, _user).onPool;
-            } else if (asset == reserve.variableDebtTokenAddress) {
-                // TODO: userAssetBalances[i].balance = morpho.borrowBalanceInOf(reserve.aTokenAddress, _user).onPool;
+            if (asset == market.aToken) {
+                userAssetBalances[i].balance = morpho.scaledPoolSupplyBalance(market.underlying, _user);
+            } else if (asset == market.variableDebtToken) {
+                userAssetBalances[i].balance = morpho.scaledPoolBorrowBalance(market.underlying, _user);
             } else {
                 revert InvalidAsset();
             }
