@@ -168,10 +168,7 @@ abstract contract MorphoInternal is MorphoStorage {
                 * underlyingPrice / tokenUnit
         );
 
-        // Calculate borrowable value for borrow.
         borrowableValue = collateralValue.percentMul(ltv);
-
-        // Calculate max debt value variable for withdraw.
         maxDebtValue = collateralValue.percentMul(liquidationThreshold);
     }
 
