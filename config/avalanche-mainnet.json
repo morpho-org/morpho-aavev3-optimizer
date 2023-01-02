@@ -2,7 +2,7 @@
     "usesRpcPrefix" : false,
     "rpc" : "https://api.avax.network/ext/bc/C/rpc",
     "chainId" : 43114,
-    "testBlock" : 15675271,
+    "testBlock" : 24437213,
     "testMarkets" : ["DAI", "USDC", "WBTC", "WETH"],
     "LendingPoolAddressesProvider" : "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
     "DAI" : "0xd586E7F844cEa2F87f50152665BCbc2C279D8d70",

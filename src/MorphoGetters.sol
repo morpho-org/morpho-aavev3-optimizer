@@ -56,6 +56,10 @@ abstract contract MorphoGetters is MorphoInternal {
         return _isClaimRewardsPaused;
     }
 
+    function pool() external view returns (IPool) {
+        return _pool;
+    }
+
     /// UTILITY ///
 
     function decodeId(uint256 id) external pure returns (address underlying, Types.PositionType positionType) {

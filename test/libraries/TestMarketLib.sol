@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GNU AGPLv3
 pragma solidity 0.8.17;
 
-import {Types} from "../src/libraries/Types.sol";
-import {MarketLib} from "../src/libraries/MarketLib.sol";
+import {Types} from "../../src/libraries/Types.sol";
+import {MarketLib} from "../../src/libraries/MarketLib.sol";
 
 import {Test} from "@forge-std/Test.sol";
 
