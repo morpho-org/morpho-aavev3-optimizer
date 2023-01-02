@@ -7,6 +7,7 @@ import {IScaledBalanceToken} from "@aave/core-v3/contracts/interfaces/IScaledBal
 import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol";
 import {IRewardsDistributor} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsDistributor.sol";
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Types} from "./libraries/Types.sol";
 
 import {Morpho} from "./Morpho.sol";
@@ -16,6 +17,8 @@ import {Morpho} from "./Morpho.sol";
 /// @custom:contact security@_morpho.xyz
 /// @notice Contract managing Aave's protocol rewards.
 contract RewardsManager {
+    using SafeCast for uint256;
+
     /// STRUCTS ///
 
     struct UserAssetBalance {
@@ -209,17 +212,12 @@ contract RewardsManager {
         (oldIndex, newIndex) = _getAssetIndex(localRewardData, asset, reward, totalSupply, assetUnit);
 
         if (newIndex != oldIndex) {
-            require(newIndex <= type(uint128).max, "INDEX_OVERFLOW"); // TODO: replace with custom error.
-
             indexUpdated = true;
-
-            // Optimization: storing one after another saves one SSTORE.
-            localRewardData.index = uint128(newIndex);
+            localRewardData.index = newIndex.toUint128();
         }
 
+        // Not safe casting because 2^128 is large enough.
         localRewardData.lastUpdateTimestamp = uint128(block.timestamp);
-
-        return (newIndex, indexUpdated);
     }
 
     /// @dev Updates the state of the distribution for the specific user.
