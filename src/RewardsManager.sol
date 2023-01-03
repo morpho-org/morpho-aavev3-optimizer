@@ -10,13 +10,14 @@ import {IRewardsDistributor} from "@aave/periphery-v3/contracts/rewards/interfac
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Types} from "./libraries/Types.sol";
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {Morpho} from "./Morpho.sol";
 
 /// @title RewardsManager.
 /// @author Morpho Labs.
-/// @custom:contact security@_morpho.xyz
+/// @custom:contact security@morpho.xyz
 /// @notice Contract managing Aave's protocol rewards.
-contract RewardsManager {
+contract RewardsManager is Initializable {
     using SafeCast for uint256;
 
     /// STRUCTS ///
@@ -80,6 +81,8 @@ contract RewardsManager {
 
     /// @notice TODO: add NATSPEC.
     constructor(address rewardsController, address morpho, address pool) {
+        _disableInitializers();
+
         _rewardsController = rewardsController;
         _morpho = Morpho(morpho);
         _pool = IPool(pool);
