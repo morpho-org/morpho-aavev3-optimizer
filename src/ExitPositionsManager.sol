@@ -28,7 +28,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
         returns (uint256 withdrawn)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserSupplyBalance(underlying, supplier), amount);
+        amount = Math.min(_getUserSupplyBalance(underlying, supplier), amount); // TODO: _getUserSupplyBalance uses _computeIndexes and it's sub-optimal
         _validateWithdraw(underlying, amount, receiver);
 
         (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) =
@@ -69,7 +69,7 @@ contract ExitPositionsManager is PositionsManagerInternal {
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserBorrowBalance(underlying, onBehalf), amount);
-        _validateRepay(underlying, amount);
+        _validateRepay(underlying, amount, onBehalf);
 
         ERC20(underlying).safeTransferFrom(repayer, address(this), amount);
 

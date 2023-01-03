@@ -17,13 +17,6 @@ contract TestMarketLib is Test {
         assertTrue(market.isCreated());
     }
 
-    function testIsCreatedMem() public {
-        Types.Market memory marketMem;
-        assertFalse(marketMem.isCreatedMem());
-        marketMem.aToken = address(1);
-        assertTrue(marketMem.isCreatedMem());
-    }
-
     function testSetAndGetIndexes() public {
         assertEq(market.indexes.poolSupplyIndex, 0);
         assertEq(market.indexes.poolBorrowIndex, 0);
