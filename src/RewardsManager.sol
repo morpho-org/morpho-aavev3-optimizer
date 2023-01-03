@@ -121,7 +121,7 @@ contract RewardsManager {
     /// @param user The address of the user.
     /// @param asset The address of the reference asset of the distribution (aToken or variable debt token).
     /// @param userBalance The current user asset balance.
-    function updateUserAssetAndAccruedRewards(address user, address asset, uint256 userBalance) external onlyMorpho {
+    function updateUserRewards(address user, address asset, uint256 userBalance) external onlyMorpho {
         _updateData(user, asset, userBalance);
     }
 

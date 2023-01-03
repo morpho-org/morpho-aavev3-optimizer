@@ -4,5 +4,5 @@ pragma solidity ^0.8.0;
 interface IRewardsManager {
     function claimRewards(address[] calldata assets, address user) external;
 
-    function updateUserAssetAndAccruedRewards(address user, address asset, uint256 userBalance) external;
+    function updateUserRewards(address user, address asset, uint256 userBalance) external;
 }
