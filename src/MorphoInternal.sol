@@ -55,16 +55,6 @@ abstract contract MorphoInternal is MorphoStorage {
         positionType = Types.PositionType(_id & 0xf);
     }
 
-    /// @dev Returns the supply balance of `user` in the `underlying` market.
-    /// @dev Note: Computes the result with the stored indexes, which are not always the most up to date ones.
-    /// @param user The address of the user.
-    /// @param underlying The market where to get the supply amount.
-    /// @return The supply balance of the user (in underlying).
-    function _getUserSupplyBalance(address underlying, address user) internal view returns (uint256) {
-        Types.Indexes256 memory indexes = _computeIndexes(underlying);
-        return _getUserSupplyBalanceFromIndexes(underlying, user, indexes.poolSupplyIndex, indexes.p2pSupplyIndex);
-    }
-
     function _getUserSupplyBalanceFromIndexes(
         address underlying,
         address user,
@@ -74,16 +64,6 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         return marketBalances.scaledPoolSupplyBalance(user).rayMul(poolSupplyIndex)
             + marketBalances.scaledP2PSupplyBalance(user).rayMul(p2pSupplyIndex);
-    }
-
-    /// @dev Returns the borrow balance of `user` in the `underlying` market.
-    /// @dev Note: Computes the result with the stored indexes, which are not always the most up to date ones.
-    /// @param user The address of the user.
-    /// @param underlying The market where to get the borrow amount.
-    /// @return The borrow balance of the user (in underlying).
-    function _getUserBorrowBalance(address underlying, address user) internal view returns (uint256) {
-        Types.Indexes256 memory indexes = _computeIndexes(underlying);
-        return _getUserBorrowBalanceFromIndexes(underlying, user, indexes.poolBorrowIndex, indexes.p2pBorrowIndex);
     }
 
     function _getUserBorrowBalanceFromIndexes(

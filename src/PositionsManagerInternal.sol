@@ -449,7 +449,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address underlyingBorrowed,
         address underlyingCollateral,
         uint256 maxToLiquidate,
-        address borrower
+        address borrower,
+        uint256 collateralPoolSupplyIndex,
+        uint256 collateralP2PSupplyIndex
     ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
         amountToLiquidate = maxToLiquidate;
         (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
@@ -468,7 +470,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         amountToSeize = ((amountToLiquidate * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
             .percentMul(liquidationBonus);
 
-        uint256 collateralBalance = _getUserSupplyBalance(underlyingCollateral, borrower);
+        uint256 collateralBalance = _getUserSupplyBalanceFromIndexes(
+            underlyingCollateral, borrower, collateralPoolSupplyIndex, collateralP2PSupplyIndex
+        );
 
         if (amountToSeize > collateralBalance) {
             amountToSeize = collateralBalance;

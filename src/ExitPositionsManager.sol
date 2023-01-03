@@ -28,7 +28,10 @@ contract ExitPositionsManager is PositionsManagerInternal {
         returns (uint256 withdrawn)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserSupplyBalance(underlying, supplier), amount); // TODO: _getUserSupplyBalance uses _computeIndexes and it's sub-optimal
+        amount = Math.min(
+            _getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.poolSupplyIndex, indexes.p2pSupplyIndex),
+            amount
+        );
         _validateWithdraw(underlying, amount, receiver);
 
         (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) =
@@ -68,7 +71,10 @@ contract ExitPositionsManager is PositionsManagerInternal {
         returns (uint256 repaid)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserBorrowBalance(underlying, onBehalf), amount);
+        amount = Math.min(
+            _getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes.poolBorrowIndex, indexes.p2pBorrowIndex),
+            amount
+        );
         _validateRepay(underlying, amount, onBehalf);
 
         ERC20(underlying).safeTransferFrom(repayer, address(this), amount);
@@ -109,11 +115,19 @@ contract ExitPositionsManager is PositionsManagerInternal {
 
         vars.amountToLiquidate = Math.min(
             amount,
-            _getUserBorrowBalance(underlyingBorrowed, borrower).percentMul(vars.closeFactor) // Max liquidatable debt.
+            _getUserBorrowBalanceFromIndexes(
+                underlyingBorrowed, borrower, borrowIndexes.poolBorrowIndex, borrowIndexes.p2pBorrowIndex
+            ).percentMul(vars.closeFactor) // Max liquidatable debt.
         );
 
-        (vars.amountToLiquidate, vars.amountToSeize) =
-            _calculateAmountToSeize(underlyingBorrowed, underlyingCollateral, vars.amountToLiquidate, borrower);
+        (vars.amountToLiquidate, vars.amountToSeize) = _calculateAmountToSeize(
+            underlyingBorrowed,
+            underlyingCollateral,
+            vars.amountToLiquidate,
+            borrower,
+            collateralIndexes.poolSupplyIndex,
+            collateralIndexes.p2pSupplyIndex
+        );
 
         ERC20(underlyingBorrowed).safeTransferFrom(liquidator, address(this), vars.amountToLiquidate);
 
