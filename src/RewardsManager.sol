@@ -131,6 +131,20 @@ contract RewardsManager is Initializable {
         _updateData(user, asset, userBalance);
     }
 
+    /// GETTERS ///
+
+    function getRewardsController() external view returns (address) {
+        return _rewardsController;
+    }
+
+    function getMorpho() external view returns (address) {
+        return address(_morpho);
+    }
+
+    function getPool() external view returns (address) {
+        return address(_pool);
+    }
+
     /// @notice Returns user's accrued rewards for the specified assets and reward token
     /// @param assets The list of assets to retrieve accrued rewards.
     /// @param user The address of the user.
