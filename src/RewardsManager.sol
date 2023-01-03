@@ -79,7 +79,10 @@ contract RewardsManager is Initializable {
 
     /// CONSTRUCTOR ///
 
-    /// @notice TODO: add NATSPEC.
+    /// @notice Initializes immutable variables.
+    /// @param rewardsController The address of the Aave rewards controller.
+    /// @param morpho The address of the main Morpho contract.
+    /// @param pool The address of the Aave pool.
     constructor(address rewardsController, address morpho, address pool) {
         _disableInitializers();
 
