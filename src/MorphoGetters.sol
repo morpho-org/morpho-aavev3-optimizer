@@ -56,8 +56,8 @@ abstract contract MorphoGetters is MorphoInternal {
         return _isClaimRewardsPaused;
     }
 
-    function pool() external view returns (IPool) {
-        return _pool;
+    function pool() external view returns (address) {
+        return address(_pool);
     }
 
     /// UTILITY ///
