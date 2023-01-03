@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {IPool} from "./interfaces/aave/IPool.sol";
+import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -214,7 +215,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     function _updateInDS(
-        address, // Note: token unused for now until more functionality added in
+        address asset,
         address user,
         ThreeHeapOrdering.HeapArray storage marketOnPool,
         ThreeHeapOrdering.HeapArray storage marketInP2P,
@@ -224,14 +225,9 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 formerOnPool = marketOnPool.getValueOf(user);
 
         if (onPool != formerOnPool) {
-            // if (address(rewardsManager) != address(0))
-            //     rewardsManager.updateUserAssetAndAccruedRewards(
-            //         rewardsController,
-            //         user,
-            //         token,
-            //         formerOnPool,
-            //         IScaledBalanceToken(token).scaledTotalSupply()
-            //     );
+            if (_rewardsManager != address(0)) {
+                IRewardsManager(_rewardsManager).updateUserAssetAndAccruedRewards(user, asset, formerOnPool);
+            }
             marketOnPool.update(user, formerOnPool, onPool, _maxSortedUsers);
         }
         marketInP2P.update(user, marketInP2P.getValueOf(user), inP2P, _maxSortedUsers);
@@ -239,7 +235,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
     function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P) internal {
         _updateInDS(
-            underlying,
+            _market[underlying].aToken,
             user,
             _marketBalances[underlying].poolSuppliers,
             _marketBalances[underlying].p2pSuppliers,

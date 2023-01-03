@@ -121,12 +121,8 @@ contract RewardsManager {
     /// @param user The address of the user.
     /// @param asset The address of the reference asset of the distribution (aToken or variable debt token).
     /// @param userBalance The current user asset balance.
-    /// @param totalSupply The current total supply of underlying assets for this distribution.
-    function updateUserAssetAndAccruedRewards(address user, address asset, uint256 userBalance, uint256 totalSupply)
-        external
-        onlyMorpho
-    {
-        _updateData(user, asset, userBalance, totalSupply);
+    function updateUserAssetAndAccruedRewards(address user, address asset, uint256 userBalance) external onlyMorpho {
+        _updateData(user, asset, userBalance);
     }
 
     /// @notice Returns user's accrued rewards for the specified assets and reward token
@@ -254,10 +250,11 @@ contract RewardsManager {
     /// @param user The user address.
     /// @param asset The address of the reference asset of the distribution.
     /// @param userBalance The current user asset balance.
-    /// @param totalSupply The total supply of the asset.
-    function _updateData(address user, address asset, uint256 userBalance, uint256 totalSupply) internal {
+    function _updateData(address user, address asset, uint256 userBalance) internal {
         address[] memory availableRewards = IRewardsController(_rewardsController).getRewardsByAsset(asset);
         if (availableRewards.length == 0) return;
+
+        uint256 totalSupply = IScaledBalanceToken(asset).scaledTotalSupply();
 
         unchecked {
             uint256 assetUnit = 10 ** IRewardsController(_rewardsController).getAssetDecimals(asset);
@@ -284,9 +281,7 @@ contract RewardsManager {
     /// @param _userAssetBalances The list of structs with the user balance and total supply of a set of assets.
     function _updateDataMultiple(address user, UserAssetBalance[] memory _userAssetBalances) internal {
         for (uint256 i; i < _userAssetBalances.length; ++i) {
-            _updateData(
-                user, _userAssetBalances[i].asset, _userAssetBalances[i].balance, _userAssetBalances[i].totalSupply
-            );
+            _updateData(user, _userAssetBalances[i].asset, _userAssetBalances[i].balance);
         }
     }
 

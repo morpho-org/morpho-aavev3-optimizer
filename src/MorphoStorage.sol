@@ -28,7 +28,7 @@ contract MorphoStorage is Initializable, OwnableUpgradeable {
     address internal _exitPositionsManager;
     // IInterestRatesManager internal _interestRatesManager;
     // IRewardsController internal _rewardsController;
-    // IRewardsManager internal _rewardsManager;
+    address internal _rewardsManager;
 
     address internal _treasuryVault;
     bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
