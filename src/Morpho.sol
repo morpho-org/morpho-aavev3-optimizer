@@ -2,8 +2,12 @@
 pragma solidity ^0.8.17;
 
 import {IERC1155} from "./interfaces/IERC1155.sol";
+import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol";
 
+import {Events} from "./libraries/Events.sol";
+import {Errors} from "./libraries/Errors.sol";
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
+import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {MorphoGetters} from "./MorphoGetters.sol";
 import {MorphoSetters} from "./MorphoSetters.sol";
@@ -12,6 +16,7 @@ import {ExitPositionsManager} from "./ExitPositionsManager.sol";
 
 // @note: To add: IERC1155
 contract Morpho is MorphoGetters, MorphoSetters {
+    using SafeTransferLib for ERC20;
     using DelegateCall for address;
 
     /// EXTERNAL ///
@@ -100,5 +105,28 @@ contract Morpho is MorphoGetters, MorphoSetters {
             )
         );
         return (abi.decode(returnData, (uint256, uint256)));
+    }
+
+    /// @notice Claims rewards for the given assets.
+    /// @param assets The assets to claim rewards from (aToken or variable debt token).
+    /// @return rewardTokens The addresses of each reward token.
+    /// @return claimedAmounts The amount of rewards claimed (in reward tokens).
+    function claimRewards(address[] calldata assets, bool)
+        external
+        returns (address[] memory rewardTokens, uint256[] memory claimedAmounts)
+    {
+        if (_isClaimRewardsPaused) revert Errors.ClaimRewardsPaused();
+
+        (rewardTokens, claimedAmounts) = _rewardsManager.claimRewards(assets, msg.sender);
+        IRewardsController(_rewardsManager.getRewardsController()).claimAllRewardsToSelf(assets);
+
+        for (uint256 i; i < rewardTokens.length; ++i) {
+            uint256 claimedAmount = claimedAmounts[i];
+
+            if (claimedAmount > 0) {
+                ERC20(rewardTokens[i]).safeTransfer(msg.sender, claimedAmount);
+                emit Events.RewardsClaimed(msg.sender, rewardTokens[i], claimedAmount);
+            }
+        }
     }
 }

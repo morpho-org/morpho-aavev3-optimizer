@@ -58,6 +58,8 @@ library Events {
         bool borrow, address indexed user, address indexed underlying, uint256 balanceOnPool, uint256 balanceInP2P
     );
 
+    event RewardsClaimed(address indexed user, address indexed rewardToken, uint256 amountClaimed);
+
     event IsSupplyPausedSet(address indexed underlying, bool isPaused);
 
     event IsBorrowPausedSet(address indexed underlying, bool isPaused);
