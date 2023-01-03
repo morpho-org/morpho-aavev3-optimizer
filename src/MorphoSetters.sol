@@ -88,7 +88,7 @@ abstract contract MorphoSetters is MorphoInternal {
         emit Events.MaxSortedUsersSet(newMaxSortedUsers);
     }
 
-    function setDefaultMaxLoops(Types.MaxLoops memory defaultMaxLoops) external onlyOwner {
+    function setDefaultMaxLoops(Types.MaxLoops calldata defaultMaxLoops) external onlyOwner {
         _defaultMaxLoops = defaultMaxLoops;
         emit Events.DefaultMaxLoopsSet(
             defaultMaxLoops.supply, defaultMaxLoops.borrow, defaultMaxLoops.repay, defaultMaxLoops.withdraw
@@ -107,7 +107,7 @@ abstract contract MorphoSetters is MorphoInternal {
         emit Events.ExitPositionsManagerSet(exitPositionsManager);
     }
 
-    function setRewardssManager(address rewardsManager) external onlyOwner {
+    function setRewardsManager(address rewardsManager) external onlyOwner {
         if (rewardsManager == address(0)) revert Errors.AddressIsZero();
         _rewardsManager = rewardsManager;
         emit Events.RewardsManagerSet(rewardsManager);
