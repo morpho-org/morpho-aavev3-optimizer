@@ -10,7 +10,7 @@ import {IRewardsDistributor} from "@aave/periphery-v3/contracts/rewards/interfac
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Types} from "./libraries/Types.sol";
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {Morpho} from "./Morpho.sol";
 
 /// @title RewardsManager.
