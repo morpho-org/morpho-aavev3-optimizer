@@ -13,6 +13,7 @@ import {PoolLib} from "./libraries/PoolLib.sol";
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 
+import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
@@ -25,6 +26,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     using SafeTransferLib for ERC20;
     using PoolLib for IPool;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+
+    using Math for uint256;
+    using WadRayMath for uint256;
 
     /// SETTERS ///
 
@@ -81,6 +85,40 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         ERC20(underlying).safeApprove(address(_pool), type(uint256).max);
 
         emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
+    }
+
+    function increaseP2PDeltas(address underlying, uint256 amount) external onlyOwner isMarketCreated(underlying) {
+        Types.Indexes256 memory indexes = _updateIndexes(underlying);
+
+        Types.Market storage market = _market[underlying];
+        uint256 poolSupplyIndex = indexes.poolSupplyIndex;
+        uint256 poolBorrowIndex = indexes.poolBorrowIndex;
+
+        amount = Math.min(
+            amount,
+            Math.min(
+                market.deltas.p2pSupplyAmount.rayMul(indexes.p2pSupplyIndex).zeroFloorSub(
+                    market.deltas.p2pSupplyDelta.rayMul(poolSupplyIndex)
+                ),
+                market.deltas.p2pBorrowAmount.rayMul(indexes.p2pBorrowIndex).zeroFloorSub(
+                    market.deltas.p2pBorrowDelta.rayMul(poolBorrowIndex)
+                )
+            )
+        );
+        if (amount == 0) revert Errors.AmountIsZero();
+
+        uint256 newP2PSupplyDelta = market.deltas.p2pSupplyDelta + amount.rayDiv(poolSupplyIndex);
+        uint256 newP2PBorrowDelta = market.deltas.p2pBorrowDelta + amount.rayDiv(poolBorrowIndex);
+
+        market.deltas.p2pSupplyDelta = newP2PSupplyDelta;
+        market.deltas.p2pBorrowDelta = newP2PBorrowDelta;
+        emit Events.P2PSupplyDeltaUpdated(underlying, newP2PSupplyDelta);
+        emit Events.P2PBorrowDeltaUpdated(underlying, newP2PBorrowDelta);
+
+        _pool.borrowFromPool(underlying, amount);
+        _pool.supplyToPool(underlying, amount);
+
+        emit Events.P2PDeltasIncreased(underlying, amount);
     }
 
     function setMaxSortedUsers(uint256 newMaxSortedUsers) external onlyOwner {
