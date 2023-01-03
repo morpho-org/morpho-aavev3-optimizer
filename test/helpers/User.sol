@@ -13,6 +13,8 @@ contract User {
     Morpho internal morpho;
     IPool internal pool;
 
+    uint256 internal constant DEFAULT_MAX_LOOPS = 10;
+
     constructor(Morpho _morpho) {
         setMorphoAddresses(_morpho);
     }
@@ -32,7 +34,7 @@ contract User {
     }
 
     function supply(address underlying, uint256 amount, address onBehalf) public {
-        morpho.supply(underlying, amount, onBehalf, 10);
+        morpho.supply(underlying, amount, onBehalf, DEFAULT_MAX_LOOPS);
     }
 
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxLoops) public {
@@ -40,7 +42,7 @@ contract User {
     }
 
     function supply(address underlying, uint256 amount) external {
-        morpho.supply(underlying, amount, address(this), 10);
+        morpho.supply(underlying, amount, address(this), DEFAULT_MAX_LOOPS);
     }
 
     function supply(address underlying, uint256 amount, uint256 maxLoops) external {
@@ -60,7 +62,7 @@ contract User {
     }
 
     function borrow(address underlying, uint256 amount, address receiver) external {
-        morpho.borrow(underlying, amount, receiver, 10);
+        morpho.borrow(underlying, amount, receiver, DEFAULT_MAX_LOOPS);
     }
 
     function borrow(address underlying, uint256 amount, uint256 maxLoops) external {
@@ -68,7 +70,7 @@ contract User {
     }
 
     function borrow(address underlying, uint256 amount) external {
-        morpho.borrow(underlying, amount, address(this), 10);
+        morpho.borrow(underlying, amount, address(this), DEFAULT_MAX_LOOPS);
     }
 
     function repay(address underlying, uint256 amount, address onBehalf, uint256 maxLoops) external {
@@ -76,7 +78,7 @@ contract User {
     }
 
     function repay(address underlying, uint256 amount, address onBehalf) external {
-        morpho.repay(underlying, amount, onBehalf, 10);
+        morpho.repay(underlying, amount, onBehalf, DEFAULT_MAX_LOOPS);
     }
 
     function repay(address underlying, uint256 amount, uint256 maxLoops) external {
@@ -84,7 +86,7 @@ contract User {
     }
 
     function repay(address underlying, uint256 amount) external {
-        morpho.repay(underlying, amount, address(this), 10);
+        morpho.repay(underlying, amount, address(this), DEFAULT_MAX_LOOPS);
     }
 
     function withdraw(address underlying, uint256 amount, address receiver, uint256 maxLoops) external {
@@ -92,7 +94,7 @@ contract User {
     }
 
     function withdraw(address underlying, uint256 amount, address receiver) external {
-        morpho.withdraw(underlying, amount, receiver, 10);
+        morpho.withdraw(underlying, amount, receiver, DEFAULT_MAX_LOOPS);
     }
 
     function withdraw(address underlying, uint256 amount, uint256 maxLoops) external {
@@ -100,7 +102,7 @@ contract User {
     }
 
     function withdraw(address underlying, uint256 amount) external {
-        morpho.withdraw(underlying, amount, address(this), 10);
+        morpho.withdraw(underlying, amount, address(this), DEFAULT_MAX_LOOPS);
     }
 
     function withdrawCollateral(address underlying, uint256 amount, address receiver) external {
