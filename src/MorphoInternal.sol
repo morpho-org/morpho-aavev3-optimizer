@@ -225,8 +225,8 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 formerOnPool = marketOnPool.getValueOf(user);
 
         if (onPool != formerOnPool) {
-            if (_rewardsManager != address(0)) {
-                IRewardsManager(_rewardsManager).updateUserRewards(user, asset, formerOnPool);
+            if (address(_rewardsManager) != address(0)) {
+                _rewardsManager.updateUserRewards(user, asset, formerOnPool);
             }
             marketOnPool.update(user, formerOnPool, onPool, _maxSortedUsers);
         }

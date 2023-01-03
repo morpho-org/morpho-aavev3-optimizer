@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -109,7 +110,7 @@ abstract contract MorphoSetters is MorphoInternal {
 
     function setRewardsManager(address rewardsManager) external onlyOwner {
         if (rewardsManager == address(0)) revert Errors.AddressIsZero();
-        _rewardsManager = rewardsManager;
+        _rewardsManager = IRewardsManager(rewardsManager);
         emit Events.RewardsManagerSet(rewardsManager);
     }
 
