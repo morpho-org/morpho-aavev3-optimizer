@@ -62,9 +62,9 @@ abstract contract MorphoSetters is MorphoInternal {
         if (market.isCreated()) revert Errors.MarketAlreadyCreated();
 
         Types.Indexes256 memory indexes;
-        indexes.p2pSupplyIndex = WadRayMath.RAY;
-        indexes.p2pBorrowIndex = WadRayMath.RAY;
-        (indexes.poolSupplyIndex, indexes.poolBorrowIndex) = _pool.getCurrentPoolIndexes(underlying);
+        indexes.supply.p2pIndex = WadRayMath.RAY;
+        indexes.borrow.p2pIndex = WadRayMath.RAY;
+        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _pool.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
         market.lastUpdateTimestamp = uint32(block.timestamp);

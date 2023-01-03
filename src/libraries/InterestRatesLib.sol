@@ -10,7 +10,7 @@ library InterestRatesLib {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
-    function computeP2PIndexes(Types.IRMParams memory params)
+    function computeP2PIndexes(Types.RatesParams memory params)
         internal
         pure
         returns (uint256 newP2PSupplyIndex, uint256 newP2PBorrowIndex)
@@ -19,24 +19,22 @@ library InterestRatesLib {
         Types.GrowthFactors memory growthFactors = computeGrowthFactors(
             params.poolSupplyIndex,
             params.poolBorrowIndex,
-            params.lastPoolSupplyIndex,
-            params.lastPoolBorrowIndex,
+            params.lastSupplyIndexes.poolIndex,
+            params.lastBorrowIndexes.poolIndex,
             params.p2pIndexCursor,
             params.reserveFactor
         );
         newP2PSupplyIndex = computeP2PIndex(
             growthFactors.poolSupplyGrowthFactor,
             growthFactors.p2pSupplyGrowthFactor,
-            params.lastPoolSupplyIndex,
-            params.lastP2PSupplyIndex,
+            params.lastSupplyIndexes,
             params.deltas.p2pSupplyDelta,
             params.deltas.p2pSupplyAmount
         );
         newP2PBorrowIndex = computeP2PIndex(
             growthFactors.poolBorrowGrowthFactor,
             growthFactors.p2pBorrowGrowthFactor,
-            params.lastPoolBorrowIndex,
-            params.lastP2PBorrowIndex,
+            params.lastBorrowIndexes,
             params.deltas.p2pBorrowDelta,
             params.deltas.p2pBorrowAmount
         );
@@ -81,28 +79,28 @@ library InterestRatesLib {
     /// @notice Computes and returns the new peer-to-peer index of a market given its parameters.
     /// @param poolGrowthFactor The pool growth factor.
     /// @param p2pGrowthFactor The P2P growth factor.
-    /// @param lastPoolIndex The last pool index.
-    /// @param lastP2PIndex The last P2P index.
+    /// @param lastIndexes The last pool & peer-to-peer indexes.
     /// @param p2pDelta The last P2P delta.
     /// @param p2pAmount The last P2P amount.
     /// @return newP2PIndex The updated peer-to-peer index (in ray).
     function computeP2PIndex(
         uint256 poolGrowthFactor,
         uint256 p2pGrowthFactor,
-        uint256 lastPoolIndex,
-        uint256 lastP2PIndex,
+        Types.MarketSideIndexes256 memory lastIndexes,
         uint256 p2pDelta,
         uint256 p2pAmount
     ) internal pure returns (uint256 newP2PIndex) {
         if (p2pAmount == 0 || p2pDelta == 0) {
-            newP2PIndex = lastP2PIndex.rayMul(p2pGrowthFactor);
+            newP2PIndex = lastIndexes.p2pIndex.rayMul(p2pGrowthFactor);
         } else {
             uint256 shareOfTheDelta = Math.min(
-                p2pDelta.wadToRay().rayMul(lastPoolIndex).rayDiv(p2pAmount.wadToRay().rayMul(lastP2PIndex)),
+                p2pDelta.wadToRay().rayMul(lastIndexes.poolIndex).rayDiv(
+                    p2pAmount.wadToRay().rayMul(lastIndexes.p2pIndex)
+                ),
                 WadRayMath.RAY // To avoid shareOfTheDelta > 1 with rounding errors.
             ); // In ray.
 
-            newP2PIndex = lastP2PIndex.rayMul(
+            newP2PIndex = lastIndexes.p2pIndex.rayMul(
                 (WadRayMath.RAY - shareOfTheDelta).rayMul(p2pGrowthFactor) + shareOfTheDelta.rayMul(poolGrowthFactor)
             );
         }

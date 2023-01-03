@@ -55,26 +55,34 @@ abstract contract MorphoInternal is MorphoStorage {
         positionType = Types.PositionType(_id & 0xf);
     }
 
+    function _getUserBalanceFromIndexes(
+        uint256 scaledPoolBalance,
+        uint256 scaledP2PBalance,
+        Types.MarketSideIndexes256 memory indexes
+    ) internal view returns (uint256) {
+        return scaledPoolBalance.rayMul(indexes.poolIndex) + scaledP2PBalance.rayMul(indexes.p2pIndex);
+    }
+
     function _getUserSupplyBalanceFromIndexes(
         address underlying,
         address user,
-        uint256 poolSupplyIndex,
-        uint256 p2pSupplyIndex
+        Types.MarketSideIndexes256 memory indexes
     ) internal view returns (uint256) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return marketBalances.scaledPoolSupplyBalance(user).rayMul(poolSupplyIndex)
-            + marketBalances.scaledP2PSupplyBalance(user).rayMul(p2pSupplyIndex);
+        return _getUserBalanceFromIndexes(
+            marketBalances.scaledPoolSupplyBalance(user), marketBalances.scaledP2PSupplyBalance(user), indexes
+        );
     }
 
     function _getUserBorrowBalanceFromIndexes(
         address underlying,
         address user,
-        uint256 poolBorrowIndex,
-        uint256 p2pBorrowIndex
+        Types.MarketSideIndexes256 memory indexes
     ) internal view returns (uint256) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return marketBalances.scaledPoolBorrowBalance(user).rayMul(poolBorrowIndex)
-            + marketBalances.scaledP2PBorrowBalance(user).rayMul(p2pBorrowIndex);
+        return _getUserBalanceFromIndexes(
+            marketBalances.scaledPoolBorrowBalance(user), marketBalances.scaledP2PBorrowBalance(user), indexes
+        );
     }
 
     /// @dev Computes and returns the total value of the collateral, debt, and LTV/LT value depending on the calculation type.
@@ -106,7 +114,7 @@ abstract contract MorphoInternal is MorphoStorage {
                 ltv,
                 liquidationThreshold,
                 tokenUnit,
-                indexes.poolSupplyIndex,
+                indexes.supply.poolIndex,
                 underlying == collateral ? amountWithdrawn : 0
             );
 
@@ -122,13 +130,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
             Types.Indexes256 memory indexes = _computeIndexes(borrowed);
             liquidityData.debt += _liquidityDataDebt(
-                borrowed,
-                user,
-                underlyingPrice,
-                tokenUnit,
-                indexes.poolBorrowIndex,
-                indexes.p2pBorrowIndex,
-                underlying == borrowed ? amountBorrowed : 0
+                borrowed, user, underlyingPrice, tokenUnit, indexes.borrow, underlying == borrowed ? amountBorrowed : 0
             );
         }
     }
@@ -157,13 +159,11 @@ abstract contract MorphoInternal is MorphoStorage {
         address user,
         uint256 underlyingPrice,
         uint256 tokenUnit,
-        uint256 poolBorrowIndex,
-        uint256 p2pBorrowIndex,
+        Types.MarketSideIndexes256 memory borrowIndexes,
         uint256 amountBorrowed
     ) internal view returns (uint256 debtValue) {
         debtValue = (
-            (_getUserBorrowBalanceFromIndexes(underlying, user, poolBorrowIndex, p2pBorrowIndex) + amountBorrowed)
-                * underlyingPrice
+            (_getUserBorrowBalanceFromIndexes(underlying, user, borrowIndexes) + amountBorrowed) * underlyingPrice
         ).divUp(tokenUnit);
     }
 
@@ -266,20 +266,19 @@ abstract contract MorphoInternal is MorphoStorage {
 
     function _computeIndexes(address underlying) internal view returns (Types.Indexes256 memory indexes) {
         Types.Market storage market = _market[underlying];
+        Types.Indexes256 memory lastIndexes = market.getIndexes();
         if (block.timestamp == market.lastUpdateTimestamp) {
-            return market.getIndexes();
+            return lastIndexes;
         }
 
-        (indexes.poolSupplyIndex, indexes.poolBorrowIndex) = _pool.getCurrentPoolIndexes(market.underlying);
+        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _pool.getCurrentPoolIndexes(market.underlying);
 
-        (indexes.p2pSupplyIndex, indexes.p2pBorrowIndex) = InterestRatesLib.computeP2PIndexes(
-            Types.IRMParams({
-                lastPoolSupplyIndex: market.indexes.poolSupplyIndex,
-                lastPoolBorrowIndex: market.indexes.poolBorrowIndex,
-                lastP2PSupplyIndex: market.indexes.p2pSupplyIndex,
-                lastP2PBorrowIndex: market.indexes.p2pBorrowIndex,
-                poolSupplyIndex: indexes.poolSupplyIndex,
-                poolBorrowIndex: indexes.poolBorrowIndex,
+        (indexes.supply.p2pIndex, indexes.borrow.p2pIndex) = InterestRatesLib.computeP2PIndexes(
+            Types.RatesParams({
+                lastSupplyIndexes: lastIndexes.supply,
+                lastBorrowIndexes: lastIndexes.borrow,
+                poolSupplyIndex: indexes.supply.poolIndex,
+                poolBorrowIndex: indexes.borrow.poolIndex,
                 reserveFactor: market.reserveFactor,
                 p2pIndexCursor: market.p2pIndexCursor,
                 deltas: market.deltas

@@ -18,16 +18,16 @@ contract TestMarketLib is Test {
     }
 
     function testSetAndGetIndexes() public {
-        assertEq(market.indexes.poolSupplyIndex, 0);
-        assertEq(market.indexes.poolBorrowIndex, 0);
-        assertEq(market.indexes.p2pSupplyIndex, 0);
-        assertEq(market.indexes.p2pBorrowIndex, 0);
+        assertEq(market.indexes.supply.poolIndex, 0);
+        assertEq(market.indexes.borrow.poolIndex, 0);
+        assertEq(market.indexes.supply.p2pIndex, 0);
+        assertEq(market.indexes.borrow.p2pIndex, 0);
 
-        market.setIndexes(Types.Indexes256(1, 2, 3, 4));
+        market.setIndexes(Types.Indexes256(Types.MarketSideIndexes256(1, 2), Types.MarketSideIndexes256(3, 4)));
 
-        assertEq(market.indexes.poolSupplyIndex, 1);
-        assertEq(market.indexes.poolBorrowIndex, 2);
-        assertEq(market.indexes.p2pSupplyIndex, 3);
-        assertEq(market.indexes.p2pBorrowIndex, 4);
+        assertEq(market.indexes.supply.poolIndex, 1);
+        assertEq(market.indexes.supply.p2pIndex, 2);
+        assertEq(market.indexes.borrow.poolIndex, 3);
+        assertEq(market.indexes.borrow.p2pIndex, 4);
     }
 }
