@@ -13,36 +13,49 @@ contract TestMarketLib is Test {
 
     Types.MarketBalances internal marketBalances;
 
-    function setUp() public {
-        marketBalances.poolSuppliers.update(address(1), 0, 1, 20);
-        marketBalances.p2pSuppliers.update(address(2), 0, 2, 20);
-        marketBalances.poolBorrowers.update(address(3), 0, 3, 20);
-        marketBalances.p2pBorrowers.update(address(4), 0, 4, 20);
-        marketBalances.collateral[address(5)] = 5;
+    uint256 internal constant DEFAULT_MAX_SORTED_USERS = 20;
+
+    function testScaledPoolSupplyBalance(address user, uint96 amount) public {
+        vm.assume(user != address(0));
+        assertEq(marketBalances.scaledPoolSupplyBalance(user), 0);
+
+        marketBalances.poolSuppliers.update(user, 0, amount, DEFAULT_MAX_SORTED_USERS);
+
+        assertEq(marketBalances.scaledPoolSupplyBalance(user), amount);
     }
 
-    function testScaledPoolSupplyBalance() public {
-        assertEq(marketBalances.scaledPoolSupplyBalance(address(0)), 0);
-        assertEq(marketBalances.scaledPoolSupplyBalance(address(1)), 1);
+    function testScaledPoolBorrowBalance(address user, uint96 amount) public {
+        vm.assume(user != address(0));
+        assertEq(marketBalances.scaledPoolBorrowBalance(user), 0);
+
+        marketBalances.poolBorrowers.update(user, 0, amount, DEFAULT_MAX_SORTED_USERS);
+
+        assertEq(marketBalances.scaledPoolBorrowBalance(user), amount);
     }
 
-    function testScaledP2PSupplyBalance() public {
-        assertEq(marketBalances.scaledP2PSupplyBalance(address(0)), 0);
-        assertEq(marketBalances.scaledP2PSupplyBalance(address(2)), 2);
+    function testScaledP2PSupplyBalance(address user, uint96 amount) public {
+        vm.assume(user != address(0));
+        assertEq(marketBalances.scaledP2PSupplyBalance(user), 0);
+
+        marketBalances.p2pSuppliers.update(user, 0, amount, DEFAULT_MAX_SORTED_USERS);
+
+        assertEq(marketBalances.scaledP2PSupplyBalance(user), amount);
     }
 
-    function testScaledPoolBorrowBalance() public {
-        assertEq(marketBalances.scaledPoolBorrowBalance(address(0)), 0);
-        assertEq(marketBalances.scaledPoolBorrowBalance(address(3)), 3);
+    function testScaledP2PBorrowBalance(address user, uint96 amount) public {
+        vm.assume(user != address(0));
+        assertEq(marketBalances.scaledP2PBorrowBalance(user), 0);
+
+        marketBalances.p2pBorrowers.update(user, 0, amount, DEFAULT_MAX_SORTED_USERS);
+
+        assertEq(marketBalances.scaledP2PBorrowBalance(user), amount);
     }
 
-    function testScaledP2PBorrowBalance() public {
-        assertEq(marketBalances.scaledP2PBorrowBalance(address(0)), 0);
-        assertEq(marketBalances.scaledP2PBorrowBalance(address(4)), 4);
-    }
+    function testScaledCollateralBalance(address user, uint256 amount) public {
+        assertEq(marketBalances.scaledCollateralBalance(user), 0);
 
-    function testScaledCollateralBalance() public {
-        assertEq(marketBalances.scaledCollateralBalance(address(0)), 0);
-        assertEq(marketBalances.scaledCollateralBalance(address(5)), 5);
+        marketBalances.collateral[user] = amount;
+
+        assertEq(marketBalances.scaledCollateralBalance(user), amount);
     }
 }
