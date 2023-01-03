@@ -15,6 +15,7 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
+import {MorphoStorage} from "./MorphoStorage.sol";
 import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 
 contract ExitPositionsManager is IExitPositionsManager, PositionsManagerInternal {
@@ -23,6 +24,12 @@ contract ExitPositionsManager is IExitPositionsManager, PositionsManagerInternal
     using PoolLib for IPool;
     using PercentageMath for uint256;
     using MarketBalanceLib for Types.MarketBalances;
+
+    /// CONSTRUCTOR ///
+
+    constructor(address _addressesProvider) MorphoStorage(_addressesProvider) {}
+
+    /// EXTERNAL ///
 
     function withdrawLogic(address underlying, uint256 amount, address supplier, address receiver)
         external
@@ -35,8 +42,8 @@ contract ExitPositionsManager is IExitPositionsManager, PositionsManagerInternal
         (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) =
             _executeWithdraw(underlying, amount, supplier, _defaultMaxLoops.withdraw, indexes);
 
-        if (toWithdraw > 0) _pool.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
-        if (toBorrow > 0) _pool.borrowFromPool(underlying, toBorrow);
+        if (toWithdraw > 0) POOL.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
+        if (toBorrow > 0) POOL.borrowFromPool(underlying, toBorrow);
         ERC20(underlying).safeTransfer(receiver, amount);
 
         emit Events.Withdrawn(supplier, receiver, underlying, amount, onPool, inP2P);
@@ -55,7 +62,7 @@ contract ExitPositionsManager is IExitPositionsManager, PositionsManagerInternal
 
         _marketBalances[underlying].collateral[supplier] -= amount.rayDiv(indexes.supply.poolIndex);
 
-        _pool.withdrawFromPool(underlying, _market[underlying].aToken, amount);
+        POOL.withdrawFromPool(underlying, _market[underlying].aToken, amount);
         ERC20(underlying).safeTransfer(receiver, amount);
 
         emit Events.CollateralWithdrawn(
@@ -77,8 +84,8 @@ contract ExitPositionsManager is IExitPositionsManager, PositionsManagerInternal
         (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
             _executeRepay(underlying, amount, onBehalf, _defaultMaxLoops.repay, indexes);
 
-        if (toRepay > 0) _pool.repayToPool(underlying, _market[underlying].variableDebtToken, toRepay);
-        if (toSupply > 0) _pool.supplyToPool(underlying, toSupply);
+        if (toRepay > 0) POOL.repayToPool(underlying, _market[underlying].variableDebtToken, toRepay);
+        if (toSupply > 0) POOL.supplyToPool(underlying, toSupply);
 
         emit Events.Repaid(repayer, onBehalf, underlying, amount, onPool, inP2P);
         return amount;
@@ -126,10 +133,10 @@ contract ExitPositionsManager is IExitPositionsManager, PositionsManagerInternal
         (,, vars.toWithdraw, vars.toBorrow) =
             _executeWithdraw(underlyingCollateral, vars.amountToSeize, borrower, 0, collateralIndexes);
 
-        _pool.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, vars.toRepay);
-        _pool.supplyToPool(underlyingBorrowed, vars.toSupply);
-        _pool.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.toWithdraw);
-        _pool.borrowFromPool(underlyingCollateral, vars.toBorrow);
+        POOL.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, vars.toRepay);
+        POOL.supplyToPool(underlyingBorrowed, vars.toSupply);
+        POOL.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.toWithdraw);
+        POOL.borrowFromPool(underlyingCollateral, vars.toBorrow);
 
         ERC20(underlyingCollateral).safeTransfer(liquidator, vars.amountToSeize);
 

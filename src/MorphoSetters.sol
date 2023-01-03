@@ -31,7 +31,6 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     function initialize(
         address newEntryPositionsManager,
         address newExitPositionsManager,
-        address newAddressesProvider,
         Types.MaxLoops memory newDefaultMaxLoops,
         uint256 newMaxSortedUsers
     ) external initializer {
@@ -41,8 +40,6 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
         _entryPositionsManager = newEntryPositionsManager;
         _exitPositionsManager = newExitPositionsManager;
-        _addressesProvider = IPoolAddressesProvider(newAddressesProvider);
-        _pool = IPool(_addressesProvider.getPool());
 
         _defaultMaxLoops = newDefaultMaxLoops;
         _maxSortedUsers = newMaxSortedUsers;
@@ -54,9 +51,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
             revert Errors.ExceedsMaxBasisPoints();
         }
 
-        if (!_pool.getConfiguration(underlying).getActive()) revert Errors.MarketIsNotListedOnAave();
+        if (!POOL.getConfiguration(underlying).getActive()) revert Errors.MarketIsNotListedOnAave();
 
-        DataTypes.ReserveData memory reserveData = _pool.getReserveData(underlying);
+        DataTypes.ReserveData memory reserveData = POOL.getReserveData(underlying);
 
         Types.Market storage market = _market[underlying];
 
@@ -65,7 +62,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         Types.Indexes256 memory indexes;
         indexes.supply.p2pIndex = WadRayMath.RAY;
         indexes.borrow.p2pIndex = WadRayMath.RAY;
-        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _pool.getCurrentPoolIndexes(underlying);
+        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = POOL.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
         market.lastUpdateTimestamp = uint32(block.timestamp);
@@ -78,7 +75,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
         _marketsCreated.push(underlying);
 
-        ERC20(underlying).safeApprove(address(_pool), type(uint256).max);
+        ERC20(underlying).safeApprove(address(POOL), type(uint256).max);
 
         emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
     }

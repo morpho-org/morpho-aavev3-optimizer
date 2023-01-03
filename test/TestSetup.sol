@@ -62,9 +62,9 @@ contract TestSetup is Test {
     }
 
     function deployAndSet() public {
-        entryPositionsManager = new EntryPositionsManager();
-        exitPositionsManager = new ExitPositionsManager();
-        morphoImplementation = new Morpho();
+        entryPositionsManager = new EntryPositionsManager(address(addressesProvider));
+        exitPositionsManager = new ExitPositionsManager(address(addressesProvider));
+        morphoImplementation = new Morpho(address(addressesProvider));
 
         proxyAdmin = new ProxyAdmin();
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImplementation)), address(proxyAdmin), "");
@@ -73,7 +73,6 @@ contract TestSetup is Test {
         morpho.initialize(
             address(entryPositionsManager),
             address(exitPositionsManager),
-            address(addressesProvider),
             Types.MaxLoops({supply: 10, borrow: 10, repay: 10, withdraw: 10}),
             20
         );

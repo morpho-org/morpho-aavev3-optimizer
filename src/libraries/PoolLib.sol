@@ -7,8 +7,11 @@ import {IVariableDebtToken} from "../interfaces/aave/IVariableDebtToken.sol";
 
 import {Constants} from "./Constants.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 library PoolLib {
+    using WadRayMath for uint256;
+
     function supplyToPool(IPool pool, address underlying, uint256 amount) internal {
         pool.supply(underlying, amount, address(this), Constants.NO_REFERRAL_CODE);
     }
@@ -34,7 +37,6 @@ library PoolLib {
         view
         returns (uint256 poolSupplyIndex, uint256 poolBorrowIndex)
     {
-        // TODO: Take into account IBT.
         poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
         poolBorrowIndex = pool.getReserveNormalizedVariableDebt(underlying);
     }

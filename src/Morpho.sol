@@ -6,6 +6,7 @@ import {IERC1155} from "./interfaces/IERC1155.sol";
 
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 
+import {MorphoStorage} from "./MorphoStorage.sol";
 import {MorphoGetters} from "./MorphoGetters.sol";
 import {MorphoSetters} from "./MorphoSetters.sol";
 import {EntryPositionsManager} from "./EntryPositionsManager.sol";
@@ -14,6 +15,10 @@ import {ExitPositionsManager} from "./ExitPositionsManager.sol";
 // @note: To add: IERC1155
 contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     using DelegateCall for address;
+
+    /// CONSTRUCTOR ///
+
+    constructor(address _addressesProvider) MorphoStorage(_addressesProvider) {}
 
     /// EXTERNAL ///
 

@@ -6,11 +6,18 @@ import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
 
 import {Types} from "./libraries/Types.sol";
+import {Errors} from "./libraries/Errors.sol";
 import {Constants} from "./libraries/Constants.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract MorphoStorage is Initializable, OwnableUpgradeable {
+abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
+    /// IMMUTABLES ///
+
+    IPool internal immutable POOL;
+    IPoolAddressesProvider internal immutable ADDRESSES_PROVIDER;
+
     /// STORAGE ///
 
     address[] internal _marketsCreated; // Keeps track of the created markets.
@@ -22,19 +29,20 @@ contract MorphoStorage is Initializable, OwnableUpgradeable {
     uint256 internal _maxSortedUsers; // The max number of users to sort in the data structure.
     Types.MaxLoops internal _defaultMaxLoops;
 
-    IPoolAddressesProvider internal _addressesProvider;
-    IPool internal _pool;
     address internal _entryPositionsManager;
     address internal _exitPositionsManager;
-    // IInterestRatesManager internal _interestRatesManager;
-    // IRewardsController internal _rewardsController;
     // IRewardsManager internal _rewardsManager;
 
     address internal _treasuryVault;
     bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
 
     /// @dev The contract is automatically marked as initialized when deployed to prevent highjacking the implementation contract.
-    constructor() {
+    constructor(address _addressesProvider) {
+        if (_addressesProvider == address(0)) revert Errors.AddressIsZero();
+
         _disableInitializers();
+
+        ADDRESSES_PROVIDER = IPoolAddressesProvider(_addressesProvider);
+        POOL = IPool(ADDRESSES_PROVIDER.getPool());
     }
 }

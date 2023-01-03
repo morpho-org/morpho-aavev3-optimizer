@@ -7,6 +7,8 @@ interface IMorphoGetters {
     function maxSortedUsers() external view returns (uint256);
     function isClaimRewardsPaused() external view returns (bool);
 
+    function pool() external view returns (address);
+    function addressesProvider() external view returns (address);
     function market(address underlying) external view returns (Types.Market memory);
 
     function scaledCollateralBalance(address underlying, address user) external view returns (uint256);
@@ -23,7 +25,6 @@ interface IMorphoSetters {
     function initialize(
         address newEntryPositionsManager,
         address newExitPositionsManager,
-        address newAddressesProvider,
         Types.MaxLoops memory newDefaultMaxLoops,
         uint256 newMaxSortedUsers
     ) external;
