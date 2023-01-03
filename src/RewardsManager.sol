@@ -69,6 +69,9 @@ contract RewardsManager is Initializable {
     /// @notice Thrown when an invalid asset is passed to accrue rewards.
     error InvalidAsset();
 
+    /// @notice Thrown when the the zero address is passed as a parameter.
+    error AddressIsZero();
+
     /// MODIFIERS ///
 
     /// @notice Prevents a user to call function allowed for the main Morpho contract only.
@@ -84,6 +87,7 @@ contract RewardsManager is Initializable {
     /// @param morpho The address of the main Morpho contract.
     /// @param pool The address of the Aave pool.
     constructor(address rewardsController, address morpho, address pool) {
+        if (rewardsController == address(0) || morpho == address(0) || pool == address(0)) revert AddressIsZero();
         _disableInitializers();
 
         _rewardsController = rewardsController;
