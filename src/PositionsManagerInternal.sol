@@ -50,7 +50,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     ) internal returns (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) {
         Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        Types.Delta storage deltas = market.deltas;
+        Types.Deltas storage deltas = market.deltas;
 
         onPool = marketBalances.scaledPoolSupplyBalance(user);
         inP2P = marketBalances.scaledP2PSupplyBalance(user);
@@ -126,7 +126,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     ) internal returns (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) {
         Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        Types.Delta storage deltas = market.deltas;
+        Types.Deltas storage deltas = market.deltas;
 
         _userBorrows[user].add(underlying);
         onPool = marketBalances.scaledPoolBorrowBalance(user);
@@ -192,7 +192,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     ) internal returns (uint256 onPool, uint256 inP2P, uint256 toSupply, uint256 toRepay) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Market storage market = _market[underlying];
-        Types.Delta storage deltas = market.deltas;
+        Types.Deltas storage deltas = market.deltas;
 
         onPool = marketBalances.scaledPoolBorrowBalance(user);
         inP2P = marketBalances.scaledP2PBorrowBalance(user);
@@ -322,7 +322,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     ) internal returns (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Market storage market = _market[underlying];
-        Types.Delta storage deltas = market.deltas;
+        Types.Deltas storage deltas = market.deltas;
 
         onPool = marketBalances.scaledPoolSupplyBalance(user);
         inP2P = marketBalances.scaledP2PSupplyBalance(user);

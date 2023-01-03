@@ -91,24 +91,25 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
         Types.Market storage market = _market[underlying];
+        Types.Deltas memory deltas = market.deltas;
         uint256 poolSupplyIndex = indexes.poolSupplyIndex;
         uint256 poolBorrowIndex = indexes.poolBorrowIndex;
 
         amount = Math.min(
             amount,
             Math.min(
-                market.deltas.p2pSupplyAmount.rayMul(indexes.p2pSupplyIndex).zeroFloorSub(
-                    market.deltas.p2pSupplyDelta.rayMul(poolSupplyIndex)
+                deltas.p2pSupplyAmount.rayMul(indexes.p2pSupplyIndex).zeroFloorSub(
+                    deltas.p2pSupplyDelta.rayMul(poolSupplyIndex)
                 ),
-                market.deltas.p2pBorrowAmount.rayMul(indexes.p2pBorrowIndex).zeroFloorSub(
-                    market.deltas.p2pBorrowDelta.rayMul(poolBorrowIndex)
+                deltas.p2pBorrowAmount.rayMul(indexes.p2pBorrowIndex).zeroFloorSub(
+                    deltas.p2pBorrowDelta.rayMul(poolBorrowIndex)
                 )
             )
         );
         if (amount == 0) revert Errors.AmountIsZero();
 
-        uint256 newP2PSupplyDelta = market.deltas.p2pSupplyDelta + amount.rayDiv(poolSupplyIndex);
-        uint256 newP2PBorrowDelta = market.deltas.p2pBorrowDelta + amount.rayDiv(poolBorrowIndex);
+        uint256 newP2PSupplyDelta = deltas.p2pSupplyDelta + amount.rayDiv(poolSupplyIndex);
+        uint256 newP2PBorrowDelta = deltas.p2pBorrowDelta + amount.rayDiv(poolBorrowIndex);
 
         market.deltas.p2pSupplyDelta = newP2PSupplyDelta;
         market.deltas.p2pBorrowDelta = newP2PBorrowDelta;
