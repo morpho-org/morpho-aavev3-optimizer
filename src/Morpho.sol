@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IMorpho} from "./interfaces/IMorpho.sol";
 import {IERC1155} from "./interfaces/IERC1155.sol";
 
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
@@ -11,7 +12,7 @@ import {EntryPositionsManager} from "./EntryPositionsManager.sol";
 import {ExitPositionsManager} from "./ExitPositionsManager.sol";
 
 // @note: To add: IERC1155
-contract Morpho is MorphoGetters, MorphoSetters {
+contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     using DelegateCall for address;
 
     /// EXTERNAL ///

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IExitPositionsManager} from "./interfaces/IExitPositionsManager.sol";
 import {IPool} from "./interfaces/aave/IPool.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -16,7 +17,7 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 
-contract ExitPositionsManager is PositionsManagerInternal {
+contract ExitPositionsManager is IExitPositionsManager, PositionsManagerInternal {
     using WadRayMath for uint256;
     using SafeTransferLib for ERC20;
     using PoolLib for IPool;
