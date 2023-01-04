@@ -32,13 +32,31 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    function _validateSupply(address underlying, uint256 amount, address user) internal view {
-        if (user == address(0)) revert Errors.AddressIsZero();
+    function _validateInput(address underlying, uint256 amount) internal view returns (Types.Market storage market) {
         if (amount == 0) revert Errors.AmountIsZero();
 
-        Types.Market storage market = _market[underlying];
+        market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
-        if (market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
+    }
+
+    function _validateInput(address underlying, uint256 amount, address user)
+        internal
+        view
+        returns (Types.Market storage)
+    {
+        if (user == address(0)) revert Errors.AddressIsZero();
+
+        return _validateInput(underlying, amount);
+    }
+
+    function _validateSupply(address underlying, uint256 amount, address user) internal view {
+        Types.Market storage market = _validateInput(underlying, amount, user);
+        if (!market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
+    }
+
+    function _validateSupplyCollateral(address underlying, uint256 amount, address user) internal view {
+        Types.Market storage market = _validateInput(underlying, amount, user);
+        if (!market.pauseStatuses.isSupplyCollateralPaused) revert Errors.SupplyCollateralIsPaused();
     }
 
     function _executeSupply(
@@ -175,11 +193,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateBorrowerInDS(underlying, user, onPool, inP2P);
     }
 
-    function _validateRepay(address underlying, uint256 amount) internal view {
-        if (amount == 0) revert Errors.AmountIsZero();
-
-        Types.Market storage market = _market[underlying];
-        if (!market.isCreated()) revert Errors.MarketNotCreated();
+    function _validateRepay(address underlying, uint256 amount, address user) internal view {
+        Types.Market storage market = _validateInput(underlying, amount, user);
         if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
     }
 
@@ -284,10 +299,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     function _validateWithdraw(address underlying, uint256 amount, address receiver) internal view {
-        Types.Market storage market = _market[underlying];
-        if (amount == 0) revert Errors.AmountIsZero();
-        if (receiver == address(0)) revert Errors.AddressIsZero();
-        if (!market.isCreated()) revert Errors.MarketNotCreated();
+        Types.Market storage market = _validateInput(underlying, amount, receiver);
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
 
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
@@ -302,12 +314,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         internal
         view
     {
-        if (amount == 0) revert Errors.AmountIsZero();
-        if (receiver == address(0)) revert Errors.AddressIsZero();
-
-        Types.Market storage market = _market[underlying];
-        if (!market.isCreated()) revert Errors.MarketNotCreated();
-        if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
+        Types.Market storage market = _validateInput(underlying, amount, receiver);
+        if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
         if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
             revert Errors.WithdrawUnauthorized();
         }

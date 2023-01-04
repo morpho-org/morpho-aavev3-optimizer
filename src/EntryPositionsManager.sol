@@ -43,7 +43,7 @@ contract EntryPositionsManager is IEntryPositionsManager, PositionsManagerIntern
         returns (uint256 supplied)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        _validateSupply(underlying, amount, onBehalf);
+        _validateSupplyCollateral(underlying, amount, onBehalf);
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
 
