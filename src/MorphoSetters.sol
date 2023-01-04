@@ -21,9 +21,9 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
+    using PoolLib for IPool;
     using MarketLib for Types.Market;
     using SafeTransferLib for ERC20;
-    using PoolLib for IPool;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /// SETTERS ///
@@ -51,9 +51,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
             revert Errors.ExceedsMaxBasisPoints();
         }
 
-        if (!POOL.getConfiguration(underlying).getActive()) revert Errors.MarketIsNotListedOnAave();
+        if (!_POOL.getConfiguration(underlying).getActive()) revert Errors.MarketIsNotListedOnAave();
 
-        DataTypes.ReserveData memory reserveData = POOL.getReserveData(underlying);
+        DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
 
         Types.Market storage market = _market[underlying];
 
@@ -62,7 +62,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         Types.Indexes256 memory indexes;
         indexes.supply.p2pIndex = WadRayMath.RAY;
         indexes.borrow.p2pIndex = WadRayMath.RAY;
-        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = POOL.getCurrentPoolIndexes(underlying);
+        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
         market.lastUpdateTimestamp = uint32(block.timestamp);
@@ -75,7 +75,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
         _marketsCreated.push(underlying);
 
-        ERC20(underlying).safeApprove(address(POOL), type(uint256).max);
+        ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
 
         emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
     }

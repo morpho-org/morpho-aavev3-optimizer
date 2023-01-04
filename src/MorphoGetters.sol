@@ -13,12 +13,12 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
 
     /// STORAGE ///
 
-    function pool() external view returns (address) {
-        return address(POOL);
+    function POOL() external view returns (address) {
+        return address(_POOL);
     }
 
-    function addressesProvider() external view returns (address) {
-        return address(ADDRESSES_PROVIDER);
+    function ADDRESSES_PROVIDER() external view returns (address) {
+        return address(_ADDRESSES_PROVIDER);
     }
 
     function market(address underlying) external view returns (Types.Market memory) {

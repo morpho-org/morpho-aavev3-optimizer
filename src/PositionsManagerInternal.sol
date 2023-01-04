@@ -122,11 +122,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Market storage market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
         if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
-        if (!POOL.getConfiguration(underlying).getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
+        if (!_POOL.getConfiguration(underlying).getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
 
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
         // In response, Morpho mirrors this behavior.
-        address priceOracleSentinel = ADDRESSES_PROVIDER.getPriceOracleSentinel();
+        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
         if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
             revert Errors.PriceOracleSentinelBorrowDisabled();
         }
@@ -304,7 +304,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
         // For safety concerns and as a withdraw on Morpho can trigger a borrow on pool, Morpho prevents withdrawals in such circumstances.
-        address priceOracleSentinel = ADDRESSES_PROVIDER.getPriceOracleSentinel();
+        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
         if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
             revert Errors.PriceOracleSentinelBorrowPaused();
         }
@@ -428,7 +428,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
         } else {
             uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
-            address priceOracleSentinel = ADDRESSES_PROVIDER.getPriceOracleSentinel();
+            address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
 
             if (
                 priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
@@ -454,15 +454,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
         amountToLiquidate = maxToLiquidate;
         (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
-            POOL.getConfiguration(underlyingCollateral).getParams();
-        (,,, uint256 borrowTokenUnit,,) = POOL.getConfiguration(underlyingBorrowed).getParams();
+            _POOL.getConfiguration(underlyingCollateral).getParams();
+        (,,, uint256 borrowTokenUnit,,) = _POOL.getConfiguration(underlyingBorrowed).getParams();
 
         unchecked {
             collateralTokenUnit = 10 ** collateralTokenUnit;
             borrowTokenUnit = 10 ** borrowTokenUnit;
         }
 
-        IPriceOracleGetter oracle = IPriceOracleGetter(ADDRESSES_PROVIDER.getPriceOracle());
+        IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
         uint256 borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
         uint256 collateralPrice = oracle.getAssetPrice(underlyingCollateral);
 

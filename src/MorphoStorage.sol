@@ -15,8 +15,8 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
     /// IMMUTABLES ///
 
-    IPool internal immutable POOL;
-    IPoolAddressesProvider internal immutable ADDRESSES_PROVIDER;
+    IPool internal immutable _POOL;
+    IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER;
 
     /// STORAGE ///
 
@@ -37,12 +37,12 @@ abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
     bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
 
     /// @dev The contract is automatically marked as initialized when deployed to prevent highjacking the implementation contract.
-    constructor(address _addressesProvider) {
-        if (_addressesProvider == address(0)) revert Errors.AddressIsZero();
+    constructor(address addressesProvider) {
+        if (addressesProvider == address(0)) revert Errors.AddressIsZero();
 
         _disableInitializers();
 
-        ADDRESSES_PROVIDER = IPoolAddressesProvider(_addressesProvider);
-        POOL = IPool(ADDRESSES_PROVIDER.getPool());
+        _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
+        _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
     }
 }

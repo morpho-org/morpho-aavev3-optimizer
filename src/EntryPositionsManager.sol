@@ -22,7 +22,7 @@ contract EntryPositionsManager is IEntryPositionsManager, PositionsManagerIntern
 
     /// CONSTRUCTOR ///
 
-    constructor(address _addressesProvider) MorphoStorage(_addressesProvider) {}
+    constructor(address addressesProvider) MorphoStorage(addressesProvider) {}
 
     /// EXTERNAL ///
 
@@ -38,8 +38,8 @@ contract EntryPositionsManager is IEntryPositionsManager, PositionsManagerIntern
         (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
             _executeSupply(underlying, amount, onBehalf, maxLoops, indexes);
 
-        if (toRepay > 0) POOL.repayToPool(underlying, _market[underlying].variableDebtToken, toRepay);
-        if (toSupply > 0) POOL.supplyToPool(underlying, toSupply);
+        if (toRepay > 0) _POOL.repayToPool(underlying, _market[underlying].variableDebtToken, toRepay);
+        if (toSupply > 0) _POOL.supplyToPool(underlying, toSupply);
 
         emit Events.Supplied(from, onBehalf, underlying, amount, onPool, inP2P);
         return amount;
@@ -56,7 +56,7 @@ contract EntryPositionsManager is IEntryPositionsManager, PositionsManagerIntern
 
         _marketBalances[underlying].collateral[onBehalf] += amount.rayDiv(indexes.supply.poolIndex);
 
-        POOL.supplyToPool(underlying, amount);
+        _POOL.supplyToPool(underlying, amount);
 
         emit Events.CollateralSupplied(
             from, onBehalf, underlying, amount, _marketBalances[underlying].collateral[onBehalf]
@@ -74,8 +74,8 @@ contract EntryPositionsManager is IEntryPositionsManager, PositionsManagerIntern
         (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) =
             _executeBorrow(underlying, amount, borrower, maxLoops, indexes);
 
-        if (toWithdraw > 0) POOL.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
-        if (toBorrow > 0) POOL.borrowFromPool(underlying, toBorrow);
+        if (toWithdraw > 0) _POOL.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
+        if (toBorrow > 0) _POOL.borrowFromPool(underlying, toBorrow);
         ERC20(underlying).safeTransfer(receiver, amount);
 
         emit Events.Borrowed(borrower, underlying, amount, onPool, inP2P);
