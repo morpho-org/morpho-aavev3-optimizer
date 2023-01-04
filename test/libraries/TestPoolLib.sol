@@ -9,7 +9,7 @@ import {TestSetup} from "../setup/TestSetup.sol";
 import {ERC20} from "@solmate/utils/SafeTransferLib.sol";
 import {DataTypes} from "../../src/libraries/aave/DataTypes.sol";
 
-contract TestPoolInteractions is TestSetup {
+contract TestPoolLib is TestSetup {
     using PoolLib for IPool;
 
     address internal aDai;
@@ -28,7 +28,7 @@ contract TestPoolInteractions is TestSetup {
     }
 }
 
-contract TestPoolInteractionsSupply is TestPoolInteractions {
+contract TestPoolLibSupply is TestPoolLib {
     using PoolLib for IPool;
 
     function testSupplyToPool(uint256 amount) public {
@@ -49,7 +49,7 @@ contract TestPoolInteractionsSupply is TestPoolInteractions {
     }
 }
 
-contract TestPoolInteractionsBorrow is TestPoolInteractions {
+contract TestPoolLibBorrow is TestPoolLib {
     using PoolLib for IPool;
 
     function setUp() public virtual override {
@@ -75,7 +75,7 @@ contract TestPoolInteractionsBorrow is TestPoolInteractions {
     }
 }
 
-contract TestPoolInteractionsRepay is TestPoolInteractions {
+contract TestPoolLibRepay is TestPoolLib {
     using PoolLib for IPool;
 
     function setUp() public virtual override {
@@ -100,7 +100,7 @@ contract TestPoolInteractionsRepay is TestPoolInteractions {
     }
 }
 
-contract TestPoolInteractionsWithdraw is TestPoolInteractions {
+contract TestPoolLibWithdraw is TestPoolLib {
     using PoolLib for IPool;
 
     function setUp() public virtual override {
