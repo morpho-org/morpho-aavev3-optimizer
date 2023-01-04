@@ -12,18 +12,19 @@ import {DataTypes} from "../../src/libraries/aave/DataTypes.sol";
 contract TestPoolInteractions is TestSetup {
     using PoolLib for IPool;
 
-    address aDai;
-    address vDai;
+    address internal aDai;
+    address internal vDai;
 
-    uint256 public constant MIN_AMOUNT = 10;
-    uint256 public constant MAX_AMOUNT = 100 ether;
+    uint256 internal constant MIN_AMOUNT = 10;
+    uint256 internal constant MAX_AMOUNT = 100 ether;
 
     function setUp() public virtual override {
-        super.setUp();
+        configSetUp();
+        fillBalance(address(this), type(uint256).max);
+        ERC20(dai).approve(address(pool), type(uint256).max);
         DataTypes.ReserveData memory reserveData = pool.getReserveData(dai);
         aDai = reserveData.aTokenAddress;
         vDai = reserveData.variableDebtTokenAddress;
-        ERC20(dai).approve(address(pool), type(uint256).max);
     }
 }
 
