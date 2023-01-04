@@ -3,14 +3,14 @@ pragma solidity 0.8.17;
 
 import {IPool, IPoolAddressesProvider} from "../../src/interfaces/aave/IPool.sol";
 import {IAToken} from "../../src/interfaces/aave/IAToken.sol";
-import {PoolInteractions} from "../../src/libraries/PoolInteractions.sol";
+import {PoolLib} from "../../src/libraries/PoolLib.sol";
 import {TestHelpers} from "../helpers/TestHelpers.sol";
 import {TestSetup} from "../setup/TestSetup.sol";
 import {ERC20} from "@solmate/utils/SafeTransferLib.sol";
 import {DataTypes} from "../../src/libraries/aave/DataTypes.sol";
 
 contract TestPoolInteractions is TestSetup {
-    using PoolInteractions for IPool;
+    using PoolLib for IPool;
 
     address aDai;
     address vDai;
@@ -28,7 +28,7 @@ contract TestPoolInteractions is TestSetup {
 }
 
 contract TestPoolInteractionsSupply is TestPoolInteractions {
-    using PoolInteractions for IPool;
+    using PoolLib for IPool;
 
     function testSupplyToPool(uint256 amount) public {
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
@@ -49,7 +49,7 @@ contract TestPoolInteractionsSupply is TestPoolInteractions {
 }
 
 contract TestPoolInteractionsBorrow is TestPoolInteractions {
-    using PoolInteractions for IPool;
+    using PoolLib for IPool;
 
     function setUp() public virtual override {
         super.setUp();
@@ -75,7 +75,7 @@ contract TestPoolInteractionsBorrow is TestPoolInteractions {
 }
 
 contract TestPoolInteractionsRepay is TestPoolInteractions {
-    using PoolInteractions for IPool;
+    using PoolLib for IPool;
 
     function setUp() public virtual override {
         super.setUp();
@@ -92,7 +92,7 @@ contract TestPoolInteractionsRepay is TestPoolInteractions {
         uint256 balanceBefore = ERC20(dai).balanceOf(address(this));
         uint256 vBalanceBefore = ERC20(vDai).balanceOf(address(this));
 
-        pool.repayToPool(dai, amount / 4);
+        pool.repayToPool(dai, vDai, amount / 4);
 
         assertEq(ERC20(dai).balanceOf(address(this)) + amount / 4, balanceBefore, "balance");
         assertApproxEqAbs(ERC20(vDai).balanceOf(address(this)) + amount / 4, vBalanceBefore, 1, "vBalance");
@@ -100,7 +100,7 @@ contract TestPoolInteractionsRepay is TestPoolInteractions {
 }
 
 contract TestPoolInteractionsWithdraw is TestPoolInteractions {
-    using PoolInteractions for IPool;
+    using PoolLib for IPool;
 
     function setUp() public virtual override {
         super.setUp();
