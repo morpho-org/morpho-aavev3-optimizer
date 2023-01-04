@@ -56,8 +56,8 @@ library InterestRatesLib {
         uint256 p2pIndexCursor,
         uint256 reserveFactor
     ) internal pure returns (Types.GrowthFactors memory growthFactors) {
-        growthFactors.poolSupplyGrowthFactor = newPoolSupplyIndex.rayDivUp(lastPoolSupplyIndex);
-        growthFactors.poolBorrowGrowthFactor = newPoolBorrowIndex.rayDivDown(lastPoolBorrowIndex);
+        growthFactors.poolSupplyGrowthFactor = newPoolSupplyIndex.rayDiv(lastPoolSupplyIndex);
+        growthFactors.poolBorrowGrowthFactor = newPoolBorrowIndex.rayDiv(lastPoolBorrowIndex);
 
         if (growthFactors.poolSupplyGrowthFactor <= growthFactors.poolBorrowGrowthFactor) {
             uint256 p2pGrowthFactor = PercentageMath.weightedAvg(
@@ -65,9 +65,9 @@ library InterestRatesLib {
             );
 
             growthFactors.p2pSupplyGrowthFactor =
-                p2pGrowthFactor - (p2pGrowthFactor - growthFactors.poolSupplyGrowthFactor).percentMulUp(reserveFactor);
+                p2pGrowthFactor - (p2pGrowthFactor - growthFactors.poolSupplyGrowthFactor).percentMul(reserveFactor);
             growthFactors.p2pBorrowGrowthFactor =
-                p2pGrowthFactor + (growthFactors.poolBorrowGrowthFactor - p2pGrowthFactor).percentMulDown(reserveFactor);
+                p2pGrowthFactor + (growthFactors.poolBorrowGrowthFactor - p2pGrowthFactor).percentMul(reserveFactor);
         } else {
             // The case poolSupplyGrowthFactor > poolBorrowGrowthFactor happens because someone has done a flashloan on Aave:
             // the peer-to-peer growth factors are set to the pool borrow growth factor.
