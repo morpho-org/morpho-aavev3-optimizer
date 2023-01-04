@@ -54,7 +54,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
     function _decodeId(uint256 _id) internal pure returns (address underlying, Types.PositionType positionType) {
         underlying = address(uint160(_id));
-        positionType = Types.PositionType(_id & 0xf);
+        positionType = Types.PositionType(_id >> 252);
     }
 
     /// @dev Returns the supply balance of `user` in the `underlying` market.
