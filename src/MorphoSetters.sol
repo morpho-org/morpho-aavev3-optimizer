@@ -33,8 +33,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     /// SETTERS ///
 
     function initialize(
-        address newEntryPositionsManager,
-        address newExitPositionsManager,
+        address newPositionsManager,
         address newAddressesProvider,
         Types.MaxLoops memory newDefaultMaxLoops,
         uint256 newMaxSortedUsers
@@ -43,8 +42,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
         __Ownable_init_unchained();
 
-        _entryPositionsManager = newEntryPositionsManager;
-        _exitPositionsManager = newExitPositionsManager;
+        _positionsManager = newPositionsManager;
         _addressesProvider = IPoolAddressesProvider(newAddressesProvider);
         _pool = IPool(_addressesProvider.getPool());
 
@@ -135,16 +133,10 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
             );
     }
 
-    function setEntryPositionsManager(address entryPositionsManager) external onlyOwner {
-        if (entryPositionsManager == address(0)) revert Errors.AddressIsZero();
-        _entryPositionsManager = entryPositionsManager;
-        emit Events.EntryPositionsManagerSet(entryPositionsManager);
-    }
-
-    function setExitPositionsManager(address exitPositionsManager) external onlyOwner {
-        if (exitPositionsManager == address(0)) revert Errors.AddressIsZero();
-        _exitPositionsManager = exitPositionsManager;
-        emit Events.ExitPositionsManagerSet(_exitPositionsManager);
+    function setPositionsManager(address positionsManager) external onlyOwner {
+        if (positionsManager == address(0)) revert Errors.AddressIsZero();
+        _positionsManager = positionsManager;
+        emit Events.PositionsManagerSet(positionsManager);
     }
 
     function setReserveFactor(address underlying, uint16 newReserveFactor)

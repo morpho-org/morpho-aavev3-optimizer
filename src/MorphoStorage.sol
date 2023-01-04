@@ -24,8 +24,7 @@ contract MorphoStorage is Initializable, OwnableUpgradeable {
 
     IPoolAddressesProvider internal _addressesProvider;
     IPool internal _pool;
-    address internal _entryPositionsManager;
-    address internal _exitPositionsManager;
+    address internal _positionsManager;
     // IInterestRatesManager internal _interestRatesManager;
     // IRewardsController internal _rewardsController;
     // IRewardsManager internal _rewardsManager;
