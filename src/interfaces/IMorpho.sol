@@ -28,7 +28,8 @@ interface IMorphoSetters {
         uint256 newMaxSortedUsers
     ) external;
 
-    function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external;
+    function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor, address ibtWrapper)
+        external;
 
     function setDefaultMaxLoops(Types.MaxLoops memory defaultMaxLoops) external;
     function setEntryPositionsManager(address entryPositionsManager) external;

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {IPool} from "./interfaces/aave/IPool.sol";
+import {IIbtWrapper} from "./interfaces/IIbtWrapper.sol";
 import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -271,7 +272,14 @@ abstract contract MorphoInternal is MorphoStorage {
             return lastIndexes;
         }
 
-        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _pool.getCurrentPoolIndexes(market.underlying);
+        if (market.ibtWrapper != address(0)) {
+            uint256 rebaseIndex = IIbtWrapper(market.ibtWrapper).rebaseIndex();
+            (uint256 poolSupplyIndex, uint256 poolBorrowIndex) = _pool.getCurrentPoolIndexes(underlying);
+            (indexes.supply.poolIndex, indexes.borrow.poolIndex) =
+                (poolSupplyIndex.rayDiv(rebaseIndex), poolBorrowIndex.rayDiv(rebaseIndex));
+        } else {
+            (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _pool.getCurrentPoolIndexes(market.underlying);
+        }
 
         (indexes.supply.p2pIndex, indexes.borrow.p2pIndex) = InterestRatesLib.computeP2PIndexes(
             Types.RatesParams({

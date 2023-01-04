@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IIbtWrapper} from "./interfaces/IIbtWrapper.sol";
 import {IMorphoSetters} from "./interfaces/IMorpho.sol";
 import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
 
@@ -21,6 +22,7 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
+    using WadRayMath for uint256;
     using MarketLib for Types.Market;
     using SafeTransferLib for ERC20;
     using PoolLib for IPool;
@@ -48,7 +50,10 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         _maxSortedUsers = newMaxSortedUsers;
     }
 
-    function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external onlyOwner {
+    function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor, address ibtWrapper)
+        external
+        onlyOwner
+    {
         if (underlying == address(0)) revert Errors.AddressIsZero();
         if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR || reserveFactor > PercentageMath.PERCENTAGE_FACTOR) {
             revert Errors.ExceedsMaxBasisPoints();
@@ -65,6 +70,14 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         Types.Indexes256 memory indexes;
         indexes.supply.p2pIndex = WadRayMath.RAY;
         indexes.borrow.p2pIndex = WadRayMath.RAY;
+
+        market.ibtWrapper = ibtWrapper;
+        if (ibtWrapper != address(0)) {
+            uint256 rebaseIndex = IIbtWrapper(ibtWrapper).rebaseIndex();
+            (uint256 poolSupplyIndex, uint256 poolBorrowIndex) = _pool.getCurrentPoolIndexes(underlying);
+            (indexes.supply.poolIndex, indexes.borrow.poolIndex) =
+                (poolSupplyIndex.rayDiv(rebaseIndex), poolBorrowIndex.rayDiv(rebaseIndex));
+        }
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _pool.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
