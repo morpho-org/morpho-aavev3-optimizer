@@ -108,7 +108,7 @@ library Types {
         uint256 poolBorrowIndex; // The current pool borrow index.
         uint256 reserveFactor; // The reserve factor percentage (10 000 = 100%).
         uint256 p2pIndexCursor; // The peer-to-peer index cursor (10 000 = 100%).
-        Delta deltas; // The deltas and peer-to-peer amounts.
+        Deltas deltas; // The deltas and peer-to-peer amounts.
     }
 
     struct GrowthFactors {
