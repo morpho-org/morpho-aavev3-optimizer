@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 
+import {MarketLib} from "./libraries/MarketLib.sol";
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
@@ -12,9 +13,11 @@ import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MatchingEngine is MorphoInternal {
+    using MarketLib for Types.Market;
+    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+
     using Math for uint256;
     using WadRayMath for uint256;
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
 
     function _promoteSuppliers(address underlying, uint256 amount, uint256 maxLoops)
         internal
@@ -26,8 +29,7 @@ abstract contract MatchingEngine is MorphoInternal {
             _marketBalances[underlying].p2pSuppliers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                poolIndex: market.indexes.poolSupplyIndex,
-                p2pIndex: market.indexes.p2pSupplyIndex,
+                indexes: market.getSupplyIndexes(),
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
@@ -48,8 +50,7 @@ abstract contract MatchingEngine is MorphoInternal {
             _marketBalances[underlying].p2pBorrowers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                poolIndex: market.indexes.poolBorrowIndex,
-                p2pIndex: market.indexes.p2pBorrowIndex,
+                indexes: market.getBorrowIndexes(),
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
@@ -70,8 +71,7 @@ abstract contract MatchingEngine is MorphoInternal {
             _marketBalances[underlying].p2pSuppliers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                poolIndex: market.indexes.poolSupplyIndex,
-                p2pIndex: market.indexes.p2pSupplyIndex,
+                indexes: market.getSupplyIndexes(),
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
@@ -92,8 +92,7 @@ abstract contract MatchingEngine is MorphoInternal {
             _marketBalances[underlying].p2pBorrowers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                poolIndex: market.indexes.poolBorrowIndex,
-                p2pIndex: market.indexes.p2pBorrowIndex,
+                indexes: market.getBorrowIndexes(),
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
@@ -121,13 +120,8 @@ abstract contract MatchingEngine is MorphoInternal {
             uint256 onPool;
             uint256 inP2P;
 
-            (onPool, inP2P, remaining) = vars.step(
-                heapOnPool.getValueOf(firstUser),
-                heapInP2P.getValueOf(firstUser),
-                vars.poolIndex,
-                vars.p2pIndex,
-                remaining
-            );
+            (onPool, inP2P, remaining) =
+                vars.step(heapOnPool.getValueOf(firstUser), heapInP2P.getValueOf(firstUser), vars.indexes, remaining);
 
             vars.updateDS(vars.underlying, firstUser, onPool, inP2P);
             emit Events.PositionUpdated(vars.borrow, firstUser, vars.underlying, onPool, inP2P);
@@ -139,25 +133,29 @@ abstract contract MatchingEngine is MorphoInternal {
         }
     }
 
-    function _promote(uint256 poolBalance, uint256 p2pBalance, uint256 poolIndex, uint256 p2pIndex, uint256 remaining)
-        internal
-        pure
-        returns (uint256 newPoolBalance, uint256 newP2PBalance, uint256 newRemaining)
-    {
-        uint256 toProcess = Math.min(poolBalance.rayMul(poolIndex), remaining);
+    function _promote(
+        uint256 poolBalance,
+        uint256 p2pBalance,
+        Types.MarketSideIndexes256 memory indexes,
+        uint256 remaining
+    ) internal pure returns (uint256 newPoolBalance, uint256 newP2PBalance, uint256 newRemaining) {
+        uint256 toProcess = Math.min(poolBalance.rayMul(indexes.poolIndex), remaining);
+
         newRemaining = remaining - toProcess;
-        newPoolBalance = poolBalance - toProcess.rayDiv(poolIndex);
-        newP2PBalance = p2pBalance + toProcess.rayDiv(p2pIndex);
+        newPoolBalance = poolBalance - toProcess.rayDiv(indexes.poolIndex);
+        newP2PBalance = p2pBalance + toProcess.rayDiv(indexes.p2pIndex);
     }
 
-    function _demote(uint256 poolBalance, uint256 p2pBalance, uint256 poolIndex, uint256 p2pIndex, uint256 remaining)
-        internal
-        pure
-        returns (uint256 newPoolBalance, uint256 newP2PBalance, uint256 newRemaining)
-    {
-        uint256 toProcess = Math.min(p2pBalance.rayMul(p2pIndex), remaining);
+    function _demote(
+        uint256 poolBalance,
+        uint256 p2pBalance,
+        Types.MarketSideIndexes256 memory indexes,
+        uint256 remaining
+    ) internal pure returns (uint256 newPoolBalance, uint256 newP2PBalance, uint256 newRemaining) {
+        uint256 toProcess = Math.min(p2pBalance.rayMul(indexes.p2pIndex), remaining);
+
         newRemaining = remaining - toProcess;
-        newPoolBalance = poolBalance + toProcess.rayDiv(poolIndex);
-        newP2PBalance = p2pBalance - toProcess.rayDiv(p2pIndex);
+        newPoolBalance = poolBalance + toProcess.rayDiv(indexes.poolIndex);
+        newP2PBalance = p2pBalance - toProcess.rayDiv(indexes.p2pIndex);
     }
 }

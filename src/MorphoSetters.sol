@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IMorphoSetters} from "./interfaces/IMorpho.sol";
 import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
 
@@ -20,7 +21,7 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
-abstract contract MorphoSetters is MorphoInternal {
+abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     using MarketLib for Types.Market;
     using SafeTransferLib for ERC20;
     using PoolLib for IPool;
@@ -63,9 +64,9 @@ abstract contract MorphoSetters is MorphoInternal {
         if (market.isCreated()) revert Errors.MarketAlreadyCreated();
 
         Types.Indexes256 memory indexes;
-        indexes.p2pSupplyIndex = WadRayMath.RAY;
-        indexes.p2pBorrowIndex = WadRayMath.RAY;
-        (indexes.poolSupplyIndex, indexes.poolBorrowIndex) = _pool.getCurrentPoolIndexes(underlying);
+        indexes.supply.p2pIndex = WadRayMath.RAY;
+        indexes.borrow.p2pIndex = WadRayMath.RAY;
+        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _pool.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
         market.lastUpdateTimestamp = uint32(block.timestamp);

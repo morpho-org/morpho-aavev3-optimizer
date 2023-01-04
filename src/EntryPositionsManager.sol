@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IEntryPositionsManager} from "./interfaces/IEntryPositionsManager.sol";
 import {IPool} from "./interfaces/aave/IPool.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -13,7 +14,7 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 
-contract EntryPositionsManager is PositionsManagerInternal {
+contract EntryPositionsManager is IEntryPositionsManager, PositionsManagerInternal {
     using WadRayMath for uint256;
     using SafeTransferLib for ERC20;
     using PoolLib for IPool;
@@ -42,11 +43,11 @@ contract EntryPositionsManager is PositionsManagerInternal {
         returns (uint256 supplied)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        _validateSupply(underlying, amount, onBehalf);
+        _validateSupplyCollateral(underlying, amount, onBehalf);
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
 
-        _marketBalances[underlying].collateral[onBehalf] += amount.rayDiv(indexes.poolSupplyIndex);
+        _marketBalances[underlying].collateral[onBehalf] += amount.rayDiv(indexes.supply.poolIndex);
 
         _pool.supplyToPool(underlying, amount);
 

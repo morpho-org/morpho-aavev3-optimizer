@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IMorphoGetters} from "./interfaces/IMorpho.sol";
+
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {Types} from "./libraries/Types.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
-abstract contract MorphoGetters is MorphoInternal {
+abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     using MarketBalanceLib for Types.MarketBalances;
 
     /// STORAGE ///
