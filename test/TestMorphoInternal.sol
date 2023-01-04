@@ -25,4 +25,24 @@ contract TestMorphoInternal is MorphoInternal, Test {
         assertEq(decodedUnderlying, underlying);
         assertEq(uint256(decodedPositionType), positionType);
     }
+
+    /// TESTS TO ADD:
+
+    // _computeIndexes
+    // _updateIndexes
+    // _getUserSupplyBalanceFromIndexes
+    // _getUserBorrowBalanceFromIndexes
+    // _getUserSupplyBalance
+    // _getUserBorrowBalance
+
+    // _assetLiquidityData
+    // _liquidityDataCollateral
+    // _liquidityDataDebt
+    // _liquidityData
+
+    // _updateInDS
+    // _updateSupplierInDS
+    // _updateBorrowerInDS
+
+    // _setPauseStatus
 }
