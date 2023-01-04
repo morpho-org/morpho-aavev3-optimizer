@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IMorphoSetters} from "./interfaces/IMorpho.sol";
 import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
 
-import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
-import {MarketLib} from "./libraries/MarketLib.sol";
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
-import {Constants} from "./libraries/Constants.sol";
+import {MarketLib} from "./libraries/MarketLib.sol";
+import {PoolLib} from "./libraries/PoolLib.sol";
 
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
@@ -18,14 +18,12 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
-
 import {MorphoInternal} from "./MorphoInternal.sol";
 
-abstract contract MorphoSetters is MorphoInternal {
+abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     using MarketLib for Types.Market;
-    using MarketBalanceLib for Types.MarketBalances;
     using SafeTransferLib for ERC20;
+    using PoolLib for IPool;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /// SETTERS ///
@@ -38,7 +36,9 @@ abstract contract MorphoSetters is MorphoInternal {
         uint256 newMaxSortedUsers
     ) external initializer {
         if (newMaxSortedUsers == 0) revert Errors.MaxSortedUsersCannotBeZero();
-        _transferOwnership(msg.sender);
+
+        __Ownable_init_unchained();
+
         _entryPositionsManager = newEntryPositionsManager;
         _exitPositionsManager = newExitPositionsManager;
         _addressesProvider = IPoolAddressesProvider(newAddressesProvider);
@@ -63,11 +63,9 @@ abstract contract MorphoSetters is MorphoInternal {
         if (market.isCreated()) revert Errors.MarketAlreadyCreated();
 
         Types.Indexes256 memory indexes;
-        indexes.p2pSupplyIndex = WadRayMath.RAY;
-        indexes.p2pBorrowIndex = WadRayMath.RAY;
-        // TODO: Fix for IB tokens
-        indexes.poolSupplyIndex = _pool.getReserveNormalizedIncome(underlying);
-        indexes.poolBorrowIndex = _pool.getReserveNormalizedVariableDebt(underlying);
+        indexes.supply.p2pIndex = WadRayMath.RAY;
+        indexes.borrow.p2pIndex = WadRayMath.RAY;
+        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _pool.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
         market.lastUpdateTimestamp = uint32(block.timestamp);

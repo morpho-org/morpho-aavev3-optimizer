@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IMorpho} from "./interfaces/IMorpho.sol";
 import {IERC1155} from "./interfaces/IERC1155.sol";
-
-import {MarketLib} from "./libraries/MarketLib.sol";
-import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
-import {Types} from "./libraries/Types.sol";
-import {Events} from "./libraries/Events.sol";
-import {Errors} from "./libraries/Errors.sol";
 
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 
@@ -16,10 +11,8 @@ import {MorphoSetters} from "./MorphoSetters.sol";
 import {EntryPositionsManager} from "./EntryPositionsManager.sol";
 import {ExitPositionsManager} from "./ExitPositionsManager.sol";
 
-// @note: To add: IERC1155, Ownable
-contract Morpho is MorphoGetters, MorphoSetters {
-    using MarketBalanceLib for Types.MarketBalances;
-    using MarketLib for Types.Market;
+// @note: To add: IERC1155
+contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     using DelegateCall for address;
 
     /// EXTERNAL ///

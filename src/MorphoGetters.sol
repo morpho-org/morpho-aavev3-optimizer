@@ -1,26 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
+import {IMorphoGetters} from "./interfaces/IMorpho.sol";
 
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
-import {MarketLib} from "./libraries/MarketLib.sol";
 import {Types} from "./libraries/Types.sol";
-import {Events} from "./libraries/Events.sol";
-import {Errors} from "./libraries/Errors.sol";
-import {Constants} from "./libraries/Constants.sol";
-
-import {DataTypes} from "./libraries/aave/DataTypes.sol";
-import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
-
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
-abstract contract MorphoGetters is MorphoInternal {
-    using MarketLib for Types.Market;
+abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     using MarketBalanceLib for Types.MarketBalances;
-    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /// STORAGE ///
 

@@ -34,11 +34,14 @@ library Types {
         bool isDeprecated;
     }
 
+    struct MarketSideIndexes {
+        uint128 poolIndex;
+        uint128 p2pIndex;
+    }
+
     struct Indexes {
-        uint128 poolSupplyIndex;
-        uint128 poolBorrowIndex;
-        uint128 p2pSupplyIndex;
-        uint128 p2pBorrowIndex;
+        MarketSideIndexes supply;
+        MarketSideIndexes borrow;
     }
 
     /// STORAGE STRUCTS ///
@@ -51,14 +54,14 @@ library Types {
         Delta deltas; // 1024 bits
         // SLOT 6
         address underlying; // 160 bits
-        PauseStatuses pauseStatuses; // 64 bits
+        PauseStatuses pauseStatuses; // 80 bits
         // SLOT 7
         address variableDebtToken; // 160 bits
         uint32 lastUpdateTimestamp; // 32 bits
         uint16 reserveFactor; // 16 bits
         uint16 p2pIndexCursor; // 16 bits
         // SLOT 8
-        address aToken;
+        address aToken; // 160 bits
     }
 
     // Contains storage-only dynamic arrays and mappings.
@@ -81,29 +84,26 @@ library Types {
 
     struct LiquidityData {
         uint256 collateral; // The collateral value (In base currency in wad).
-        uint256 maxDebt; // The max debt value (In base currency in wad).
-        uint256 liquidationThresholdValue; // The liquidation threshold value (In base currency in wad).
+        uint256 borrowable; // The maximum debt value allowed to borrow (In base currency in wad).
+        uint256 maxDebt; // The maximum debt value allowed before being liquidatable (In base currency in wad).
         uint256 debt; // The debt value (In base currency in wad).
     }
 
-    struct PromoteVars {
+    struct MatchingEngineVars {
         address underlying;
-        uint256 poolIndex;
-        uint256 p2pIndex;
+        MarketSideIndexes256 indexes;
         uint256 amount;
         uint256 maxLoops;
         bool borrow;
         function (address, address, uint256, uint256) updateDS; // This function will be used to update the data-structure.
-        bool promoting; // True for promote, False for demote
-        function(uint256, uint256, uint256, uint256, uint256)
+        bool promoting; // True for promote, False for demote.
+        function(uint256, uint256, MarketSideIndexes256 memory, uint256)
             pure returns (uint256, uint256, uint256) step; // This function will be used to decide whether to use the algorithm for promoting or for demoting.
     }
 
-    struct IRMParams {
-        uint256 lastPoolSupplyIndex;
-        uint256 lastPoolBorrowIndex;
-        uint256 lastP2PSupplyIndex;
-        uint256 lastP2PBorrowIndex;
+    struct RatesParams {
+        MarketSideIndexes256 lastSupplyIndexes;
+        MarketSideIndexes256 lastBorrowIndexes;
         uint256 poolSupplyIndex; // The current pool supply index.
         uint256 poolBorrowIndex; // The current pool borrow index.
         uint256 reserveFactor; // The reserve factor percentage (10 000 = 100%).
@@ -118,10 +118,13 @@ library Types {
         uint256 p2pBorrowGrowthFactor; // Peer-to-peer borrow index growth factor (in ray).
     }
 
+    struct MarketSideIndexes256 {
+        uint256 poolIndex;
+        uint256 p2pIndex;
+    }
+
     struct Indexes256 {
-        uint256 poolSupplyIndex;
-        uint256 poolBorrowIndex;
-        uint256 p2pSupplyIndex;
-        uint256 p2pBorrowIndex;
+        MarketSideIndexes256 supply;
+        MarketSideIndexes256 borrow;
     }
 }
