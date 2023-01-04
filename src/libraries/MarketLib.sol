@@ -11,18 +11,34 @@ library MarketLib {
         return market.aToken != address(0);
     }
 
+    function getSupplyIndexes(Types.Market storage market)
+        internal
+        view
+        returns (Types.MarketSideIndexes256 memory supplyIndexes)
+    {
+        supplyIndexes.poolIndex = uint256(market.indexes.supply.poolIndex);
+        supplyIndexes.p2pIndex = uint256(market.indexes.supply.p2pIndex);
+    }
+
+    function getBorrowIndexes(Types.Market storage market)
+        internal
+        view
+        returns (Types.MarketSideIndexes256 memory borrowIndexes)
+    {
+        borrowIndexes.poolIndex = uint256(market.indexes.borrow.poolIndex);
+        borrowIndexes.p2pIndex = uint256(market.indexes.borrow.p2pIndex);
+    }
+
     function getIndexes(Types.Market storage market) internal view returns (Types.Indexes256 memory indexes) {
-        indexes.poolSupplyIndex = uint256(market.indexes.poolSupplyIndex);
-        indexes.poolBorrowIndex = uint256(market.indexes.poolBorrowIndex);
-        indexes.p2pSupplyIndex = uint256(market.indexes.p2pSupplyIndex);
-        indexes.p2pBorrowIndex = uint256(market.indexes.p2pBorrowIndex);
+        indexes.supply = getSupplyIndexes(market);
+        indexes.borrow = getBorrowIndexes(market);
     }
 
     function setIndexes(Types.Market storage market, Types.Indexes256 memory indexes) internal {
-        market.indexes.poolSupplyIndex = indexes.poolSupplyIndex.toUint128();
-        market.indexes.poolBorrowIndex = indexes.poolBorrowIndex.toUint128();
-        market.indexes.p2pSupplyIndex = indexes.p2pSupplyIndex.toUint128();
-        market.indexes.p2pBorrowIndex = indexes.p2pBorrowIndex.toUint128();
+        market.indexes.supply.poolIndex = indexes.supply.poolIndex.toUint128();
+        market.indexes.borrow.poolIndex = indexes.borrow.poolIndex.toUint128();
+        market.indexes.supply.p2pIndex = indexes.supply.p2pIndex.toUint128();
+        market.indexes.borrow.p2pIndex = indexes.borrow.p2pIndex.toUint128();
         market.lastUpdateTimestamp = uint32(block.timestamp);
     }
 }

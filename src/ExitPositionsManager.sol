@@ -29,7 +29,7 @@ contract ExitPositionsManager is IExitPositionsManager, PositionsManagerInternal
         returns (uint256 withdrawn)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserSupplyBalance(underlying, supplier), amount); // TODO: _getUserSupplyBalance uses _computeIndexes and it's sub-optimal
+        amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.supply), amount);
         _validateWithdraw(underlying, amount, receiver);
 
         (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) =
@@ -49,11 +49,11 @@ contract ExitPositionsManager is IExitPositionsManager, PositionsManagerInternal
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(
-            _marketBalances[underlying].scaledCollateralBalance(supplier).rayMul(indexes.poolSupplyIndex), amount
+            _marketBalances[underlying].scaledCollateralBalance(supplier).rayMul(indexes.supply.poolIndex), amount
         );
         _validateWithdrawCollateral(underlying, amount, supplier, receiver);
 
-        _marketBalances[underlying].collateral[supplier] -= amount.rayDiv(indexes.poolSupplyIndex);
+        _marketBalances[underlying].collateral[supplier] -= amount.rayDiv(indexes.supply.poolIndex);
 
         _pool.withdrawFromPool(underlying, _market[underlying].aToken, amount);
         ERC20(underlying).safeTransfer(receiver, amount);
@@ -69,7 +69,7 @@ contract ExitPositionsManager is IExitPositionsManager, PositionsManagerInternal
         returns (uint256 repaid)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserBorrowBalance(underlying, onBehalf), amount);
+        amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes.borrow), amount);
         _validateRepay(underlying, amount, onBehalf);
 
         ERC20(underlying).safeTransferFrom(repayer, address(this), amount);
@@ -110,11 +110,14 @@ contract ExitPositionsManager is IExitPositionsManager, PositionsManagerInternal
 
         vars.amountToLiquidate = Math.min(
             amount,
-            _getUserBorrowBalance(underlyingBorrowed, borrower).percentMul(vars.closeFactor) // Max liquidatable debt.
+            _getUserBorrowBalanceFromIndexes(underlyingBorrowed, borrower, borrowIndexes.borrow).percentMul(
+                vars.closeFactor
+            ) // Max liquidatable debt.
         );
 
-        (vars.amountToLiquidate, vars.amountToSeize) =
-            _calculateAmountToSeize(underlyingBorrowed, underlyingCollateral, vars.amountToLiquidate, borrower);
+        (vars.amountToLiquidate, vars.amountToSeize) = _calculateAmountToSeize(
+            underlyingBorrowed, underlyingCollateral, vars.amountToLiquidate, borrower, collateralIndexes.supply
+        );
 
         ERC20(underlyingBorrowed).safeTransferFrom(liquidator, address(this), vars.amountToLiquidate);
 
