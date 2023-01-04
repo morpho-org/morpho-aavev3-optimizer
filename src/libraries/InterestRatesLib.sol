@@ -99,8 +99,7 @@ library InterestRatesLib {
             WadRayMath.RAY // To avoid shareOfTheDelta > 1 with rounding errors.
         ); // In ray.
 
-        return lastIndexes.p2pIndex.rayMul(
-            (WadRayMath.RAY - shareOfTheDelta).rayMul(p2pGrowthFactor) + shareOfTheDelta.rayMul(poolGrowthFactor)
-        );
+        return
+            lastIndexes.p2pIndex.rayMul(WadRayMath.rayWeightedAvg(p2pGrowthFactor, poolGrowthFactor, shareOfTheDelta));
     }
 }
