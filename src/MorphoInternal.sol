@@ -59,7 +59,7 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 scaledPoolBalance,
         uint256 scaledP2PBalance,
         Types.MarketSideIndexes256 memory indexes
-    ) internal view returns (uint256) {
+    ) internal pure returns (uint256) {
         return scaledPoolBalance.rayMul(indexes.poolIndex) + scaledP2PBalance.rayMul(indexes.p2pIndex);
     }
 
@@ -83,6 +83,14 @@ abstract contract MorphoInternal is MorphoStorage {
         return _getUserBalanceFromIndexes(
             marketBalances.scaledPoolBorrowBalance(user), marketBalances.scaledP2PBorrowBalance(user), indexes
         );
+    }
+
+    function _getUserCollateralBalanceFromIndex(address underlying, address user, uint256 poolSupplyIndex)
+        internal
+        view
+        returns (uint256)
+    {
+        return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
     }
 
     /// @dev Computes and returns the total value of the collateral, debt, and LTV/LT value depending on the calculation type.
@@ -146,12 +154,12 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 amountWithdrawn
     ) internal view returns (uint256 collateralValue, uint256 borrowableValue, uint256 maxDebtValue) {
         collateralValue = (
-            (_marketBalances[underlying].scaledCollateralBalance(user).rayMul(poolSupplyIndex) - amountWithdrawn)
-                * underlyingPrice / tokenUnit
+            (_getUserCollateralBalanceFromIndex(underlying, user, poolSupplyIndex) - amountWithdrawn) * underlyingPrice
+                / tokenUnit
         );
 
-        borrowableValue = collateralValue.percentMul(ltv);
-        maxDebtValue = collateralValue.percentMul(liquidationThreshold);
+        borrowableValue = collateralValue.percentMulDown(ltv);
+        maxDebtValue = collateralValue.percentMulDown(liquidationThreshold);
     }
 
     function _liquidityDataDebt(
@@ -258,9 +266,9 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     function _updateIndexes(address underlying) internal returns (Types.Indexes256 memory indexes) {
-        Types.Market storage market = _market[underlying];
         indexes = _computeIndexes(underlying);
 
+        Types.Market storage market = _market[underlying];
         market.setIndexes(indexes);
     }
 

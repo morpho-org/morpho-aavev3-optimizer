@@ -2,7 +2,7 @@
 @ds-test/=lib/forge-std/lib/ds-test/src/
 
 @morpho-utils/=lib/morpho-utils/src/
-@morpho-data-structures/=lib/morpho-data-structures/contracts/
+@morpho-data-structures/=lib/morpho-data-structures/src/
 
 @openzeppelin/=lib/openzeppelin-contracts/
 @openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/

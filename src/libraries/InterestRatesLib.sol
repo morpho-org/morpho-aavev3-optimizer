@@ -56,8 +56,8 @@ library InterestRatesLib {
         uint256 p2pIndexCursor,
         uint256 reserveFactor
     ) internal pure returns (Types.GrowthFactors memory growthFactors) {
-        growthFactors.poolSupplyGrowthFactor = newPoolSupplyIndex.rayDiv(lastPoolSupplyIndex);
-        growthFactors.poolBorrowGrowthFactor = newPoolBorrowIndex.rayDiv(lastPoolBorrowIndex);
+        growthFactors.poolSupplyGrowthFactor = newPoolSupplyIndex.rayDivUp(lastPoolSupplyIndex);
+        growthFactors.poolBorrowGrowthFactor = newPoolBorrowIndex.rayDivDown(lastPoolBorrowIndex);
 
         if (growthFactors.poolSupplyGrowthFactor <= growthFactors.poolBorrowGrowthFactor) {
             uint256 p2pGrowthFactor = PercentageMath.weightedAvg(
@@ -65,9 +65,9 @@ library InterestRatesLib {
             );
 
             growthFactors.p2pSupplyGrowthFactor =
-                p2pGrowthFactor - (p2pGrowthFactor - growthFactors.poolSupplyGrowthFactor).percentMul(reserveFactor);
+                p2pGrowthFactor - (p2pGrowthFactor - growthFactors.poolSupplyGrowthFactor).percentMulUp(reserveFactor);
             growthFactors.p2pBorrowGrowthFactor =
-                p2pGrowthFactor + (growthFactors.poolBorrowGrowthFactor - p2pGrowthFactor).percentMul(reserveFactor);
+                p2pGrowthFactor + (growthFactors.poolBorrowGrowthFactor - p2pGrowthFactor).percentMulDown(reserveFactor);
         } else {
             // The case poolSupplyGrowthFactor > poolBorrowGrowthFactor happens because someone has done a flashloan on Aave:
             // the peer-to-peer growth factors are set to the pool borrow growth factor.
@@ -89,20 +89,18 @@ library InterestRatesLib {
         Types.MarketSideIndexes256 memory lastIndexes,
         uint256 p2pDelta,
         uint256 p2pAmount
-    ) internal pure returns (uint256 newP2PIndex) {
+    ) internal pure returns (uint256) {
         if (p2pAmount == 0 || p2pDelta == 0) {
-            newP2PIndex = lastIndexes.p2pIndex.rayMul(p2pGrowthFactor);
-        } else {
-            uint256 shareOfTheDelta = Math.min(
-                p2pDelta.wadToRay().rayMul(lastIndexes.poolIndex).rayDiv(
-                    p2pAmount.wadToRay().rayMul(lastIndexes.p2pIndex)
-                ),
-                WadRayMath.RAY // To avoid shareOfTheDelta > 1 with rounding errors.
-            ); // In ray.
-
-            newP2PIndex = lastIndexes.p2pIndex.rayMul(
-                (WadRayMath.RAY - shareOfTheDelta).rayMul(p2pGrowthFactor) + shareOfTheDelta.rayMul(poolGrowthFactor)
-            );
+            return lastIndexes.p2pIndex.rayMul(p2pGrowthFactor);
         }
+
+        uint256 shareOfTheDelta = Math.min(
+            p2pDelta.rayMul(lastIndexes.poolIndex).rayDivUp(p2pAmount.rayMul(lastIndexes.p2pIndex)),
+            WadRayMath.RAY // To avoid shareOfTheDelta > 1 with rounding errors.
+        ); // In ray.
+
+        return lastIndexes.p2pIndex.rayMul(
+            (WadRayMath.RAY - shareOfTheDelta).rayMul(p2pGrowthFactor) + shareOfTheDelta.rayMul(poolGrowthFactor)
+        );
     }
 }

@@ -48,9 +48,7 @@ contract ExitPositionsManager is IExitPositionsManager, PositionsManagerInternal
         returns (uint256 withdrawn)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(
-            _marketBalances[underlying].scaledCollateralBalance(supplier).rayMul(indexes.supply.poolIndex), amount
-        );
+        amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, indexes.supply.poolIndex), amount);
         _validateWithdrawCollateral(underlying, amount, supplier, receiver);
 
         _marketBalances[underlying].collateral[supplier] -= amount.rayDiv(indexes.supply.poolIndex);
