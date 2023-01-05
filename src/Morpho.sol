@@ -2,22 +2,25 @@
 pragma solidity ^0.8.17;
 
 import {IMorpho} from "./interfaces/IMorpho.sol";
-import {IERC1155} from "./interfaces/IERC1155.sol";
 import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
+import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol";
 
+import {Events} from "./libraries/Events.sol";
+import {Errors} from "./libraries/Errors.sol";
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
+import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 import {MorphoGetters} from "./MorphoGetters.sol";
 import {MorphoSetters} from "./MorphoSetters.sol";
 
-// @note: To add: IERC1155
 contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     using DelegateCall for address;
+    using SafeTransferLib for ERC20;
 
     /// CONSTRUCTOR ///
 
-    constructor(address addressesProvider) MorphoStorage(addressesProvider) {}
+    constructor(address pool, address addressesProvider) MorphoStorage(pool, addressesProvider) {}
 
     /// EXTERNAL ///
 
@@ -112,5 +115,29 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         );
 
         return (abi.decode(returnData, (uint256, uint256)));
+    }
+
+    /// @notice Claims rewards for the given assets.
+    /// @param assets The assets to claim rewards from (aToken or variable debt token).
+    /// @param onBehalf The address for which rewards are claimed and sent to.
+    /// @return rewardTokens The addresses of each reward token.
+    /// @return claimedAmounts The amount of rewards claimed (in reward tokens).
+    function claimRewards(address[] calldata assets, address onBehalf)
+        external
+        returns (address[] memory rewardTokens, uint256[] memory claimedAmounts)
+    {
+        if (_isClaimRewardsPaused) revert Errors.ClaimRewardsPaused();
+
+        (rewardTokens, claimedAmounts) = _rewardsManager.claimRewards(assets, onBehalf);
+        IRewardsController(_rewardsManager.getRewardsController()).claimAllRewardsToSelf(assets);
+
+        for (uint256 i; i < rewardTokens.length; ++i) {
+            uint256 claimedAmount = claimedAmounts[i];
+
+            if (claimedAmount > 0) {
+                ERC20(rewardTokens[i]).safeTransfer(onBehalf, claimedAmount);
+                emit Events.RewardsClaimed(onBehalf, rewardTokens[i], claimedAmount);
+            }
+        }
     }
 }

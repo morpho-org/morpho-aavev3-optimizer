@@ -10,26 +10,9 @@ import {MorphoInternal} from "../src/MorphoInternal.sol";
 import {Types} from "../src/libraries/Types.sol";
 
 contract TestMorphoInternal is MorphoInternal, Test {
-    uint256 public constant positionMax = uint256(type(Types.PositionType).max);
-
     /// CONSTRUCTOR ///
 
-    constructor() MorphoStorage(address(1)) {}
-
-    function testDecodeId(uint256 id) public {
-        vm.assume((id >> 252) <= positionMax);
-        (address underlying, Types.PositionType positionType) = _decodeId(id);
-        assertEq(underlying, address(uint160(id)));
-        assertEq(uint256(positionType), id >> 252);
-    }
-
-    function testReverseDecodeId(address underlying, uint256 positionType) public {
-        positionType = positionType % (positionMax + 1);
-        uint256 id = uint256(uint160(underlying)) + (positionType << 252);
-        (address decodedUnderlying, Types.PositionType decodedPositionType) = _decodeId(id);
-        assertEq(decodedUnderlying, underlying);
-        assertEq(uint256(decodedPositionType), positionType);
-    }
+    constructor() MorphoStorage(address(0x4001), address(0xADD)) {}
 
     /// TESTS TO ADD:
 

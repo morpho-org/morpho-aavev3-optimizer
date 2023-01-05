@@ -29,4 +29,6 @@ library Errors {
     error MarketIsNotListedOnAave();
     error MarketAlreadyCreated();
     error MaxSortedUsersCannotBeZero();
+
+    error ClaimRewardsPaused();
 }
