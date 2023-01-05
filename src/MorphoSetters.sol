@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {IMorphoSetters} from "./interfaces/IMorpho.sol";
+import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -123,10 +124,10 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         emit Events.MaxSortedUsersSet(newMaxSortedUsers);
     }
 
-    function setDefaultMaxLoops(Types.MaxLoops memory defaultMaxLoops) external onlyOwner {
+    function setDefaultMaxLoops(Types.MaxLoops calldata defaultMaxLoops) external onlyOwner {
         _defaultMaxLoops = defaultMaxLoops;
         emit Events.DefaultMaxLoopsSet(
-            _defaultMaxLoops.supply, _defaultMaxLoops.borrow, _defaultMaxLoops.repay, _defaultMaxLoops.withdraw
+            defaultMaxLoops.supply, defaultMaxLoops.borrow, defaultMaxLoops.repay, defaultMaxLoops.withdraw
             );
     }
 
@@ -134,6 +135,12 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         if (positionsManager == address(0)) revert Errors.AddressIsZero();
         _positionsManager = positionsManager;
         emit Events.PositionsManagerSet(positionsManager);
+    }
+
+    function setRewardsManager(address rewardsManager) external onlyOwner {
+        if (rewardsManager == address(0)) revert Errors.AddressIsZero();
+        _rewardsManager = IRewardsManager(rewardsManager);
+        emit Events.RewardsManagerSet(rewardsManager);
     }
 
     function setReserveFactor(address underlying, uint16 newReserveFactor)

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IPool, IPoolAddressesProvider} from "./interfaces/aave/IPool.sol";
 import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
@@ -30,7 +31,7 @@ abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
     Types.MaxLoops internal _defaultMaxLoops;
 
     address internal _positionsManager;
-    // IRewardsManager internal _rewardsManager;
+    IRewardsManager internal _rewardsManager;
 
     address internal _treasuryVault;
     bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
