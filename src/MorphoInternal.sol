@@ -195,7 +195,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     function _updateInDS(
-        address asset,
+        address poolToken,
         address user,
         ThreeHeapOrdering.HeapArray storage marketOnPool,
         ThreeHeapOrdering.HeapArray storage marketInP2P,
@@ -206,7 +206,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
         if (onPool != formerOnPool) {
             if (address(_rewardsManager) != address(0)) {
-                _rewardsManager.updateUserRewards(user, asset, formerOnPool);
+                _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
             marketOnPool.update(user, formerOnPool, onPool, _maxSortedUsers);
         }
