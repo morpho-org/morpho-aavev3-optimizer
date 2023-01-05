@@ -53,7 +53,7 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
         external
         returns (uint256 supplied);
 
-    function borrow(address underlying, uint256 amount, address receiver, uint256 maxLoops)
+    function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
         external
         returns (uint256 borrowed);
 

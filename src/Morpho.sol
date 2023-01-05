@@ -50,13 +50,13 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
-    function borrow(address underlying, uint256 amount, address receiver, uint256 maxLoops)
+    function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
         external
         returns (uint256 borrowed)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeWithSelector(
-                IPositionsManager.borrowLogic.selector, underlying, amount, msg.sender, receiver, maxLoops
+                IPositionsManager.borrowLogic.selector, underlying, amount, onBehalf, receiver, maxLoops
             )
         );
 

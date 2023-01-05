@@ -118,6 +118,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
     function _validateBorrow(address underlying, uint256 amount, address user) internal view {
         if (amount == 0) revert Errors.AmountIsZero();
+        if (!_hasPermission(user, msg.sender)) revert Errors.PermissionDenied();
 
         Types.Market storage market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();

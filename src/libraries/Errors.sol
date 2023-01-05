@@ -7,6 +7,7 @@ library Errors {
 
     error AddressIsZero();
     error AmountIsZero();
+    error PermissionDenied();
 
     error SupplyIsPaused();
     error SupplyCollateralIsPaused();
