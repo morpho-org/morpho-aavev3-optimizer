@@ -5,14 +5,11 @@ import {IMorphoGetters} from "./interfaces/IMorpho.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     using MarketBalanceLib for Types.MarketBalances;
-
-    using WadRayMath for uint256;
 
     /// STORAGE ///
 
@@ -26,18 +23,6 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
 
     function market(address underlying) external view returns (Types.Market memory) {
         return _market[underlying];
-    }
-
-    function supplyBalance(address underlying, address user) external view returns (uint256) {
-        return _getUserSupplyBalanceFromIndexes(underlying, user, _computeIndexes(underlying).supply);
-    }
-
-    function borrowBalance(address underlying, address user) external view returns (uint256) {
-        return _getUserBorrowBalanceFromIndexes(underlying, user, _computeIndexes(underlying).borrow);
-    }
-
-    function collateralBalance(address underlying, address user) external view returns (uint256) {
-        return _getUserCollateralBalanceFromIndex(underlying, user, _computeIndexes(underlying).supply.poolIndex);
     }
 
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256) {
