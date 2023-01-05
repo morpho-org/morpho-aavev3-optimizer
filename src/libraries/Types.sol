@@ -34,11 +34,14 @@ library Types {
         bool isDeprecated;
     }
 
+    struct MarketSideIndexes {
+        uint128 poolIndex;
+        uint128 p2pIndex;
+    }
+
     struct Indexes {
-        uint128 poolSupplyIndex;
-        uint128 poolBorrowIndex;
-        uint128 p2pSupplyIndex;
-        uint128 p2pBorrowIndex;
+        MarketSideIndexes supply;
+        MarketSideIndexes borrow;
     }
 
     /// STORAGE STRUCTS ///
@@ -88,22 +91,19 @@ library Types {
 
     struct MatchingEngineVars {
         address underlying;
-        uint256 poolIndex;
-        uint256 p2pIndex;
+        MarketSideIndexes256 indexes;
         uint256 amount;
         uint256 maxLoops;
         bool borrow;
         function (address, address, uint256, uint256) updateDS; // This function will be used to update the data-structure.
         bool promoting; // True for promote, False for demote.
-        function(uint256, uint256, uint256, uint256, uint256)
+        function(uint256, uint256, MarketSideIndexes256 memory, uint256)
             pure returns (uint256, uint256, uint256) step; // This function will be used to decide whether to use the algorithm for promoting or for demoting.
     }
 
-    struct IRMParams {
-        uint256 lastPoolSupplyIndex;
-        uint256 lastPoolBorrowIndex;
-        uint256 lastP2PSupplyIndex;
-        uint256 lastP2PBorrowIndex;
+    struct RatesParams {
+        MarketSideIndexes256 lastSupplyIndexes;
+        MarketSideIndexes256 lastBorrowIndexes;
         uint256 poolSupplyIndex; // The current pool supply index.
         uint256 poolBorrowIndex; // The current pool borrow index.
         uint256 reserveFactor; // The reserve factor percentage (10 000 = 100%).
@@ -118,10 +118,13 @@ library Types {
         uint256 p2pBorrowGrowthFactor; // Peer-to-peer borrow index growth factor (in ray).
     }
 
+    struct MarketSideIndexes256 {
+        uint256 poolIndex;
+        uint256 p2pIndex;
+    }
+
     struct Indexes256 {
-        uint256 poolSupplyIndex;
-        uint256 poolBorrowIndex;
-        uint256 p2pSupplyIndex;
-        uint256 p2pBorrowIndex;
+        MarketSideIndexes256 supply;
+        MarketSideIndexes256 borrow;
     }
 }

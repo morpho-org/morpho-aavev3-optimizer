@@ -65,9 +65,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         if (market.isCreated()) revert Errors.MarketAlreadyCreated();
 
         Types.Indexes256 memory indexes;
-        indexes.p2pSupplyIndex = WadRayMath.RAY;
-        indexes.p2pBorrowIndex = WadRayMath.RAY;
-        (indexes.poolSupplyIndex, indexes.poolBorrowIndex) = _pool.getCurrentPoolIndexes(underlying);
+        indexes.supply.p2pIndex = WadRayMath.RAY;
+        indexes.borrow.p2pIndex = WadRayMath.RAY;
+        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _pool.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
         market.lastUpdateTimestamp = uint32(block.timestamp);
@@ -90,16 +90,16 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
         Types.Market storage market = _market[underlying];
         Types.Deltas memory deltas = market.deltas;
-        uint256 poolSupplyIndex = indexes.poolSupplyIndex;
-        uint256 poolBorrowIndex = indexes.poolBorrowIndex;
+        uint256 poolSupplyIndex = indexes.supply.poolIndex;
+        uint256 poolBorrowIndex = indexes.borrow.poolIndex;
 
         amount = Math.min(
             amount,
             Math.min(
-                deltas.p2pSupplyAmount.rayMul(indexes.p2pSupplyIndex).zeroFloorSub(
+                deltas.p2pSupplyAmount.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
                     deltas.p2pSupplyDelta.rayMul(poolSupplyIndex)
                 ),
-                deltas.p2pBorrowAmount.rayMul(indexes.p2pBorrowIndex).zeroFloorSub(
+                deltas.p2pBorrowAmount.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
                     deltas.p2pBorrowDelta.rayMul(poolBorrowIndex)
                 )
             )

@@ -48,11 +48,11 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         returns (uint256 supplied)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        _validateSupply(underlying, amount, onBehalf);
+        _validateSupplyCollateral(underlying, amount, onBehalf);
 
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
 
-        _marketBalances[underlying].collateral[onBehalf] += amount.rayDiv(indexes.poolSupplyIndex);
+        _marketBalances[underlying].collateral[onBehalf] += amount.rayDiv(indexes.supply.poolIndex);
 
         _pool.supplyToPool(underlying, amount);
 
@@ -85,7 +85,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         returns (uint256 withdrawn)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserSupplyBalance(underlying, supplier), amount);
+        amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.supply), amount);
         _validateWithdraw(underlying, amount, receiver);
 
         (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) =
@@ -105,11 +105,11 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(
-            _marketBalances[underlying].scaledCollateralBalance(supplier).rayMul(indexes.poolSupplyIndex), amount
+            _marketBalances[underlying].scaledCollateralBalance(supplier).rayMul(indexes.supply.poolIndex), amount
         );
         _validateWithdrawCollateral(underlying, amount, supplier, receiver);
 
-        _marketBalances[underlying].collateral[supplier] -= amount.rayDiv(indexes.poolSupplyIndex);
+        _marketBalances[underlying].collateral[supplier] -= amount.rayDiv(indexes.supply.poolIndex);
 
         _pool.withdrawFromPool(underlying, _market[underlying].aToken, amount);
         ERC20(underlying).safeTransfer(receiver, amount);
@@ -125,8 +125,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         returns (uint256 repaid)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserBorrowBalance(underlying, onBehalf), amount);
-        _validateRepay(underlying, amount);
+        amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes.borrow), amount);
+        _validateRepay(underlying, amount, onBehalf);
 
         ERC20(underlying).safeTransferFrom(repayer, address(this), amount);
 
@@ -166,11 +166,14 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         vars.amountToLiquidate = Math.min(
             amount,
-            _getUserBorrowBalance(underlyingBorrowed, borrower).percentMul(vars.closeFactor) // Max liquidatable debt.
+            _getUserBorrowBalanceFromIndexes(underlyingBorrowed, borrower, borrowIndexes.borrow).percentMul(
+                vars.closeFactor
+            ) // Max liquidatable debt.
         );
 
-        (vars.amountToLiquidate, vars.amountToSeize) =
-            _calculateAmountToSeize(underlyingBorrowed, underlyingCollateral, vars.amountToLiquidate, borrower);
+        (vars.amountToLiquidate, vars.amountToSeize) = _calculateAmountToSeize(
+            underlyingBorrowed, underlyingCollateral, vars.amountToLiquidate, borrower, collateralIndexes.supply
+        );
 
         ERC20(underlyingBorrowed).safeTransferFrom(liquidator, address(this), vars.amountToLiquidate);
 

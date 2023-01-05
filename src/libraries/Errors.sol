@@ -9,9 +9,11 @@ library Errors {
     error AmountIsZero();
 
     error SupplyIsPaused();
+    error SupplyCollateralIsPaused();
     error BorrowIsPaused();
     error RepayIsPaused();
     error WithdrawIsPaused();
+    error WithdrawCollateralIsPaused();
     error LiquidateCollateralIsPaused();
     error LiquidateBorrowIsPaused();
 
