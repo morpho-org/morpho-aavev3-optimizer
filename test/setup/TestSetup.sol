@@ -82,8 +82,8 @@ contract TestSetup is Test {
     }
 
     function deployAndSet() internal {
-        positionsManager = new PositionsManager(address(pool), address(addressesProvider));
-        morphoImplementation = new Morpho(address(pool), address(addressesProvider));
+        positionsManager = new PositionsManager(address(addressesProvider));
+        morphoImplementation = new Morpho(address(addressesProvider));
 
         proxyAdmin = new ProxyAdmin();
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImplementation)), address(proxyAdmin), "");

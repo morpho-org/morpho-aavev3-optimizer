@@ -37,12 +37,10 @@ abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
     bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
 
     /// @dev The contract is automatically marked as initialized when deployed to prevent highjacking the implementation contract.
-    constructor(address pool, address addressesProvider) {
-        if (addressesProvider == address(0) || pool == address(0)) revert Errors.AddressIsZero();
-
+    constructor(address addressesProvider) {
         _disableInitializers();
 
-        _POOL = IPool(pool);
         _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
+        _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
     }
 }

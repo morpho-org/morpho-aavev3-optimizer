@@ -20,7 +20,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     /// CONSTRUCTOR ///
 
-    constructor(address pool, address addressesProvider) MorphoStorage(pool, addressesProvider) {}
+    constructor(address addressesProvider) MorphoStorage(addressesProvider) {}
 
     /// EXTERNAL ///
 
