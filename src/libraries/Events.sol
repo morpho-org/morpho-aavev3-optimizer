@@ -78,15 +78,15 @@ library Events {
 
     event P2PSupplyDeltaUpdated(address indexed underlying, uint256 p2pSupplyDelta);
 
+    event P2PDeltasIncreased(address indexed _poolToken, uint256 _amount);
+
     event MarketCreated(address indexed underlying, uint16 reserveFactor, uint16 p2pIndexCursor);
 
     event MaxSortedUsersSet(uint256 maxSortedUsers);
 
     event DefaultMaxLoopsSet(uint64 supply, uint64 borrow, uint64 repay, uint64 withdraw);
 
-    event EntryPositionsManagerSet(address indexed entryPositionsManager);
-
-    event ExitPositionsManagerSet(address indexed exitPositionsManager);
+    event PositionsManagerSet(address positionsManager);
 
     event RewardsManagerSet(address indexed rewardsManager);
 
