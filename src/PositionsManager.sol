@@ -5,6 +5,7 @@ import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
 import {IPool} from "./interfaces/aave/IPool.sol";
 
 import {Types} from "./libraries/Types.sol";
+import {Errors} from "./libraries/Errors.sol";
 import {Events} from "./libraries/Events.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
@@ -92,6 +93,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256 withdrawn)
     {
+        if (!_hasPermission(supplier, msg.sender)) revert Errors.PermissionDenied();
+
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.supply), amount);
         _validateWithdraw(underlying, amount, receiver);
@@ -111,6 +114,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256 withdrawn)
     {
+        if (!_hasPermission(supplier, msg.sender)) revert Errors.PermissionDenied();
+
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, indexes.supply.poolIndex), amount);
         _validateWithdrawCollateral(underlying, amount, supplier, receiver);
