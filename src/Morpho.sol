@@ -117,6 +117,11 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256, uint256)));
     }
 
+    function allow(address manager, bool isAllowed) external {
+        _isAllowed[msg.sender][manager] = isAllowed;
+        emit Events.Approval(msg.sender, manager, isAllowed);
+    }
+
     /// @notice Claims rewards for the given assets.
     /// @param assets The assets to claim rewards from (aToken or variable debt token).
     /// @param onBehalf The address for which rewards are claimed and sent to.
