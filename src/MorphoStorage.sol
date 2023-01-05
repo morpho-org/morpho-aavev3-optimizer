@@ -29,8 +29,7 @@ abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
     uint256 internal _maxSortedUsers; // The max number of users to sort in the data structure.
     Types.MaxLoops internal _defaultMaxLoops;
 
-    address internal _entryPositionsManager;
-    address internal _exitPositionsManager;
+    address internal _positionsManager;
     // IRewardsManager internal _rewardsManager;
 
     address internal _treasuryVault;

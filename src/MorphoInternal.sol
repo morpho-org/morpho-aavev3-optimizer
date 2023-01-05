@@ -59,7 +59,7 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 scaledPoolBalance,
         uint256 scaledP2PBalance,
         Types.MarketSideIndexes256 memory indexes
-    ) internal view returns (uint256) {
+    ) internal pure returns (uint256) {
         return scaledPoolBalance.rayMul(indexes.poolIndex) + scaledP2PBalance.rayMul(indexes.p2pIndex);
     }
 
