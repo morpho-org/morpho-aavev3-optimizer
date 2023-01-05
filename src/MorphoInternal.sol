@@ -101,40 +101,49 @@ abstract contract MorphoInternal is MorphoStorage {
         returns (Types.LiquidityData memory liquidityData)
     {
         IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
-        address[] memory userCollaterals = _userCollaterals[user].values();
-        address[] memory userBorrows = _userBorrows[user].values();
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
 
-        for (uint256 i; i < userCollaterals.length; ++i) {
-            address collateral = userCollaterals[i];
-            (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
-                _assetLiquidityData(_market[collateral].underlying, oracle, morphoPoolConfig);
+        liquidityData = _liquidityDataAllCollaterals(underlying, user, oracle, morphoPoolConfig, amountWithdrawn);
 
-            Types.Indexes256 memory indexes = _computeIndexes(collateral);
-            (uint256 collateralValue, uint256 borrowableValue, uint256 maxDebtValue) = _liquidityDataCollateral(
-                collateral,
+        liquidityData.debt = _liquidityDataAllDebts(underlying, user, oracle, morphoPoolConfig, amountBorrowed);
+    }
+
+    function _liquidityDataAllCollaterals(
+        address underlying,
+        address user,
+        IPriceOracleGetter oracle,
+        DataTypes.UserConfigurationMap memory morphoPoolConfig,
+        uint256 amountWithdrawn
+    ) internal view returns (Types.LiquidityData memory liquidityData) {
+        address[] memory userCollaterals = _userCollaterals[user].values();
+
+        for (uint256 i; i < userCollaterals.length; ++i) {
+            Types.LiquidityData memory liquidityDataCollateral = _liquidityDataCollateral(
+                userCollaterals[i],
                 user,
-                underlyingPrice,
-                ltv,
-                liquidationThreshold,
-                tokenUnit,
-                indexes.supply.poolIndex,
-                underlying == collateral ? amountWithdrawn : 0
+                oracle,
+                morphoPoolConfig,
+                userCollaterals[i] == underlying ? amountWithdrawn : 0
             );
 
-            liquidityData.collateral += collateralValue;
-            liquidityData.borrowable += borrowableValue;
-            liquidityData.maxDebt += maxDebtValue;
+            liquidityData.collateral += liquidityDataCollateral.collateral;
+            liquidityData.borrowable += liquidityDataCollateral.borrowable;
+            liquidityData.maxDebt += liquidityDataCollateral.maxDebt;
         }
+    }
+
+    function _liquidityDataAllDebts(
+        address underlying,
+        address user,
+        IPriceOracleGetter oracle,
+        DataTypes.UserConfigurationMap memory morphoPoolConfig,
+        uint256 amountBorrowed
+    ) internal view returns (uint256 debt) {
+        address[] memory userBorrows = _userBorrows[user].values();
 
         for (uint256 i; i < userBorrows.length; ++i) {
-            address borrowed = userBorrows[i];
-            (uint256 underlyingPrice,,, uint256 tokenUnit) =
-                _assetLiquidityData(_market[borrowed].underlying, oracle, morphoPoolConfig);
-
-            Types.Indexes256 memory indexes = _computeIndexes(borrowed);
-            liquidityData.debt += _liquidityDataDebt(
-                borrowed, user, underlyingPrice, tokenUnit, indexes.borrow, underlying == borrowed ? amountBorrowed : 0
+            debt += _liquidityDataDebt(
+                userBorrows[i], user, oracle, morphoPoolConfig, userBorrows[i] == underlying ? amountBorrowed : 0
             );
         }
     }
@@ -142,32 +151,34 @@ abstract contract MorphoInternal is MorphoStorage {
     function _liquidityDataCollateral(
         address underlying,
         address user,
-        uint256 underlyingPrice,
-        uint256 ltv,
-        uint256 liquidationThreshold,
-        uint256 tokenUnit,
-        uint256 poolSupplyIndex,
+        IPriceOracleGetter oracle,
+        DataTypes.UserConfigurationMap memory morphoPoolConfig,
         uint256 amountWithdrawn
-    ) internal view returns (uint256 collateralValue, uint256 borrowableValue, uint256 maxDebtValue) {
-        collateralValue = (
-            (_getUserCollateralBalanceFromIndex(underlying, user, poolSupplyIndex) - amountWithdrawn) * underlyingPrice
-                / tokenUnit
-        );
+    ) internal view returns (Types.LiquidityData memory liquidityData) {
+        (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
+            _assetLiquidityData(underlying, oracle, morphoPoolConfig);
 
-        borrowableValue = collateralValue.percentMulDown(ltv);
-        maxDebtValue = collateralValue.percentMulDown(liquidationThreshold);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
+        liquidityData.collateral = (
+            _getUserCollateralBalanceFromIndex(underlying, user, indexes.supply.poolIndex) - amountWithdrawn
+        ) * underlyingPrice / tokenUnit;
+
+        liquidityData.borrowable = liquidityData.collateral.percentMulDown(ltv);
+        liquidityData.maxDebt = liquidityData.collateral.percentMulDown(liquidationThreshold);
     }
 
     function _liquidityDataDebt(
         address underlying,
         address user,
-        uint256 underlyingPrice,
-        uint256 tokenUnit,
-        Types.MarketSideIndexes256 memory borrowIndexes,
+        IPriceOracleGetter oracle,
+        DataTypes.UserConfigurationMap memory morphoPoolConfig,
         uint256 amountBorrowed
     ) internal view returns (uint256 debtValue) {
+        (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(underlying, oracle, morphoPoolConfig);
+
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
         debtValue = (
-            (_getUserBorrowBalanceFromIndexes(underlying, user, borrowIndexes) + amountBorrowed) * underlyingPrice
+            (_getUserBorrowBalanceFromIndexes(underlying, user, indexes.borrow) + amountBorrowed) * underlyingPrice
         ).divUp(tokenUnit);
     }
 
