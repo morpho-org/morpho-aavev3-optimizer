@@ -41,9 +41,9 @@ contract RewardsManager is Initializable {
 
     /// IMMUTABLES ///
 
-    address internal immutable _rewardsController; // The rewards controller is supposed not to change depending on the asset.
-    IMorpho internal immutable _morpho;
-    IPool internal immutable _pool;
+    address public immutable rewardsController; // The rewards controller is supposed not to change depending on the asset.
+    IMorpho public immutable morpho; // The address of the main Morpho contract.
+    IPool public immutable pool; // The address of the Aave pool.
 
     /// STORAGE ///
 
@@ -76,23 +76,23 @@ contract RewardsManager is Initializable {
 
     /// @notice Prevents a user to call function allowed for the main Morpho contract only.
     modifier onlyMorpho() {
-        if (msg.sender != address(_morpho)) revert OnlyMorpho();
+        if (msg.sender != address(morpho)) revert OnlyMorpho();
         _;
     }
 
     /// CONSTRUCTOR ///
 
     /// @notice Initializes immutable variables.
-    /// @param rewardsController The address of the Aave rewards controller.
-    /// @param morpho The address of the main Morpho contract.
-    /// @param pool The address of the Aave pool.
-    constructor(address rewardsController, address morpho, address pool) {
-        if (rewardsController == address(0) || morpho == address(0) || pool == address(0)) revert AddressIsZero();
+    /// @param _rewardsController The address of the Aave rewards controller.
+    /// @param _morpho The address of the main Morpho contract.
+    /// @param _pool The address of the Aave _pool.
+    constructor(address _rewardsController, address _morpho, address _pool) {
+        if (_rewardsController == address(0) || _morpho == address(0) || _pool == address(0)) revert AddressIsZero();
         _disableInitializers();
 
-        _rewardsController = rewardsController;
-        _morpho = IMorpho(morpho);
-        _pool = IPool(pool);
+        rewardsController = _rewardsController;
+        morpho = IMorpho(_morpho);
+        pool = IPool(_pool);
     }
 
     /// EXTERNAL ///
@@ -107,7 +107,7 @@ contract RewardsManager is Initializable {
         onlyMorpho
         returns (address[] memory rewardsList, uint256[] memory claimedAmounts)
     {
-        rewardsList = IRewardsDistributor(_rewardsController).getRewardsList();
+        rewardsList = IRewardsDistributor(rewardsController).getRewardsList();
         claimedAmounts = new uint256[](rewardsList.length);
 
         _updateDataMultiple(user, _getUserAssetBalances(assets, user));
@@ -137,18 +137,6 @@ contract RewardsManager is Initializable {
 
     /// GETTERS ///
 
-    function getRewardsController() external view returns (address) {
-        return _rewardsController;
-    }
-
-    function getMorpho() external view returns (address) {
-        return address(_morpho);
-    }
-
-    function getPool() external view returns (address) {
-        return address(_pool);
-    }
-
     /// @notice Returns user's accrued rewards for the specified assets and reward token
     /// @param assets The list of assets to retrieve accrued rewards.
     /// @param user The address of the user.
@@ -176,7 +164,7 @@ contract RewardsManager is Initializable {
         returns (address[] memory rewardsList, uint256[] memory unclaimedAmounts)
     {
         UserAssetBalance[] memory userAssetBalances = _getUserAssetBalances(assets, user);
-        rewardsList = IRewardsDistributor(_rewardsController).getRewardsList();
+        rewardsList = IRewardsDistributor(rewardsController).getRewardsList();
         uint256 rewardsListLength = rewardsList.length;
         unclaimedAmounts = new uint256[](rewardsListLength);
 
@@ -275,13 +263,13 @@ contract RewardsManager is Initializable {
     /// @param asset The address of the reference asset of the distribution.
     /// @param userBalance The current user asset balance.
     function _updateData(address user, address asset, uint256 userBalance) internal {
-        address[] memory availableRewards = IRewardsController(_rewardsController).getRewardsByAsset(asset);
+        address[] memory availableRewards = IRewardsController(rewardsController).getRewardsByAsset(asset);
         if (availableRewards.length == 0) return;
 
         uint256 totalSupply = IScaledBalanceToken(asset).scaledTotalSupply();
 
         unchecked {
-            uint256 assetUnit = 10 ** IRewardsController(_rewardsController).getAssetDecimals(asset);
+            uint256 assetUnit = 10 ** IRewardsController(rewardsController).getAssetDecimals(asset);
 
             for (uint128 i; i < availableRewards.length; ++i) {
                 address reward = availableRewards[i];
@@ -345,7 +333,7 @@ contract RewardsManager is Initializable {
 
         uint256 assetUnit;
         unchecked {
-            assetUnit = 10 ** IRewardsController(_rewardsController).getAssetDecimals(_userAssetBalance.asset);
+            assetUnit = 10 ** IRewardsController(rewardsController).getAssetDecimals(_userAssetBalance.asset);
         }
 
         (, uint256 nextIndex) =
@@ -392,7 +380,7 @@ contract RewardsManager is Initializable {
         }
 
         (uint256 rewardIndex, uint256 emissionPerSecond, uint256 lastUpdateTimestamp, uint256 distributionEnd) =
-            IRewardsController(_rewardsController).getRewardsData(asset, reward);
+            IRewardsController(rewardsController).getRewardsData(asset, reward);
 
         if (
             emissionPerSecond == 0 || totalSupply == 0 || lastUpdateTimestamp == currentTimestamp
@@ -424,12 +412,12 @@ contract RewardsManager is Initializable {
             userAssetBalances[i].asset = asset;
 
             Types.Market memory market =
-                _morpho.market(IPoolToken(userAssetBalances[i].asset).UNDERLYING_ASSET_ADDRESS());
+                morpho.market(IPoolToken(userAssetBalances[i].asset).UNDERLYING_ASSET_ADDRESS());
 
             if (asset == market.aToken) {
-                userAssetBalances[i].balance = _morpho.scaledPoolSupplyBalance(market.underlying, user);
+                userAssetBalances[i].balance = morpho.scaledPoolSupplyBalance(market.underlying, user);
             } else if (asset == market.variableDebtToken) {
-                userAssetBalances[i].balance = _morpho.scaledPoolBorrowBalance(market.underlying, user);
+                userAssetBalances[i].balance = morpho.scaledPoolBorrowBalance(market.underlying, user);
             } else {
                 revert InvalidAsset();
             }
