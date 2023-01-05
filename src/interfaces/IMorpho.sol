@@ -29,6 +29,7 @@ interface IMorphoSetters {
     ) external;
 
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external;
+    function increaseP2PDeltas(address underlying, uint256 amount) external;
 
     function setDefaultMaxLoops(Types.MaxLoops memory defaultMaxLoops) external;
     function setEntryPositionsManager(address entryPositionsManager) external;
