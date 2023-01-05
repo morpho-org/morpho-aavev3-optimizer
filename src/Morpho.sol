@@ -11,6 +11,7 @@ import {Errors} from "./libraries/Errors.sol";
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
+import {MorphoStorage} from "./MorphoStorage.sol";
 import {MorphoGetters} from "./MorphoGetters.sol";
 import {MorphoSetters} from "./MorphoSetters.sol";
 
@@ -18,6 +19,10 @@ import {MorphoSetters} from "./MorphoSetters.sol";
 contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     using DelegateCall for address;
     using SafeTransferLib for ERC20;
+
+    /// CONSTRUCTOR ///
+
+    constructor(address addressesProvider) MorphoStorage(addressesProvider) {}
 
     /// EXTERNAL ///
 
@@ -30,6 +35,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
                 IPositionsManager.supplyLogic.selector, underlying, amount, msg.sender, onBehalf, maxLoops
             )
         );
+
         return (abi.decode(returnData, (uint256)));
     }
 
@@ -42,6 +48,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
                 IPositionsManager.supplyCollateralLogic.selector, underlying, amount, msg.sender, onBehalf
             )
         );
+
         return (abi.decode(returnData, (uint256)));
     }
 
@@ -54,6 +61,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
                 IPositionsManager.borrowLogic.selector, underlying, amount, msg.sender, receiver, maxLoops
             )
         );
+
         return (abi.decode(returnData, (uint256)));
     }
 
@@ -66,6 +74,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
                 IPositionsManager.repayLogic.selector, underlying, amount, msg.sender, onBehalf, maxLoops
             )
         );
+
         return (abi.decode(returnData, (uint256)));
     }
 
@@ -78,6 +87,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
                 IPositionsManager.withdrawLogic.selector, underlying, amount, msg.sender, to, maxLoops
             )
         );
+
         return (abi.decode(returnData, (uint256)));
     }
 
@@ -87,6 +97,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
                 IPositionsManager.withdrawCollateralLogic.selector, underlying, amount, msg.sender, to
             )
         );
+
         return (abi.decode(returnData, (uint256)));
     }
 
@@ -104,6 +115,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
                 msg.sender
             )
         );
+
         return (abi.decode(returnData, (uint256, uint256)));
     }
 

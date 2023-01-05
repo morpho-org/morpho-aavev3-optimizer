@@ -89,20 +89,17 @@ library InterestRatesLib {
         Types.MarketSideIndexes256 memory lastIndexes,
         uint256 p2pDelta,
         uint256 p2pAmount
-    ) internal pure returns (uint256 newP2PIndex) {
+    ) internal pure returns (uint256) {
         if (p2pAmount == 0 || p2pDelta == 0) {
-            newP2PIndex = lastIndexes.p2pIndex.rayMul(p2pGrowthFactor);
-        } else {
-            uint256 shareOfTheDelta = Math.min(
-                p2pDelta.wadToRay().rayMul(lastIndexes.poolIndex).rayDiv(
-                    p2pAmount.wadToRay().rayMul(lastIndexes.p2pIndex)
-                ),
-                WadRayMath.RAY // To avoid shareOfTheDelta > 1 with rounding errors.
-            ); // In ray.
-
-            newP2PIndex = lastIndexes.p2pIndex.rayMul(
-                (WadRayMath.RAY - shareOfTheDelta).rayMul(p2pGrowthFactor) + shareOfTheDelta.rayMul(poolGrowthFactor)
-            );
+            return lastIndexes.p2pIndex.rayMul(p2pGrowthFactor);
         }
+
+        uint256 shareOfTheDelta = Math.min(
+            p2pDelta.rayMul(lastIndexes.poolIndex).rayDivUp(p2pAmount.rayMul(lastIndexes.p2pIndex)),
+            WadRayMath.RAY // To avoid shareOfTheDelta > 1 with rounding errors.
+        ); // In ray.
+
+        return
+            lastIndexes.p2pIndex.rayMul(WadRayMath.rayWeightedAvg(p2pGrowthFactor, poolGrowthFactor, shareOfTheDelta));
     }
 }

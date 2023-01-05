@@ -60,18 +60,15 @@ contract TestSetup is Test {
     }
 
     function deployAndSet() public {
-        positionsManager = new PositionsManager();
-        morphoImplementation = new Morpho();
+        positionsManager = new PositionsManager(address(addressesProvider));
+        morphoImplementation = new Morpho(address(addressesProvider));
 
         proxyAdmin = new ProxyAdmin();
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImplementation)), address(proxyAdmin), "");
         morpho = Morpho(payable(address(morphoProxy)));
 
         morpho.initialize(
-            address(positionsManager),
-            address(addressesProvider),
-            Types.MaxLoops({supply: 10, borrow: 10, repay: 10, withdraw: 10}),
-            20
+            address(positionsManager), Types.MaxLoops({supply: 10, borrow: 10, repay: 10, withdraw: 10}), 20
         );
 
         createMarket(dai);
