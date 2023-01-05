@@ -5,6 +5,7 @@
     "testBlock" : 24437213,
     "testMarkets" : ["DAI", "USDC", "WBTC", "WETH"],
     "LendingPoolAddressesProvider" : "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
+    "Pool" : "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
     "DAI" : "0xd586E7F844cEa2F87f50152665BCbc2C279D8d70",
     "FRAX" : "0xD24C2Ad096400B6FBcd2ad8B24E7acBc21A1da64",
     "MAI" : "0x5c49b268c9841AFF1Cc3B0a418ff5c3442eE3F3b",

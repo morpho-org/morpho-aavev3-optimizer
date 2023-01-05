@@ -17,6 +17,11 @@ library TestHelpers {
         json = vm.readFile(path);
     }
 
+    function getAddress(string memory key) internal view returns (address) {
+        string memory json = getJsonConfig(vm.envString("NETWORK"));
+        return getAddressFromJson(json, key);
+    }
+
     function getAddressFromJson(string memory json, string memory key) internal pure returns (address) {
         return json.readAddress(string(abi.encodePacked(key)));
     }
