@@ -75,6 +75,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256 borrowed)
     {
+        if (!_hasPermission(borrower, msg.sender)) revert Errors.PermissionDenied();
+
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         _validateBorrow(underlying, amount, borrower);
 
