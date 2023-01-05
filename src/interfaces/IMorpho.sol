@@ -7,6 +7,8 @@ interface IMorphoGetters {
     function maxSortedUsers() external view returns (uint256);
     function isClaimRewardsPaused() external view returns (bool);
 
+    function POOL() external view returns (address);
+    function ADDRESSES_PROVIDER() external view returns (address);
     function market(address underlying) external view returns (Types.Market memory);
 
     function scaledCollateralBalance(address underlying, address user) external view returns (uint256);
@@ -21,18 +23,16 @@ interface IMorphoGetters {
 
 interface IMorphoSetters {
     function initialize(
-        address newEntryPositionsManager,
-        address newExitPositionsManager,
-        address newAddressesProvider,
+        address newPositionsManager,
         Types.MaxLoops memory newDefaultMaxLoops,
         uint256 newMaxSortedUsers
     ) external;
 
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external;
+    function increaseP2PDeltas(address underlying, uint256 amount) external;
 
     function setDefaultMaxLoops(Types.MaxLoops memory defaultMaxLoops) external;
-    function setEntryPositionsManager(address entryPositionsManager) external;
-    function setExitPositionsManager(address exitPositionsManager) external;
+    function setPositionsManager(address positionsManager) external;
     function setIsBorrowPaused(address underlying, bool isPaused) external;
     function setIsDeprecated(address underlying, bool isDeprecated) external;
     function setIsLiquidateBorrowPaused(address underlying, bool isPaused) external;
