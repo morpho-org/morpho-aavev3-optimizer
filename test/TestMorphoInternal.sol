@@ -5,11 +5,16 @@ import {TestHelpers} from "./helpers/TestHelpers.sol";
 import {Test} from "@forge-std/Test.sol";
 import {console2} from "@forge-std/console2.sol";
 
+import {MorphoStorage} from "../src/MorphoStorage.sol";
 import {MorphoInternal} from "../src/MorphoInternal.sol";
 import {Types} from "../src/libraries/Types.sol";
 
 contract TestMorphoInternal is MorphoInternal, Test {
     uint256 public constant positionMax = uint256(type(Types.PositionType).max);
+
+    /// CONSTRUCTOR ///
+
+    constructor() MorphoStorage(address(1)) {}
 
     function testDecodeId(uint256 id) public {
         vm.assume((id >> 252) <= positionMax);

@@ -14,7 +14,7 @@ library Types {
 
     /// NESTED STRUCTS ///
 
-    struct Delta {
+    struct Deltas {
         uint256 p2pSupplyDelta; // Difference between the stored peer-to-peer supply amount and the real peer-to-peer supply amount (in pool supply unit).
         uint256 p2pBorrowDelta; // Difference between the stored peer-to-peer borrow amount and the real peer-to-peer borrow amount (in pool borrow unit).
         uint256 p2pSupplyAmount; // Sum of all stored peer-to-peer supply (in peer-to-peer supply unit).
@@ -51,7 +51,7 @@ library Types {
         // SLOT 0-1
         Indexes indexes;
         // SLOT 2-5
-        Delta deltas; // 1024 bits
+        Deltas deltas; // 1024 bits
         // SLOT 6
         address underlying; // 160 bits
         PauseStatuses pauseStatuses; // 80 bits
@@ -83,10 +83,10 @@ library Types {
     /// STACK AND RETURN STRUCTS ///
 
     struct LiquidityData {
-        uint256 collateral; // The collateral value (In base currency in wad).
-        uint256 borrowable; // The maximum debt value allowed to borrow (In base currency in wad).
-        uint256 maxDebt; // The maximum debt value allowed before being liquidatable (In base currency in wad).
-        uint256 debt; // The debt value (In base currency in wad).
+        uint256 collateral; // The collateral value (in base currency, 8 decimals).
+        uint256 borrowable; // The maximum debt value allowed to borrow (in base currency, 8 decimals).
+        uint256 maxDebt; // The maximum debt value allowed before being liquidatable (in base currency, 8 decimals).
+        uint256 debt; // The debt value (in base currency, 8 decimals).
     }
 
     struct MatchingEngineVars {
@@ -108,7 +108,7 @@ library Types {
         uint256 poolBorrowIndex; // The current pool borrow index.
         uint256 reserveFactor; // The reserve factor percentage (10 000 = 100%).
         uint256 p2pIndexCursor; // The peer-to-peer index cursor (10 000 = 100%).
-        Delta deltas; // The deltas and peer-to-peer amounts.
+        Deltas deltas; // The deltas and peer-to-peer amounts.
     }
 
     struct GrowthFactors {

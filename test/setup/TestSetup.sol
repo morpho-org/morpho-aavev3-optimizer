@@ -9,8 +9,7 @@ import {IPool, IPoolAddressesProvider} from "../../src/interfaces/aave/IPool.sol
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
-import {EntryPositionsManager} from "../../src/EntryPositionsManager.sol";
-import {ExitPositionsManager} from "../../src/ExitPositionsManager.sol";
+import {PositionsManager} from "../../src/PositionsManager.sol";
 import {Morpho} from "../../src/Morpho.sol";
 
 import {Types} from "../../src/libraries/Types.sol";
@@ -29,8 +28,7 @@ contract TestSetup is Test {
     address internal wbtc;
     address internal wNative;
 
-    EntryPositionsManager internal entryPositionsManager;
-    ExitPositionsManager internal exitPositionsManager;
+    PositionsManager internal positionsManager;
     Morpho internal morphoImplementation;
     TransparentUpgradeableProxy internal morphoProxy;
     ProxyAdmin internal proxyAdmin;
@@ -84,20 +82,15 @@ contract TestSetup is Test {
     }
 
     function deployAndSet() internal {
-        entryPositionsManager = new EntryPositionsManager();
-        exitPositionsManager = new ExitPositionsManager();
-        morphoImplementation = new Morpho();
+        positionsManager = new PositionsManager(address(addressesProvider));
+        morphoImplementation = new Morpho(address(addressesProvider));
 
         proxyAdmin = new ProxyAdmin();
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImplementation)), address(proxyAdmin), "");
         morpho = Morpho(payable(address(morphoProxy)));
 
         morpho.initialize(
-            address(entryPositionsManager),
-            address(exitPositionsManager),
-            address(addressesProvider),
-            Types.MaxLoops({supply: 10, borrow: 10, repay: 10, withdraw: 10}),
-            20
+            address(positionsManager), Types.MaxLoops({supply: 10, borrow: 10, repay: 10, withdraw: 10}), 20
         );
 
         createMarket(dai);

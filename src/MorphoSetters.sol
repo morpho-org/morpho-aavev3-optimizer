@@ -13,6 +13,7 @@ import {PoolLib} from "./libraries/PoolLib.sol";
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 
+import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
@@ -21,17 +22,18 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
+    using PoolLib for IPool;
     using MarketLib for Types.Market;
     using SafeTransferLib for ERC20;
-    using PoolLib for IPool;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+
+    using Math for uint256;
+    using WadRayMath for uint256;
 
     /// SETTERS ///
 
     function initialize(
-        address newEntryPositionsManager,
-        address newExitPositionsManager,
-        address newAddressesProvider,
+        address newPositionsManager,
         Types.MaxLoops memory newDefaultMaxLoops,
         uint256 newMaxSortedUsers
     ) external initializer {
@@ -39,10 +41,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
         __Ownable_init_unchained();
 
-        _entryPositionsManager = newEntryPositionsManager;
-        _exitPositionsManager = newExitPositionsManager;
-        _addressesProvider = IPoolAddressesProvider(newAddressesProvider);
-        _pool = IPool(_addressesProvider.getPool());
+        _positionsManager = newPositionsManager;
 
         _defaultMaxLoops = newDefaultMaxLoops;
         _maxSortedUsers = newMaxSortedUsers;
@@ -54,9 +53,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
             revert Errors.ExceedsMaxBasisPoints();
         }
 
-        if (!_pool.getConfiguration(underlying).getActive()) revert Errors.MarketIsNotListedOnAave();
+        if (!_POOL.getConfiguration(underlying).getActive()) revert Errors.MarketIsNotListedOnAave();
 
-        DataTypes.ReserveData memory reserveData = _pool.getReserveData(underlying);
+        DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
 
         Types.Market storage market = _market[underlying];
 
@@ -65,7 +64,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         Types.Indexes256 memory indexes;
         indexes.supply.p2pIndex = WadRayMath.RAY;
         indexes.borrow.p2pIndex = WadRayMath.RAY;
-        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _pool.getCurrentPoolIndexes(underlying);
+        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
         market.lastUpdateTimestamp = uint32(block.timestamp);
@@ -78,9 +77,44 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
         _marketsCreated.push(underlying);
 
-        ERC20(underlying).safeApprove(address(_pool), type(uint256).max);
+        ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
 
         emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
+    }
+
+    function increaseP2PDeltas(address underlying, uint256 amount) external onlyOwner isMarketCreated(underlying) {
+        Types.Indexes256 memory indexes = _updateIndexes(underlying);
+
+        Types.Market storage market = _market[underlying];
+        Types.Deltas memory deltas = market.deltas;
+        uint256 poolSupplyIndex = indexes.supply.poolIndex;
+        uint256 poolBorrowIndex = indexes.borrow.poolIndex;
+
+        amount = Math.min(
+            amount,
+            Math.min(
+                deltas.p2pSupplyAmount.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                    deltas.p2pSupplyDelta.rayMul(poolSupplyIndex)
+                ),
+                deltas.p2pBorrowAmount.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+                    deltas.p2pBorrowDelta.rayMul(poolBorrowIndex)
+                )
+            )
+        );
+        if (amount == 0) revert Errors.AmountIsZero();
+
+        uint256 newP2PSupplyDelta = deltas.p2pSupplyDelta + amount.rayDiv(poolSupplyIndex);
+        uint256 newP2PBorrowDelta = deltas.p2pBorrowDelta + amount.rayDiv(poolBorrowIndex);
+
+        market.deltas.p2pSupplyDelta = newP2PSupplyDelta;
+        market.deltas.p2pBorrowDelta = newP2PBorrowDelta;
+        emit Events.P2PSupplyDeltaUpdated(underlying, newP2PSupplyDelta);
+        emit Events.P2PBorrowDeltaUpdated(underlying, newP2PBorrowDelta);
+
+        _POOL.borrowFromPool(underlying, amount);
+        _POOL.supplyToPool(underlying, amount);
+
+        emit Events.P2PDeltasIncreased(underlying, amount);
     }
 
     function setMaxSortedUsers(uint256 newMaxSortedUsers) external onlyOwner {
@@ -96,16 +130,10 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
             );
     }
 
-    function setEntryPositionsManager(address entryPositionsManager) external onlyOwner {
-        if (entryPositionsManager == address(0)) revert Errors.AddressIsZero();
-        _entryPositionsManager = entryPositionsManager;
-        emit Events.EntryPositionsManagerSet(entryPositionsManager);
-    }
-
-    function setExitPositionsManager(address exitPositionsManager) external onlyOwner {
-        if (exitPositionsManager == address(0)) revert Errors.AddressIsZero();
-        _exitPositionsManager = exitPositionsManager;
-        emit Events.ExitPositionsManagerSet(_exitPositionsManager);
+    function setPositionsManager(address positionsManager) external onlyOwner {
+        if (positionsManager == address(0)) revert Errors.AddressIsZero();
+        _positionsManager = positionsManager;
+        emit Events.PositionsManagerSet(positionsManager);
     }
 
     function setReserveFactor(address underlying, uint16 newReserveFactor)

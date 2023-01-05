@@ -121,6 +121,6 @@ contract User {
 
     function setMorphoAddresses(Morpho _morpho) public {
         morpho = _morpho;
-        pool = IPool(_morpho.pool());
+        pool = IPool(_morpho.POOL());
     }
 }
