@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IMorpho} from "./interfaces/IMorpho.sol";
 import {IPool} from "./interfaces/aave/IPool.sol";
 import {IPoolToken} from "./interfaces/aave/IPoolToken.sol";
 import {IScaledBalanceToken} from "@aave/core-v3/contracts/interfaces/IScaledBalanceToken.sol";
@@ -11,7 +12,6 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Types} from "./libraries/Types.sol";
 
 import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
-import {Morpho} from "./Morpho.sol";
 
 /// @title RewardsManager.
 /// @author Morpho Labs.
@@ -42,7 +42,7 @@ contract RewardsManager is Initializable {
     /// IMMUTABLES ///
 
     address internal immutable _rewardsController; // The rewards controller is supposed not to change depending on the asset.
-    Morpho internal immutable _morpho;
+    IMorpho internal immutable _morpho;
     IPool internal immutable _pool;
 
     /// STORAGE ///
@@ -91,7 +91,7 @@ contract RewardsManager is Initializable {
         _disableInitializers();
 
         _rewardsController = rewardsController;
-        _morpho = Morpho(morpho);
+        _morpho = IMorpho(morpho);
         _pool = IPool(pool);
     }
 
