@@ -84,9 +84,7 @@ library Events {
 
     event DefaultMaxLoopsSet(uint64 supply, uint64 borrow, uint64 repay, uint64 withdraw);
 
-    event EntryPositionsManagerSet(address entryPositionsManager);
-
-    event ExitPositionsManagerSet(address exitPositionsManager);
+    event PositionsManagerSet(address positionsManager);
 
     event ReserveFactorSet(address indexed underlying, uint16 reserveFactor);
 

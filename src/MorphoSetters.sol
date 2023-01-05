@@ -33,8 +33,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     /// SETTERS ///
 
     function initialize(
-        address newEntryPositionsManager,
-        address newExitPositionsManager,
+        address newPositionsManager,
         address newAddressesProvider,
         Types.MaxLoops memory newDefaultMaxLoops,
         uint256 newMaxSortedUsers
@@ -43,8 +42,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
         __Ownable_init_unchained();
 
-        _entryPositionsManager = newEntryPositionsManager;
-        _exitPositionsManager = newExitPositionsManager;
+        _positionsManager = newPositionsManager;
         _addressesProvider = IPoolAddressesProvider(newAddressesProvider);
         _pool = IPool(_addressesProvider.getPool());
 
@@ -92,16 +90,16 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
         Types.Market storage market = _market[underlying];
         Types.Deltas memory deltas = market.deltas;
-        uint256 poolSupplyIndex = indexes.poolSupplyIndex;
-        uint256 poolBorrowIndex = indexes.poolBorrowIndex;
+        uint256 poolSupplyIndex = indexes.supply.poolIndex;
+        uint256 poolBorrowIndex = indexes.borrow.poolIndex;
 
         amount = Math.min(
             amount,
             Math.min(
-                deltas.p2pSupplyAmount.rayMul(indexes.p2pSupplyIndex).zeroFloorSub(
+                deltas.p2pSupplyAmount.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
                     deltas.p2pSupplyDelta.rayMul(poolSupplyIndex)
                 ),
-                deltas.p2pBorrowAmount.rayMul(indexes.p2pBorrowIndex).zeroFloorSub(
+                deltas.p2pBorrowAmount.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
                     deltas.p2pBorrowDelta.rayMul(poolBorrowIndex)
                 )
             )
@@ -135,16 +133,10 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
             );
     }
 
-    function setEntryPositionsManager(address entryPositionsManager) external onlyOwner {
-        if (entryPositionsManager == address(0)) revert Errors.AddressIsZero();
-        _entryPositionsManager = entryPositionsManager;
-        emit Events.EntryPositionsManagerSet(entryPositionsManager);
-    }
-
-    function setExitPositionsManager(address exitPositionsManager) external onlyOwner {
-        if (exitPositionsManager == address(0)) revert Errors.AddressIsZero();
-        _exitPositionsManager = exitPositionsManager;
-        emit Events.ExitPositionsManagerSet(_exitPositionsManager);
+    function setPositionsManager(address positionsManager) external onlyOwner {
+        if (positionsManager == address(0)) revert Errors.AddressIsZero();
+        _positionsManager = positionsManager;
+        emit Events.PositionsManagerSet(positionsManager);
     }
 
     function setReserveFactor(address underlying, uint16 newReserveFactor)
