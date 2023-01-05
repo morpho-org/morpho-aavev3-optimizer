@@ -3,13 +3,16 @@ pragma solidity ^0.8.17;
 
 import {IMorphoGetters} from "./interfaces/IMorpho.sol";
 
-import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {Types} from "./libraries/Types.sol";
+import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     using MarketBalanceLib for Types.MarketBalances;
+
+    using WadRayMath for uint256;
 
     /// STORAGE ///
 
@@ -23,6 +26,18 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
 
     function market(address underlying) external view returns (Types.Market memory) {
         return _market[underlying];
+    }
+
+    function supplyBalance(address underlying, address user) external view returns (uint256) {
+        return _getUserSupplyBalanceFromIndexes(underlying, user, _computeIndexes(underlying).supply);
+    }
+
+    function borrowBalance(address underlying, address user) external view returns (uint256) {
+        return _getUserBorrowBalanceFromIndexes(underlying, user, _computeIndexes(underlying).borrow);
+    }
+
+    function collateralBalance(address underlying, address user) external view returns (uint256) {
+        return _getUserCollateralBalanceFromIndex(underlying, user, _computeIndexes(underlying).supply.poolIndex);
     }
 
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256) {
@@ -51,28 +66,5 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
 
     function isClaimRewardsPaused() external view returns (bool) {
         return _isClaimRewardsPaused;
-    }
-
-    /// UTILITY ///
-
-    function decodeId(uint256 id) external pure returns (address underlying, Types.PositionType positionType) {
-        return _decodeId(id);
-    }
-
-    /// ERC1155 ///
-
-    function balanceOf(address user, uint256 id) external view returns (uint256) {
-        (address underlying, Types.PositionType positionType) = _decodeId(id);
-        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-
-        if (positionType == Types.PositionType.COLLATERAL) {
-            return marketBalances.scaledCollateralBalance(user);
-        } else if (positionType == Types.PositionType.SUPPLY) {
-            return marketBalances.scaledP2PSupplyBalance(user) + marketBalances.scaledPoolSupplyBalance(user); // TODO: take into account indexes.
-        } else if (positionType == Types.PositionType.BORROW) {
-            return marketBalances.scaledP2PBorrowBalance(user) + marketBalances.scaledPoolBorrowBalance(user); // TODO: take into account indexes.
-        } else {
-            return 0;
-        }
     }
 }

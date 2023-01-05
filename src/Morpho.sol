@@ -2,7 +2,6 @@
 pragma solidity ^0.8.17;
 
 import {IMorpho} from "./interfaces/IMorpho.sol";
-import {IERC1155} from "./interfaces/IERC1155.sol";
 import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
 
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
@@ -11,7 +10,6 @@ import {MorphoStorage} from "./MorphoStorage.sol";
 import {MorphoGetters} from "./MorphoGetters.sol";
 import {MorphoSetters} from "./MorphoSetters.sol";
 
-// @note: To add: IERC1155
 contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     using DelegateCall for address;
 
