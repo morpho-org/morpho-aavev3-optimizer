@@ -52,7 +52,7 @@ abstract contract MorphoInternal is MorphoStorage {
     /// INTERNAL ///
 
     function _hasPermission(address owner, address manager) public view returns (bool) {
-        return owner == manager || _isAllowed[owner][manager];
+        return owner == manager || _isManaging[owner][manager];
     }
 
     function _getUserBalanceFromIndexes(

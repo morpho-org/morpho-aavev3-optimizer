@@ -54,7 +54,7 @@ library Events {
         uint256 amountSeized
     );
 
-    event Approval(address indexed owner, address indexed manager, bool isAllowed);
+    event ManagerApproval(address indexed owner, address indexed manager, bool isAllowed);
 
     event PositionUpdated(
         bool borrow, address indexed user, address indexed underlying, uint256 balanceOnPool, uint256 balanceInP2P

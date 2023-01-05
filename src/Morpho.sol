@@ -117,9 +117,9 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256, uint256)));
     }
 
-    function allow(address manager, bool isAllowed) external {
-        _isAllowed[msg.sender][manager] = isAllowed;
-        emit Events.Approval(msg.sender, manager, isAllowed);
+    function approveManager(address manager, bool isAllowed) external {
+        _isManaging[msg.sender][manager] = isAllowed;
+        emit Events.ManagerApproval(msg.sender, manager, isAllowed);
     }
 
     /// @notice Claims rewards for the given assets.
