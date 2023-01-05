@@ -16,9 +16,6 @@ interface IMorphoGetters {
     function scaledP2PSupplyBalance(address underlying, address user) external view returns (uint256);
     function scaledPoolBorrowBalance(address underlying, address user) external view returns (uint256);
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256);
-
-    function decodeId(uint256 id) external pure returns (address underlying, Types.PositionType positionType);
-    function balanceOf(address user, uint256 id) external view returns (uint256);
 }
 
 interface IMorphoSetters {
