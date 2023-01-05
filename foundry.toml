@@ -1,5 +1,4 @@
 [profile.default]
-via-ir = true
 fs_permissions = [{ access = "read", path = "./"}]
 names = true
 sizes = true
