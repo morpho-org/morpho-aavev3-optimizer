@@ -38,8 +38,6 @@ abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
 
     /// @dev The contract is automatically marked as initialized when deployed to prevent highjacking the implementation contract.
     constructor(address addressesProvider) {
-        if (addressesProvider == address(0)) revert Errors.AddressIsZero();
-
         _disableInitializers();
 
         _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
