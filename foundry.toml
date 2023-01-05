@@ -4,4 +4,7 @@ fs_permissions = [{ access = "read", path = "./"}]
 names = true
 sizes = true
 
+[fuzz]
+runs = 64
+
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
