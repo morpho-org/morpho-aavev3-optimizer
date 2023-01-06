@@ -12,6 +12,7 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {IPool, IPoolAddressesProvider} from "../src/interfaces/aave/IPool.sol";
 import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
@@ -34,6 +35,9 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using TestConfig for TestConfig.Config;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    IPriceOracleGetter internal oracle;
 
     constructor() TestSetup() MorphoStorage(config.load(vm.envString("NETWORK")).getAddress("addressesProvider")) {}
 
@@ -42,6 +46,25 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         _maxSortedUsers = 20;
 
         createTestMarket(dai, 0, 3_333);
+        createTestMarket(wbtc, 0, 3_333);
+        createTestMarket(usdc, 0, 3_333);
+        createTestMarket(usdt, 0, 3_333);
+        createTestMarket(wNative, 0, 3_333);
+
+        fillBalance(address(this), type(uint256).max);
+        ERC20(dai).approve(address(_POOL), type(uint256).max);
+        ERC20(wbtc).approve(address(_POOL), type(uint256).max);
+        ERC20(usdc).approve(address(_POOL), type(uint256).max);
+        ERC20(usdt).approve(address(_POOL), type(uint256).max);
+        ERC20(wNative).approve(address(_POOL), type(uint256).max);
+
+        _POOL.supplyToPool(dai, 100 ether);
+        _POOL.supplyToPool(wbtc, 1e8);
+        _POOL.supplyToPool(usdc, 1e8);
+        _POOL.supplyToPool(usdt, 1e8);
+        _POOL.supplyToPool(wNative, 1 ether);
+
+        oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
     }
 
     function createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
@@ -196,20 +219,18 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
     }
 
     function testAssetLiquidityData() public {
-        IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        _POOL.setUserUseReserveAsCollateral(dai, false);
+
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
         (uint256 poolLtv, uint256 poolLt,, uint256 poolDecimals,,) = _POOL.getConfiguration(dai).getParams();
-
         (uint256 price, uint256 ltv, uint256 lt, uint256 units) = _assetLiquidityData(dai, oracle, morphoPoolConfig);
+
         assertEq(price, oracle.getAssetPrice(dai), "price not equal to oracle price 1");
         assertEq(ltv, 0, "ltv not equal to 0");
         assertEq(lt, 0, "lt not equal to 0");
         assertEq(units, 10 ** poolDecimals, "units not equal to pool decimals 1");
 
-        fillBalance(address(this), type(uint256).max);
-        ERC20(dai).approve(address(_POOL), type(uint256).max);
-        _POOL.supplyToPool(dai, 100 ether);
-
+        _POOL.setUserUseReserveAsCollateral(dai, true);
         morphoPoolConfig = _POOL.getUserConfiguration(address(this));
 
         (price, ltv, lt, units) = _assetLiquidityData(dai, oracle, morphoPoolConfig);
@@ -230,10 +251,6 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
 
         _marketBalances[dai].collateral[address(1)] = amount.rayDivUp(_market[dai].indexes.supply.poolIndex);
 
-        fillBalance(address(this), type(uint256).max);
-        ERC20(dai).approve(address(_POOL), type(uint256).max);
-        _POOL.supplyToPool(dai, 100 ether);
-        IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
 
         Types.LiquidityData memory liquidityData =
@@ -273,10 +290,6 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
             amountP2P.rayDiv(_market[dai].indexes.borrow.p2pIndex)
         );
 
-        fillBalance(address(this), type(uint256).max);
-        ERC20(dai).approve(address(_POOL), type(uint256).max);
-        _POOL.supplyToPool(dai, 100 ether);
-        IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
 
         Types.Indexes256 memory indexes = _computeIndexes(dai);
@@ -290,11 +303,130 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         assertApproxEqAbs(debt, expectedDebtValue, 1, "debtValue not equal to expected");
     }
 
+    function testLiquidityDataAllCollaterals() public {
+        _marketBalances[dai].collateral[address(1)] = uint256(100 ether).rayDivUp(_market[dai].indexes.supply.poolIndex);
+        _marketBalances[wbtc].collateral[address(1)] = uint256(1e8).rayDivUp(_market[wbtc].indexes.supply.poolIndex);
+        _marketBalances[usdc].collateral[address(1)] = uint256(1e8).rayDivUp(_market[usdc].indexes.supply.poolIndex);
+
+        _userCollaterals[address(1)].add(dai);
+        _userCollaterals[address(1)].add(wbtc);
+        _userCollaterals[address(1)].add(usdc);
+
+        DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
+
+        Types.LiquidityData memory liquidityData =
+            _liquidityDataAllCollaterals(dai, address(1), oracle, morphoPoolConfig, 10 ether);
+
+        Types.LiquidityData[3] memory liquidityDataSingles = [
+            _liquidityDataCollateral(dai, address(1), oracle, morphoPoolConfig, 10 ether),
+            _liquidityDataCollateral(wbtc, address(1), oracle, morphoPoolConfig, 0),
+            _liquidityDataCollateral(usdc, address(1), oracle, morphoPoolConfig, 0)
+        ];
+
+        assertEq(
+            liquidityData.collateral,
+            liquidityDataSingles[0].collateral + liquidityDataSingles[1].collateral + liquidityDataSingles[2].collateral,
+            "collateral not equal to sum of singles"
+        );
+        assertEq(
+            liquidityData.borrowable,
+            liquidityDataSingles[0].borrowable + liquidityDataSingles[1].borrowable + liquidityDataSingles[2].borrowable,
+            "borrowable not equal to sum of singles"
+        );
+        assertEq(
+            liquidityData.maxDebt,
+            liquidityDataSingles[0].maxDebt + liquidityDataSingles[1].maxDebt + liquidityDataSingles[2].maxDebt,
+            "maxDebt not equal to sum of singles"
+        );
+    }
+
+    function testLiquidityDataAllDebts() public {
+        _updateBorrowerInDS(
+            dai,
+            address(1),
+            uint256(100 ether).rayDiv(_market[dai].indexes.borrow.poolIndex),
+            uint256(100 ether).rayDiv(_market[dai].indexes.borrow.p2pIndex)
+        );
+        _updateBorrowerInDS(
+            wbtc,
+            address(1),
+            uint256(1e8).rayDiv(_market[wbtc].indexes.borrow.poolIndex),
+            uint256(1e8).rayDiv(_market[wbtc].indexes.borrow.p2pIndex)
+        );
+        _updateBorrowerInDS(
+            usdc,
+            address(1),
+            uint256(1e8).rayDiv(_market[usdc].indexes.borrow.poolIndex),
+            uint256(1e8).rayDiv(_market[usdc].indexes.borrow.p2pIndex)
+        );
+
+        _userBorrows[address(1)].add(dai);
+        _userBorrows[address(1)].add(wbtc);
+        _userBorrows[address(1)].add(usdc);
+
+        DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
+
+        uint256 debt = _liquidityDataAllDebts(dai, address(1), oracle, morphoPoolConfig, 10 ether);
+
+        uint256[3] memory debtSingles = [
+            _liquidityDataDebt(dai, address(1), oracle, morphoPoolConfig, 10 ether),
+            _liquidityDataDebt(wbtc, address(1), oracle, morphoPoolConfig, 0),
+            _liquidityDataDebt(usdc, address(1), oracle, morphoPoolConfig, 0)
+        ];
+
+        assertApproxEqAbs(
+            debt, debtSingles[0] + debtSingles[1] + debtSingles[2], 1, "collateral not equal to sum of singles"
+        );
+    }
+
+    function testLiquidityData() public {
+        _marketBalances[dai].collateral[address(1)] = uint256(100 ether).rayDivUp(_market[dai].indexes.supply.poolIndex);
+        _marketBalances[wbtc].collateral[address(1)] = uint256(1e8).rayDivUp(_market[wbtc].indexes.supply.poolIndex);
+        _marketBalances[usdc].collateral[address(1)] = uint256(1e8).rayDivUp(_market[usdc].indexes.supply.poolIndex);
+
+        _userCollaterals[address(1)].add(dai);
+        _userCollaterals[address(1)].add(wbtc);
+        _userCollaterals[address(1)].add(usdc);
+
+        _updateBorrowerInDS(
+            dai,
+            address(1),
+            uint256(100 ether).rayDiv(_market[dai].indexes.borrow.poolIndex),
+            uint256(100 ether).rayDiv(_market[dai].indexes.borrow.p2pIndex)
+        );
+        _updateBorrowerInDS(
+            wbtc,
+            address(1),
+            uint256(1e8).rayDiv(_market[wbtc].indexes.borrow.poolIndex),
+            uint256(1e8).rayDiv(_market[wbtc].indexes.borrow.p2pIndex)
+        );
+        _updateBorrowerInDS(
+            usdc,
+            address(1),
+            uint256(1e8).rayDiv(_market[usdc].indexes.borrow.poolIndex),
+            uint256(1e8).rayDiv(_market[usdc].indexes.borrow.p2pIndex)
+        );
+
+        _userBorrows[address(1)].add(dai);
+        _userBorrows[address(1)].add(wbtc);
+        _userBorrows[address(1)].add(usdc);
+
+        DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
+
+        Types.LiquidityData memory liquidityData = _liquidityData(dai, address(1), 10 ether, 10 ether);
+
+        Types.LiquidityData memory liquidityDataAllCollaterals =
+            _liquidityDataAllCollaterals(dai, address(1), oracle, morphoPoolConfig, 10 ether);
+        uint256 debtAllDebts = _liquidityDataAllDebts(dai, address(1), oracle, morphoPoolConfig, 10 ether);
+
+        assertEq(liquidityData.collateral, liquidityDataAllCollaterals.collateral, "collateral not equal");
+        assertEq(liquidityData.borrowable, liquidityDataAllCollaterals.borrowable, "borrowable not equal");
+        assertEq(liquidityData.maxDebt, liquidityDataAllCollaterals.maxDebt, "maxDebt not equal");
+        assertEq(liquidityData.debt, debtAllDebts, "debt not equal");
+    }
+
     /// TESTS TO ADD:
 
-    // _liquidityDataAllCollaterals
-    // _liquidityDataAllDebts
-    // _liquidityData
     // _getUserHealthFactor
 
     // _setPauseStatus
