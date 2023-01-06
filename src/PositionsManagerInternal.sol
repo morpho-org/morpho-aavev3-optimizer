@@ -117,12 +117,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     function _validateBorrow(address underlying, uint256 amount, address borrower) internal view {
-        if (amount == 0) revert Errors.AmountIsZero();
-
         if (!_hasPermission(borrower, msg.sender)) revert Errors.PermissionDenied();
 
-        Types.Market storage market = _market[underlying];
-        if (!market.isCreated()) revert Errors.MarketNotCreated();
+        Types.Market storage market = _validateInput(underlying, amount, borrower);
         if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
         if (!_POOL.getConfiguration(underlying).getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
 
