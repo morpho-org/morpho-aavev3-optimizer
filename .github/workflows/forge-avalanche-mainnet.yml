@@ -1,0 +1,33 @@
+name: Forge tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - lib/**
+      - config/**/aave-v2/**
+      - src/**
+      - test/**
+      - yarn.lock
+      - foundry.toml
+      - remappings.txt
+      - .github/actions/forge.yml
+      - .github/workflows/forge-avalanche-mainnet.yml
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  avalanche-mainnet:
+    name: avalanche-mainnet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - uses: ./.github/actions/forge
+        with:
+          network: avalanche-mainnet
