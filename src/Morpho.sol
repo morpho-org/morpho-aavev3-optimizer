@@ -50,13 +50,13 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
-    function borrow(address underlying, uint256 amount, address receiver, uint256 maxLoops)
+    function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
         external
         returns (uint256 borrowed)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeWithSelector(
-                IPositionsManager.borrowLogic.selector, underlying, amount, msg.sender, receiver, maxLoops
+                IPositionsManager.borrowLogic.selector, underlying, amount, onBehalf, receiver, maxLoops
             )
         );
 
@@ -76,23 +76,26 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
-    function withdraw(address underlying, uint256 amount, address to, uint256 maxLoops)
+    function withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
         external
         returns (uint256 withdrawn)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeWithSelector(
-                IPositionsManager.withdrawLogic.selector, underlying, amount, msg.sender, to, maxLoops
+                IPositionsManager.withdrawLogic.selector, underlying, amount, onBehalf, receiver, maxLoops
             )
         );
 
         return (abi.decode(returnData, (uint256)));
     }
 
-    function withdrawCollateral(address underlying, uint256 amount, address to) external returns (uint256 withdrawn) {
+    function withdrawCollateral(address underlying, uint256 amount, address onBehalf, address receiver)
+        external
+        returns (uint256 withdrawn)
+    {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeWithSelector(
-                IPositionsManager.withdrawCollateralLogic.selector, underlying, amount, msg.sender, to
+                IPositionsManager.withdrawCollateralLogic.selector, underlying, amount, onBehalf, receiver
             )
         );
 

@@ -94,7 +94,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.supply), amount);
-        _validateWithdraw(underlying, amount, receiver);
+        _validateWithdraw(underlying, amount, supplier, receiver);
 
         (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) =
             _executeWithdraw(underlying, amount, supplier, _defaultMaxLoops.withdraw, indexes);
