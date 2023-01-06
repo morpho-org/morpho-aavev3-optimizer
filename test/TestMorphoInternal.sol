@@ -2,17 +2,21 @@
 pragma solidity ^0.8.17;
 
 import {TestHelpers} from "./helpers/TestHelpers.sol";
+import {TestConfig} from "./helpers/TestConfig.sol";
 
-import {Test} from "@forge-std/Test.sol";
+import {TestSetup} from "./setup/TestSetup.sol";
 import {console2} from "@forge-std/console2.sol";
 
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
+import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 
 import {IPool, IPoolAddressesProvider} from "../src/interfaces/aave/IPool.sol";
+import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
 import {DataTypes} from "../src/libraries/aave/DataTypes.sol";
+import {ReserveConfiguration} from "../src/libraries/aave/ReserveConfiguration.sol";
 
 import {MorphoInternal, MorphoStorage} from "../src/MorphoInternal.sol";
 import {Types} from "../src/libraries/Types.sol";
@@ -20,29 +24,20 @@ import {MarketLib} from "../src/libraries/MarketLib.sol";
 import {MarketBalanceLib} from "../src/libraries/MarketBalanceLib.sol";
 import {PoolLib} from "../src/libraries/PoolLib.sol";
 
-contract TestMorphoInternal is MorphoInternal, Test {
+contract TestMorphoInternal is TestSetup, MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using PoolLib for IPool;
     using WadRayMath for uint256;
+    using PercentageMath for uint256;
     using SafeTransferLib for ERC20;
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using TestConfig for TestConfig.Config;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    address internal dai;
-    uint256 internal forkId;
+    constructor() TestSetup() MorphoStorage(config.load(vm.envString("NETWORK")).getAddress("addressesProvider")) {}
 
-    constructor()
-        MorphoStorage(TestHelpers.getAddress("Pool"), TestHelpers.getAddress("LendingPoolAddressesProvider"))
-    {}
-
-    function setUp() public virtual {
-        string memory network = vm.envString("NETWORK");
-        string memory config = TestHelpers.getJsonConfig(network);
-
-        forkId = TestHelpers.setForkFromJson(config);
-
-        dai = TestHelpers.getAddressFromJson(config, "DAI");
-
+    function setUp() public virtual override {
         _defaultMaxLoops = Types.MaxLoops(10, 10, 10, 10);
         _maxSortedUsers = 20;
 
@@ -200,12 +195,107 @@ contract TestMorphoInternal is MorphoInternal, Test {
         );
     }
 
+    function testAssetLiquidityData() public {
+        IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
+        (uint256 poolLtv, uint256 poolLt,, uint256 poolDecimals,,) = _POOL.getConfiguration(dai).getParams();
+
+        (uint256 price, uint256 ltv, uint256 lt, uint256 units) = _assetLiquidityData(dai, oracle, morphoPoolConfig);
+        assertEq(price, oracle.getAssetPrice(dai), "price not equal to oracle price 1");
+        assertEq(ltv, 0, "ltv not equal to 0");
+        assertEq(lt, 0, "lt not equal to 0");
+        assertEq(units, 10 ** poolDecimals, "units not equal to pool decimals 1");
+
+        fillBalance(address(this), type(uint256).max);
+        ERC20(dai).approve(address(_POOL), type(uint256).max);
+        _POOL.supplyToPool(dai, 100 ether);
+
+        morphoPoolConfig = _POOL.getUserConfiguration(address(this));
+
+        (price, ltv, lt, units) = _assetLiquidityData(dai, oracle, morphoPoolConfig);
+        assertEq(price, oracle.getAssetPrice(dai), "price not equal to oracle price 2");
+        assertEq(ltv, poolLtv, "ltv not equal to pool ltv");
+        assertEq(lt, poolLt, "lt not equal to pool lt");
+        assertEq(units, 10 ** poolDecimals, "units not equal to pool decimals 2");
+
+        assertGt(price, 0, "price not gt 0");
+        assertGt(ltv, 0, "ltv not gt 0");
+        assertGt(lt, 0, "lt not gt 0");
+        assertGt(units, 0, "units not gt 0");
+    }
+
+    function testLiquidityDataCollateral(uint256 amount, uint256 amountWithdrawn) public {
+        amount = bound(amount, 0, 1_000_000 ether);
+        amountWithdrawn = bound(amountWithdrawn, 0, amount);
+
+        _marketBalances[dai].collateral[address(1)] = amount.rayDivUp(_market[dai].indexes.supply.poolIndex);
+
+        fillBalance(address(this), type(uint256).max);
+        ERC20(dai).approve(address(_POOL), type(uint256).max);
+        _POOL.supplyToPool(dai, 100 ether);
+        IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
+
+        Types.LiquidityData memory liquidityData =
+            _liquidityDataCollateral(dai, address(1), oracle, morphoPoolConfig, amountWithdrawn);
+
+        (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
+            _assetLiquidityData(dai, oracle, morphoPoolConfig);
+
+        amountWithdrawn = bound(
+            amountWithdrawn,
+            0,
+            _marketBalances[dai].scaledCollateralBalance(address(1)).rayMulDown(_market[dai].indexes.supply.poolIndex)
+        );
+        uint256 expectedCollateralValue = (
+            _getUserCollateralBalanceFromIndex(dai, address(1), _market[dai].indexes.supply.poolIndex) - amountWithdrawn
+        ) * underlyingPrice / tokenUnit;
+        assertEq(liquidityData.collateral, expectedCollateralValue, "collateralValue not equal to expected");
+        assertEq(
+            liquidityData.borrowable, expectedCollateralValue.percentMulDown(ltv), "borrowable not equal to expected"
+        );
+        assertEq(
+            liquidityData.maxDebt,
+            expectedCollateralValue.percentMulDown(liquidationThreshold),
+            "maxDebt not equal to expected"
+        );
+    }
+
+    function testLiquidityDataDebt(uint256 amountPool, uint256 amountP2P, uint256 amountBorrowed) public {
+        amountPool = bound(amountPool, 0, 1_000_000 ether);
+        amountP2P = bound(amountP2P, 0, 1_000_000 ether);
+        amountBorrowed = bound(amountBorrowed, 0, 1_000_000 ether);
+
+        _updateBorrowerInDS(
+            dai,
+            address(1),
+            amountPool.rayDiv(_market[dai].indexes.borrow.poolIndex),
+            amountP2P.rayDiv(_market[dai].indexes.borrow.p2pIndex)
+        );
+
+        fillBalance(address(this), type(uint256).max);
+        ERC20(dai).approve(address(_POOL), type(uint256).max);
+        _POOL.supplyToPool(dai, 100 ether);
+        IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
+
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+
+        uint256 debt = _liquidityDataDebt(dai, address(1), oracle, morphoPoolConfig, amountBorrowed);
+
+        (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(dai, oracle, morphoPoolConfig);
+
+        uint256 expectedDebtValue = (_getUserBorrowBalanceFromIndexes(dai, address(1), indexes.borrow) + amountBorrowed)
+            * underlyingPrice / tokenUnit;
+        assertApproxEqAbs(debt, expectedDebtValue, 1, "debtValue not equal to expected");
+    }
+
     /// TESTS TO ADD:
 
-    // _assetLiquidityData
-    // _liquidityDataCollateral
-    // _liquidityDataDebt
+    // _liquidityDataAllCollaterals
+    // _liquidityDataAllDebts
     // _liquidityData
+    // _getUserHealthFactor
 
     // _setPauseStatus
 }

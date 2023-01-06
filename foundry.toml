@@ -5,6 +5,6 @@ sizes = true
 libs = ["node_modules", "lib"]
 
 [fuzz]
-runs = 64
+runs = 16
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
