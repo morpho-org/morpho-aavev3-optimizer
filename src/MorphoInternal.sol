@@ -282,7 +282,8 @@ abstract contract MorphoInternal is MorphoStorage {
                 poolBorrowIndex: indexes.borrow.poolIndex,
                 reserveFactor: market.reserveFactor,
                 p2pIndexCursor: market.p2pIndexCursor,
-                deltas: market.deltas
+                deltas: market.deltas,
+                proportionIdle: _proportionIdle(underlying)
             })
         );
     }

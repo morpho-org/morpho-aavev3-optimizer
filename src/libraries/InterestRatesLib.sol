@@ -29,14 +29,16 @@ library InterestRatesLib {
             growthFactors.p2pSupplyGrowthFactor,
             params.lastSupplyIndexes,
             params.deltas.p2pSupplyDelta,
-            params.deltas.p2pSupplyAmount
+            params.deltas.p2pSupplyAmount,
+            params.proportionIdle
         );
         newP2PBorrowIndex = computeP2PIndex(
             growthFactors.poolBorrowGrowthFactor,
             growthFactors.p2pBorrowGrowthFactor,
             params.lastBorrowIndexes,
             params.deltas.p2pBorrowDelta,
-            params.deltas.p2pBorrowAmount
+            params.deltas.p2pBorrowAmount,
+            0
         );
     }
 
@@ -88,14 +90,15 @@ library InterestRatesLib {
         uint256 p2pGrowthFactor,
         Types.MarketSideIndexes256 memory lastIndexes,
         uint256 p2pDelta,
-        uint256 p2pAmount
+        uint256 p2pAmount,
+        uint256 proportionIdle
     ) internal pure returns (uint256) {
         if (p2pAmount == 0 || p2pDelta == 0) {
             return lastIndexes.p2pIndex.rayMul(p2pGrowthFactor);
         }
 
         uint256 shareOfTheDelta = Math.min(
-            p2pDelta.rayMul(lastIndexes.poolIndex).rayDivUp(p2pAmount.rayMul(lastIndexes.p2pIndex)),
+            p2pDelta.rayMul(lastIndexes.poolIndex).rayDivUp(p2pAmount.rayMul(lastIndexes.p2pIndex)) + proportionIdle,
             WadRayMath.RAY // To avoid shareOfTheDelta > 1 with rounding errors.
         ); // In ray.
 

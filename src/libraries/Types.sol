@@ -105,6 +105,7 @@ library Types {
         uint256 reserveFactor; // The reserve factor percentage (10 000 = 100%).
         uint256 p2pIndexCursor; // The peer-to-peer index cursor (10 000 = 100%).
         Deltas deltas; // The deltas and peer-to-peer amounts.
+        uint256 proportionIdle; // In ray.
     }
 
     struct GrowthFactors {
