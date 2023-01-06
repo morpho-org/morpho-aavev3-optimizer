@@ -116,8 +116,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateSupplierInDS(underlying, user, onPool, inP2P);
     }
 
-    function _validateBorrow(address underlying, uint256 amount, address user) internal view {
+    function _validateBorrow(address underlying, uint256 amount, address borrower) internal view {
         if (amount == 0) revert Errors.AmountIsZero();
+
+        if (!_hasPermission(borrower, msg.sender)) revert Errors.PermissionDenied();
 
         Types.Market storage market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
@@ -131,7 +133,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             revert Errors.PriceOracleSentinelBorrowDisabled();
         }
 
-        Types.LiquidityData memory values = _liquidityData(underlying, user, 0, amount);
+        Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
         if (values.debt > values.borrowable) revert Errors.UnauthorisedBorrow();
     }
 
@@ -298,7 +300,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (inP2P == 0 && onPool == 0) _userBorrows[user].remove(underlying);
     }
 
-    function _validateWithdraw(address underlying, uint256 amount, address receiver) internal view {
+    function _validateWithdraw(address underlying, uint256 amount, address supplier, address receiver) internal view {
+        if (!_hasPermission(supplier, msg.sender)) revert Errors.PermissionDenied();
+
         Types.Market storage market = _validateInput(underlying, amount, receiver);
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
 
@@ -314,8 +318,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         internal
         view
     {
+        if (!_hasPermission(supplier, msg.sender)) revert Errors.PermissionDenied();
+
         Types.Market storage market = _validateInput(underlying, amount, receiver);
         if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
+
         if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
             revert Errors.WithdrawUnauthorized();
         }
