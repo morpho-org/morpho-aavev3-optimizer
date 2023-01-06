@@ -154,6 +154,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         onPool = marketBalances.scaledPoolBorrowBalance(user);
         inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
+        /// Idle borrow ///
+
+        {
+            uint256 idleSupply = market.idleSupply;
+            if (idleSupply > 0) {
+                uint256 idleToMatch = Math.min(market.idleSupply, amount); // In underlying.
+                market.idleSupply -= idleToMatch;
+                amount -= idleToMatch;
+            }
+        }
+
         /// Peer-to-peer borrow ///
 
         // Match the peer-to-peer supply delta.
@@ -340,6 +351,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         onPool = marketBalances.scaledPoolSupplyBalance(user);
         inP2P = marketBalances.scaledP2PSupplyBalance(user);
+
+        /// Idle Withdraw ///
+        {
+            uint256 idleSupply = market.idleSupply;
+            if (idleSupply > 0) {
+                uint256 idleToMatch = Math.min(market.idleSupply, amount); // In underlying.
+                market.idleSupply -= idleToMatch;
+                amount -= idleToMatch;
+            }
+        }
 
         /// Pool withdraw ///
 
