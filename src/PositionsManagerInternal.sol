@@ -32,21 +32,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    function _validateInput(address underlying, uint256 amount) internal view returns (Types.Market storage market) {
+    function _validateInput(address underlying, uint256 amount, address user)
+        internal
+        view
+        returns (Types.Market storage market)
+    {
+        if (user == address(0)) revert Errors.AddressIsZero();
         if (amount == 0) revert Errors.AmountIsZero();
 
         market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
-    }
-
-    function _validateInput(address underlying, uint256 amount, address user)
-        internal
-        view
-        returns (Types.Market storage)
-    {
-        if (user == address(0)) revert Errors.AddressIsZero();
-
-        return _validateInput(underlying, amount);
     }
 
     function _validateSupply(address underlying, uint256 amount, address user) internal view {
