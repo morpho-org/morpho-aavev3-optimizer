@@ -45,7 +45,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     function _validatePermission(address owner, address manager) internal view {
-        if (!(owner == manager || _isAllowed[owner][manager])) revert Errors.PermissionDenied();
+        if (!(owner == manager || _isManaging[owner][manager])) revert Errors.PermissionDenied();
     }
 
     function _validateSupply(address underlying, uint256 amount, address user) internal view {
