@@ -32,21 +32,20 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    function _validateInput(address underlying, uint256 amount) internal view returns (Types.Market storage market) {
+    function _validateInput(address underlying, uint256 amount, address user)
+        internal
+        view
+        returns (Types.Market storage market)
+    {
+        if (user == address(0)) revert Errors.AddressIsZero();
         if (amount == 0) revert Errors.AmountIsZero();
 
         market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
     }
 
-    function _validateInput(address underlying, uint256 amount, address user)
-        internal
-        view
-        returns (Types.Market storage)
-    {
-        if (user == address(0)) revert Errors.AddressIsZero();
-
-        return _validateInput(underlying, amount);
+    function _validatePermission(address owner, address manager) internal view {
+        if (!(owner == manager || _isAllowed[owner][manager])) revert Errors.PermissionDenied();
     }
 
     function _validateSupply(address underlying, uint256 amount, address user) internal view {
@@ -57,6 +56,102 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _validateSupplyCollateral(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
         if (!market.pauseStatuses.isSupplyCollateralPaused) revert Errors.SupplyCollateralIsPaused();
+    }
+
+    function _validateBorrow(address underlying, uint256 amount, address borrower) internal view {
+        _validatePermission(borrower, msg.sender);
+
+        Types.Market storage market = _validateInput(underlying, amount, borrower);
+        if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
+        if (!_POOL.getConfiguration(underlying).getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
+
+        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
+        // In response, Morpho mirrors this behavior.
+        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
+        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
+            revert Errors.PriceOracleSentinelBorrowDisabled();
+        }
+
+        Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
+        if (values.debt > values.borrowable) revert Errors.UnauthorisedBorrow();
+    }
+
+    function _validateRepay(address underlying, uint256 amount, address user) internal view {
+        Types.Market storage market = _validateInput(underlying, amount, user);
+        if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
+    }
+
+    function _validateWithdraw(address underlying, uint256 amount, address supplier, address receiver) internal view {
+        _validatePermission(supplier, msg.sender);
+
+        Types.Market storage market = _validateInput(underlying, amount, receiver);
+        if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
+
+        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
+        // For safety concerns and as a withdraw on Morpho can trigger a borrow on pool, Morpho prevents withdrawals in such circumstances.
+        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
+        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
+            revert Errors.PriceOracleSentinelBorrowPaused();
+        }
+    }
+
+    function _validateWithdrawCollateral(address underlying, uint256 amount, address supplier, address receiver)
+        internal
+        view
+    {
+        _validatePermission(supplier, msg.sender);
+
+        Types.Market storage market = _validateInput(underlying, amount, receiver);
+        if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
+
+        if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+            revert Errors.WithdrawUnauthorized();
+        }
+    }
+
+    function _validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
+        internal
+        view
+        returns (uint256 closeFactor)
+    {
+        Types.Market storage borrowMarket = _market[underlyingBorrowed];
+        Types.Market storage collateralMarket = _market[underlyingCollateral];
+
+        if (!collateralMarket.isCreated() || !borrowMarket.isCreated()) {
+            revert Errors.MarketNotCreated();
+        }
+        if (collateralMarket.pauseStatuses.isLiquidateCollateralPaused) {
+            revert Errors.LiquidateCollateralIsPaused();
+        }
+        if (borrowMarket.pauseStatuses.isLiquidateBorrowPaused) {
+            revert Errors.LiquidateBorrowIsPaused();
+        }
+        if (
+            !_userCollaterals[borrower].contains(underlyingCollateral)
+                || !_userBorrows[borrower].contains(underlyingBorrowed)
+        ) {
+            revert Errors.UserNotMemberOfMarket();
+        }
+
+        if (borrowMarket.pauseStatuses.isDeprecated) {
+            return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
+        } else {
+            uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
+            address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
+
+            if (
+                priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
+                    && healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD
+            ) {
+                revert Errors.UnauthorisedLiquidate();
+            } else if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+                revert Errors.UnauthorisedLiquidate();
+            }
+
+            closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
+                ? Constants.DEFAULT_CLOSE_FACTOR
+                : Constants.MAX_CLOSE_FACTOR;
+        }
     }
 
     function _executeSupply(
@@ -116,24 +211,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateSupplierInDS(underlying, user, onPool, inP2P);
     }
 
-    function _validateBorrow(address underlying, uint256 amount, address borrower) internal view {
-        if (!_hasPermission(borrower, msg.sender)) revert Errors.PermissionDenied();
-
-        Types.Market storage market = _validateInput(underlying, amount, borrower);
-        if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
-        if (!_POOL.getConfiguration(underlying).getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
-
-        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
-        // In response, Morpho mirrors this behavior.
-        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
-        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
-            revert Errors.PriceOracleSentinelBorrowDisabled();
-        }
-
-        Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
-        if (values.debt > values.borrowable) revert Errors.UnauthorisedBorrow();
-    }
-
     function _executeBorrow(
         address underlying,
         uint256 amount,
@@ -190,11 +267,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         _updateBorrowerInDS(underlying, user, onPool, inP2P);
-    }
-
-    function _validateRepay(address underlying, uint256 amount, address user) internal view {
-        Types.Market storage market = _validateInput(underlying, amount, user);
-        if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
     }
 
     function _executeRepay(
@@ -297,34 +369,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (inP2P == 0 && onPool == 0) _userBorrows[user].remove(underlying);
     }
 
-    function _validateWithdraw(address underlying, uint256 amount, address supplier, address receiver) internal view {
-        if (!_hasPermission(supplier, msg.sender)) revert Errors.PermissionDenied();
-
-        Types.Market storage market = _validateInput(underlying, amount, receiver);
-        if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
-
-        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
-        // For safety concerns and as a withdraw on Morpho can trigger a borrow on pool, Morpho prevents withdrawals in such circumstances.
-        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
-        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
-            revert Errors.PriceOracleSentinelBorrowPaused();
-        }
-    }
-
-    function _validateWithdrawCollateral(address underlying, uint256 amount, address supplier, address receiver)
-        internal
-        view
-    {
-        if (!_hasPermission(supplier, msg.sender)) revert Errors.PermissionDenied();
-
-        Types.Market storage market = _validateInput(underlying, amount, receiver);
-        if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
-
-        if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
-            revert Errors.WithdrawUnauthorized();
-        }
-    }
-
     function _executeWithdraw(
         address underlying,
         uint256 amount,
@@ -402,51 +446,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         if (inP2P == 0 && onPool == 0) _userCollaterals[user].remove(underlying);
-    }
-
-    function _validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
-        internal
-        view
-        returns (uint256 closeFactor)
-    {
-        Types.Market storage borrowMarket = _market[underlyingBorrowed];
-        Types.Market storage collateralMarket = _market[underlyingCollateral];
-
-        if (!collateralMarket.isCreated() || !borrowMarket.isCreated()) {
-            revert Errors.MarketNotCreated();
-        }
-        if (collateralMarket.pauseStatuses.isLiquidateCollateralPaused) {
-            revert Errors.LiquidateCollateralIsPaused();
-        }
-        if (borrowMarket.pauseStatuses.isLiquidateBorrowPaused) {
-            revert Errors.LiquidateBorrowIsPaused();
-        }
-        if (
-            !_userCollaterals[borrower].contains(underlyingCollateral)
-                || !_userBorrows[borrower].contains(underlyingBorrowed)
-        ) {
-            revert Errors.UserNotMemberOfMarket();
-        }
-
-        if (borrowMarket.pauseStatuses.isDeprecated) {
-            return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
-        } else {
-            uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
-            address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
-
-            if (
-                priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
-                    && healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD
-            ) {
-                revert Errors.UnauthorisedLiquidate();
-            } else if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
-                revert Errors.UnauthorisedLiquidate();
-            }
-
-            closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
-                ? Constants.DEFAULT_CLOSE_FACTOR
-                : Constants.MAX_CLOSE_FACTOR;
-        }
     }
 
     function _calculateAmountToSeize(
