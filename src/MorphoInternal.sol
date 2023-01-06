@@ -103,12 +103,12 @@ abstract contract MorphoInternal is MorphoStorage {
         IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
 
-        liquidityData = _liquidityDataAllCollaterals(underlying, user, oracle, morphoPoolConfig, amountWithdrawn);
+        liquidityData = _totalCollateralData(underlying, user, oracle, morphoPoolConfig, amountWithdrawn);
 
-        liquidityData.debt = _liquidityDataAllDebts(underlying, user, oracle, morphoPoolConfig, amountBorrowed);
+        liquidityData.debt = _totalDebt(underlying, user, oracle, morphoPoolConfig, amountBorrowed);
     }
 
-    function _liquidityDataAllCollaterals(
+    function _totalCollateralData(
         address underlying,
         address user,
         IPriceOracleGetter oracle,
@@ -118,7 +118,7 @@ abstract contract MorphoInternal is MorphoStorage {
         address[] memory userCollaterals = _userCollaterals[user].values();
 
         for (uint256 i; i < userCollaterals.length; ++i) {
-            Types.LiquidityData memory liquidityDataCollateral = _liquidityDataCollateral(
+            Types.LiquidityData memory liquidityDataCollateral = _collateralData(
                 userCollaterals[i],
                 user,
                 oracle,
@@ -132,7 +132,7 @@ abstract contract MorphoInternal is MorphoStorage {
         }
     }
 
-    function _liquidityDataAllDebts(
+    function _totalDebt(
         address underlying,
         address user,
         IPriceOracleGetter oracle,
@@ -142,13 +142,12 @@ abstract contract MorphoInternal is MorphoStorage {
         address[] memory userBorrows = _userBorrows[user].values();
 
         for (uint256 i; i < userBorrows.length; ++i) {
-            debt += _liquidityDataDebt(
-                userBorrows[i], user, oracle, morphoPoolConfig, userBorrows[i] == underlying ? amountBorrowed : 0
-            );
+            debt +=
+                _debt(userBorrows[i], user, oracle, morphoPoolConfig, userBorrows[i] == underlying ? amountBorrowed : 0);
         }
     }
 
-    function _liquidityDataCollateral(
+    function _collateralData(
         address underlying,
         address user,
         IPriceOracleGetter oracle,
@@ -167,7 +166,7 @@ abstract contract MorphoInternal is MorphoStorage {
         liquidityData.maxDebt = liquidityData.collateral.percentMulDown(liquidationThreshold);
     }
 
-    function _liquidityDataDebt(
+    function _debt(
         address underlying,
         address user,
         IPriceOracleGetter oracle,
