@@ -44,6 +44,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (!market.isCreated()) revert Errors.MarketNotCreated();
     }
 
+    function _validatePermission(address owner, address manager) internal view {
+        if (!(owner == manager || _isAllowed[owner][manager])) revert Errors.PermissionDenied();
+    }
+
     function _validateSupply(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
         if (!market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
@@ -55,7 +59,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     function _validateBorrow(address underlying, uint256 amount, address borrower) internal view {
-        if (!_hasPermission(borrower, msg.sender)) revert Errors.PermissionDenied();
+        _validatePermission(borrower, msg.sender);
 
         Types.Market storage market = _validateInput(underlying, amount, borrower);
         if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
@@ -78,7 +82,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     function _validateWithdraw(address underlying, uint256 amount, address supplier, address receiver) internal view {
-        if (!_hasPermission(supplier, msg.sender)) revert Errors.PermissionDenied();
+        _validatePermission(supplier, msg.sender);
 
         Types.Market storage market = _validateInput(underlying, amount, receiver);
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
@@ -95,7 +99,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         internal
         view
     {
-        if (!_hasPermission(supplier, msg.sender)) revert Errors.PermissionDenied();
+        _validatePermission(supplier, msg.sender);
 
         Types.Market storage market = _validateInput(underlying, amount, receiver);
         if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
