@@ -7,6 +7,7 @@ import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interface
 
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
+import {Constants} from "./libraries/Constants.sol";
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
@@ -121,8 +122,40 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     }
 
     function approveManager(address manager, bool isAllowed) external {
-        _isManaging[msg.sender][manager] = isAllowed;
-        emit Events.ManagerApproval(msg.sender, manager, isAllowed);
+        _approveManager(msg.sender, manager, isAllowed);
+    }
+
+    function approveManagerWithSig(
+        address owner,
+        address manager,
+        bool isAllowed,
+        uint256 nonce,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        if (uint256(s) > Constants.MAX_VALID_ECDSA_S) revert Errors.InvalidValueS();
+        // v ∈ {27, 28} (source: https://ethereum.github.io/yellowpaper/paper.pdf #308)
+        if (v != 27 && v != 28) revert Errors.InvalidValueV();
+        bytes32 domainSeparator = keccak256(
+            abi.encode(
+                Constants.DOMAIN_TYPEHASH,
+                keccak256(bytes(Constants.name)),
+                keccak256(bytes(Constants.version)),
+                block.chainid,
+                address(this)
+            )
+        );
+        bytes32 structHash =
+            keccak256(abi.encode(Constants.AUTHORIZATION_TYPEHASH, owner, manager, isAllowed, nonce, deadline));
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+        address signatory = ecrecover(digest, v, r, s);
+        if (signatory == address(0)) revert Errors.WrongSignatory();
+        if (owner != signatory) revert Errors.WrongSignatory();
+        if (nonce != userNonce[signatory]++) revert Errors.WrongNonce();
+        if (block.timestamp >= deadline) revert Errors.SignatureExpired();
+        _approveManager(signatory, manager, isAllowed);
     }
 
     /// @notice Claims rewards for the given assets.

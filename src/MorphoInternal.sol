@@ -51,6 +51,11 @@ abstract contract MorphoInternal is MorphoStorage {
 
     /// INTERNAL ///
 
+    function _approveManager(address owner, address manager, bool isAllowed) internal {
+        _isManaging[owner][manager] = isAllowed;
+        emit Events.ManagerApproval(owner, manager, isAllowed);
+    }
+
     function _getUserBalanceFromIndexes(
         uint256 scaledPoolBalance,
         uint256 scaledP2PBalance,
