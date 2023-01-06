@@ -33,6 +33,7 @@ library ReserveConfiguration {
     uint256 internal constant RESERVE_DECIMALS_START_BIT_POSITION = 48;
     uint256 internal constant RESERVE_FACTOR_START_BIT_POSITION = 64;
     uint256 internal constant EMODE_CATEGORY_START_BIT_POSITION = 168;
+    uint256 internal constant SUPPLY_CAP_START_BIT_POSITION = 116;
 
     function getActive(DataTypes.ReserveConfigurationMap memory self) internal pure returns (bool) {
         return (self.data & ~ACTIVE_MASK) != 0;
@@ -73,5 +74,9 @@ library ReserveConfiguration {
             (dataLocal & ~RESERVE_FACTOR_MASK) >> RESERVE_FACTOR_START_BIT_POSITION,
             (dataLocal & ~EMODE_CATEGORY_MASK) >> EMODE_CATEGORY_START_BIT_POSITION
         );
+    }
+
+    function getSupplyCap(DataTypes.ReserveConfigurationMap memory self) internal pure returns (uint256) {
+        return (self.data & ~SUPPLY_CAP_MASK) >> SUPPLY_CAP_START_BIT_POSITION;
     }
 }
