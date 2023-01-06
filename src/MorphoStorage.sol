@@ -26,7 +26,7 @@ abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
     mapping(address => Types.MarketBalances) internal _marketBalances;
     mapping(address => EnumerableSet.AddressSet) internal _userCollaterals; // The collateral markets entered by a user.
     mapping(address => EnumerableSet.AddressSet) internal _userBorrows; // The borrow markets entered by a user.
-    mapping(address => mapping(address => bool)) public _isAllowed; // Whether a user is allowed to borrow or withdraw on behalf of another user. owner => manager => bool
+    mapping(address => mapping(address => bool)) public _isManaging; // Whether a user is allowed to borrow or withdraw on behalf of another user. owner => manager => bool
 
     uint256 internal _maxSortedUsers; // The max number of users to sort in the data structure.
     Types.MaxLoops internal _defaultMaxLoops;
@@ -39,8 +39,6 @@ abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
 
     /// @dev The contract is automatically marked as initialized when deployed to prevent highjacking the implementation contract.
     constructor(address addressesProvider) {
-        if (addressesProvider == address(0)) revert Errors.AddressIsZero();
-
         _disableInitializers();
 
         _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);

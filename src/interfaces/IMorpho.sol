@@ -68,6 +68,8 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
         external
         returns (uint256 withdrawn);
 
+    function approveManager(address manager, bool isAllowed) external;
+
     function liquidate(address underlyingBorrowed, address underlyingCollateral, address user, uint256 amount)
         external
         returns (uint256 repaid, uint256 seized);

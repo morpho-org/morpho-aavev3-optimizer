@@ -4,14 +4,6 @@ pragma solidity ^0.8.17;
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
 library Types {
-    /// ENUMS ///
-
-    enum PositionType {
-        SUPPLY,
-        COLLATERAL,
-        BORROW
-    }
-
     /// NESTED STRUCTS ///
 
     struct Deltas {
