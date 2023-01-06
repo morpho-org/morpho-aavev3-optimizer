@@ -56,6 +56,8 @@ library Types {
         uint16 p2pIndexCursor; // 16 bits
         // SLOT 8
         address aToken; // 160 bits
+        // SLOT 9
+        uint256 idleSupply; // 256 bits
     }
 
     // Contains storage-only dynamic arrays and mappings.

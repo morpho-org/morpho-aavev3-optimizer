@@ -27,6 +27,8 @@ import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 
+import {ERC20} from "@solmate/utils/SafeTransferLib.sol";
+
 abstract contract MorphoInternal is MorphoStorage {
     using PoolLib for IPool;
     using MarketLib for Types.Market;
@@ -296,5 +298,19 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.LiquidityData memory liquidityData = _liquidityData(underlying, user, withdrawnAmount, 0);
 
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
+    }
+
+    /// @dev Returns a ray.
+    function _proportionIdle(address underlying) internal view returns (uint256) {
+        Types.Market storage market = _market[underlying];
+        uint256 idleSupply = market.idleSupply;
+        if (idleSupply == 0) {
+            return 0;
+        } else {
+            uint256 totalSupplied = ERC20(market.aToken).balanceOf(address(this)).rayMul(
+                market.indexes.supply.poolIndex
+            ) + market.deltas.p2pSupplyAmount.rayMul(market.indexes.supply.p2pIndex);
+            return idleSupply.rayDivUp(totalSupplied + idleSupply);
+        }
     }
 }
