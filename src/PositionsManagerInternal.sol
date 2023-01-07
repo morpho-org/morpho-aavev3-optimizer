@@ -112,7 +112,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Supply on pool.
         if (amount > 0) {
             onPool += amount.rayDiv(indexes.supply.poolIndex); // In scaled balance.
-            toSupply = _handleSupplyCap(underlying, amount);
+            toSupply = amount;
         }
 
         _updateSupplierInDS(underlying, user, onPool, inP2P);
@@ -298,6 +298,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             deltas.p2pBorrowAmount -= Math.min(amount.rayDiv(indexes.borrow.p2pIndex), deltas.p2pBorrowAmount);
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
 
+            /// note: Only used in breaking repay. Suppliers should not be able to supply if the pool is supply capped
             toSupply = _handleSupplyCap(underlying, amount);
         }
 
