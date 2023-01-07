@@ -45,6 +45,10 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _marketBalances[underlying].scaledCollateralBalance(user);
     }
 
+    function isManaging(address owner, address manager) external view returns (bool) {
+        return _isManaging[owner][manager];
+    }
+
     function userNonce(address user) external view returns (uint256) {
         return _userNonce[user];
     }
