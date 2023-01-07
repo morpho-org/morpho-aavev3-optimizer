@@ -112,9 +112,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Supply on pool.
         if (amount > 0) {
             onPool += amount.rayDiv(indexes.supply.poolIndex); // In scaled balance.
-            uint256 toIdle;
-            (toSupply, toIdle) = _handleSupplyCap(underlying, amount);
-            market.idleSupply += toIdle;
+            toSupply = _handleSupplyCap(underlying, amount);
         }
 
         _updateSupplierInDS(underlying, user, onPool, inP2P);
@@ -156,14 +154,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Idle borrow ///
 
-        {
-            uint256 idleSupply = market.idleSupply;
-            if (idleSupply > 0) {
-                uint256 idleToMatch = Math.min(market.idleSupply, amount); // In underlying.
-                market.idleSupply -= idleToMatch;
-                amount -= idleToMatch;
-            }
-        }
+        amount = _handleIdleSupply(underlying, amount);
 
         /// Peer-to-peer borrow ///
 
@@ -307,9 +298,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             deltas.p2pBorrowAmount -= Math.min(amount.rayDiv(indexes.borrow.p2pIndex), deltas.p2pBorrowAmount);
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
 
-            uint256 toIdle;
-            (toSupply, toIdle) = _handleSupplyCap(underlying, amount);
-            market.idleSupply += toIdle;
+            toSupply = _handleSupplyCap(underlying, amount);
         }
 
         if (inP2P == 0 && onPool == 0) _userBorrows[user].remove(underlying);
@@ -353,14 +342,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         inP2P = marketBalances.scaledP2PSupplyBalance(user);
 
         /// Idle Withdraw ///
-        {
-            uint256 idleSupply = market.idleSupply;
-            if (idleSupply > 0) {
-                uint256 idleToMatch = Math.min(market.idleSupply, amount); // In underlying.
-                market.idleSupply -= idleToMatch;
-                amount -= idleToMatch;
-            }
-        }
+        amount = _handleIdleSupply(underlying, amount);
 
         /// Pool withdraw ///
 
@@ -506,21 +488,28 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
     }
 
-    function _handleSupplyCap(address underlying, uint256 amount)
-        internal
-        view
-        returns (uint256 toSupply, uint256 toIdle)
-    {
+    function _handleSupplyCap(address underlying, uint256 amount) internal returns (uint256 toSupply) {
         uint256 supplyCap = _POOL.getConfiguration(underlying).getSupplyCap();
-        if (supplyCap == 0) return (amount, 0);
+        if (supplyCap == 0) return (amount);
+
         uint256 totalSupply = ERC20(_market[underlying].aToken).totalSupply();
-        if (totalSupply >= supplyCap) {
-            return (0, amount);
-        } else if (totalSupply + amount > supplyCap) {
+        if (totalSupply + amount > supplyCap) {
+            _market[underlying].idleSupply += totalSupply + amount - supplyCap;
             toSupply = supplyCap - totalSupply;
-            toIdle = amount - toSupply;
         } else {
             toSupply = amount;
         }
+    }
+
+    /// @return newAmount the new amount to process accounting for supply of tokens already in this contract.
+    function _handleIdleSupply(address underlying, uint256 amount) internal returns (uint256) {
+        Types.Market storage market = _market[underlying];
+        uint256 idleSupply = market.idleSupply;
+        if (idleSupply > 0) {
+            uint256 idleToMatch = Math.min(idleSupply, amount); // In underlying.
+            market.idleSupply -= idleToMatch;
+            amount -= idleToMatch;
+        }
+        return amount;
     }
 }
