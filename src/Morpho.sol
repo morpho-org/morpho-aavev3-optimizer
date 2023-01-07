@@ -153,7 +153,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         address signatory = ecrecover(digest, v, r, s);
         if (signatory == address(0)) revert Errors.WrongSignatory();
         if (owner != signatory) revert Errors.WrongSignatory();
-        if (nonce != userNonce[signatory]++) revert Errors.WrongNonce();
+        if (nonce != _userNonce[signatory]++) revert Errors.WrongNonce();
         if (block.timestamp >= deadline) revert Errors.SignatureExpired();
         _approveManager(signatory, manager, isAllowed);
     }

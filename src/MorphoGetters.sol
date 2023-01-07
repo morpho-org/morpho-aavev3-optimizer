@@ -45,6 +45,10 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _marketBalances[underlying].scaledCollateralBalance(user);
     }
 
+    function userNonce(address user) external view returns (uint256) {
+        return _userNonce[user];
+    }
+
     function maxSortedUsers() external view returns (uint256) {
         return _maxSortedUsers;
     }
