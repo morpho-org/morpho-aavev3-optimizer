@@ -20,7 +20,14 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         assertEq(pauseStatuses.isSupplyPaused, true);
     }
 
+    function testApproveManager(address owner, address manager, bool isAllowed) public {
+        _approveManager(owner, manager, isAllowed);
+        assertEq(_isManaging[owner][manager], isAllowed);
+    }
+
     /// TESTS TO ADD:
+
+    // _approveManager
 
     // _computeIndexes
     // _updateIndexes
