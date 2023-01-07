@@ -89,12 +89,6 @@ abstract contract MorphoInternal is MorphoStorage {
         return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
     }
 
-    /// @dev Computes and returns the total value of the collateral, debt, and LTV/LT value depending on the calculation type.
-    /// @param underlying The pool token that is being borrowed or withdrawn.
-    /// @param user The user address.
-    /// @param amountWithdrawn The amount that is being withdrawn.
-    /// @param amountBorrowed The amount that is being borrowed.
-    /// @return liquidityData The struct containing health factor, collateral, debt, ltv, liquidation threshold values.
     function _liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
         internal
         view
