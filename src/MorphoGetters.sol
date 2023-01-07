@@ -25,6 +25,10 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _market[underlying];
     }
 
+    function marketsCreated() external view returns (address[] memory) {
+        return _marketsCreated;
+    }
+
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledPoolSupplyBalance(user);
     }
@@ -49,7 +53,35 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _maxSortedUsers;
     }
 
+    function defaultMaxLoops() external view returns (Types.MaxLoops memory) {
+        return _defaultMaxLoops;
+    }
+
+    function positionsManager() external view returns (address) {
+        return _positionsManager;
+    }
+
+    function rewardsManager() external view returns (address) {
+        return address(_rewardsManager);
+    }
+
+    function treasuryVault() external view returns (address) {
+        return _treasuryVault;
+    }
+
     function isClaimRewardsPaused() external view returns (bool) {
         return _isClaimRewardsPaused;
+    }
+
+    function updatedIndexes(address underlying) external view returns (Types.Indexes256 memory) {
+        return _computeIndexes(underlying);
+    }
+
+    function liquidityData(address user) external view returns (Types.LiquidityData memory) {
+        return _liquidityData(address(0), user, 0, 0);
+    }
+
+    function healthFactor(address user) external view returns (uint256) {
+        return _getUserHealthFactor(address(0), user, 0);
     }
 }
