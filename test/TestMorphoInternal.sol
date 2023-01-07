@@ -27,8 +27,6 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
 
     /// TESTS TO ADD:
 
-    // _approveManager
-
     // _computeIndexes
     // _updateIndexes
     // _getUserSupplyBalanceFromIndexes
