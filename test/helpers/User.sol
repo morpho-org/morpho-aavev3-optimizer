@@ -58,19 +58,19 @@ contract User {
     }
 
     function borrow(address underlying, uint256 amount, address receiver, uint256 maxLoops) external {
-        morpho.borrow(underlying, amount, receiver, maxLoops);
+        morpho.borrow(underlying, amount, address(this), receiver, maxLoops);
     }
 
     function borrow(address underlying, uint256 amount, address receiver) external {
-        morpho.borrow(underlying, amount, receiver, DEFAULT_MAX_LOOPS);
+        morpho.borrow(underlying, amount, address(this), receiver, DEFAULT_MAX_LOOPS);
     }
 
     function borrow(address underlying, uint256 amount, uint256 maxLoops) external {
-        morpho.borrow(underlying, amount, address(this), maxLoops);
+        morpho.borrow(underlying, amount, address(this), address(this), maxLoops);
     }
 
     function borrow(address underlying, uint256 amount) external {
-        morpho.borrow(underlying, amount, address(this), DEFAULT_MAX_LOOPS);
+        morpho.borrow(underlying, amount, address(this), address(this), DEFAULT_MAX_LOOPS);
     }
 
     function repay(address underlying, uint256 amount, address onBehalf, uint256 maxLoops) external {
@@ -90,27 +90,27 @@ contract User {
     }
 
     function withdraw(address underlying, uint256 amount, address receiver, uint256 maxLoops) external {
-        morpho.withdraw(underlying, amount, receiver, maxLoops);
+        morpho.withdraw(underlying, amount, address(this), receiver, maxLoops);
     }
 
     function withdraw(address underlying, uint256 amount, address receiver) external {
-        morpho.withdraw(underlying, amount, receiver, DEFAULT_MAX_LOOPS);
+        morpho.withdraw(underlying, amount, address(this), receiver, DEFAULT_MAX_LOOPS);
     }
 
     function withdraw(address underlying, uint256 amount, uint256 maxLoops) external {
-        morpho.withdraw(underlying, amount, address(this), maxLoops);
+        morpho.withdraw(underlying, amount, address(this), address(this), maxLoops);
     }
 
     function withdraw(address underlying, uint256 amount) external {
-        morpho.withdraw(underlying, amount, address(this), DEFAULT_MAX_LOOPS);
+        morpho.withdraw(underlying, amount, address(this), address(this), DEFAULT_MAX_LOOPS);
     }
 
     function withdrawCollateral(address underlying, uint256 amount, address receiver) external {
-        morpho.withdrawCollateral(underlying, amount, receiver);
+        morpho.withdrawCollateral(underlying, amount, address(this), receiver);
     }
 
     function withdrawCollateral(address underlying, uint256 amount) external {
-        morpho.withdrawCollateral(underlying, amount, address(this));
+        morpho.withdrawCollateral(underlying, amount, address(this), address(this));
     }
 
     function liquidate(address underlyingBorrowed, address underlyingCollateral, address borrower, uint256 amount)

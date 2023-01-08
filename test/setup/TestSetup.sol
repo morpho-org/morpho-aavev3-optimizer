@@ -1,6 +1,7 @@
-// SPDX-License-Identifier: GNU AGPLv3
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.17;
 
+import {TestConfig} from "../helpers/TestConfig.sol";
 import {TestHelpers} from "../helpers/TestHelpers.sol";
 import {User} from "../helpers/User.sol";
 import {console2} from "@forge-std/console2.sol";
@@ -17,7 +18,13 @@ import {Types} from "../../src/libraries/Types.sol";
 import {Test} from "@forge-std/Test.sol";
 
 contract TestSetup is Test {
+    using TestConfig for TestConfig.Config;
+
     uint256 internal constant INITIAL_BALANCE = 1_000_000 ether;
+
+    string internal network = vm.envString("NETWORK");
+    uint256 internal forkId;
+    TestConfig.Config internal config;
 
     // Common test variables between all networks
     IPoolAddressesProvider internal addressesProvider;
@@ -37,8 +44,6 @@ contract TestSetup is Test {
     // The full list of markets to be tested when fuzzing or looping through all markets
     address[] internal markets;
 
-    uint256 internal forkId;
-
     User[] internal users;
 
     User internal supplier1;
@@ -49,8 +54,28 @@ contract TestSetup is Test {
     User internal borrower2;
     User internal borrower3;
 
+    constructor() {
+        _loadConfig();
+    }
+
+    function _loadConfig() internal {
+        config.load(network);
+
+        forkId = config.createFork();
+
+        addressesProvider = IPoolAddressesProvider(config.getAddress("addressesProvider"));
+        pool = IPool(addressesProvider.getPool());
+
+        dai = config.getAddress("DAI");
+        usdc = config.getAddress("USDC");
+        usdt = config.getAddress("USDT");
+        wbtc = config.getAddress("WBTC");
+        wNative = config.getAddress("wrappedNative");
+
+        markets = config.getTestMarkets();
+    }
+
     function setUp() public virtual {
-        configSetUp();
         deployAndSet();
         initUsers(10, INITIAL_BALANCE);
         fillBalance(address(this), type(uint256).max);
@@ -61,24 +86,6 @@ contract TestSetup is Test {
         borrower1 = users[3];
         borrower2 = users[4];
         borrower3 = users[5];
-    }
-
-    function configSetUp() internal {
-        string memory network = vm.envString("NETWORK");
-        string memory config = TestHelpers.getJsonConfig(network);
-
-        forkId = TestHelpers.setForkFromJson(config);
-
-        addressesProvider =
-            IPoolAddressesProvider(TestHelpers.getAddressFromJson(config, "LendingPoolAddressesProvider"));
-        pool = IPool(addressesProvider.getPool());
-        dai = TestHelpers.getAddressFromJson(config, "DAI");
-        usdc = TestHelpers.getAddressFromJson(config, "USDC");
-        usdt = TestHelpers.getAddressFromJson(config, "USDT");
-        wbtc = TestHelpers.getAddressFromJson(config, "WBTC");
-        wNative = TestHelpers.getAddressFromJson(config, "wrappedNative");
-
-        markets = TestHelpers.getTestMarkets(config);
     }
 
     function deployAndSet() internal {

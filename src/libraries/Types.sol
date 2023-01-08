@@ -2,6 +2,8 @@
 pragma solidity ^0.8.17;
 
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
+import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
+import {DataTypes} from "./aave/DataTypes.sol";
 
 library Types {
     /// NESTED STRUCTS ///
@@ -118,5 +120,11 @@ library Types {
     struct Indexes256 {
         MarketSideIndexes256 supply;
         MarketSideIndexes256 borrow;
+    }
+
+    struct LiquidityStackVars {
+        address user;
+        IPriceOracleGetter oracle;
+        DataTypes.UserConfigurationMap morphoPoolConfig;
     }
 }
