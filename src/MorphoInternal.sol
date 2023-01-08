@@ -89,12 +89,6 @@ abstract contract MorphoInternal is MorphoStorage {
         return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
     }
 
-    /// @dev Computes and returns the total value of the collateral, debt, and LTV/LT value depending on the calculation type.
-    /// @param underlying The pool token that is being borrowed or withdrawn.
-    /// @param user The user address.
-    /// @param amountWithdrawn The amount that is being withdrawn.
-    /// @param amountBorrowed The amount that is being borrowed.
-    /// @return liquidityData The struct containing health factor, collateral, debt, ltv, liquidation threshold values.
     function _liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
         internal
         view
@@ -103,82 +97,71 @@ abstract contract MorphoInternal is MorphoStorage {
         IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
 
-        liquidityData = _liquidityDataAllCollaterals(underlying, user, oracle, morphoPoolConfig, amountWithdrawn);
+        Types.LiquidityStackVars memory vars = Types.LiquidityStackVars(user, oracle, morphoPoolConfig);
 
-        liquidityData.debt = _liquidityDataAllDebts(underlying, user, oracle, morphoPoolConfig, amountBorrowed);
+        (liquidityData.collateral, liquidityData.borrowable, liquidityData.maxDebt) =
+            _totalCollateralData(underlying, vars, amountWithdrawn);
+
+        liquidityData.debt = _totalDebt(underlying, vars, amountBorrowed);
     }
 
-    function _liquidityDataAllCollaterals(
-        address underlying,
-        address user,
-        IPriceOracleGetter oracle,
-        DataTypes.UserConfigurationMap memory morphoPoolConfig,
-        uint256 amountWithdrawn
-    ) internal view returns (Types.LiquidityData memory liquidityData) {
-        address[] memory userCollaterals = _userCollaterals[user].values();
+    function _totalCollateralData(address assetWithdrawn, Types.LiquidityStackVars memory vars, uint256 amountWithdrawn)
+        internal
+        view
+        returns (uint256 collateral, uint256 borrowable, uint256 maxDebt)
+    {
+        address[] memory userCollaterals = _userCollaterals[vars.user].values();
 
         for (uint256 i; i < userCollaterals.length; ++i) {
-            Types.LiquidityData memory liquidityDataCollateral = _liquidityDataCollateral(
-                userCollaterals[i],
-                user,
-                oracle,
-                morphoPoolConfig,
-                userCollaterals[i] == underlying ? amountWithdrawn : 0
-            );
+            (uint256 collateralSingle, uint256 borrowableSingle, uint256 maxDebtSingle) =
+                _collateralData(userCollaterals[i], vars, userCollaterals[i] == assetWithdrawn ? amountWithdrawn : 0);
 
-            liquidityData.collateral += liquidityDataCollateral.collateral;
-            liquidityData.borrowable += liquidityDataCollateral.borrowable;
-            liquidityData.maxDebt += liquidityDataCollateral.maxDebt;
+            collateral += collateralSingle;
+            borrowable += borrowableSingle;
+            maxDebt += maxDebtSingle;
         }
     }
 
-    function _liquidityDataAllDebts(
-        address underlying,
-        address user,
-        IPriceOracleGetter oracle,
-        DataTypes.UserConfigurationMap memory morphoPoolConfig,
-        uint256 amountBorrowed
-    ) internal view returns (uint256 debt) {
-        address[] memory userBorrows = _userBorrows[user].values();
+    function _totalDebt(address assetBorrowed, Types.LiquidityStackVars memory vars, uint256 amountBorrowed)
+        internal
+        view
+        returns (uint256 debt)
+    {
+        address[] memory userBorrows = _userBorrows[vars.user].values();
 
         for (uint256 i; i < userBorrows.length; ++i) {
-            debt += _liquidityDataDebt(
-                userBorrows[i], user, oracle, morphoPoolConfig, userBorrows[i] == underlying ? amountBorrowed : 0
-            );
+            debt += _debt(userBorrows[i], vars, userBorrows[i] == assetBorrowed ? amountBorrowed : 0);
         }
     }
 
-    function _liquidityDataCollateral(
-        address underlying,
-        address user,
-        IPriceOracleGetter oracle,
-        DataTypes.UserConfigurationMap memory morphoPoolConfig,
-        uint256 amountWithdrawn
-    ) internal view returns (Types.LiquidityData memory liquidityData) {
+    function _collateralData(address underlying, Types.LiquidityStackVars memory vars, uint256 amountWithdrawn)
+        internal
+        view
+        returns (uint256 collateral, uint256 borrowable, uint256 maxDebt)
+    {
         (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
-            _assetLiquidityData(underlying, oracle, morphoPoolConfig);
+            _assetLiquidityData(underlying, vars.oracle, vars.morphoPoolConfig);
 
         Types.Indexes256 memory indexes = _computeIndexes(underlying);
-        liquidityData.collateral = (
-            _getUserCollateralBalanceFromIndex(underlying, user, indexes.supply.poolIndex) - amountWithdrawn
+        collateral = (
+            _getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex) - amountWithdrawn
         ) * underlyingPrice / tokenUnit;
 
-        liquidityData.borrowable = liquidityData.collateral.percentMulDown(ltv);
-        liquidityData.maxDebt = liquidityData.collateral.percentMulDown(liquidationThreshold);
+        borrowable = collateral.percentMulDown(ltv);
+        maxDebt = collateral.percentMulDown(liquidationThreshold);
     }
 
-    function _liquidityDataDebt(
-        address underlying,
-        address user,
-        IPriceOracleGetter oracle,
-        DataTypes.UserConfigurationMap memory morphoPoolConfig,
-        uint256 amountBorrowed
-    ) internal view returns (uint256 debtValue) {
-        (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(underlying, oracle, morphoPoolConfig);
+    function _debt(address underlying, Types.LiquidityStackVars memory vars, uint256 amountBorrowed)
+        internal
+        view
+        returns (uint256 debtValue)
+    {
+        (uint256 underlyingPrice,,, uint256 tokenUnit) =
+            _assetLiquidityData(underlying, vars.oracle, vars.morphoPoolConfig);
 
         Types.Indexes256 memory indexes = _computeIndexes(underlying);
         debtValue = (
-            (_getUserBorrowBalanceFromIndexes(underlying, user, indexes.borrow) + amountBorrowed) * underlyingPrice
+            (_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes.borrow) + amountBorrowed) * underlyingPrice
         ).divUp(tokenUnit);
     }
 
