@@ -77,8 +77,12 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _computeIndexes(underlying);
     }
 
-    function liquidityData(address user) external view returns (Types.LiquidityData memory) {
-        return _liquidityData(address(0), user, 0, 0);
+    function liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
+        external
+        view
+        returns (Types.LiquidityData memory)
+    {
+        return _liquidityData(underlying, user, amountWithdrawn, amountBorrowed);
     }
 
     function healthFactor(address user) external view returns (uint256) {
