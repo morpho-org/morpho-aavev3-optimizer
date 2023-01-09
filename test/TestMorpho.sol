@@ -35,13 +35,15 @@ contract TestMorpho is TestSetup, Morpho {
         assertEq(this.isManaging(owner, manager), isAllowed);
     }
 
-    function testApproveManagerWithSig() public {
+    function testApproveManagerWithSig(uint128 deadline) public {
+        vm.assume(deadline > block.timestamp);
+
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
             owner: ownerAdd,
             manager: managerAdd,
             isAllowed: true,
             nonce: this.userNonce(ownerAdd),
-            deadline: block.timestamp + 1 days
+            deadline: block.timestamp + deadline
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
@@ -63,13 +65,13 @@ contract TestMorpho is TestSetup, Morpho {
         assertEq(this.userNonce(ownerAdd), 1);
     }
 
-    function testRevertExpiredApproveManagerWithSig() public {
+    function testRevertExpiredApproveManagerWithSig(uint128 deadline) public {
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
             owner: ownerAdd,
             manager: managerAdd,
             isAllowed: true,
             nonce: this.userNonce(ownerAdd),
-            deadline: block.timestamp + 1 days
+            deadline: block.timestamp + deadline
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
@@ -117,12 +119,14 @@ contract TestMorpho is TestSetup, Morpho {
         );
     }
 
-    function testRevertInvalidNonceApproveManagerWithSig() public {
+    function testRevertInvalidNonceApproveManagerWithSig(uint256 nonce) public {
+        vm.assume(nonce != this.userNonce(ownerAdd));
+
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
             owner: ownerAdd,
             manager: managerAdd,
             isAllowed: true,
-            nonce: 1, // owner nonce stored on-chain is 0.
+            nonce: nonce,
             deadline: block.timestamp + 1 days
         });
 
