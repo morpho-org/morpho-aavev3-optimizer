@@ -12,7 +12,7 @@ contract TestPositionsManager is TestSetup, PositionsManagerInternal {
 
     constructor() MorphoStorage(config.load(vm.envString("NETWORK")).getAddress("addressesProvider")) {}
 
-    function testValidatePermission(address owner, address manager, bool isAllowed) public {
+    function testValidatePermission(address owner, address manager) public {
         _validatePermission(owner, owner);
 
         if (owner != manager) {
