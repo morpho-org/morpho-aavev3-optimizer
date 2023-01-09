@@ -154,8 +154,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Idle borrow ///
 
-        amount = _handleIdleSupply(underlying, amount);
-
+        {
+            uint256 idleSupply = market.idleSupply;
+            if (idleSupply > 0) {
+                uint256 idleToMatch = Math.min(idleSupply, amount); // In underlying.
+                market.idleSupply -= idleToMatch;
+                amount -= idleToMatch;
+                inP2P += idleToMatch.rayDiv(indexes.borrow.p2pIndex);
+            }
+        }
         /// Peer-to-peer borrow ///
 
         // Match the peer-to-peer supply delta.
@@ -342,9 +349,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         onPool = marketBalances.scaledPoolSupplyBalance(user);
         inP2P = marketBalances.scaledP2PSupplyBalance(user);
 
-        /// Idle Withdraw ///
-        amount = _handleIdleSupply(underlying, amount);
-
         /// Pool withdraw ///
 
         // Withdraw supply on pool.
@@ -365,6 +369,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         inP2P -= Math.min(inP2P, amount.rayDiv(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
+
+        /// Idle Withdraw ///
+        if (amount > 0 && market.idleSupply > 0 && inP2P > 0) {
+            uint256 matchedIdle = Math.min(Math.min(market.idleSupply, amount), inP2P.rayMul(indexes.supply.p2pIndex));
+            market.idleSupply -= matchedIdle;
+            inP2P -= matchedIdle.rayDiv(indexes.supply.p2pIndex);
+        }
+
         _updateSupplierInDS(underlying, user, onPool, inP2P);
 
         // Reduce the peer-to-peer supply delta.
@@ -500,17 +512,5 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         } else {
             toSupply = amount;
         }
-    }
-
-    /// @return newAmount the new amount to process accounting for supply of tokens already in this contract.
-    function _handleIdleSupply(address underlying, uint256 amount) internal returns (uint256) {
-        Types.Market storage market = _market[underlying];
-        uint256 idleSupply = market.idleSupply;
-        if (idleSupply > 0) {
-            uint256 idleToMatch = Math.min(idleSupply, amount); // In underlying.
-            market.idleSupply -= idleToMatch;
-            amount -= idleToMatch;
-        }
-        return amount;
     }
 }

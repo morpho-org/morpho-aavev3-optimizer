@@ -97,12 +97,13 @@ library InterestRatesLib {
             return lastIndexes.p2pIndex.rayMul(p2pGrowthFactor);
         }
 
-        uint256 shareOfTheDelta = Math.min(
-            p2pDelta.rayMul(lastIndexes.poolIndex).rayDivUp(p2pAmount.rayMul(lastIndexes.p2pIndex)) + proportionIdle,
-            WadRayMath.RAY // To avoid shareOfTheDelta > 1 with rounding errors.
+        uint256 proportionDelta = Math.min(
+            p2pDelta.rayMul(lastIndexes.poolIndex).rayDivUp(p2pAmount.rayMul(lastIndexes.p2pIndex)),
+            WadRayMath.RAY - proportionIdle // To avoid shareOfTheDelta + proportionIdle > 1 with rounding errors.
         ); // In ray.
 
-        return
-            lastIndexes.p2pIndex.rayMul(WadRayMath.rayWeightedAvg(p2pGrowthFactor, poolGrowthFactor, shareOfTheDelta));
+        return lastIndexes.p2pIndex.rayMul(
+            WadRayMath.rayWeightedAvg(p2pGrowthFactor, poolGrowthFactor, proportionDelta + proportionIdle)
+        ) + p2pGrowthFactor.rayMul(proportionDelta);
     }
 }
