@@ -6,7 +6,7 @@ import {Errors} from "../src/libraries/Errors.sol";
 import "./helpers/SigUtils.sol";
 import "./setup/TestSetup.sol";
 
-contract TestMorpho is TestSetup, Morpho {
+contract TestApproval is TestSetup, Morpho {
     using TestConfig for TestConfig.Config;
 
     SigUtils internal sigUtils;
