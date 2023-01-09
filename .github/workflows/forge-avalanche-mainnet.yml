@@ -1,4 +1,4 @@
-name: Forge tests
+name: Forge checks
 
 on:
   push:
@@ -13,21 +13,32 @@ on:
       - yarn.lock
       - foundry.toml
       - remappings.txt
-      - .github/actions/forge.yml
+      - .github/actions/forge-build/**
+      - .github/actions/forge-test/**
       - .github/workflows/forge-avalanche-mainnet.yml
 
 env:
   FOUNDRY_PROFILE: ci
 
 jobs:
-  avalanche-mainnet:
-    name: avalanche-mainnet
+  avalanche-mainnet-compilation:
+    name: Compilation (avalanche-mainnet)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      - uses: ./.github/actions/forge
+      - uses: ./.github/actions/forge-build
+
+  avalanche-mainnet-test:
+    name: Tests (avalanche-mainnet)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - uses: ./.github/actions/forge-test
         with:
           network: avalanche-mainnet

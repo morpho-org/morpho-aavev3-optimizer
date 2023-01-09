@@ -1,5 +1,5 @@
 name: Forge tests
-description: Given a network, compiles the contracts, checks for their size & runs the full forge test suite
+description: Given a network, compiles the contracts & runs the full forge test suite
 
 inputs:
   network:
@@ -42,11 +42,7 @@ runs:
         path: |
           cache
           out
-        key: ${{ github.base_ref || github.ref_name }}-forge-${{ inputs.network }} # always keep compiled contracts from base branch
-
-    - name: Check contracts sizes
-      run: make contracts
-      shell: bash
+        key: ${{ github.base_ref || github.ref_name }}-forge-test-${{ inputs.network }} # always keep compiled contracts from base branch
 
     - name: Run tests
       run: make test
