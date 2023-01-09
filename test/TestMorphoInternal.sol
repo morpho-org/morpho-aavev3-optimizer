@@ -234,15 +234,16 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         morphoPoolConfig = _POOL.getUserConfiguration(address(this));
 
         (price, ltv, lt, units) = _assetLiquidityData(dai, oracle, morphoPoolConfig);
-        assertEq(price, oracle.getAssetPrice(dai), "price not equal to oracle price 2");
-        assertEq(ltv, poolLtv, "ltv not equal to pool ltv");
-        assertEq(lt, poolLt, "lt not equal to pool lt");
-        assertEq(units, 10 ** poolDecimals, "units not equal to pool decimals 2");
 
         assertGt(price, 0, "price not gt 0");
         assertGt(ltv, 0, "ltv not gt 0");
         assertGt(lt, 0, "lt not gt 0");
         assertGt(units, 0, "units not gt 0");
+
+        assertEq(price, oracle.getAssetPrice(dai), "price not equal to oracle price 2");
+        assertEq(ltv, poolLtv, "ltv not equal to pool ltv");
+        assertEq(lt, poolLt, "lt not equal to pool lt");
+        assertEq(units, 10 ** poolDecimals, "units not equal to pool decimals 2");
     }
 
     function testLiquidityDataCollateral(uint256 amount, uint256 amountWithdrawn) public {
@@ -405,17 +406,23 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         Types.LiquidityStackVars memory vars = Types.LiquidityStackVars(address(1), oracle, morphoPoolConfig);
 
         (uint256 collateral, uint256 borrowable, uint256 maxDebt) = _totalCollateralData(dai, vars, 10 ether);
-        uint256 debtAllDebts = _totalDebt(dai, vars, 10 ether);
+        uint256 debt = _totalDebt(dai, vars, 10 ether);
 
         assertEq(liquidityData.collateral, collateral, "collateral not equal");
         assertEq(liquidityData.borrowable, borrowable, "borrowable not equal");
         assertEq(liquidityData.maxDebt, maxDebt, "maxDebt not equal");
-        assertEq(liquidityData.debt, debtAllDebts, "debt not equal");
+        assertEq(liquidityData.debt, debt, "debt not equal");
     }
 
-    function testGetUserHealthFactor(uint256 amountWithdrawn) public {
-        amountWithdrawn = bound(amountWithdrawn, 0, 10 ether);
-        _marketBalances[dai].collateral[address(1)] = uint256(100 ether).rayDivUp(_market[dai].indexes.supply.poolIndex);
+    function testGetUserHealthFactor(uint256 collateral, uint256 amountPool, uint256 amountP2P, uint256 amountWithdrawn)
+        public
+    {
+        collateral = bound(collateral, 0, 1_000_000 ether);
+        amountPool = bound(amountPool, 1, 1_000_000 ether);
+        amountP2P = bound(amountP2P, 0, 1_000_000 ether);
+        amountWithdrawn = bound(amountWithdrawn, 0, collateral);
+
+        _marketBalances[dai].collateral[address(1)] = collateral.rayDivUp(_market[dai].indexes.supply.poolIndex);
         _userCollaterals[address(1)].add(dai);
 
         assertEq(
@@ -428,8 +435,8 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         _updateBorrowerInDS(
             dai,
             address(1),
-            uint256(20 ether).rayDiv(_market[dai].indexes.borrow.poolIndex),
-            uint256(20 ether).rayDiv(_market[dai].indexes.borrow.p2pIndex)
+            amountPool.rayDiv(_market[dai].indexes.borrow.poolIndex),
+            amountP2P.rayDiv(_market[dai].indexes.borrow.p2pIndex)
         );
 
         Types.LiquidityData memory liquidityData = _liquidityData(dai, address(1), amountWithdrawn, 0);
@@ -437,7 +444,7 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         assertEq(
             _getUserHealthFactor(dai, address(1), amountWithdrawn),
             liquidityData.maxDebt.wadDiv(liquidityData.debt),
-            "health factor not equal to 5"
+            "health factor not expected"
         );
     }
 
