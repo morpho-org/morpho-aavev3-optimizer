@@ -2,4 +2,6 @@
 
 ## Issue(s) fixed
 
-This pull request fixes #to-complete
+This pull request fixes:
+
+- #to-complete
