@@ -49,9 +49,28 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
         external
         returns (uint256 supplied);
+    function supplyWithPermit(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        uint256 maxLoops,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 supplied);
     function supplyCollateral(address underlying, uint256 amount, address onBehalf)
         external
         returns (uint256 supplied);
+    function supplyCollateralWithPermit(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 supplied);
 
     function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
         external
@@ -60,6 +79,16 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
     function repay(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
         external
         returns (uint256 repaid);
+    function repayWithPermit(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        uint256 maxLoops,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 repaid);
 
     function withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
         external
