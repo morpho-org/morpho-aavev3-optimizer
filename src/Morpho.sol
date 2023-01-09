@@ -142,9 +142,9 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
             keccak256(abi.encode(Constants.AUTHORIZATION_TYPEHASH, owner, manager, isAllowed, nonce, deadline));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", _computeDomainSeparator(), structHash));
         address signatory = ecrecover(digest, v, r, s);
-        if (signatory == address(0)) revert Errors.WrongSignatory();
-        if (owner != signatory) revert Errors.WrongSignatory();
-        if (nonce != _userNonce[signatory]++) revert Errors.WrongNonce();
+        if (signatory == address(0)) revert Errors.InvalidSignatory();
+        if (owner != signatory) revert Errors.InvalidSignatory();
+        if (nonce != _userNonce[signatory]++) revert Errors.InvalidNonce();
         if (block.timestamp >= deadline) revert Errors.SignatureExpired();
         _approveManager(signatory, manager, isAllowed);
     }
