@@ -17,8 +17,8 @@ library Constants {
     bytes32 internal constant BORROWING_MASK = 0x5555555555555555555555555555555555555555555555555555555555555555;
     bytes32 internal constant ONE = 0x0000000000000000000000000000000000000000000000000000000000000001;
 
-    string internal constant name = "Morpho-AaveV3";
-    string internal constant version = "0";
+    bytes32 internal constant NAME = keccak256("Morpho-AaveV3");
+    bytes32 internal constant VERSION = keccak256("0");
     bytes32 internal constant DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"); // The EIP-712 typehash for the contract's domain.
     bytes32 internal constant AUTHORIZATION_TYPEHASH =

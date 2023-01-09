@@ -59,13 +59,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
     function _computeDomainSeparator() internal view returns (bytes32) {
         return keccak256(
-            abi.encode(
-                Constants.DOMAIN_TYPEHASH,
-                keccak256(bytes(Constants.name)),
-                keccak256(bytes(Constants.version)),
-                block.chainid,
-                address(this)
-            )
+            abi.encode(Constants.DOMAIN_TYPEHASH, Constants.NAME, Constants.VERSION, block.chainid, address(this))
         );
     }
 
