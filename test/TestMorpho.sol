@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {Morpho} from "../src/Morpho.sol";
+import {Errors} from "../src/libraries/Errors.sol";
 import "./helpers/SigUtils.sol";
 import "./setup/TestSetup.sol";
 
@@ -39,7 +40,7 @@ contract TestMorpho is TestSetup, Morpho {
             owner: ownerAdd,
             manager: managerAdd,
             isAllowed: true,
-            nonce: 0,
+            nonce: this.userNonce(ownerAdd),
             deadline: block.timestamp + 1 days
         });
 
@@ -60,5 +61,122 @@ contract TestMorpho is TestSetup, Morpho {
 
         assertEq(this.isManaging(ownerAdd, managerAdd), true);
         assertEq(this.userNonce(ownerAdd), 1);
+    }
+
+    function testRevertExpiredApproveManagerWithSig() public {
+        SigUtils.Authorization memory authorization = SigUtils.Authorization({
+            owner: ownerAdd,
+            manager: managerAdd,
+            isAllowed: true,
+            nonce: this.userNonce(ownerAdd),
+            deadline: block.timestamp + 1 days
+        });
+
+        bytes32 digest = sigUtils.getTypedDataHash(authorization);
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
+
+        vm.warp(block.timestamp + authorization.deadline + 1);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.SignatureExpired.selector));
+        this.approveManagerWithSig(
+            authorization.owner,
+            authorization.manager,
+            authorization.isAllowed,
+            authorization.nonce,
+            authorization.deadline,
+            v,
+            r,
+            s
+        );
+    }
+
+    function testRevertInvalidSignatoryApproveManagerWithSig() public {
+        SigUtils.Authorization memory authorization = SigUtils.Authorization({
+            owner: ownerAdd,
+            manager: managerAdd,
+            isAllowed: true,
+            nonce: this.userNonce(ownerAdd),
+            deadline: block.timestamp + 1 days
+        });
+
+        bytes32 digest = sigUtils.getTypedDataHash(authorization);
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(managerPrivateKey, digest); // manager signs owner's approval.
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidSignatory.selector));
+        this.approveManagerWithSig(
+            authorization.owner,
+            authorization.manager,
+            authorization.isAllowed,
+            authorization.nonce,
+            authorization.deadline,
+            v,
+            r,
+            s
+        );
+    }
+
+    function testRevertInvalidNonceApproveManagerWithSig() public {
+        SigUtils.Authorization memory authorization = SigUtils.Authorization({
+            owner: ownerAdd,
+            manager: managerAdd,
+            isAllowed: true,
+            nonce: 1, // owner nonce stored on-chain is 0.
+            deadline: block.timestamp + 1 days
+        });
+
+        bytes32 digest = sigUtils.getTypedDataHash(authorization);
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidNonce.selector));
+        this.approveManagerWithSig(
+            authorization.owner,
+            authorization.manager,
+            authorization.isAllowed,
+            authorization.nonce,
+            authorization.deadline,
+            v,
+            r,
+            s
+        );
+    }
+
+    function testRevertSignatureReplayApproveManagerWithSig() public {
+        SigUtils.Authorization memory authorization = SigUtils.Authorization({
+            owner: ownerAdd,
+            manager: managerAdd,
+            isAllowed: true,
+            nonce: this.userNonce(ownerAdd),
+            deadline: block.timestamp + 1 days
+        });
+
+        bytes32 digest = sigUtils.getTypedDataHash(authorization);
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
+
+        this.approveManagerWithSig(
+            authorization.owner,
+            authorization.manager,
+            authorization.isAllowed,
+            authorization.nonce,
+            authorization.deadline,
+            v,
+            r,
+            s
+        );
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.InvalidNonce.selector));
+        this.approveManagerWithSig(
+            authorization.owner,
+            authorization.manager,
+            authorization.isAllowed,
+            authorization.nonce,
+            authorization.deadline,
+            v,
+            r,
+            s
+        );
     }
 }
