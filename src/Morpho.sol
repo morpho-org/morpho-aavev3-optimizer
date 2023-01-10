@@ -38,10 +38,49 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
+    function supplyWithPermit(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        uint256 maxLoops,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 supplied) {
+        ERC20(underlying).permit(msg.sender, address(this), amount, deadline, v, r, s);
+        bytes memory returnData = _positionsManager.functionDelegateCall(
+            abi.encodeWithSelector(
+                IPositionsManager.supplyLogic.selector, underlying, amount, msg.sender, onBehalf, maxLoops
+            )
+        );
+
+        return (abi.decode(returnData, (uint256)));
+    }
+
     function supplyCollateral(address underlying, uint256 amount, address onBehalf)
         external
         returns (uint256 supplied)
     {
+        bytes memory returnData = _positionsManager.functionDelegateCall(
+            abi.encodeWithSelector(
+                IPositionsManager.supplyCollateralLogic.selector, underlying, amount, msg.sender, onBehalf
+            )
+        );
+
+        return (abi.decode(returnData, (uint256)));
+    }
+
+    function supplyCollateralWithPermit(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 supplied) {
+        ERC20(underlying).permit(msg.sender, address(this), amount, deadline, v, r, s);
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeWithSelector(
                 IPositionsManager.supplyCollateralLogic.selector, underlying, amount, msg.sender, onBehalf
@@ -68,6 +107,26 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         external
         returns (uint256 repaid)
     {
+        bytes memory returnData = _positionsManager.functionDelegateCall(
+            abi.encodeWithSelector(
+                IPositionsManager.repayLogic.selector, underlying, amount, msg.sender, onBehalf, maxLoops
+            )
+        );
+
+        return (abi.decode(returnData, (uint256)));
+    }
+
+    function repayWithPermit(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        uint256 maxLoops,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 repaid) {
+        ERC20(underlying).permit(msg.sender, address(this), amount, deadline, v, r, s);
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeWithSelector(
                 IPositionsManager.repayLogic.selector, underlying, amount, msg.sender, onBehalf, maxLoops
