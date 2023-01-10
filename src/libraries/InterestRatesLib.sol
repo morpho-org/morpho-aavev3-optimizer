@@ -103,7 +103,8 @@ library InterestRatesLib {
         ); // In ray.
 
         return lastIndexes.p2pIndex.rayMul(
-            WadRayMath.rayWeightedAvg(p2pGrowthFactor, poolGrowthFactor, proportionDelta + proportionIdle)
-        ) + p2pGrowthFactor.rayMul(proportionDelta);
+            p2pGrowthFactor.rayMul(WadRayMath.RAY - proportionDelta - proportionIdle)
+                + poolGrowthFactor.rayMul(proportionDelta) + proportionIdle
+        );
     }
 }

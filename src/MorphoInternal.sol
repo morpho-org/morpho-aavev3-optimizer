@@ -308,9 +308,8 @@ abstract contract MorphoInternal is MorphoStorage {
         if (idleSupply == 0) {
             return 0;
         } else {
-            uint256 totalSupplied = ERC20(market.aToken).balanceOf(address(this))
-                + market.deltas.p2pSupplyAmount.rayMul(market.indexes.supply.p2pIndex);
-            return idleSupply.rayDivUp(totalSupplied + idleSupply);
+            uint256 totalP2PSupplied = market.deltas.p2pSupplyAmount.rayMulDown(market.indexes.supply.p2pIndex);
+            return idleSupply.rayDivUp(totalP2PSupplied + idleSupply);
         }
     }
 }
