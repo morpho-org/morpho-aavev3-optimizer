@@ -83,7 +83,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         _POOL.borrowFromPool(underlying, vars.toBorrow);
         ERC20(underlying).safeTransfer(receiver, amount);
 
-        emit Events.Borrowed(borrower, underlying, amount, vars.position.onPool, vars.position.inP2P);
+        emit Events.Borrowed(borrower, underlying, amount, vars.onPool, vars.inP2P);
         return amount;
     }
 
@@ -102,7 +102,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         _POOL.borrowFromPool(underlying, vars.toBorrow);
         ERC20(underlying).safeTransfer(receiver, amount);
 
-        emit Events.Withdrawn(supplier, receiver, underlying, amount, vars.position.onPool, vars.position.inP2P);
+        emit Events.Withdrawn(supplier, receiver, underlying, amount, vars.onPool, vars.inP2P);
         return amount;
     }
 

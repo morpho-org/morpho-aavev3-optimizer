@@ -128,13 +128,9 @@ library Types {
         DataTypes.UserConfigurationMap morphoPoolConfig;
     }
 
-    struct Position {
+    struct OutPositionVars {
         uint256 onPool;
         uint256 inP2P;
-    }
-
-    struct OutPositionVars {
-        Position position;
         uint256 toWithdraw;
         uint256 toBorrow;
     }
