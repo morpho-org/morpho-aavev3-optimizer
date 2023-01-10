@@ -1,31 +1,24 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {TestConfig} from "./helpers/TestConfig.sol";
-import {TestSetup} from "./setup/TestSetup.sol";
-
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
-import {Math} from "@morpho-utils/math/Math.sol";
-
 import {MatchingEngine} from "../src/MatchingEngine.sol";
 import {MorphoInternal} from "../src/MorphoInternal.sol";
 import {MorphoStorage} from "../src/MorphoStorage.sol";
 
-import {Types} from "../src/libraries/Types.sol";
 import {MarketLib} from "../src/libraries/MarketLib.sol";
 import {MarketBalanceLib} from "../src/libraries/MarketBalanceLib.sol";
 
-contract TestMatchingEngine is TestSetup, MatchingEngine {
+import "./helpers/InternalTest.sol";
+
+contract TestMatchingEngine is InternalTest, MatchingEngine {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using WadRayMath for uint256;
-    using TestConfig for TestConfig.Config;
     using Math for uint256;
-
-    constructor() TestSetup() MorphoStorage(config.load(vm.envString("NETWORK")).getAddress("addressesProvider")) {}
 
     function setUp() public virtual override {
         super.setUp();
+
         _market[dai].setIndexes(
             Types.Indexes256(
                 Types.MarketSideIndexes256(WadRayMath.RAY, WadRayMath.RAY),
