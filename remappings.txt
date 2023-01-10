@@ -12,3 +12,5 @@
 @aave/periphery-v3/=lib/aave-v3-periphery/
 
 @solmate/=lib/solmate/src/
+
+@permit2/=lib/permit2/src/

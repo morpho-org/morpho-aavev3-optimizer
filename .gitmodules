@@ -31,3 +31,6 @@
 	path = lib/aave-v3-periphery
 	url = https://github.com/aave/aave-v3-periphery
 	branch = v3.0.1
+[submodule "lib/permit2"]
+	path = lib/permit2
+	url = https://github.com/Uniswap/permit2
