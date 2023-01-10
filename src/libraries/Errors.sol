@@ -32,4 +32,10 @@ library Errors {
     error MaxSortedUsersCannotBeZero();
 
     error ClaimRewardsPaused();
+
+    error InvalidValueS();
+    error InvalidValueV();
+    error WrongSignatory();
+    error WrongNonce();
+    error SignatureExpired();
 }
