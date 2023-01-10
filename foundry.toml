@@ -2,6 +2,7 @@
 fs_permissions = [{ access = "read", path = "./"}]
 names = true
 sizes = true
+via_ir = true
 libs = ["node_modules", "lib"]
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
