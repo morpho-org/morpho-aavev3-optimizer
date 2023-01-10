@@ -8,7 +8,9 @@ import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interface
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {Constants} from "./libraries/Constants.sol";
+
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
+import {Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
@@ -16,6 +18,7 @@ import {MorphoGetters} from "./MorphoGetters.sol";
 import {MorphoSetters} from "./MorphoSetters.sol";
 
 contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
+    using Permit2Lib for ERC20;
     using DelegateCall for address;
     using SafeTransferLib for ERC20;
 
@@ -48,7 +51,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         bytes32 r,
         bytes32 s
     ) external returns (uint256 supplied) {
-        ERC20(underlying).permit(msg.sender, address(this), amount, deadline, v, r, s);
+        ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, v, r, s);
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeWithSelector(
                 IPositionsManager.supplyLogic.selector, underlying, amount, msg.sender, onBehalf, maxLoops
@@ -80,7 +83,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         bytes32 r,
         bytes32 s
     ) external returns (uint256 supplied) {
-        ERC20(underlying).permit(msg.sender, address(this), amount, deadline, v, r, s);
+        ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, v, r, s);
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeWithSelector(
                 IPositionsManager.supplyCollateralLogic.selector, underlying, amount, msg.sender, onBehalf
@@ -126,7 +129,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         bytes32 r,
         bytes32 s
     ) external returns (uint256 repaid) {
-        ERC20(underlying).permit(msg.sender, address(this), amount, deadline, v, r, s);
+        ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, v, r, s);
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeWithSelector(
                 IPositionsManager.repayLogic.selector, underlying, amount, msg.sender, onBehalf, maxLoops
