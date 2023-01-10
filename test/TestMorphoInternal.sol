@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
-import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
@@ -439,10 +438,10 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
     }
 
     function testSetPauseStatus() public {
-        for (uint256 i; i < testMarkets.length; ++i) {
+        for (uint256 marketIndex; marketIndex < testMarkets.length; ++marketIndex) {
             _revert();
 
-            address underlying = testMarkets[i];
+            address underlying = testMarkets[marketIndex];
 
             Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
 

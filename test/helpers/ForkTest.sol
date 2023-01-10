@@ -3,8 +3,12 @@ pragma solidity 0.8.17;
 
 import {IPool, IPoolAddressesProvider} from "../../src/interfaces/aave/IPool.sol";
 
-import {TestConfig, TestConfigLib} from "../helpers/TestConfigLib.sol";
 import {Types} from "../../src/libraries/Types.sol";
+import {Events} from "../../src/libraries/Events.sol";
+import {Errors} from "../../src/libraries/Errors.sol";
+import {DataTypes} from "../../src/libraries/aave/DataTypes.sol";
+import {TestConfig, TestConfigLib} from "../helpers/TestConfigLib.sol";
+import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";

@@ -3,7 +3,6 @@ pragma solidity 0.8.17;
 
 import {IPool, IPoolAddressesProvider} from "../../src/interfaces/aave/IPool.sol";
 
-import {ERC20} from "@solmate/utils/SafeTransferLib.sol";
 import {PoolLib} from "../../src/libraries/PoolLib.sol";
 import {DataTypes} from "../../src/libraries/aave/DataTypes.sol";
 
