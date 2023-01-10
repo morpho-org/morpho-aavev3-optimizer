@@ -66,19 +66,19 @@ contract TestApproval is TestSetup, Morpho {
     }
 
     function testRevertExpiredApproveManagerWithSig(uint128 deadline) public {
+        vm.assume(deadline <= block.timestamp);
+
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
             owner: ownerAdd,
             manager: managerAdd,
             isAllowed: true,
             nonce: this.userNonce(ownerAdd),
-            deadline: block.timestamp + deadline
+            deadline: deadline
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
-
-        vm.warp(block.timestamp + authorization.deadline + 1);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.SignatureExpired.selector));
         this.approveManagerWithSig(
