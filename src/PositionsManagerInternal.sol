@@ -217,14 +217,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
-    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) {
+    ) internal returns (Types.OutPositionVars memory vars) {
         Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Deltas storage deltas = market.deltas;
 
         _userBorrows[user].add(underlying);
-        onPool = marketBalances.scaledPoolBorrowBalance(user);
-        inP2P = marketBalances.scaledP2PBorrowBalance(user);
+        vars.position.onPool = marketBalances.scaledPoolBorrowBalance(user);
+        vars.position.inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
         /// Peer-to-peer borrow ///
 
@@ -233,7 +233,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             uint256 matchedDelta = Math.min(deltas.p2pSupplyDelta.rayMul(indexes.supply.poolIndex), amount); // In underlying.
 
             deltas.p2pSupplyDelta = deltas.p2pSupplyDelta.zeroFloorSub(amount.rayDiv(indexes.supply.poolIndex));
-            toWithdraw = matchedDelta;
+            vars.toWithdraw = matchedDelta;
             amount -= matchedDelta;
             emit Events.P2PSupplyDeltaUpdated(underlying, deltas.p2pSupplyDelta);
         }
@@ -245,16 +245,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         ) {
             (uint256 promoted,) = _promoteSuppliers(underlying, amount, maxLoops); // In underlying.
 
-            toWithdraw += promoted;
+            vars.toWithdraw += promoted;
             amount -= promoted;
             deltas.p2pSupplyAmount += promoted.rayDiv(indexes.supply.p2pIndex);
         }
 
-        if (toWithdraw > 0) {
-            uint256 borrowedP2P = toWithdraw.rayDiv(indexes.borrow.p2pIndex); // In peer-to-peer unit.
+        if (vars.toWithdraw > 0) {
+            uint256 borrowedP2P = vars.toWithdraw.rayDiv(indexes.borrow.p2pIndex); // In peer-to-peer unit.
 
             deltas.p2pBorrowAmount += borrowedP2P;
-            inP2P += borrowedP2P;
+            vars.position.inP2P += borrowedP2P;
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
         }
 
@@ -262,11 +262,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Borrow on pool.
         if (amount > 0) {
-            onPool += amount.rayDiv(indexes.borrow.poolIndex); // In adUnit.
-            toBorrow = amount;
+            vars.position.onPool += amount.rayDiv(indexes.borrow.poolIndex); // In adUnit.
+            vars.toBorrow = amount;
         }
 
-        _updateBorrowerInDS(underlying, user, onPool, inP2P);
+        _updateBorrowerInDS(underlying, user, vars.position.onPool, vars.position.inP2P);
     }
 
     function _executeRepay(
@@ -375,35 +375,35 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
-    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) {
+    ) internal returns (Types.OutPositionVars memory vars) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Market storage market = _market[underlying];
         Types.Deltas storage deltas = market.deltas;
 
-        onPool = marketBalances.scaledPoolSupplyBalance(user);
-        inP2P = marketBalances.scaledP2PSupplyBalance(user);
+        vars.position.onPool = marketBalances.scaledPoolSupplyBalance(user);
+        vars.position.inP2P = marketBalances.scaledP2PSupplyBalance(user);
 
         /// Pool withdraw ///
 
         // Withdraw supply on pool.
-        if (onPool > 0) {
-            toWithdraw = Math.min(onPool.rayMul(indexes.supply.poolIndex), amount);
-            amount -= toWithdraw;
-            onPool -= Math.min(onPool, toWithdraw.rayDiv(indexes.supply.poolIndex));
+        if (vars.position.onPool > 0) {
+            vars.toWithdraw = Math.min(vars.position.onPool.rayMul(indexes.supply.poolIndex), amount);
+            amount -= vars.toWithdraw;
+            vars.position.onPool -= Math.min(vars.position.onPool, vars.toWithdraw.rayDiv(indexes.supply.poolIndex));
 
             if (amount == 0) {
-                _updateSupplierInDS(underlying, user, onPool, inP2P);
+                _updateSupplierInDS(underlying, user, vars.position.onPool, vars.position.inP2P);
 
-                if (inP2P == 0 && onPool == 0) {
+                if (vars.position.inP2P == 0 && vars.position.onPool == 0) {
                     _userCollaterals[user].remove(underlying);
                 }
 
-                return (onPool, inP2P, toBorrow, toWithdraw);
+                return vars;
             }
         }
 
-        inP2P -= Math.min(inP2P, amount.rayDiv(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
-        _updateSupplierInDS(underlying, user, onPool, inP2P);
+        vars.position.inP2P -= Math.min(vars.position.inP2P, amount.rayDiv(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
+        _updateSupplierInDS(underlying, user, vars.position.onPool, vars.position.inP2P);
 
         // Reduce the peer-to-peer supply delta.
         if (amount > 0 && deltas.p2pSupplyDelta > 0) {
@@ -411,7 +411,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             deltas.p2pSupplyDelta = deltas.p2pSupplyDelta.zeroFloorSub(amount.rayDiv(indexes.supply.poolIndex));
             deltas.p2pSupplyAmount -= matchedDelta.rayDiv(indexes.supply.p2pIndex);
-            toWithdraw += matchedDelta;
+            vars.toWithdraw += matchedDelta;
             amount -= matchedDelta;
             emit Events.P2PSupplyDeltaUpdated(underlying, deltas.p2pSupplyDelta);
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
@@ -424,7 +424,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             (uint256 promoted, uint256 loopsDone) = _promoteSuppliers(underlying, amount, maxLoops);
             maxLoops -= loopsDone;
             amount -= promoted;
-            toWithdraw += promoted;
+            vars.toWithdraw += promoted;
         }
 
         /// Breaking withdraw ///
@@ -442,10 +442,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             deltas.p2pSupplyAmount -= Math.min(deltas.p2pSupplyAmount, amount.rayDiv(indexes.supply.p2pIndex));
             deltas.p2pBorrowAmount -= Math.min(deltas.p2pBorrowAmount, demoted.rayDiv(indexes.borrow.p2pIndex));
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
-            toBorrow = amount;
+            vars.toBorrow = amount;
         }
 
-        if (inP2P == 0 && onPool == 0) _userCollaterals[user].remove(underlying);
+        if (vars.position.inP2P == 0 && vars.position.onPool == 0) _userCollaterals[user].remove(underlying);
     }
 
     function _calculateAmountToSeize(

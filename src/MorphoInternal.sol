@@ -210,8 +210,10 @@ abstract contract MorphoInternal is MorphoStorage {
             if (address(_rewardsManager) != address(0)) {
                 _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
+
             marketOnPool.update(user, formerOnPool, onPool, _maxSortedUsers);
         }
+
         marketInP2P.update(user, marketInP2P.getValueOf(user), inP2P, _maxSortedUsers);
     }
 
