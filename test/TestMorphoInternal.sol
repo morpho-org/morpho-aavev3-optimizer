@@ -467,4 +467,9 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         assertTrue(pauseStatuses.isLiquidateCollateralPaused);
         assertTrue(pauseStatuses.isLiquidateBorrowPaused);
     }
+
+    function testApproveManager(address owner, address manager, bool isAllowed) public {
+        _approveManager(owner, manager, isAllowed);
+        assertEq(_isManaging[owner][manager], isAllowed);
+    }
 }

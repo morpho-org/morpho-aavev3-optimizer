@@ -7,6 +7,7 @@ import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interface
 
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
+import {Constants} from "./libraries/Constants.sol";
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
@@ -37,10 +38,49 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
+    function supplyWithPermit(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        uint256 maxLoops,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 supplied) {
+        ERC20(underlying).permit(msg.sender, address(this), amount, deadline, v, r, s);
+        bytes memory returnData = _positionsManager.functionDelegateCall(
+            abi.encodeWithSelector(
+                IPositionsManager.supplyLogic.selector, underlying, amount, msg.sender, onBehalf, maxLoops
+            )
+        );
+
+        return (abi.decode(returnData, (uint256)));
+    }
+
     function supplyCollateral(address underlying, uint256 amount, address onBehalf)
         external
         returns (uint256 supplied)
     {
+        bytes memory returnData = _positionsManager.functionDelegateCall(
+            abi.encodeWithSelector(
+                IPositionsManager.supplyCollateralLogic.selector, underlying, amount, msg.sender, onBehalf
+            )
+        );
+
+        return (abi.decode(returnData, (uint256)));
+    }
+
+    function supplyCollateralWithPermit(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 supplied) {
+        ERC20(underlying).permit(msg.sender, address(this), amount, deadline, v, r, s);
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeWithSelector(
                 IPositionsManager.supplyCollateralLogic.selector, underlying, amount, msg.sender, onBehalf
@@ -67,6 +107,26 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         external
         returns (uint256 repaid)
     {
+        bytes memory returnData = _positionsManager.functionDelegateCall(
+            abi.encodeWithSelector(
+                IPositionsManager.repayLogic.selector, underlying, amount, msg.sender, onBehalf, maxLoops
+            )
+        );
+
+        return (abi.decode(returnData, (uint256)));
+    }
+
+    function repayWithPermit(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        uint256 maxLoops,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 repaid) {
+        ERC20(underlying).permit(msg.sender, address(this), amount, deadline, v, r, s);
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeWithSelector(
                 IPositionsManager.repayLogic.selector, underlying, amount, msg.sender, onBehalf, maxLoops
@@ -121,8 +181,31 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     }
 
     function approveManager(address manager, bool isAllowed) external {
-        _isManaging[msg.sender][manager] = isAllowed;
-        emit Events.ManagerApproval(msg.sender, manager, isAllowed);
+        _approveManager(msg.sender, manager, isAllowed);
+    }
+
+    function approveManagerWithSig(
+        address owner,
+        address manager,
+        bool isAllowed,
+        uint256 nonce,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        if (uint256(s) > Constants.MAX_VALID_ECDSA_S) revert Errors.InvalidValueS();
+        // v ∈ {27, 28} (source: https://ethereum.github.io/yellowpaper/paper.pdf #308)
+        if (v != 27 && v != 28) revert Errors.InvalidValueV();
+        bytes32 structHash =
+            keccak256(abi.encode(Constants.AUTHORIZATION_TYPEHASH, owner, manager, isAllowed, nonce, deadline));
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", _computeDomainSeparator(), structHash));
+        address signatory = ecrecover(digest, v, r, s);
+        if (signatory == address(0)) revert Errors.InvalidSignatory();
+        if (owner != signatory) revert Errors.InvalidSignatory();
+        if (nonce != _userNonce[signatory]++) revert Errors.InvalidNonce();
+        if (block.timestamp >= deadline) revert Errors.SignatureExpired();
+        _approveManager(signatory, manager, isAllowed);
     }
 
     /// @notice Claims rewards for the given assets.
