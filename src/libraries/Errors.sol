@@ -35,7 +35,7 @@ library Errors {
 
     error InvalidValueS();
     error InvalidValueV();
-    error WrongSignatory();
-    error WrongNonce();
+    error InvalidSignatory();
+    error InvalidNonce();
     error SignatureExpired();
 }

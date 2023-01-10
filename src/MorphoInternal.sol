@@ -10,6 +10,7 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
+import {Constants} from "./libraries/Constants.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {InterestRatesLib} from "./libraries/InterestRatesLib.sol";
 
@@ -54,6 +55,18 @@ abstract contract MorphoInternal is MorphoStorage {
     function _approveManager(address owner, address manager, bool isAllowed) internal {
         _isManaging[owner][manager] = isAllowed;
         emit Events.ManagerApproval(owner, manager, isAllowed);
+    }
+
+    function _computeDomainSeparator() internal view returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                Constants.DOMAIN_TYPEHASH,
+                keccak256(bytes(Constants.name)),
+                keccak256(bytes(Constants.version)),
+                block.chainid,
+                address(this)
+            )
+        );
     }
 
     function _getUserBalanceFromIndexes(

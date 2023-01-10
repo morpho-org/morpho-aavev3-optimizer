@@ -138,22 +138,13 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         if (uint256(s) > Constants.MAX_VALID_ECDSA_S) revert Errors.InvalidValueS();
         // v ∈ {27, 28} (source: https://ethereum.github.io/yellowpaper/paper.pdf #308)
         if (v != 27 && v != 28) revert Errors.InvalidValueV();
-        bytes32 domainSeparator = keccak256(
-            abi.encode(
-                Constants.DOMAIN_TYPEHASH,
-                keccak256(bytes(Constants.name)),
-                keccak256(bytes(Constants.version)),
-                block.chainid,
-                address(this)
-            )
-        );
         bytes32 structHash =
             keccak256(abi.encode(Constants.AUTHORIZATION_TYPEHASH, owner, manager, isAllowed, nonce, deadline));
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", _computeDomainSeparator(), structHash));
         address signatory = ecrecover(digest, v, r, s);
-        if (signatory == address(0)) revert Errors.WrongSignatory();
-        if (owner != signatory) revert Errors.WrongSignatory();
-        if (nonce != _userNonce[signatory]++) revert Errors.WrongNonce();
+        if (signatory == address(0)) revert Errors.InvalidSignatory();
+        if (owner != signatory) revert Errors.InvalidSignatory();
+        if (nonce != _userNonce[signatory]++) revert Errors.InvalidNonce();
         if (block.timestamp >= deadline) revert Errors.SignatureExpired();
         _approveManager(signatory, manager, isAllowed);
     }
