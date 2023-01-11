@@ -188,10 +188,30 @@ abstract contract MorphoInternal is MorphoStorage {
         IPriceOracleGetter oracle,
         DataTypes.UserConfigurationMap memory morphoPoolConfig
     ) internal view returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) {
+        uint8 eMode = uint8(_POOL.getUserEMode(address(this)));
+
+        DataTypes.EModeCategory memory eModeCategory;
+
+        if (eMode != 0) {
+            eModeCategory = _POOL.getEModeCategoryData(eMode);
+        }
+
         underlyingPrice = oracle.getAssetPrice(underlying);
 
         uint256 decimals;
-        (ltv, liquidationThreshold,, decimals,,) = _POOL.getConfiguration(underlying).getParams();
+        uint256 eModeCat;
+
+        (ltv, liquidationThreshold,, decimals,, eModeCat) = _POOL.getConfiguration(underlying).getParams();
+
+        bool isInEModeCategory = eModeCat == eMode;
+        if (isInEModeCategory) {
+            if (eModeCategory.priceSource != address(0)) {
+                underlyingPrice = oracle.getAssetPrice(eModeCategory.priceSource);
+            }
+
+            ltv = eModeCategory.ltv;
+            liquidationThreshold = eModeCategory.liquidationThreshold;
+        }
 
         // LTV should be zero if Morpho has not enabled this asset as collateral
         if (!morphoPoolConfig.isUsingAsCollateral(_POOL.getReserveData(underlying).id)) {
