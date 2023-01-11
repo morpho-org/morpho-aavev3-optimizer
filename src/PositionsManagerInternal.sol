@@ -463,7 +463,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         amountToLiquidate = maxToLiquidate;
         (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
             _POOL.getConfiguration(underlyingCollateral).getParams();
-        (,,, uint256 borrowTokenUnit,,) = _POOL.getConfiguration(underlyingBorrowed).getParams();
+        uint256 borrowTokenUnit = _POOL.getConfiguration(underlyingBorrowed).getDecimals();
 
         unchecked {
             collateralTokenUnit = 10 ** collateralTokenUnit;
