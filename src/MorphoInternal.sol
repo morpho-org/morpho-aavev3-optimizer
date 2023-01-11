@@ -161,7 +161,7 @@ abstract contract MorphoInternal is MorphoStorage {
         returns (uint256 collateral, uint256 borrowable, uint256 maxDebt)
     {
         (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
-            _assetLiquidityData(underlying, vars.oracle, vars.eMode, vars.eModeCategory, vars.morphoPoolConfig);
+            _assetLiquidityData(underlying, vars);
 
         Types.Indexes256 memory indexes = _computeIndexes(underlying);
         collateral = (
@@ -177,8 +177,7 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256 debtValue)
     {
-        (uint256 underlyingPrice,,, uint256 tokenUnit) =
-            _assetLiquidityData(underlying, vars.oracle, vars.eMode, vars.eModeCategory, vars.morphoPoolConfig);
+        (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(underlying, vars);
 
         Types.Indexes256 memory indexes = _computeIndexes(underlying);
         debtValue = (
@@ -186,33 +185,31 @@ abstract contract MorphoInternal is MorphoStorage {
         ).divUp(tokenUnit);
     }
 
-    function _assetLiquidityData(
-        address underlying,
-        IPriceOracleGetter oracle,
-        uint8 eMode,
-        DataTypes.EModeCategory memory eModeCategory,
-        DataTypes.UserConfigurationMap memory morphoPoolConfig
-    ) internal view returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) {
-        underlyingPrice = oracle.getAssetPrice(underlying);
+    function _assetLiquidityData(address underlying, Types.LiquidityStackVars memory vars)
+        internal
+        view
+        returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit)
+    {
+        underlyingPrice = vars.oracle.getAssetPrice(underlying);
 
         uint256 decimals;
         uint256 eModeCat;
 
         (ltv, liquidationThreshold,, decimals,, eModeCat) = _POOL.getConfiguration(underlying).getParams();
 
-        if (eModeCat == eMode) {
-            underlyingPrice = eModeCategory.priceSource != address(0)
-                ? oracle.getAssetPrice(eModeCategory.priceSource)
-                : underlyingPrice = oracle.getAssetPrice(underlying);
+        if (eModeCat == vars.eMode) {
+            underlyingPrice = vars.eModeCategory.priceSource != address(0)
+                ? vars.oracle.getAssetPrice(vars.eModeCategory.priceSource)
+                : underlyingPrice = vars.oracle.getAssetPrice(underlying);
 
-            ltv = eModeCategory.ltv;
-            liquidationThreshold = eModeCategory.liquidationThreshold;
+            ltv = vars.eModeCategory.ltv;
+            liquidationThreshold = vars.eModeCategory.liquidationThreshold;
         } else {
-            underlyingPrice = oracle.getAssetPrice(underlying);
+            underlyingPrice = vars.oracle.getAssetPrice(underlying);
         }
 
         // LTV should be zero if Morpho has not enabled this asset as collateral
-        if (!morphoPoolConfig.isUsingAsCollateral(_POOL.getReserveData(underlying).id)) {
+        if (!vars.morphoPoolConfig.isUsingAsCollateral(_POOL.getReserveData(underlying).id)) {
             ltv = 0;
         }
 
