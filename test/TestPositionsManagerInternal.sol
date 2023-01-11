@@ -347,8 +347,6 @@ contract TestPositionsManagerInternal is TestSetup, PositionsManagerInternal {
         _userBorrows[address(this)].add(dai);
         _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 101 / 100), 0);
 
-        console2.log(_getUserHealthFactor(address(0), address(this), 0));
-
         MockPriceOracleSentinel priceOracleSentinel = new MockPriceOracleSentinel(address(_ADDRESSES_PROVIDER));
         priceOracleSentinel.setLiquidationAllowed(false);
         vm.prank(_ADDRESSES_PROVIDER.owner());
@@ -361,7 +359,6 @@ contract TestPositionsManagerInternal is TestSetup, PositionsManagerInternal {
     function testValidateLiquidateShouldRevertIfBorrowerHealthy() public {
         uint256 amount = 1e18;
         Types.Indexes256 memory indexes = _computeIndexes(dai);
-        console2.log(indexes.supply.poolIndex);
 
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
@@ -380,7 +377,7 @@ contract TestPositionsManagerInternal is TestSetup, PositionsManagerInternal {
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
         _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 90 / 100), 0);
+        _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 11 / 10), 0);
 
         uint256 closeFactor = this.validateLiquidate(dai, dai, address(this));
         assertEq(closeFactor, Constants.MAX_CLOSE_FACTOR);
@@ -394,7 +391,7 @@ contract TestPositionsManagerInternal is TestSetup, PositionsManagerInternal {
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
         _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 99 / 100), 0);
+        _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 101 / 100), 0);
 
         uint256 closeFactor = this.validateLiquidate(dai, dai, address(this));
         assertEq(closeFactor, Constants.DEFAULT_CLOSE_FACTOR);
