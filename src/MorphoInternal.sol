@@ -138,6 +138,14 @@ abstract contract MorphoInternal is MorphoStorage {
             borrowable += borrowableSingle;
             maxDebt += maxDebtSingle;
         }
+        if (!_userCollaterals[vars.user].contains(assetWithdrawn)) {
+            (uint256 collateralSingle, uint256 borrowableSingle, uint256 maxDebtSingle) =
+                _collateralData(assetWithdrawn, vars, amountWithdrawn);
+
+            collateral += collateralSingle;
+            borrowable += borrowableSingle;
+            maxDebt += maxDebtSingle;
+        }
     }
 
     function _totalDebt(address assetBorrowed, Types.LiquidityStackVars memory vars, uint256 amountBorrowed)
@@ -149,6 +157,9 @@ abstract contract MorphoInternal is MorphoStorage {
 
         for (uint256 i; i < userBorrows.length; ++i) {
             debt += _debt(userBorrows[i], vars, userBorrows[i] == assetBorrowed ? amountBorrowed : 0);
+        }
+        if (!_userBorrows[vars.user].contains(assetBorrowed)) {
+            debt += _debt(assetBorrowed, vars, amountBorrowed);
         }
     }
 

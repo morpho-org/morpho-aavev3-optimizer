@@ -50,12 +50,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
     function _validateSupply(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
-        if (!market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
+        if (market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
     }
 
     function _validateSupplyCollateral(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
-        if (!market.pauseStatuses.isSupplyCollateralPaused) revert Errors.SupplyCollateralIsPaused();
+        if (market.pauseStatuses.isSupplyCollateralPaused) revert Errors.SupplyCollateralIsPaused();
     }
 
     function _validateBorrow(address underlying, uint256 amount, address borrower) internal view {

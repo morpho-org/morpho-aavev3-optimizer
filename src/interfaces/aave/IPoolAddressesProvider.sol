@@ -7,4 +7,10 @@ interface IPoolAddressesProvider {
     function getPriceOracle() external view returns (address);
 
     function getPriceOracleSentinel() external view returns (address);
+
+    function getPoolConfigurator() external view returns (address);
+
+    function owner() external view returns (address);
+
+    function setPriceOracleSentinel(address newPriceOracleSentinel) external;
 }

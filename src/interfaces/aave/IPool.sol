@@ -73,4 +73,6 @@ interface IPool {
     function getReserveData(address asset) external view returns (DataTypes.ReserveData memory);
 
     function ADDRESSES_PROVIDER() external view returns (IPoolAddressesProvider);
+
+    function setConfiguration(address asset, DataTypes.ReserveConfigurationMap calldata configuration) external;
 }

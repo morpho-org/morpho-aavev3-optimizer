@@ -29,6 +29,7 @@ contract TestSetup is Test {
     // Common test variables between all networks
     IPoolAddressesProvider internal addressesProvider;
     IPool internal pool;
+    address internal poolConfigurator;
     address internal dai;
     address internal usdc;
     address internal usdt;
@@ -65,6 +66,7 @@ contract TestSetup is Test {
 
         addressesProvider = IPoolAddressesProvider(config.getAddress("addressesProvider"));
         pool = IPool(addressesProvider.getPool());
+        poolConfigurator = addressesProvider.getPoolConfigurator();
 
         dai = config.getAddress("DAI");
         usdc = config.getAddress("USDC");
