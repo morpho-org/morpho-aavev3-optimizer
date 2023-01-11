@@ -10,16 +10,22 @@ import {Math} from "@morpho-utils/math/Math.sol";
 
 library PoolLib {
     function supplyToPool(IPool pool, address underlying, uint256 amount) internal {
+        if (amount == 0) return;
+
         pool.supply(underlying, amount, address(this), Constants.NO_REFERRAL_CODE);
     }
 
     function withdrawFromPool(IPool pool, address underlying, address aToken, uint256 amount) internal {
+        if (amount == 0) return;
+
         // Withdraw only what is possible. The remaining dust is taken from the contract balance.
         amount = Math.min(IAToken(aToken).balanceOf(address(this)), amount);
         pool.withdraw(underlying, amount, address(this));
     }
 
     function borrowFromPool(IPool pool, address underlying, uint256 amount) internal {
+        if (amount == 0) return;
+
         pool.borrow(underlying, amount, Constants.VARIABLE_INTEREST_MODE, Constants.NO_REFERRAL_CODE, address(this));
     }
 
