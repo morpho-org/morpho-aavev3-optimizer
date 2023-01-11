@@ -10,6 +10,8 @@ contract MockPriceOracleSentinel {
 
     constructor(address addr) {
         poolAddressesProvider = addr;
+        borrowAllowed = true;
+        liquidationAllowed = true;
     }
 
     function isBorrowAllowed() external view returns (bool) {

@@ -180,6 +180,7 @@ contract TestPositionsManagerInternal is TestSetup, PositionsManagerInternal {
 
     function testValidateBorrowShouldRevertIfPriceOracleSentinelBorrowDisabled() public {
         MockPriceOracleSentinel priceOracleSentinel = new MockPriceOracleSentinel(address(_ADDRESSES_PROVIDER));
+        priceOracleSentinel.setBorrowAllowed(false);
 
         vm.prank(_ADDRESSES_PROVIDER.owner());
         _ADDRESSES_PROVIDER.setPriceOracleSentinel(address(priceOracleSentinel));
@@ -236,6 +237,7 @@ contract TestPositionsManagerInternal is TestSetup, PositionsManagerInternal {
 
     function testValidateWithdrawShouldRevertIfPriceOracleSentinelBorrowPaused() public {
         MockPriceOracleSentinel priceOracleSentinel = new MockPriceOracleSentinel(address(_ADDRESSES_PROVIDER));
+        priceOracleSentinel.setBorrowAllowed(false);
 
         vm.prank(_ADDRESSES_PROVIDER.owner());
         _ADDRESSES_PROVIDER.setPriceOracleSentinel(address(priceOracleSentinel));
@@ -269,7 +271,7 @@ contract TestPositionsManagerInternal is TestSetup, PositionsManagerInternal {
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = onPool.rayDiv(indexes.supply.poolIndex);
         _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(dai, address(this), onPool.rayDiv(indexes.supply.poolIndex) / 2, 0);
+        _updateBorrowerInDS(dai, address(this), onPool.rayDiv(indexes.borrow.poolIndex) / 2, 0);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.WithdrawUnauthorized.selector));
         this.validateWithdrawCollateral(dai, onPool.rayDiv(indexes.supply.poolIndex) / 2, address(this), address(this));
@@ -335,23 +337,38 @@ contract TestPositionsManagerInternal is TestSetup, PositionsManagerInternal {
         assertEq(closeFactor, Constants.MAX_CLOSE_FACTOR);
     }
 
-    // TODO: Failing with no reason. To investigate.
-    // function testValidateLiquidateShouldRevertIfSentinelDisallows() public {
-    //     uint256 amount = 1e18;
-    //     (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
-    //     Types.Indexes256 memory indexes = _computeIndexes(dai);
+    function testValidateLiquidateShouldRevertIfSentinelDisallows() public {
+        uint256 amount = 1e18;
+        (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
 
-    //     _userCollaterals[address(this)].add(dai);
-    //     _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
-    //     _userBorrows[address(this)].add(dai);
-    //     _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.supply.poolIndex).percentMulUp(lt * 11 / 10) , 0);
+        _userCollaterals[address(this)].add(dai);
+        _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
+        _userBorrows[address(this)].add(dai);
+        _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 101 / 100), 0);
 
-    //     MockPriceOracleSentinel priceOracleSentinel = new MockPriceOracleSentinel(address(_ADDRESSES_PROVIDER));
-    //     priceOracleSentinel.setBorrowAllowed(true);
-    //     vm.prank(_ADDRESSES_PROVIDER.owner());
-    //     _ADDRESSES_PROVIDER.setPriceOracleSentinel(address(priceOracleSentinel));
+        console2.log(_getUserHealthFactor(address(0), address(this), 0));
 
-    //     vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorisedLiquidate.selector));
-    //     this.validateLiquidate(dai, dai, address(this));
-    // }
+        MockPriceOracleSentinel priceOracleSentinel = new MockPriceOracleSentinel(address(_ADDRESSES_PROVIDER));
+        priceOracleSentinel.setLiquidationAllowed(false);
+        vm.prank(_ADDRESSES_PROVIDER.owner());
+        _ADDRESSES_PROVIDER.setPriceOracleSentinel(address(priceOracleSentinel));
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorisedLiquidate.selector));
+        this.validateLiquidate(dai, dai, address(this));
+    }
+
+    function testShouldNotLiquidateIfBorrowerHealthy() public {
+        uint256 amount = 1e18;
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        console2.log(indexes.supply.poolIndex);
+
+        _userCollaterals[address(this)].add(dai);
+        _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
+        _userBorrows[address(this)].add(dai);
+        _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulDown(50_00), 0);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorisedLiquidate.selector));
+        this.validateLiquidate(dai, dai, address(this));
+    }
 }
