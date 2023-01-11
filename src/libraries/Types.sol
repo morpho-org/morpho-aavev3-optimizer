@@ -124,7 +124,9 @@ library Types {
 
     struct LiquidityStackVars {
         address user;
+        uint8 eMode;
         IPriceOracleGetter oracle;
+        DataTypes.EModeCategory eModeCategory;
         DataTypes.UserConfigurationMap morphoPoolConfig;
     }
 
