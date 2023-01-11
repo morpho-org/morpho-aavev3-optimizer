@@ -83,18 +83,6 @@ library Types {
         uint256 debt; // The debt value (in base currency, 8 decimals).
     }
 
-    struct MatchingEngineVars {
-        address underlying;
-        MarketSideIndexes256 indexes;
-        uint256 amount;
-        uint256 maxLoops;
-        bool borrow;
-        function (address, address, uint256, uint256) updateDS; // This function will be used to update the data-structure.
-        bool promoting; // True for promote, False for demote.
-        function(uint256, uint256, MarketSideIndexes256 memory, uint256)
-            pure returns (uint256, uint256, uint256) step; // This function will be used to decide whether to use the algorithm for promoting or for demoting.
-    }
-
     struct RatesParams {
         MarketSideIndexes256 lastSupplyIndexes;
         MarketSideIndexes256 lastBorrowIndexes;
@@ -122,9 +110,28 @@ library Types {
         MarketSideIndexes256 borrow;
     }
 
+    struct MatchingEngineVars {
+        address underlying;
+        MarketSideIndexes256 indexes;
+        uint256 amount;
+        uint256 maxLoops;
+        bool borrow;
+        function (address, address, uint256, uint256) updateDS; // This function will be used to update the data-structure.
+        bool promoting; // True for promote, False for demote.
+        function(uint256, uint256, MarketSideIndexes256 memory, uint256)
+            pure returns (uint256, uint256, uint256) step; // This function will be used to decide whether to use the algorithm for promoting or for demoting.
+    }
+
     struct LiquidityStackVars {
         address user;
         IPriceOracleGetter oracle;
         DataTypes.UserConfigurationMap morphoPoolConfig;
+    }
+
+    struct OutPositionVars {
+        uint256 onPool;
+        uint256 inP2P;
+        uint256 toWithdraw;
+        uint256 toBorrow;
     }
 }

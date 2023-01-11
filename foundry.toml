@@ -4,4 +4,7 @@ names = true
 sizes = true
 libs = ["node_modules", "lib"]
 
+[profile.ci.fuzz]
+runs = 512
+
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
