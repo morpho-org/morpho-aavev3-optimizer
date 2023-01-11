@@ -65,6 +65,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
         if (!_POOL.getConfiguration(underlying).getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
 
+        uint256 eMode = _POOL.getUserEMode(address(this));
+        if (eMode != 0) {
+            if (eMode != _POOL.getConfiguration(address(this)).getEModeCategory()) revert Errors.InconsistentEMode();
+        }
+
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
         // In response, Morpho mirrors this behavior.
         address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
