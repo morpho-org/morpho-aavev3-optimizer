@@ -113,7 +113,7 @@ abstract contract MatchingEngine is MorphoInternal {
         uint256 remaining = vars.amount;
         ThreeHeapOrdering.HeapArray storage workingHeap = vars.promoting ? heapOnPool : heapInP2P;
 
-        for (; loopsDone < vars.maxLoops; ++loopsDone) {
+        for (; loopsDone < vars.maxLoops && remaining != 0; ++loopsDone) {
             address firstUser = workingHeap.getHead();
             if (firstUser == address(0)) break;
 
