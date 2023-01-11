@@ -7,6 +7,7 @@ library Errors {
 
     error AddressIsZero();
     error AmountIsZero();
+    error PermissionDenied();
 
     error SupplyIsPaused();
     error SupplyCollateralIsPaused();
@@ -31,4 +32,10 @@ library Errors {
     error MaxSortedUsersCannotBeZero();
 
     error ClaimRewardsPaused();
+
+    error InvalidValueS();
+    error InvalidValueV();
+    error InvalidSignatory();
+    error InvalidNonce();
+    error SignatureExpired();
 }

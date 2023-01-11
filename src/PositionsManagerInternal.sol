@@ -34,21 +34,20 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    function _validateInput(address underlying, uint256 amount) internal view returns (Types.Market storage market) {
+    function _validateInput(address underlying, uint256 amount, address user)
+        internal
+        view
+        returns (Types.Market storage market)
+    {
+        if (user == address(0)) revert Errors.AddressIsZero();
         if (amount == 0) revert Errors.AmountIsZero();
 
         market = _market[underlying];
         if (!market.isCreated()) revert Errors.MarketNotCreated();
     }
 
-    function _validateInput(address underlying, uint256 amount, address user)
-        internal
-        view
-        returns (Types.Market storage)
-    {
-        if (user == address(0)) revert Errors.AddressIsZero();
-
-        return _validateInput(underlying, amount);
+    function _validatePermission(address owner, address manager) internal view {
+        if (!(owner == manager || _isManaging[owner][manager])) revert Errors.PermissionDenied();
     }
 
     function _validateSupply(address underlying, uint256 amount, address user) internal view {
@@ -59,6 +58,102 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _validateSupplyCollateral(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
         if (!market.pauseStatuses.isSupplyCollateralPaused) revert Errors.SupplyCollateralIsPaused();
+    }
+
+    function _validateBorrow(address underlying, uint256 amount, address borrower) internal view {
+        _validatePermission(borrower, msg.sender);
+
+        Types.Market storage market = _validateInput(underlying, amount, borrower);
+        if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
+        if (!_POOL.getConfiguration(underlying).getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
+
+        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
+        // In response, Morpho mirrors this behavior.
+        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
+        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
+            revert Errors.PriceOracleSentinelBorrowDisabled();
+        }
+
+        Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
+        if (values.debt > values.borrowable) revert Errors.UnauthorisedBorrow();
+    }
+
+    function _validateRepay(address underlying, uint256 amount, address user) internal view {
+        Types.Market storage market = _validateInput(underlying, amount, user);
+        if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
+    }
+
+    function _validateWithdraw(address underlying, uint256 amount, address supplier, address receiver) internal view {
+        _validatePermission(supplier, msg.sender);
+
+        Types.Market storage market = _validateInput(underlying, amount, receiver);
+        if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
+
+        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
+        // For safety concerns and as a withdraw on Morpho can trigger a borrow on pool, Morpho prevents withdrawals in such circumstances.
+        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
+        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
+            revert Errors.PriceOracleSentinelBorrowPaused();
+        }
+    }
+
+    function _validateWithdrawCollateral(address underlying, uint256 amount, address supplier, address receiver)
+        internal
+        view
+    {
+        _validatePermission(supplier, msg.sender);
+
+        Types.Market storage market = _validateInput(underlying, amount, receiver);
+        if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
+
+        if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+            revert Errors.WithdrawUnauthorized();
+        }
+    }
+
+    function _validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
+        internal
+        view
+        returns (uint256 closeFactor)
+    {
+        Types.Market storage borrowMarket = _market[underlyingBorrowed];
+        Types.Market storage collateralMarket = _market[underlyingCollateral];
+
+        if (!collateralMarket.isCreated() || !borrowMarket.isCreated()) {
+            revert Errors.MarketNotCreated();
+        }
+        if (collateralMarket.pauseStatuses.isLiquidateCollateralPaused) {
+            revert Errors.LiquidateCollateralIsPaused();
+        }
+        if (borrowMarket.pauseStatuses.isLiquidateBorrowPaused) {
+            revert Errors.LiquidateBorrowIsPaused();
+        }
+        if (
+            !_userCollaterals[borrower].contains(underlyingCollateral)
+                || !_userBorrows[borrower].contains(underlyingBorrowed)
+        ) {
+            revert Errors.UserNotMemberOfMarket();
+        }
+
+        if (borrowMarket.pauseStatuses.isDeprecated) {
+            return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
+        } else {
+            uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
+            address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
+
+            if (
+                priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
+                    && healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD
+            ) {
+                revert Errors.UnauthorisedLiquidate();
+            } else if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+                revert Errors.UnauthorisedLiquidate();
+            }
+
+            closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
+                ? Constants.DEFAULT_CLOSE_FACTOR
+                : Constants.MAX_CLOSE_FACTOR;
+        }
     }
 
     function _executeSupply(
@@ -118,39 +213,20 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateSupplierInDS(underlying, user, onPool, inP2P);
     }
 
-    function _validateBorrow(address underlying, uint256 amount, address user) internal view {
-        if (amount == 0) revert Errors.AmountIsZero();
-
-        Types.Market storage market = _market[underlying];
-        if (!market.isCreated()) revert Errors.MarketNotCreated();
-        if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
-        if (!_POOL.getConfiguration(underlying).getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
-
-        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
-        // In response, Morpho mirrors this behavior.
-        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
-        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
-            revert Errors.PriceOracleSentinelBorrowDisabled();
-        }
-
-        Types.LiquidityData memory values = _liquidityData(underlying, user, 0, amount);
-        if (values.debt > values.borrowable) revert Errors.UnauthorisedBorrow();
-    }
-
     function _executeBorrow(
         address underlying,
         uint256 amount,
         address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
-    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) {
+    ) internal returns (Types.OutPositionVars memory vars) {
         Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Deltas storage deltas = market.deltas;
 
         _userBorrows[user].add(underlying);
-        onPool = marketBalances.scaledPoolBorrowBalance(user);
-        inP2P = marketBalances.scaledP2PBorrowBalance(user);
+        vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
+        vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
         /// Idle borrow ///
 
@@ -160,7 +236,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
                 uint256 idleToMatch = Math.min(idleSupply, amount); // In underlying.
                 market.idleSupply -= idleToMatch;
                 amount -= idleToMatch;
-                inP2P += idleToMatch.rayDiv(indexes.borrow.p2pIndex);
+                vars.inP2P += idleToMatch.rayDiv(indexes.borrow.p2pIndex);
             }
         }
         /// Peer-to-peer borrow ///
@@ -170,7 +246,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             uint256 matchedDelta = Math.min(deltas.p2pSupplyDelta.rayMul(indexes.supply.poolIndex), amount); // In underlying.
 
             deltas.p2pSupplyDelta = deltas.p2pSupplyDelta.zeroFloorSub(amount.rayDiv(indexes.supply.poolIndex));
-            toWithdraw = matchedDelta;
+            vars.toWithdraw = matchedDelta;
             amount -= matchedDelta;
             emit Events.P2PSupplyDeltaUpdated(underlying, deltas.p2pSupplyDelta);
         }
@@ -182,16 +258,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         ) {
             (uint256 promoted,) = _promoteSuppliers(underlying, amount, maxLoops); // In underlying.
 
-            toWithdraw += promoted;
+            vars.toWithdraw += promoted;
             amount -= promoted;
             deltas.p2pSupplyAmount += promoted.rayDiv(indexes.supply.p2pIndex);
         }
 
-        if (toWithdraw > 0) {
-            uint256 borrowedP2P = toWithdraw.rayDiv(indexes.borrow.p2pIndex); // In peer-to-peer unit.
+        if (vars.toWithdraw > 0) {
+            uint256 borrowedP2P = vars.toWithdraw.rayDiv(indexes.borrow.p2pIndex); // In peer-to-peer unit.
 
             deltas.p2pBorrowAmount += borrowedP2P;
-            inP2P += borrowedP2P;
+            vars.inP2P += borrowedP2P;
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
         }
 
@@ -199,16 +275,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Borrow on pool.
         if (amount > 0) {
-            onPool += amount.rayDiv(indexes.borrow.poolIndex); // In adUnit.
-            toBorrow = amount;
+            vars.onPool += amount.rayDiv(indexes.borrow.poolIndex); // In adUnit.
+            vars.toBorrow = amount;
         }
 
-        _updateBorrowerInDS(underlying, user, onPool, inP2P);
-    }
-
-    function _validateRepay(address underlying, uint256 amount, address user) internal view {
-        Types.Market storage market = _validateInput(underlying, amount, user);
-        if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
+        _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
     }
 
     function _executeRepay(
@@ -312,72 +383,50 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (inP2P == 0 && onPool == 0) _userBorrows[user].remove(underlying);
     }
 
-    function _validateWithdraw(address underlying, uint256 amount, address receiver) internal view {
-        Types.Market storage market = _validateInput(underlying, amount, receiver);
-        if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
-
-        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
-        // For safety concerns and as a withdraw on Morpho can trigger a borrow on pool, Morpho prevents withdrawals in such circumstances.
-        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
-        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
-            revert Errors.PriceOracleSentinelBorrowPaused();
-        }
-    }
-
-    function _validateWithdrawCollateral(address underlying, uint256 amount, address supplier, address receiver)
-        internal
-        view
-    {
-        Types.Market storage market = _validateInput(underlying, amount, receiver);
-        if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
-        if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
-            revert Errors.WithdrawUnauthorized();
-        }
-    }
-
     function _executeWithdraw(
         address underlying,
         uint256 amount,
         address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
-    ) internal returns (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) {
+    ) internal returns (Types.OutPositionVars memory vars) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Market storage market = _market[underlying];
         Types.Deltas storage deltas = market.deltas;
 
-        onPool = marketBalances.scaledPoolSupplyBalance(user);
-        inP2P = marketBalances.scaledP2PSupplyBalance(user);
+        vars.onPool = marketBalances.scaledPoolSupplyBalance(user);
+        vars.inP2P = marketBalances.scaledP2PSupplyBalance(user);
 
         /// Pool withdraw ///
 
         // Withdraw supply on pool.
-        if (onPool > 0) {
-            toWithdraw = Math.min(onPool.rayMul(indexes.supply.poolIndex), amount);
-            amount -= toWithdraw;
-            onPool -= Math.min(onPool, toWithdraw.rayDiv(indexes.supply.poolIndex));
+        if (vars.onPool > 0) {
+            vars.toWithdraw = Math.min(vars.onPool.rayMul(indexes.supply.poolIndex), amount);
+            amount -= vars.toWithdraw;
+            vars.onPool -= Math.min(vars.onPool, vars.toWithdraw.rayDiv(indexes.supply.poolIndex));
 
             if (amount == 0) {
-                _updateSupplierInDS(underlying, user, onPool, inP2P);
+                _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
 
-                if (inP2P == 0 && onPool == 0) {
+                if (vars.inP2P == 0 && vars.onPool == 0) {
                     _userCollaterals[user].remove(underlying);
                 }
 
-                return (onPool, inP2P, toBorrow, toWithdraw);
+                return vars;
             }
         }
 
-        inP2P -= Math.min(inP2P, amount.rayDiv(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
+        vars.inP2P -= Math.min(vars.inP2P, amount.rayDiv(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
         /// Idle Withdraw ///
-        if (amount > 0 && market.idleSupply > 0 && inP2P > 0) {
-            uint256 matchedIdle = Math.min(Math.min(market.idleSupply, amount), inP2P.rayMul(indexes.supply.p2pIndex));
+        if (amount > 0 && market.idleSupply > 0 && vars.inP2P > 0) {
+            uint256 matchedIdle =
+                Math.min(Math.min(market.idleSupply, amount), vars.inP2P.rayMul(indexes.supply.p2pIndex));
             market.idleSupply -= matchedIdle;
-            inP2P -= matchedIdle.rayDiv(indexes.supply.p2pIndex);
+            vars.inP2P -= matchedIdle.rayDiv(indexes.supply.p2pIndex);
         }
 
-        _updateSupplierInDS(underlying, user, onPool, inP2P);
+        _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
 
         // Reduce the peer-to-peer supply delta.
         if (amount > 0 && deltas.p2pSupplyDelta > 0) {
@@ -385,7 +434,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             deltas.p2pSupplyDelta = deltas.p2pSupplyDelta.zeroFloorSub(amount.rayDiv(indexes.supply.poolIndex));
             deltas.p2pSupplyAmount -= matchedDelta.rayDiv(indexes.supply.p2pIndex);
-            toWithdraw += matchedDelta;
+            vars.toWithdraw += matchedDelta;
             amount -= matchedDelta;
             emit Events.P2PSupplyDeltaUpdated(underlying, deltas.p2pSupplyDelta);
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
@@ -398,7 +447,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             (uint256 promoted, uint256 loopsDone) = _promoteSuppliers(underlying, amount, maxLoops);
             maxLoops -= loopsDone;
             amount -= promoted;
-            toWithdraw += promoted;
+            vars.toWithdraw += promoted;
         }
 
         /// Breaking withdraw ///
@@ -416,55 +465,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             deltas.p2pSupplyAmount -= Math.min(deltas.p2pSupplyAmount, amount.rayDiv(indexes.supply.p2pIndex));
             deltas.p2pBorrowAmount -= Math.min(deltas.p2pBorrowAmount, demoted.rayDiv(indexes.borrow.p2pIndex));
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
-            toBorrow = amount;
+            vars.toBorrow = amount;
         }
 
-        if (inP2P == 0 && onPool == 0) _userCollaterals[user].remove(underlying);
-    }
-
-    function _validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
-        internal
-        view
-        returns (uint256 closeFactor)
-    {
-        Types.Market storage borrowMarket = _market[underlyingBorrowed];
-        Types.Market storage collateralMarket = _market[underlyingCollateral];
-
-        if (!collateralMarket.isCreated() || !borrowMarket.isCreated()) {
-            revert Errors.MarketNotCreated();
-        }
-        if (collateralMarket.pauseStatuses.isLiquidateCollateralPaused) {
-            revert Errors.LiquidateCollateralIsPaused();
-        }
-        if (borrowMarket.pauseStatuses.isLiquidateBorrowPaused) {
-            revert Errors.LiquidateBorrowIsPaused();
-        }
-        if (
-            !_userCollaterals[borrower].contains(underlyingCollateral)
-                || !_userBorrows[borrower].contains(underlyingBorrowed)
-        ) {
-            revert Errors.UserNotMemberOfMarket();
-        }
-
-        if (borrowMarket.pauseStatuses.isDeprecated) {
-            return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
-        } else {
-            uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
-            address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
-
-            if (
-                priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
-                    && healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD
-            ) {
-                revert Errors.UnauthorisedLiquidate();
-            } else if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
-                revert Errors.UnauthorisedLiquidate();
-            }
-
-            closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
-                ? Constants.DEFAULT_CLOSE_FACTOR
-                : Constants.MAX_CLOSE_FACTOR;
-        }
+        if (vars.inP2P == 0 && vars.onPool == 0) _userCollaterals[user].remove(underlying);
     }
 
     function _calculateAmountToSeize(

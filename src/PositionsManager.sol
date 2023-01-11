@@ -44,8 +44,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
             _executeSupply(underlying, amount, onBehalf, maxLoops, indexes);
 
-        if (toRepay > 0) _POOL.repayToPool(underlying, _market[underlying].variableDebtToken, toRepay);
-        if (toSupply > 0) _POOL.supplyToPool(underlying, toSupply);
+        _POOL.repayToPool(underlying, _market[underlying].variableDebtToken, toRepay);
+        _POOL.supplyToPool(underlying, toSupply);
 
         emit Events.Supplied(from, onBehalf, underlying, amount, onPool, inP2P);
         return amount;
@@ -77,14 +77,13 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         _validateBorrow(underlying, amount, borrower);
 
-        (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) =
-            _executeBorrow(underlying, amount, borrower, maxLoops, indexes);
+        Types.OutPositionVars memory vars = _executeBorrow(underlying, amount, borrower, maxLoops, indexes);
 
-        if (toWithdraw > 0) _POOL.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
-        if (toBorrow > 0) _POOL.borrowFromPool(underlying, toBorrow);
+        _POOL.withdrawFromPool(underlying, _market[underlying].aToken, vars.toWithdraw);
+        _POOL.borrowFromPool(underlying, vars.toBorrow);
         ERC20(underlying).safeTransfer(receiver, amount);
 
-        emit Events.Borrowed(borrower, underlying, amount, onPool, inP2P);
+        emit Events.Borrowed(borrower, underlying, amount, vars.onPool, vars.inP2P);
         return amount;
     }
 
@@ -94,16 +93,16 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.supply), amount);
-        _validateWithdraw(underlying, amount, receiver);
+        _validateWithdraw(underlying, amount, supplier, receiver);
 
-        (uint256 onPool, uint256 inP2P, uint256 toWithdraw, uint256 toBorrow) =
+        Types.OutPositionVars memory vars =
             _executeWithdraw(underlying, amount, supplier, _defaultMaxLoops.withdraw, indexes);
 
-        if (toWithdraw > 0) _POOL.withdrawFromPool(underlying, _market[underlying].aToken, toWithdraw);
-        if (toBorrow > 0) _POOL.borrowFromPool(underlying, toBorrow);
+        _POOL.withdrawFromPool(underlying, _market[underlying].aToken, vars.toWithdraw);
+        _POOL.borrowFromPool(underlying, vars.toBorrow);
         ERC20(underlying).safeTransfer(receiver, amount);
 
-        emit Events.Withdrawn(supplier, receiver, underlying, amount, onPool, inP2P);
+        emit Events.Withdrawn(supplier, receiver, underlying, amount, vars.onPool, vars.inP2P);
         return amount;
     }
 
@@ -139,8 +138,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
             _executeRepay(underlying, amount, onBehalf, _defaultMaxLoops.repay, indexes);
 
-        if (toRepay > 0) _POOL.repayToPool(underlying, _market[underlying].variableDebtToken, toRepay);
-        if (toSupply > 0) _POOL.supplyToPool(underlying, toSupply);
+        _POOL.repayToPool(underlying, _market[underlying].variableDebtToken, toRepay);
+        _POOL.supplyToPool(underlying, toSupply);
 
         emit Events.Repaid(repayer, onBehalf, underlying, amount, onPool, inP2P);
         return amount;
@@ -185,8 +184,11 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         (,, vars.toRepay, vars.toSupply) =
             _executeRepay(underlyingBorrowed, vars.amountToLiquidate, borrower, 0, borrowIndexes);
-        (,, vars.toWithdraw, vars.toBorrow) =
+        Types.OutPositionVars memory withdrawVars =
             _executeWithdraw(underlyingCollateral, vars.amountToSeize, borrower, 0, collateralIndexes);
+
+        vars.toWithdraw = withdrawVars.toWithdraw;
+        vars.toBorrow = withdrawVars.toBorrow;
 
         _POOL.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, vars.toRepay);
         _POOL.supplyToPool(underlyingBorrowed, vars.toSupply);

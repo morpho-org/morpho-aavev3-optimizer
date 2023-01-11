@@ -19,7 +19,6 @@ contract TestPoolLib is TestSetup {
     uint256 internal constant MAX_AMOUNT = 100 ether;
 
     function setUp() public virtual override {
-        configSetUp();
         fillBalance(address(this), type(uint256).max);
         ERC20(dai).approve(address(pool), type(uint256).max);
         DataTypes.ReserveData memory reserveData = pool.getReserveData(dai);

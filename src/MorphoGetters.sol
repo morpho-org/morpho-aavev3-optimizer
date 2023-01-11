@@ -21,8 +21,16 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return address(_ADDRESSES_PROVIDER);
     }
 
+    function DOMAIN_SEPARATOR() external view returns (bytes32) {
+        return _computeDomainSeparator();
+    }
+
     function market(address underlying) external view returns (Types.Market memory) {
         return _market[underlying];
+    }
+
+    function marketsCreated() external view returns (address[] memory) {
+        return _marketsCreated;
     }
 
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256) {
@@ -45,11 +53,51 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _marketBalances[underlying].scaledCollateralBalance(user);
     }
 
+    function isManaging(address owner, address manager) external view returns (bool) {
+        return _isManaging[owner][manager];
+    }
+
+    function userNonce(address user) external view returns (uint256) {
+        return _userNonce[user];
+    }
+
     function maxSortedUsers() external view returns (uint256) {
         return _maxSortedUsers;
     }
 
+    function defaultMaxLoops() external view returns (Types.MaxLoops memory) {
+        return _defaultMaxLoops;
+    }
+
+    function positionsManager() external view returns (address) {
+        return _positionsManager;
+    }
+
+    function rewardsManager() external view returns (address) {
+        return address(_rewardsManager);
+    }
+
+    function treasuryVault() external view returns (address) {
+        return _treasuryVault;
+    }
+
     function isClaimRewardsPaused() external view returns (bool) {
         return _isClaimRewardsPaused;
+    }
+
+    function updatedIndexes(address underlying) external view returns (Types.Indexes256 memory) {
+        return _computeIndexes(underlying);
+    }
+
+    function liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
+        external
+        view
+        returns (Types.LiquidityData memory)
+    {
+        return _liquidityData(underlying, user, amountWithdrawn, amountBorrowed);
+    }
+
+    function healthFactor(address user) external view returns (uint256) {
+        return _getUserHealthFactor(address(0), user, 0);
     }
 }

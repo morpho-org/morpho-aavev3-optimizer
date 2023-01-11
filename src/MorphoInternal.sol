@@ -10,6 +10,7 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
+import {Constants} from "./libraries/Constants.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {InterestRatesLib} from "./libraries/InterestRatesLib.sol";
 
@@ -53,6 +54,23 @@ abstract contract MorphoInternal is MorphoStorage {
 
     /// INTERNAL ///
 
+    function _approveManager(address owner, address manager, bool isAllowed) internal {
+        _isManaging[owner][manager] = isAllowed;
+        emit Events.ManagerApproval(owner, manager, isAllowed);
+    }
+
+    function _computeDomainSeparator() internal view returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                Constants.DOMAIN_TYPEHASH,
+                keccak256(bytes(Constants.name)),
+                keccak256(bytes(Constants.version)),
+                block.chainid,
+                address(this)
+            )
+        );
+    }
+
     function _getUserBalanceFromIndexes(
         uint256 scaledPoolBalance,
         uint256 scaledP2PBalance,
@@ -91,12 +109,6 @@ abstract contract MorphoInternal is MorphoStorage {
         return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
     }
 
-    /// @dev Computes and returns the total value of the collateral, debt, and LTV/LT value depending on the calculation type.
-    /// @param underlying The pool token that is being borrowed or withdrawn.
-    /// @param user The user address.
-    /// @param amountWithdrawn The amount that is being withdrawn.
-    /// @param amountBorrowed The amount that is being borrowed.
-    /// @return liquidityData The struct containing health factor, collateral, debt, ltv, liquidation threshold values.
     function _liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
         internal
         view
@@ -213,8 +225,10 @@ abstract contract MorphoInternal is MorphoStorage {
             if (address(_rewardsManager) != address(0)) {
                 _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
+
             marketOnPool.update(user, formerOnPool, onPool, _maxSortedUsers);
         }
+
         marketInP2P.update(user, marketInP2P.getValueOf(user), inP2P, _maxSortedUsers);
     }
 
