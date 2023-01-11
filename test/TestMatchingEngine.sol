@@ -16,6 +16,9 @@ contract TestMatchingEngine is InternalTest, MatchingEngine {
     using WadRayMath for uint256;
     using Math for uint256;
 
+    uint256 internal constant TOTAL_AMOUNT = 20 ether;
+    uint256 internal constant USER_AMOUNT = 1 ether;
+
     function setUp() public virtual override {
         super.setUp();
 
@@ -70,133 +73,133 @@ contract TestMatchingEngine is InternalTest, MatchingEngine {
         assertEq(newRemaining, remaining - toProcess);
     }
 
-    function testPromoteSuppliers(uint256 numSuppliers, uint256 amountToMatch, uint256 maxLoops) public {
+    function testPromoteSuppliers(uint256 numSuppliers, uint256 amountToPromote, uint256 maxLoops) public {
         numSuppliers = bound(numSuppliers, 0, 10);
-        amountToMatch = bound(amountToMatch, 0, 20e18);
+        amountToPromote = bound(amountToPromote, 0, TOTAL_AMOUNT);
         maxLoops = bound(maxLoops, 0, numSuppliers);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
 
         for (uint256 i; i < numSuppliers; i++) {
-            _updateSupplierInDS(dai, address(uint160(i + 1)), 1e18, 0);
+            _updateSupplierInDS(dai, vm.addr(i + 1), USER_AMOUNT, 0);
         }
 
-        (uint256 promoted, uint256 loopsDone) = _promoteSuppliers(dai, amountToMatch, maxLoops);
+        (uint256 promoted, uint256 loopsDone) = _promoteSuppliers(dai, amountToPromote, maxLoops);
 
         uint256 totalP2PSupply;
         for (uint256 i; i < numSuppliers; i++) {
-            address user = address(uint160(i + 1));
+            address user = address(vm.addr(i + 1));
             assertEq(
                 marketBalances.scaledPoolSupplyBalance(user) + marketBalances.scaledP2PSupplyBalance(user),
-                1e18,
+                USER_AMOUNT,
                 "user supply"
             );
             totalP2PSupply += marketBalances.scaledP2PSupplyBalance(user);
         }
 
-        uint256 expectedPromoted = Math.min(amountToMatch, maxLoops * 1e18);
-        expectedPromoted = Math.min(expectedPromoted, numSuppliers * 1e18);
+        uint256 expectedPromoted = Math.min(amountToPromote, maxLoops * USER_AMOUNT);
+        expectedPromoted = Math.min(expectedPromoted, numSuppliers * USER_AMOUNT);
 
-        uint256 expectedLoops = Math.min(expectedPromoted.divUp(1e18), maxLoops);
+        uint256 expectedLoops = Math.min(expectedPromoted.divUp(USER_AMOUNT), maxLoops);
 
         assertEq(promoted, expectedPromoted, "promoted");
         assertEq(totalP2PSupply, promoted, "total borrow");
         assertEq(loopsDone, expectedLoops, "loops");
     }
 
-    function testPromoteBorrowers(uint256 numBorrowers, uint256 amountToMatch, uint256 maxLoops) public {
+    function testPromoteBorrowers(uint256 numBorrowers, uint256 amountToPromote, uint256 maxLoops) public {
         numBorrowers = bound(numBorrowers, 0, 10);
-        amountToMatch = bound(amountToMatch, 0, 20e18);
+        amountToPromote = bound(amountToPromote, 0, TOTAL_AMOUNT);
         maxLoops = bound(maxLoops, 0, numBorrowers);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
 
         for (uint256 i; i < numBorrowers; i++) {
-            _updateBorrowerInDS(dai, address(uint160(i + 1)), 1e18, 0);
+            _updateBorrowerInDS(dai, vm.addr(i + 1), USER_AMOUNT, 0);
         }
 
-        (uint256 promoted, uint256 loopsDone) = _promoteBorrowers(dai, amountToMatch, maxLoops);
+        (uint256 promoted, uint256 loopsDone) = _promoteBorrowers(dai, amountToPromote, maxLoops);
 
         uint256 totalP2PBorrow;
         for (uint256 i; i < numBorrowers; i++) {
-            address user = address(uint160(i + 1));
+            address user = vm.addr(i + 1);
             assertEq(
                 marketBalances.scaledPoolBorrowBalance(user) + marketBalances.scaledP2PBorrowBalance(user),
-                1e18,
+                USER_AMOUNT,
                 "user borrow"
             );
             totalP2PBorrow += marketBalances.scaledP2PBorrowBalance(user);
         }
 
-        uint256 expectedPromoted = Math.min(amountToMatch, maxLoops * 1e18);
-        expectedPromoted = Math.min(expectedPromoted, numBorrowers * 1e18);
+        uint256 expectedPromoted = Math.min(amountToPromote, maxLoops * USER_AMOUNT);
+        expectedPromoted = Math.min(expectedPromoted, numBorrowers * USER_AMOUNT);
 
-        uint256 expectedLoops = Math.min(expectedPromoted.divUp(1e18), maxLoops);
+        uint256 expectedLoops = Math.min(expectedPromoted.divUp(USER_AMOUNT), maxLoops);
 
         assertEq(promoted, expectedPromoted, "promoted");
         assertEq(totalP2PBorrow, promoted, "total borrow");
         assertEq(loopsDone, expectedLoops, "loops");
     }
 
-    function testDemoteSuppliers(uint256 numSuppliers, uint256 amountToMatch, uint256 maxLoops) public {
+    function testDemoteSuppliers(uint256 numSuppliers, uint256 amountToDemote, uint256 maxLoops) public {
         numSuppliers = bound(numSuppliers, 0, 10);
-        amountToMatch = bound(amountToMatch, 0, 20e18);
+        amountToDemote = bound(amountToDemote, 0, TOTAL_AMOUNT);
         maxLoops = bound(maxLoops, 0, numSuppliers);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
 
         for (uint256 i; i < numSuppliers; i++) {
-            _updateSupplierInDS(dai, address(uint160(i + 1)), 0, 1e18);
+            _updateSupplierInDS(dai, vm.addr(i + 1), 0, USER_AMOUNT);
         }
 
-        uint256 demoted = _demoteSuppliers(dai, amountToMatch, maxLoops);
+        uint256 demoted = _demoteSuppliers(dai, amountToDemote, maxLoops);
 
         uint256 totalP2PSupply;
         for (uint256 i; i < numSuppliers; i++) {
-            address user = address(uint160(i + 1));
+            address user = vm.addr(i + 1);
             assertEq(
                 marketBalances.scaledPoolSupplyBalance(user) + marketBalances.scaledP2PSupplyBalance(user),
-                1e18,
+                USER_AMOUNT,
                 "user supply"
             );
             totalP2PSupply += marketBalances.scaledP2PSupplyBalance(user);
         }
 
-        uint256 expectedDemoted = Math.min(amountToMatch, maxLoops * 1e18);
-        expectedDemoted = Math.min(expectedDemoted, numSuppliers * 1e18);
+        uint256 expectedDemoted = Math.min(amountToDemote, maxLoops * USER_AMOUNT);
+        expectedDemoted = Math.min(expectedDemoted, numSuppliers * USER_AMOUNT);
 
         assertEq(demoted, expectedDemoted, "demoted");
-        assertEq(totalP2PSupply, 1e18 * numSuppliers - demoted, "total borrow");
+        assertEq(totalP2PSupply, USER_AMOUNT * numSuppliers - demoted, "total borrow");
     }
 
-    function testDemoteBorrowers(uint256 numBorrowers, uint256 amountToMatch, uint256 maxLoops) public {
+    function testDemoteBorrowers(uint256 numBorrowers, uint256 amountToDemote, uint256 maxLoops) public {
         numBorrowers = bound(numBorrowers, 0, 10);
-        amountToMatch = bound(amountToMatch, 0, 20e18);
+        amountToDemote = bound(amountToDemote, 0, TOTAL_AMOUNT);
         maxLoops = bound(maxLoops, 0, numBorrowers);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
 
         for (uint256 i; i < numBorrowers; i++) {
-            _updateBorrowerInDS(dai, address(uint160(i + 1)), 0, 1e18);
+            _updateBorrowerInDS(dai, vm.addr(i + 1), 0, USER_AMOUNT);
         }
 
-        uint256 demoted = _demoteBorrowers(dai, amountToMatch, maxLoops);
+        uint256 demoted = _demoteBorrowers(dai, amountToDemote, maxLoops);
 
         uint256 totalP2PBorrow;
         for (uint256 i; i < numBorrowers; i++) {
-            address user = address(uint160(i + 1));
+            address user = vm.addr(i + 1);
             assertEq(
                 marketBalances.scaledPoolBorrowBalance(user) + marketBalances.scaledP2PBorrowBalance(user),
-                1e18,
+                USER_AMOUNT,
                 "user borrow"
             );
             totalP2PBorrow += marketBalances.scaledP2PBorrowBalance(user);
         }
 
-        uint256 expectedDemoted = Math.min(amountToMatch, maxLoops * 1e18);
-        expectedDemoted = Math.min(expectedDemoted, numBorrowers * 1e18);
+        uint256 expectedDemoted = Math.min(amountToDemote, maxLoops * USER_AMOUNT);
+        expectedDemoted = Math.min(expectedDemoted, numBorrowers * USER_AMOUNT);
 
         assertEq(demoted, expectedDemoted, "demoted");
-        assertEq(totalP2PBorrow, 1e18 * numBorrowers - demoted, "total borrow");
+        assertEq(totalP2PBorrow, USER_AMOUNT * numBorrowers - demoted, "total borrow");
     }
 }

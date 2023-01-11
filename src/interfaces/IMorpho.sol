@@ -4,18 +4,31 @@ pragma solidity >=0.5.0;
 import {Types} from "../libraries/Types.sol";
 
 interface IMorphoGetters {
-    function maxSortedUsers() external view returns (uint256);
-    function isClaimRewardsPaused() external view returns (bool);
-
     function POOL() external view returns (address);
     function ADDRESSES_PROVIDER() external view returns (address);
     function market(address underlying) external view returns (Types.Market memory);
+    function marketsCreated() external view returns (address[] memory);
 
     function scaledCollateralBalance(address underlying, address user) external view returns (uint256);
     function scaledP2PBorrowBalance(address underlying, address user) external view returns (uint256);
     function scaledP2PSupplyBalance(address underlying, address user) external view returns (uint256);
     function scaledPoolBorrowBalance(address underlying, address user) external view returns (uint256);
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256);
+
+    function maxSortedUsers() external view returns (uint256);
+    function defaultMaxLoops() external view returns (Types.MaxLoops memory);
+    function positionsManager() external view returns (address);
+    function rewardsManager() external view returns (address);
+    function treasuryVault() external view returns (address);
+
+    function isClaimRewardsPaused() external view returns (bool);
+
+    function updatedIndexes(address underlying) external view returns (Types.Indexes256 memory);
+    function liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
+        external
+        view
+        returns (Types.LiquidityData memory);
+    function healthFactor(address user) external view returns (uint256);
 }
 
 interface IMorphoSetters {
@@ -49,9 +62,28 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
         external
         returns (uint256 supplied);
+    function supplyWithPermit(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        uint256 maxLoops,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 supplied);
     function supplyCollateral(address underlying, uint256 amount, address onBehalf)
         external
         returns (uint256 supplied);
+    function supplyCollateralWithPermit(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 supplied);
 
     function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
         external
@@ -60,6 +92,16 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
     function repay(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
         external
         returns (uint256 repaid);
+    function repayWithPermit(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        uint256 maxLoops,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external returns (uint256 repaid);
 
     function withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
         external
@@ -69,6 +111,16 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
         returns (uint256 withdrawn);
 
     function approveManager(address manager, bool isAllowed) external;
+    function approveManagerWithSig(
+        address owner,
+        address manager,
+        bool isAllowed,
+        uint256 nonce,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
 
     function liquidate(address underlyingBorrowed, address underlyingCollateral, address user, uint256 amount)
         external

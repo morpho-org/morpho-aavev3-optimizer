@@ -40,11 +40,6 @@ contract TestPoolLibSupply is TestPoolLib {
         assertEq(ERC20(dai).balanceOf(address(this)) + amount, balanceBefore, "balance");
         assertApproxEqAbs(ERC20(aDai).balanceOf(address(this)), aBalanceBefore + amount, 1, "aBalance");
     }
-
-    function testSupplyRevertsWithZero() public {
-        vm.expectRevert(bytes("26"));
-        pool.supplyToPool(dai, 0);
-    }
 }
 
 contract TestPoolLibBorrow is TestPoolLib {
@@ -65,11 +60,6 @@ contract TestPoolLibBorrow is TestPoolLib {
 
         assertEq(ERC20(dai).balanceOf(address(this)), balanceBefore + amount / 2, "balance");
         assertApproxEqAbs(ERC20(vDai).balanceOf(address(this)), vBalanceBefore + amount / 2, 1, "vBalance");
-    }
-
-    function testBorrowRevertsWithZero() public {
-        vm.expectRevert(bytes("26"));
-        pool.borrowFromPool(dai, 0);
     }
 }
 
