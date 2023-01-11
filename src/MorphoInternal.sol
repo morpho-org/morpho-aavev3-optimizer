@@ -112,7 +112,7 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (Types.LiquidityData memory liquidityData)
     {
-        Types.LiquidityStackVars memory vars;
+        Types.LiquidityVars memory vars;
 
         vars.eMode = uint8(_POOL.getUserEMode(address(this)));
         if (vars.eMode != 0) vars.eModeCategory = _POOL.getEModeCategoryData(vars.eMode);
@@ -126,7 +126,7 @@ abstract contract MorphoInternal is MorphoStorage {
         liquidityData.debt = _totalDebt(underlying, vars, amountBorrowed);
     }
 
-    function _totalCollateralData(address assetWithdrawn, Types.LiquidityStackVars memory vars, uint256 amountWithdrawn)
+    function _totalCollateralData(address assetWithdrawn, Types.LiquidityVars memory vars, uint256 amountWithdrawn)
         internal
         view
         returns (uint256 collateral, uint256 borrowable, uint256 maxDebt)
@@ -143,7 +143,7 @@ abstract contract MorphoInternal is MorphoStorage {
         }
     }
 
-    function _totalDebt(address assetBorrowed, Types.LiquidityStackVars memory vars, uint256 amountBorrowed)
+    function _totalDebt(address assetBorrowed, Types.LiquidityVars memory vars, uint256 amountBorrowed)
         internal
         view
         returns (uint256 debt)
@@ -155,7 +155,7 @@ abstract contract MorphoInternal is MorphoStorage {
         }
     }
 
-    function _collateralData(address underlying, Types.LiquidityStackVars memory vars, uint256 amountWithdrawn)
+    function _collateralData(address underlying, Types.LiquidityVars memory vars, uint256 amountWithdrawn)
         internal
         view
         returns (uint256 collateral, uint256 borrowable, uint256 maxDebt)
@@ -172,7 +172,7 @@ abstract contract MorphoInternal is MorphoStorage {
         maxDebt = collateral.percentMulDown(liquidationThreshold);
     }
 
-    function _debt(address underlying, Types.LiquidityStackVars memory vars, uint256 amountBorrowed)
+    function _debt(address underlying, Types.LiquidityVars memory vars, uint256 amountBorrowed)
         internal
         view
         returns (uint256 debtValue)
@@ -185,7 +185,7 @@ abstract contract MorphoInternal is MorphoStorage {
         ).divUp(tokenUnit);
     }
 
-    function _assetLiquidityData(address underlying, Types.LiquidityStackVars memory vars)
+    function _assetLiquidityData(address underlying, Types.LiquidityVars memory vars)
         internal
         view
         returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit)
