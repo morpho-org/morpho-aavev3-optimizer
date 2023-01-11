@@ -18,6 +18,8 @@ import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
+import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -36,6 +38,7 @@ abstract contract MorphoInternal is MorphoStorage {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using UserConfiguration for DataTypes.UserConfigurationMap;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using SafeTransferLib for ERC20;
 
     using Math for uint256;
     using WadRayMath for uint256;
@@ -51,6 +54,41 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// INTERNAL ///
+
+    function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
+        if (underlying == address(0)) revert Errors.AddressIsZero();
+        if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR || reserveFactor > PercentageMath.PERCENTAGE_FACTOR) {
+            revert Errors.ExceedsMaxBasisPoints();
+        }
+
+        if (!_POOL.getConfiguration(underlying).getActive()) revert Errors.MarketIsNotListedOnAave();
+
+        DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
+
+        Types.Market storage market = _market[underlying];
+
+        if (market.isCreated()) revert Errors.MarketAlreadyCreated();
+
+        Types.Indexes256 memory indexes;
+        indexes.supply.p2pIndex = WadRayMath.RAY;
+        indexes.borrow.p2pIndex = WadRayMath.RAY;
+        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
+
+        market.setIndexes(indexes);
+        market.lastUpdateTimestamp = uint32(block.timestamp);
+
+        market.underlying = underlying;
+        market.aToken = reserveData.aTokenAddress;
+        market.variableDebtToken = reserveData.variableDebtTokenAddress;
+        market.reserveFactor = reserveFactor;
+        market.p2pIndexCursor = p2pIndexCursor;
+
+        _marketsCreated.push(underlying);
+
+        ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
+
+        emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
+    }
 
     function _approveManager(address owner, address manager, bool isAllowed) internal {
         _isManaging[owner][manager] = isAllowed;

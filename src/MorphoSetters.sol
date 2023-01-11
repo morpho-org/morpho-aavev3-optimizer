@@ -49,38 +49,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external onlyOwner {
-        if (underlying == address(0)) revert Errors.AddressIsZero();
-        if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR || reserveFactor > PercentageMath.PERCENTAGE_FACTOR) {
-            revert Errors.ExceedsMaxBasisPoints();
-        }
-
-        if (!_POOL.getConfiguration(underlying).getActive()) revert Errors.MarketIsNotListedOnAave();
-
-        DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
-
-        Types.Market storage market = _market[underlying];
-
-        if (market.isCreated()) revert Errors.MarketAlreadyCreated();
-
-        Types.Indexes256 memory indexes;
-        indexes.supply.p2pIndex = WadRayMath.RAY;
-        indexes.borrow.p2pIndex = WadRayMath.RAY;
-        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
-
-        market.setIndexes(indexes);
-        market.lastUpdateTimestamp = uint32(block.timestamp);
-
-        market.underlying = underlying;
-        market.aToken = reserveData.aTokenAddress;
-        market.variableDebtToken = reserveData.variableDebtTokenAddress;
-        market.reserveFactor = reserveFactor;
-        market.p2pIndexCursor = p2pIndexCursor;
-
-        _marketsCreated.push(underlying);
-
-        ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
-
-        emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
+        _createMarket(underlying, reserveFactor, p2pIndexCursor);
     }
 
     function increaseP2PDeltas(address underlying, uint256 amount) external onlyOwner isMarketCreated(underlying) {
