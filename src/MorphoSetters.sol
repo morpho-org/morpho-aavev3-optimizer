@@ -53,38 +53,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     function increaseP2PDeltas(address underlying, uint256 amount) external onlyOwner isMarketCreated(underlying) {
-        Types.Indexes256 memory indexes = _updateIndexes(underlying);
-
-        Types.Market storage market = _market[underlying];
-        Types.Deltas memory deltas = market.deltas;
-        uint256 poolSupplyIndex = indexes.supply.poolIndex;
-        uint256 poolBorrowIndex = indexes.borrow.poolIndex;
-
-        amount = Math.min(
-            amount,
-            Math.min(
-                deltas.p2pSupplyAmount.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                    deltas.p2pSupplyDelta.rayMul(poolSupplyIndex)
-                ),
-                deltas.p2pBorrowAmount.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                    deltas.p2pBorrowDelta.rayMul(poolBorrowIndex)
-                )
-            )
-        );
-        if (amount == 0) revert Errors.AmountIsZero();
-
-        uint256 newP2PSupplyDelta = deltas.p2pSupplyDelta + amount.rayDiv(poolSupplyIndex);
-        uint256 newP2PBorrowDelta = deltas.p2pBorrowDelta + amount.rayDiv(poolBorrowIndex);
-
-        market.deltas.p2pSupplyDelta = newP2PSupplyDelta;
-        market.deltas.p2pBorrowDelta = newP2PBorrowDelta;
-        emit Events.P2PSupplyDeltaUpdated(underlying, newP2PSupplyDelta);
-        emit Events.P2PBorrowDeltaUpdated(underlying, newP2PBorrowDelta);
-
-        _POOL.borrowFromPool(underlying, amount);
-        _POOL.supplyToPool(underlying, amount);
-
-        emit Events.P2PDeltasIncreased(underlying, amount);
+        _increaseP2PDeltas(underlying, amount);
     }
 
     function setMaxSortedUsers(uint256 newMaxSortedUsers) external onlyOwner {
