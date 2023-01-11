@@ -67,7 +67,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         uint256 eMode = _POOL.getUserEMode(address(this));
         if (eMode != 0) {
-            if (eMode != _POOL.getConfiguration(address(this)).getEModeCategory()) revert Errors.InconsistentEMode();
+            if (eMode != _POOL.getConfiguration(underlying).getEModeCategory()) revert Errors.InconsistentEMode();
         }
 
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.

@@ -202,9 +202,7 @@ abstract contract MorphoInternal is MorphoStorage {
             if (vars.eModeCategory.priceSource != address(0)) {
                 eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
             }
-            underlyingPrice = eModeUnderlyingPrice != 0
-                ? eModeUnderlyingPrice
-                : underlyingPrice = vars.oracle.getAssetPrice(underlying);
+            underlyingPrice = eModeUnderlyingPrice != 0 ? eModeUnderlyingPrice : vars.oracle.getAssetPrice(underlying);
 
             if (ltv != 0) ltv = vars.eModeCategory.ltv;
             liquidationThreshold = vars.eModeCategory.liquidationThreshold;
