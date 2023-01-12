@@ -27,4 +27,12 @@ library DataTypes {
     struct UserConfigurationMap {
         uint256 data;
     }
+
+    struct EModeCategory {
+        uint16 ltv;
+        uint16 liquidationThreshold;
+        uint16 liquidationBonus;
+        address priceSource;
+        string label;
+    }
 }

@@ -225,4 +225,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         _market[underlying].pauseStatuses.isDeprecated = isDeprecated;
         emit Events.IsDeprecatedSet(underlying, isDeprecated);
     }
+
+    function setEMode(uint8 categoryId) external onlyOwner {
+        _POOL.setUserEMode(categoryId);
+        emit Events.EModeSet(categoryId);
+    }
 }
