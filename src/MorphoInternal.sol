@@ -239,8 +239,6 @@ abstract contract MorphoInternal is MorphoStorage {
             onPool,
             inP2P
         );
-        if (onPool == 0 && inP2P == 0) _userCollaterals[user].remove(underlying);
-        else _userCollaterals[user].add(underlying);
     }
 
     function _updateBorrowerInDS(address underlying, address user, uint256 onPool, uint256 inP2P) internal {
