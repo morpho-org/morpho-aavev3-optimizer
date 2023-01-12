@@ -239,6 +239,8 @@ abstract contract MorphoInternal is MorphoStorage {
             onPool,
             inP2P
         );
+        if (onPool == 0 && inP2P == 0) _userCollaterals[user].remove(underlying);
+        else _userCollaterals[user].add(underlying);
     }
 
     function _updateBorrowerInDS(address underlying, address user, uint256 onPool, uint256 inP2P) internal {
@@ -250,6 +252,8 @@ abstract contract MorphoInternal is MorphoStorage {
             onPool,
             inP2P
         );
+        if (onPool == 0 && inP2P == 0) _userBorrows[user].remove(underlying);
+        else _userBorrows[user].add(underlying);
     }
 
     function _setPauseStatus(address underlying, bool isPaused) internal {
@@ -310,5 +314,39 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.LiquidityData memory liquidityData = _liquidityData(underlying, user, withdrawnAmount, 0);
 
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
+    }
+
+    function _calculateAmountToSeize(
+        address underlyingBorrowed,
+        address underlyingCollateral,
+        uint256 maxToLiquidate,
+        address borrower,
+        Types.MarketSideIndexes256 memory collateralIndexes
+    ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
+        amountToLiquidate = maxToLiquidate;
+        (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
+            _POOL.getConfiguration(underlyingCollateral).getParams();
+        (,,, uint256 borrowTokenUnit,,) = _POOL.getConfiguration(underlyingBorrowed).getParams();
+
+        unchecked {
+            collateralTokenUnit = 10 ** collateralTokenUnit;
+            borrowTokenUnit = 10 ** borrowTokenUnit;
+        }
+
+        IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        uint256 borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
+        uint256 collateralPrice = oracle.getAssetPrice(underlyingCollateral);
+
+        amountToSeize = ((amountToLiquidate * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
+            .percentMul(liquidationBonus);
+
+        uint256 collateralBalance = _getUserSupplyBalanceFromIndexes(underlyingCollateral, borrower, collateralIndexes);
+
+        if (amountToSeize > collateralBalance) {
+            amountToSeize = collateralBalance;
+            amountToLiquidate = (
+                (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
+            ).percentDiv(liquidationBonus);
+        }
     }
 }
