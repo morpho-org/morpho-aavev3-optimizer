@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IMorpho} from "../src/interfaces/IMorpho.sol";
+
 import {Morpho} from "../src/Morpho.sol";
 import {Errors} from "../src/libraries/Errors.sol";
 import "./helpers/SigUtils.sol";
@@ -48,7 +50,8 @@ contract TestApproval is TestSetup, Morpho {
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
+        IMorpho.Signature memory sig;
+        (sig.v, sig.r, sig.s) = vm.sign(ownerPrivateKey, digest);
 
         this.approveManagerWithSig(
             authorization.owner,
@@ -56,9 +59,7 @@ contract TestApproval is TestSetup, Morpho {
             authorization.isAllowed,
             authorization.nonce,
             authorization.deadline,
-            v,
-            r,
-            s
+            sig
         );
 
         assertEq(this.isManaging(ownerAdd, managerAdd), true);
@@ -75,8 +76,8 @@ contract TestApproval is TestSetup, Morpho {
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
+        IMorpho.Signature memory sig;
+        (sig.v, sig.r, sig.s) = vm.sign(ownerPrivateKey, digest);
 
         vm.warp(block.timestamp + authorization.deadline + 1);
 
@@ -87,9 +88,7 @@ contract TestApproval is TestSetup, Morpho {
             authorization.isAllowed,
             authorization.nonce,
             authorization.deadline,
-            v,
-            r,
-            s
+            sig
         );
     }
 
@@ -103,8 +102,8 @@ contract TestApproval is TestSetup, Morpho {
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(managerPrivateKey, digest); // manager signs owner's approval.
+        IMorpho.Signature memory sig;
+        (sig.v, sig.r, sig.s) = vm.sign(managerPrivateKey, digest); // manager signs owner's approval.
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidSignatory.selector));
         this.approveManagerWithSig(
@@ -113,9 +112,7 @@ contract TestApproval is TestSetup, Morpho {
             authorization.isAllowed,
             authorization.nonce,
             authorization.deadline,
-            v,
-            r,
-            s
+            sig
         );
     }
 
@@ -131,8 +128,8 @@ contract TestApproval is TestSetup, Morpho {
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
+        IMorpho.Signature memory sig;
+        (sig.v, sig.r, sig.s) = vm.sign(ownerPrivateKey, digest);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidNonce.selector));
         this.approveManagerWithSig(
@@ -141,9 +138,7 @@ contract TestApproval is TestSetup, Morpho {
             authorization.isAllowed,
             authorization.nonce,
             authorization.deadline,
-            v,
-            r,
-            s
+            sig
         );
     }
 
@@ -157,8 +152,8 @@ contract TestApproval is TestSetup, Morpho {
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
+        IMorpho.Signature memory sig;
+        (sig.v, sig.r, sig.s) = vm.sign(ownerPrivateKey, digest);
 
         this.approveManagerWithSig(
             authorization.owner,
@@ -166,9 +161,7 @@ contract TestApproval is TestSetup, Morpho {
             authorization.isAllowed,
             authorization.nonce,
             authorization.deadline,
-            v,
-            r,
-            s
+            sig
         );
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidNonce.selector));
@@ -178,9 +171,7 @@ contract TestApproval is TestSetup, Morpho {
             authorization.isAllowed,
             authorization.nonce,
             authorization.deadline,
-            v,
-            r,
-            s
+            sig
         );
     }
 }

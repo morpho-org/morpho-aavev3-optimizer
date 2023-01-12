@@ -47,7 +47,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         address onBehalf,
         uint256 maxLoops,
         uint256 deadline,
-        Signature memory signature
+        Signature calldata signature
     ) external returns (uint256 supplied) {
         ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         bytes memory returnData = _positionsManager.functionDelegateCall(
@@ -77,7 +77,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 amount,
         address onBehalf,
         uint256 deadline,
-        Signature memory signature
+        Signature calldata signature
     ) external returns (uint256 supplied) {
         ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         bytes memory returnData = _positionsManager.functionDelegateCall(
@@ -121,7 +121,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         address onBehalf,
         uint256 maxLoops,
         uint256 deadline,
-        Signature memory signature
+        Signature calldata signature
     ) external returns (uint256 repaid) {
         ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         bytes memory returnData = _positionsManager.functionDelegateCall(
@@ -187,17 +187,15 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         bool isAllowed,
         uint256 nonce,
         uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        Signature calldata signature
     ) external {
-        if (uint256(s) > Constants.MAX_VALID_ECDSA_S) revert Errors.InvalidValueS();
+        if (uint256(signature.s) > Constants.MAX_VALID_ECDSA_S) revert Errors.InvalidValueS();
         // v ∈ {27, 28} (source: https://ethereum.github.io/yellowpaper/paper.pdf #308)
-        if (v != 27 && v != 28) revert Errors.InvalidValueV();
+        if (signature.v != 27 && signature.v != 28) revert Errors.InvalidValueV();
         bytes32 structHash =
             keccak256(abi.encode(Constants.AUTHORIZATION_TYPEHASH, owner, manager, isAllowed, nonce, deadline));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", _computeDomainSeparator(), structHash));
-        address signatory = ecrecover(digest, v, r, s);
+        address signatory = ecrecover(digest, signature.v, signature.r, signature.s);
         if (signatory == address(0)) revert Errors.InvalidSignatory();
         if (owner != signatory) revert Errors.InvalidSignatory();
         if (nonce != _userNonce[signatory]++) revert Errors.InvalidNonce();

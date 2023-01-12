@@ -104,9 +104,7 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
         bool isAllowed,
         uint256 nonce,
         uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        Signature memory signature
     ) external;
 
     function liquidate(address underlyingBorrowed, address underlyingCollateral, address user, uint256 amount)
