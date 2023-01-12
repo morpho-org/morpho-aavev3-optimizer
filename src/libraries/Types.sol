@@ -110,6 +110,12 @@ library Types {
         MarketSideIndexes256 borrow;
     }
 
+    struct Signature {
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+    }
+
     struct MatchingEngineVars {
         address underlying;
         MarketSideIndexes256 indexes;

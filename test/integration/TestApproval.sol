@@ -46,7 +46,7 @@ contract TestApproval is IntegrationTest {
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
 
-        IMorpho.Signature memory sig;
+        Types.Signature memory sig;
         (sig.v, sig.r, sig.s) = vm.sign(OWNER_PK, digest);
 
         morpho.approveManagerWithSig(
@@ -74,7 +74,7 @@ contract TestApproval is IntegrationTest {
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
-        IMorpho.Signature memory sig;
+        Types.Signature memory sig;
         (sig.v, sig.r, sig.s) = vm.sign(OWNER_PK, digest);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.SignatureExpired.selector));
@@ -98,7 +98,7 @@ contract TestApproval is IntegrationTest {
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
-        IMorpho.Signature memory sig;
+        Types.Signature memory sig;
         (sig.v, sig.r, sig.s) = vm.sign(MANAGER_PK, digest); // manager signs owner's approval.
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidSignatory.selector));
@@ -124,7 +124,7 @@ contract TestApproval is IntegrationTest {
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
-        IMorpho.Signature memory sig;
+        Types.Signature memory sig;
         (sig.v, sig.r, sig.s) = vm.sign(OWNER_PK, digest);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidNonce.selector));
@@ -148,7 +148,7 @@ contract TestApproval is IntegrationTest {
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
-        IMorpho.Signature memory sig;
+        Types.Signature memory sig;
         (sig.v, sig.r, sig.s) = vm.sign(OWNER_PK, digest);
 
         morpho.approveManagerWithSig(

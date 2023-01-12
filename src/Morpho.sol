@@ -5,6 +5,7 @@ import {IMorpho} from "./interfaces/IMorpho.sol";
 import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
 import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol";
 
+import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {Constants} from "./libraries/Constants.sol";
@@ -41,7 +42,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         address onBehalf,
         uint256 maxLoops,
         uint256 deadline,
-        Signature calldata signature
+        Types.Signature calldata signature
     ) external returns (uint256 supplied) {
         ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         return _supply(underlying, amount, msg.sender, onBehalf, maxLoops);
@@ -59,7 +60,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 amount,
         address onBehalf,
         uint256 deadline,
-        Signature calldata signature
+        Types.Signature calldata signature
     ) external returns (uint256 supplied) {
         ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         return _supplyCollateral(underlying, amount, msg.sender, onBehalf);
@@ -85,7 +86,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         address onBehalf,
         uint256 maxLoops,
         uint256 deadline,
-        Signature calldata signature
+        Types.Signature calldata signature
     ) external returns (uint256 repaid) {
         ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         return _repay(underlying, amount, msg.sender, onBehalf, maxLoops);
@@ -122,7 +123,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         bool isAllowed,
         uint256 nonce,
         uint256 deadline,
-        Signature calldata signature
+        Types.Signature calldata signature
     ) external {
         if (uint256(signature.s) > Constants.MAX_VALID_ECDSA_S) revert Errors.InvalidValueS();
         // v ∈ {27, 28} (source: https://ethereum.github.io/yellowpaper/paper.pdf #308)
