@@ -11,9 +11,9 @@ contract TestSupply is IntegrationTest {
         }
     }
 
-    /// @dev The index calculation reverts if the market has no initialized indexes due to division by 0, so no revert reason should be given.
+    /// TODO: refactor the input validation to throw the correct error in this case
     function testShouldRevertWithMarketNotCreated() public {
-        vm.expectRevert();
+        vm.expectRevert(Errors.MarketNotCreated.selector);
         user1.supply(sAvax, 100);
     }
 }
