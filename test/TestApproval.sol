@@ -1,52 +1,50 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {Morpho} from "../src/Morpho.sol";
 import {Errors} from "../src/libraries/Errors.sol";
-import "./helpers/SigUtils.sol";
-import "./helpers/MorphoTest.sol";
 
-contract TestApproval is Morpho, MorphoTest {
+import {Morpho} from "../src/Morpho.sol";
+
+import {SigUtils} from "./helpers/SigUtils.sol";
+import "./helpers/IntegrationTest.sol";
+
+contract TestApproval is IntegrationTest {
+    uint256 internal constant OWNER_PK = 0xA11CE;
+    uint256 internal constant MANAGER_PK = 0xB0B;
+
+    address internal immutable OWNER = vm.addr(OWNER_PK);
+    address internal immutable MANAGER = vm.addr(MANAGER_PK);
+
     SigUtils internal sigUtils;
-    uint256 internal ownerPrivateKey;
-    uint256 internal managerPrivateKey;
-    address internal ownerAdd;
-    address internal managerAdd;
 
     function setUp() public override {
         super.setUp();
 
-        sigUtils = new SigUtils(this.DOMAIN_SEPARATOR());
-
-        ownerPrivateKey = 0xA11CE;
-        managerPrivateKey = 0xB0B;
-
-        ownerAdd = vm.addr(ownerPrivateKey);
-        managerAdd = vm.addr(managerPrivateKey);
+        sigUtils = new SigUtils(morpho.DOMAIN_SEPARATOR());
     }
 
     function testApproveManager(address owner, address manager, bool isAllowed) public {
         vm.prank(owner);
-        this.approveManager(manager, isAllowed);
-        assertEq(this.isManaging(owner, manager), isAllowed);
+        morpho.approveManager(manager, isAllowed);
+        assertEq(morpho.isManaging(owner, manager), isAllowed);
     }
 
     function testApproveManagerWithSig(uint128 deadline) public {
         vm.assume(deadline > block.timestamp);
 
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
-            owner: ownerAdd,
-            manager: managerAdd,
+            owner: OWNER,
+            manager: MANAGER,
             isAllowed: true,
-            nonce: this.userNonce(ownerAdd),
+            nonce: morpho.userNonce(OWNER),
             deadline: block.timestamp + deadline
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(OWNER_PK, digest);
 
-        this.approveManagerWithSig(
+        morpho.approveManagerWithSig(
             authorization.owner,
             authorization.manager,
             authorization.isAllowed,
@@ -57,27 +55,27 @@ contract TestApproval is Morpho, MorphoTest {
             s
         );
 
-        assertEq(this.isManaging(ownerAdd, managerAdd), true);
-        assertEq(this.userNonce(ownerAdd), 1);
+        assertEq(morpho.isManaging(OWNER, MANAGER), true);
+        assertEq(morpho.userNonce(OWNER), 1);
     }
 
     function testRevertExpiredApproveManagerWithSig(uint128 deadline) public {
         vm.assume(deadline <= block.timestamp);
 
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
-            owner: ownerAdd,
-            manager: managerAdd,
+            owner: OWNER,
+            manager: MANAGER,
             isAllowed: true,
-            nonce: this.userNonce(ownerAdd),
+            nonce: morpho.userNonce(OWNER),
             deadline: deadline
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(OWNER_PK, digest);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.SignatureExpired.selector));
-        this.approveManagerWithSig(
+        morpho.approveManagerWithSig(
             authorization.owner,
             authorization.manager,
             authorization.isAllowed,
@@ -91,19 +89,19 @@ contract TestApproval is Morpho, MorphoTest {
 
     function testRevertInvalidSignatoryApproveManagerWithSig() public {
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
-            owner: ownerAdd,
-            manager: managerAdd,
+            owner: OWNER,
+            manager: MANAGER,
             isAllowed: true,
-            nonce: this.userNonce(ownerAdd),
+            nonce: morpho.userNonce(OWNER),
             deadline: block.timestamp + 1 days
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(managerPrivateKey, digest); // manager signs owner's approval.
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(MANAGER_PK, digest); // manager signs owner's approval.
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidSignatory.selector));
-        this.approveManagerWithSig(
+        morpho.approveManagerWithSig(
             authorization.owner,
             authorization.manager,
             authorization.isAllowed,
@@ -116,11 +114,11 @@ contract TestApproval is Morpho, MorphoTest {
     }
 
     function testRevertInvalidNonceApproveManagerWithSig(uint256 nonce) public {
-        vm.assume(nonce != this.userNonce(ownerAdd));
+        vm.assume(nonce != morpho.userNonce(OWNER));
 
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
-            owner: ownerAdd,
-            manager: managerAdd,
+            owner: OWNER,
+            manager: MANAGER,
             isAllowed: true,
             nonce: nonce,
             deadline: block.timestamp + 1 days
@@ -128,10 +126,10 @@ contract TestApproval is Morpho, MorphoTest {
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(OWNER_PK, digest);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidNonce.selector));
-        this.approveManagerWithSig(
+        morpho.approveManagerWithSig(
             authorization.owner,
             authorization.manager,
             authorization.isAllowed,
@@ -145,18 +143,18 @@ contract TestApproval is Morpho, MorphoTest {
 
     function testRevertSignatureReplayApproveManagerWithSig() public {
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
-            owner: ownerAdd,
-            manager: managerAdd,
+            owner: OWNER,
+            manager: MANAGER,
             isAllowed: true,
-            nonce: this.userNonce(ownerAdd),
+            nonce: morpho.userNonce(OWNER),
             deadline: block.timestamp + 1 days
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(OWNER_PK, digest);
 
-        this.approveManagerWithSig(
+        morpho.approveManagerWithSig(
             authorization.owner,
             authorization.manager,
             authorization.isAllowed,
@@ -168,7 +166,7 @@ contract TestApproval is Morpho, MorphoTest {
         );
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidNonce.selector));
-        this.approveManagerWithSig(
+        morpho.approveManagerWithSig(
             authorization.owner,
             authorization.manager,
             authorization.isAllowed,
