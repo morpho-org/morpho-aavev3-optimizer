@@ -13,5 +13,3 @@
 
 @solmate/=lib/solmate/src/
 solmate/=lib/solmate/
-
-@permit2/=lib/permit2/src/
