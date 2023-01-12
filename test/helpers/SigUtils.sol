@@ -21,7 +21,7 @@ contract SigUtils {
     function getStructHash(Authorization memory authorization) internal pure returns (bytes32) {
         return keccak256(
             abi.encode(
-                Constants.AUTHORIZATION_TYPEHASH,
+                Constants.EIP712_AUTHORIZATION_TYPEHASH,
                 authorization.owner,
                 authorization.manager,
                 authorization.isAllowed,
