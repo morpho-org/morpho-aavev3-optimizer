@@ -4,6 +4,9 @@ names = true
 sizes = true
 libs = ["node_modules", "lib"]
 
+[fuzz]
+runs = 16
+
 [profile.ci.fuzz]
 runs = 512
 
