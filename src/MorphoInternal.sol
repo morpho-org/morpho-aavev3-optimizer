@@ -194,8 +194,8 @@ abstract contract MorphoInternal is MorphoStorage {
 
         uint256 decimals;
         uint256 eModeCat;
-
-        (ltv, liquidationThreshold,, decimals,, eModeCat) = _POOL.getConfiguration(underlying).getParams();
+        DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
+        (ltv, liquidationThreshold,, decimals,, eModeCat) = reserveData.configuration.getParams();
 
         if (vars.eMode != 0 && vars.eMode == eModeCat) {
             uint256 eModeUnderlyingPrice;
@@ -211,7 +211,7 @@ abstract contract MorphoInternal is MorphoStorage {
         }
 
         // LTV should be zero if Morpho has not enabled this asset as collateral
-        if (!vars.morphoPoolConfig.isUsingAsCollateral(_POOL.getReserveData(underlying).id)) {
+        if (!vars.morphoPoolConfig.isUsingAsCollateral(reserveData.id)) {
             ltv = 0;
         }
 
