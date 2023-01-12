@@ -353,6 +353,21 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return (toRepay, amount, maxLoops);
     }
 
+    function _promotePoolSuppliersInWithdraw(address underlying, uint256 amount, uint256 toWithdraw, uint256 maxLoops)
+        internal
+        returns (uint256, uint256, uint256)
+    {
+        Types.Market storage market = _market[underlying];
+        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+        if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolSuppliers.getHead() != address(0)) {
+            (uint256 promoted, uint256 loopsDone) = _promoteSuppliers(underlying, amount, maxLoops);
+            toWithdraw += promoted;
+            amount -= promoted;
+            maxLoops -= loopsDone;
+        }
+        return (toWithdraw, amount, maxLoops);
+    }
+
     function _demoteSuppliers(address underlying, uint256 amount, Types.Indexes256 memory indexes, uint256 maxLoops)
         internal
         returns (uint256)
@@ -376,21 +391,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             toSupply = amount;
         }
         return toSupply;
-    }
-
-    function _promotePoolSuppliersInWithdraw(address underlying, uint256 amount, uint256 toWithdraw, uint256 maxLoops)
-        internal
-        returns (uint256, uint256, uint256)
-    {
-        Types.Market storage market = _market[underlying];
-        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolSuppliers.getHead() != address(0)) {
-            (uint256 promoted, uint256 loopsDone) = _promoteSuppliers(underlying, amount, maxLoops);
-            toWithdraw += promoted;
-            amount -= promoted;
-            maxLoops -= loopsDone;
-        }
-        return (toWithdraw, amount, maxLoops);
     }
 
     function _demoteBorrowersInWithdraw(
