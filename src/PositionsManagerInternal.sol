@@ -511,7 +511,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     function _handleSupplyCap(address underlying, uint256 amount) internal returns (uint256 toSupply) {
-        uint256 supplyCap = _POOL.getConfiguration(underlying).getSupplyCap();
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+        uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
         if (supplyCap == 0) return amount;
 
         uint256 totalSupply = ERC20(_market[underlying].aToken).totalSupply();
