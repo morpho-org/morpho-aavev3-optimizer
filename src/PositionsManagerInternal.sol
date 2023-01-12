@@ -167,7 +167,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         inP2P = marketBalances.scaledP2PSupplyBalance(user);
 
         (toRepay, amount) = _matchBorrowDeltaInSupply(underlying, amount, indexes.borrow.poolIndex);
-        (toRepay, amount, inP2P) = _promotePoolBorrowers(underlying, amount, toRepay, inP2P, indexes.borrow, maxLoops);
+        (toRepay, amount, inP2P) = _promotePoolBorrowers(underlying, amount, toRepay, inP2P, indexes, maxLoops);
         (toSupply, onPool) = _processPoolAmountAddition(amount, onPool, indexes.supply.poolIndex);
 
         _updateSupplierInDS(underlying, user, onPool, inP2P);
@@ -280,7 +280,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 amount,
         uint256 toRepay,
         uint256 inP2P,
-        Types.MarketSideIndexes256 memory borrowIndexes,
+        Types.Indexes256 memory indexes,
         uint256 maxLoops
     ) internal returns (uint256, uint256, uint256) {
         Types.Market storage market = _market[underlying];
@@ -292,11 +292,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             toRepay += promoted;
             amount -= promoted;
-            deltas.p2pBorrowAmount += promoted.rayDiv(borrowIndexes.poolIndex);
+            deltas.p2pBorrowAmount += promoted.rayDiv(indexes.borrow.poolIndex);
         }
 
         if (toRepay > 0) {
-            uint256 suppliedP2P = toRepay.rayDiv(borrowIndexes.p2pIndex);
+            uint256 suppliedP2P = toRepay.rayDiv(indexes.supply.p2pIndex);
 
             deltas.p2pSupplyAmount += suppliedP2P;
             inP2P += suppliedP2P;
