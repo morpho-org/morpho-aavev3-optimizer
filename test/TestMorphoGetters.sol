@@ -4,13 +4,9 @@ pragma solidity ^0.8.17;
 import {MorphoStorage} from "../src/MorphoStorage.sol";
 import {MorphoGetters} from "../src/MorphoGetters.sol";
 
-import "./setup/TestSetup.sol";
+import "./helpers/InternalTest.sol";
 
-contract TestMorphoGetters is TestSetup, MorphoGetters {
-    using TestConfig for TestConfig.Config;
-
-    constructor() MorphoStorage(config.load(vm.envString("NETWORK")).getAddress("addressesProvider")) {}
-
+contract TestMorphoGetters is InternalTest, MorphoGetters {
     function testIsManaging(address owner, address manager, bool isAllowed) public {
         _approveManager(owner, manager, isAllowed);
         assertEq(this.isManaging(owner, manager), isAllowed);

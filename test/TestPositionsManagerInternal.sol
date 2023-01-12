@@ -5,13 +5,9 @@ import {Errors} from "../src/libraries/Errors.sol";
 import {MorphoStorage} from "../src/MorphoStorage.sol";
 import {PositionsManagerInternal} from "../src/PositionsManagerInternal.sol";
 
-import "./setup/TestSetup.sol";
+import "./helpers/InternalTest.sol";
 
-contract TestPositionsManager is TestSetup, PositionsManagerInternal {
-    using TestConfig for TestConfig.Config;
-
-    constructor() MorphoStorage(config.load(vm.envString("NETWORK")).getAddress("addressesProvider")) {}
-
+contract TestPositionsManager is InternalTest, PositionsManagerInternal {
     function testValidatePermission(address owner, address manager) public {
         _validatePermission(owner, owner);
 

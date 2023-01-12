@@ -2,14 +2,13 @@
 pragma solidity 0.8.17;
 
 import {IPool, IPoolAddressesProvider} from "../../src/interfaces/aave/IPool.sol";
-import {IAToken} from "../../src/interfaces/aave/IAToken.sol";
+
 import {PoolLib} from "../../src/libraries/PoolLib.sol";
-import {TestHelpers} from "../helpers/TestHelpers.sol";
-import {TestSetup} from "../setup/TestSetup.sol";
-import {ERC20} from "@solmate/utils/SafeTransferLib.sol";
 import {DataTypes} from "../../src/libraries/aave/DataTypes.sol";
 
-contract TestPoolLib is TestSetup {
+import "../helpers/ForkTest.sol";
+
+contract TestPoolLib is ForkTest {
     using PoolLib for IPool;
 
     address internal aDai;
@@ -18,9 +17,9 @@ contract TestPoolLib is TestSetup {
     uint256 internal constant MIN_AMOUNT = 10;
     uint256 internal constant MAX_AMOUNT = 100 ether;
 
-    function setUp() public virtual override {
-        fillBalance(address(this), type(uint256).max);
+    constructor() {
         ERC20(dai).approve(address(pool), type(uint256).max);
+
         DataTypes.ReserveData memory reserveData = pool.getReserveData(dai);
         aDai = reserveData.aTokenAddress;
         vDai = reserveData.variableDebtTokenAddress;
