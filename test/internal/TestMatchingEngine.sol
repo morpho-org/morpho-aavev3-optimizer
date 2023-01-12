@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {MatchingEngine} from "../src/MatchingEngine.sol";
-import {MorphoInternal} from "../src/MorphoInternal.sol";
-import {MorphoStorage} from "../src/MorphoStorage.sol";
+import {MatchingEngine} from "src/MatchingEngine.sol";
+import {MorphoInternal} from "src/MorphoInternal.sol";
+import {MorphoStorage} from "src/MorphoStorage.sol";
 
-import {MarketLib} from "../src/libraries/MarketLib.sol";
-import {MarketBalanceLib} from "../src/libraries/MarketBalanceLib.sol";
+import {MarketLib} from "src/libraries/MarketLib.sol";
+import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
 
-import "./helpers/InternalTest.sol";
+import "test/helpers/InternalTest.sol";
 
 contract TestMatchingEngine is InternalTest, MatchingEngine {
     using MarketLib for Types.Market;

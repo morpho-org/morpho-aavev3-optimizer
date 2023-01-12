@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.17;
 
-import {Types} from "../../src/libraries/Types.sol";
-import {MarketLib} from "../../src/libraries/MarketLib.sol";
+import {Types} from "src/libraries/Types.sol";
+import {MarketLib} from "src/libraries/MarketLib.sol";
 
 import {Test} from "@forge-std/Test.sol";
 
@@ -14,11 +14,7 @@ contract TestMarketLib is Test {
     function testIsCreated(Types.Market memory _market) public {
         market = _market;
 
-        assertTrue(market.isCreated());
-
-        market.aToken = address(0);
-
-        assertFalse(market.isCreated());
+        assertEq(market.isCreated(), market.aToken != address(0));
     }
 
     function testGetSupplyIndexes(Types.Market memory _market) public {

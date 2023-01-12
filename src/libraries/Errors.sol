@@ -19,6 +19,7 @@ library Errors {
     error LiquidateBorrowIsPaused();
 
     error BorrowingNotEnabled();
+    error InconsistentEMode();
     error PriceOracleSentinelBorrowDisabled();
     error PriceOracleSentinelBorrowPaused();
     error UnauthorizedBorrow();

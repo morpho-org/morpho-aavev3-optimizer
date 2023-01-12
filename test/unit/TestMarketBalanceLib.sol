@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.17;
 
-import {Types} from "../../src/libraries/Types.sol";
-import {MarketBalanceLib} from "../../src/libraries/MarketBalanceLib.sol";
+import {Types} from "src/libraries/Types.sol";
+import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
 import {Test} from "@forge-std/Test.sol";
