@@ -167,6 +167,12 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         }
     }
 
+    function increaseP2PDeltas(address underlying, uint256 amount) external onlyOwner isMarketCreated(underlying) {
+        _positionsManager.functionDelegateCall(
+            abi.encodeWithSelector(IPositionsManager.increaseP2PDeltasLogic.selector, underlying, amount)
+        );
+    }
+
     /// INTERNAL ///
 
     function _supply(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)

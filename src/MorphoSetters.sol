@@ -52,10 +52,6 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         _createMarket(underlying, reserveFactor, p2pIndexCursor);
     }
 
-    function increaseP2PDeltas(address underlying, uint256 amount) external onlyOwner isMarketCreated(underlying) {
-        _increaseP2PDeltas(underlying, amount);
-    }
-
     function setMaxSortedUsers(uint256 newMaxSortedUsers) external onlyOwner {
         if (newMaxSortedUsers == 0) revert Errors.MaxSortedUsersCannotBeZero();
         _maxSortedUsers = newMaxSortedUsers;

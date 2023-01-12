@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IPool} from "./interfaces/aave/IPool.sol";
 import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
 import {IPriceOracleSentinel} from "@aave/core-v3/contracts/interfaces/IPriceOracleSentinel.sol";
 
@@ -11,6 +12,7 @@ import {Constants} from "./libraries/Constants.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 
+import {PoolLib} from "./libraries/PoolLib.sol";
 import {DataTypes} from "./libraries/aave/DataTypes.sol";
 import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 
@@ -26,6 +28,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using Math for uint256;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
+    using PoolLib for IPool;
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -480,5 +483,40 @@ abstract contract PositionsManagerInternal is MatchingEngine {
                 (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
             ).percentDiv(liquidationBonus);
         }
+    }
+
+    function _increaseP2PDeltas(address underlying, uint256 amount) internal {
+        Types.Indexes256 memory indexes = _updateIndexes(underlying);
+
+        Types.Market storage market = _market[underlying];
+        Types.Deltas memory deltas = market.deltas;
+        uint256 poolSupplyIndex = indexes.supply.poolIndex;
+        uint256 poolBorrowIndex = indexes.borrow.poolIndex;
+
+        amount = Math.min(
+            amount,
+            Math.min(
+                deltas.p2pSupplyAmount.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                    deltas.p2pSupplyDelta.rayMul(poolSupplyIndex)
+                ),
+                deltas.p2pBorrowAmount.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+                    deltas.p2pBorrowDelta.rayMul(poolBorrowIndex)
+                )
+            )
+        );
+        if (amount == 0) revert Errors.AmountIsZero();
+
+        uint256 newP2PSupplyDelta = deltas.p2pSupplyDelta + amount.rayDiv(poolSupplyIndex);
+        uint256 newP2PBorrowDelta = deltas.p2pBorrowDelta + amount.rayDiv(poolBorrowIndex);
+
+        market.deltas.p2pSupplyDelta = newP2PSupplyDelta;
+        market.deltas.p2pBorrowDelta = newP2PBorrowDelta;
+        emit Events.P2PSupplyDeltaUpdated(underlying, newP2PSupplyDelta);
+        emit Events.P2PBorrowDeltaUpdated(underlying, newP2PBorrowDelta);
+
+        _POOL.borrowFromPool(underlying, amount);
+        _POOL.supplyToPool(underlying, amount);
+
+        emit Events.P2PDeltasIncreased(underlying, amount);
     }
 }

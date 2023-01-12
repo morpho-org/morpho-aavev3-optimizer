@@ -32,4 +32,6 @@ interface IPositionsManager {
         address borrower,
         address liquidator
     ) external returns (uint256 liquidated, uint256 seized);
+
+    function increaseP2PDeltasLogic(address underlying, uint256 amount) external;
 }

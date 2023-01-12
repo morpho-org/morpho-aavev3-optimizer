@@ -202,4 +202,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
             );
         return (vars.amountToLiquidate, vars.amountToSeize);
     }
+
+    function increaseP2PDeltasLogic(address underlying, uint256 amount) external {
+        _increaseP2PDeltas(underlying, amount);
+    }
 }
