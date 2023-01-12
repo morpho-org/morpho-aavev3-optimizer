@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.17;
 
-import {IPool, IPoolAddressesProvider} from "../../src/interfaces/aave/IPool.sol";
+import {IPool, IPoolAddressesProvider} from "src/interfaces/aave/IPool.sol";
 
-import {PoolLib} from "../../src/libraries/PoolLib.sol";
-import {DataTypes} from "../../src/libraries/aave/DataTypes.sol";
+import {PoolLib} from "src/libraries/PoolLib.sol";
+import {DataTypes} from "src/libraries/aave/DataTypes.sol";
 
-import "../helpers/ForkTest.sol";
+import "test/helpers/ForkTest.sol";
 
 contract TestPoolLib is ForkTest {
     using PoolLib for IPool;

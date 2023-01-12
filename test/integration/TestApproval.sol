@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {Errors} from "../src/libraries/Errors.sol";
+import {Errors} from "src/libraries/Errors.sol";
 
-import {Morpho} from "../src/Morpho.sol";
+import {Morpho} from "src/Morpho.sol";
 
-import {SigUtils} from "./helpers/SigUtils.sol";
-import "./helpers/IntegrationTest.sol";
+import {SigUtils} from "test/helpers/SigUtils.sol";
+import "test/helpers/IntegrationTest.sol";
 
 contract TestApproval is IntegrationTest {
     uint256 internal constant OWNER_PK = 0xA11CE;
@@ -24,6 +24,8 @@ contract TestApproval is IntegrationTest {
     }
 
     function testApproveManager(address owner, address manager, bool isAllowed) public {
+        vm.assume(owner != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
+
         vm.prank(owner);
         morpho.approveManager(manager, isAllowed);
         assertEq(morpho.isManaging(owner, manager), isAllowed);
