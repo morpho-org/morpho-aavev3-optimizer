@@ -17,11 +17,13 @@ library Constants {
     bytes32 internal constant BORROWING_MASK = 0x5555555555555555555555555555555555555555555555555555555555555555;
     bytes32 internal constant ONE = 0x0000000000000000000000000000000000000000000000000000000000000001;
 
-    string internal constant name = "Morpho-AaveV3";
-    string internal constant version = "0";
-    bytes32 internal constant DOMAIN_TYPEHASH =
+    string internal constant EIP712_MSG_PREFIX = "\x19\x01";
+    string internal constant EIP712_NAME = "Morpho-AaveV3";
+    string internal constant EIP712_VERSION = "0";
+    bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"); // The EIP-712 typehash for the contract's domain.
-    bytes32 internal constant AUTHORIZATION_TYPEHASH =
+    bytes32 internal constant EIP712_AUTHORIZATION_TYPEHASH =
         keccak256("Authorization(address owner,address manager,bool isAllowed,uint256 nonce,uint256 deadline)"); // The EIP-712 typehash for approveManagerBySig Authorization.
+
     uint256 internal constant MAX_VALID_ECDSA_S = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0; // The highest valid value for s in an ECDSA signature pair (0 < s < secp256k1n ÷ 2 + 1)
 }
