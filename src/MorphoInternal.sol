@@ -61,9 +61,8 @@ abstract contract MorphoInternal is MorphoStorage {
             revert Errors.ExceedsMaxBasisPoints();
         }
 
-        if (!_POOL.getConfiguration(underlying).getActive()) revert Errors.MarketIsNotListedOnAave();
-
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
+        if (!reserveData.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
 
         Types.Market storage market = _market[underlying];
 
