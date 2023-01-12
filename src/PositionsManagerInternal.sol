@@ -22,7 +22,7 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 import {MatchingEngine} from "./MatchingEngine.sol";
 
-import {ERC20} from "@solmate/utils/SafeTransferLib.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 abstract contract PositionsManagerInternal is MatchingEngine {
     using Math for uint256;
@@ -381,7 +381,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             deltas.p2pBorrowAmount -= Math.min(amount.rayDiv(indexes.borrow.p2pIndex), deltas.p2pBorrowAmount);
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
 
-            /// note: Only used in breaking repay. Suppliers should not be able to supply if the pool is supply capped
+            /// Note: Only used in breaking repay. Suppliers should not be able to supply if the pool is supply capped.
             toSupply = _handleSupplyCap(underlying, amount);
         }
 

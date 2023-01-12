@@ -28,7 +28,7 @@ import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 
-import {ERC20} from "@solmate/utils/SafeTransferLib.sol";
+import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 abstract contract MorphoInternal is MorphoStorage {
     using PoolLib for IPool;
