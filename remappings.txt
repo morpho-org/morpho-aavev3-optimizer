@@ -15,4 +15,3 @@ test/=test/
 @aave/periphery-v3/=lib/aave-v3-periphery/
 
 @solmate/=lib/solmate/src/
-solmate/=lib/solmate/
