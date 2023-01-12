@@ -1,0 +1,71 @@
+name: Forge tests
+description: Given a network, compiles the contracts & runs the full forge test suite
+
+inputs:
+  network:
+    description: The network on which to run the forge test suite.
+    required: true
+  codecovToken:
+    description: The Codecov token used to upload coverage report.
+    required: false
+  coverageThreshold:
+    description: The coverage threshold below which to fail the action.
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: yarn
+
+    - name: Install lcov
+      if: ${{ inputs.codecovToken != '' }}
+      run: sudo apt-get install -y lcov
+      shell: bash
+
+    - name: Install Foundry
+      uses: onbjerg/foundry-toolchain@v1
+      with:
+        version: nightly
+
+    - name: Foundry fork cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.foundry/cache
+        key: foundry-${{ hashFiles(format('config/{0}.json', inputs.network)) }} # where fork block numbers & RPC are stored
+
+    - name: Foundry compilation cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          cache
+          out
+        key: ${{ github.base_ref || github.ref_name }}-forge-test-${{ inputs.network }} # always keep compiled contracts from base branch
+
+    - name: Run tests
+      run: make test
+      shell: bash
+      env:
+        NETWORK: ${{ inputs.network }}
+
+    - name: Generate lcov coverage report
+      if: ${{ inputs.codecovToken != '' }}
+      run: make coverage
+      shell: bash
+      env:
+        NETWORK: ${{ inputs.network }}
+
+    - name: Check coverage threshold
+      if: ${{ inputs.coverageThreshold != '' }}
+      run: npx lcov-total lcov.info --gte=${{ inputs.coverageThreshold }}
+      shell: bash
+
+    - name: Upload coverage to Codecov
+      if: ${{ inputs.codecovToken != '' }}
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ inputs.codecovToken }}
+        name: morpho-aave-v3-${{ inputs.network }}
+        files: lcov.info

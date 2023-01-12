@@ -74,4 +74,12 @@ library ReserveConfiguration {
             (dataLocal & ~EMODE_CATEGORY_MASK) >> EMODE_CATEGORY_START_BIT_POSITION
         );
     }
+
+    function getDecimals(DataTypes.ReserveConfigurationMap memory self) internal pure returns (uint256) {
+        return (self.data & ~DECIMALS_MASK) >> RESERVE_DECIMALS_START_BIT_POSITION;
+    }
+
+    function getEModeCategory(DataTypes.ReserveConfigurationMap memory self) internal pure returns (uint256) {
+        return (self.data & ~EMODE_CATEGORY_MASK) >> EMODE_CATEGORY_START_BIT_POSITION;
+    }
 }
