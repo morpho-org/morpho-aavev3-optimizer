@@ -21,10 +21,10 @@ library Errors {
     error BorrowingNotEnabled();
     error PriceOracleSentinelBorrowDisabled();
     error PriceOracleSentinelBorrowPaused();
-    error UnauthorisedBorrow();
+    error UnauthorizedBorrow();
 
-    error WithdrawUnauthorized();
-    error UnauthorisedLiquidate();
+    error UnauthorizedWithdraw();
+    error UnauthorizedLiquidate();
 
     error ExceedsMaxBasisPoints();
     error MarketIsNotListedOnAave();

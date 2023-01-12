@@ -71,9 +71,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
             revert Errors.PriceOracleSentinelBorrowDisabled();
         }
-
-        Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
-        if (values.debt > values.borrowable) revert Errors.UnauthorisedBorrow();
     }
 
     function _validateRepay(address underlying, uint256 amount, address user) internal view {
@@ -103,10 +100,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         Types.Market storage market = _validateInput(underlying, amount, receiver);
         if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
-
-        if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
-            revert Errors.WithdrawUnauthorized();
-        }
     }
 
     function _validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
@@ -143,9 +136,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
                 priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
                     && healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD
             ) {
-                revert Errors.UnauthorisedLiquidate();
+                revert Errors.UnauthorizedLiquidate();
             } else if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
-                revert Errors.UnauthorisedLiquidate();
+                revert Errors.UnauthorizedLiquidate();
             }
 
             closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
