@@ -13,7 +13,7 @@ import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
-import {Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
+import {Permit2Lib} from "./libraries/Permit2Lib.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
