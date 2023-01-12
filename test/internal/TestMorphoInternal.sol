@@ -1,31 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {TestHelpers} from "./helpers/TestHelpers.sol";
-import {TestConfig} from "./helpers/TestConfig.sol";
-
-import {TestSetup} from "./setup/TestSetup.sol";
-import {console2} from "@forge-std/console2.sol";
-
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
-import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
-import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {IPool, IPoolAddressesProvider} from "../src/interfaces/aave/IPool.sol";
 import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
-import {DataTypes} from "../src/libraries/aave/DataTypes.sol";
-import {ReserveConfiguration} from "../src/libraries/aave/ReserveConfiguration.sol";
+import {DataTypes} from "src/libraries/aave/DataTypes.sol";
+import {ReserveConfiguration} from "src/libraries/aave/ReserveConfiguration.sol";
 
-import {MorphoInternal, MorphoStorage} from "../src/MorphoInternal.sol";
-import {Types} from "../src/libraries/Types.sol";
-import {MarketLib} from "../src/libraries/MarketLib.sol";
-import {MarketBalanceLib} from "../src/libraries/MarketBalanceLib.sol";
-import {PoolLib} from "../src/libraries/PoolLib.sol";
+import {MorphoInternal, MorphoStorage} from "src/MorphoInternal.sol";
+import {MarketLib} from "src/libraries/MarketLib.sol";
+import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
+import {PoolLib} from "src/libraries/PoolLib.sol";
 
-contract TestMorphoInternal is TestSetup, MorphoInternal {
+import "test/helpers/InternalTest.sol";
+
+contract TestMorphoInternal is InternalTest, MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using PoolLib for IPool;
@@ -33,15 +24,14 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
     using PercentageMath for uint256;
     using SafeTransferLib for ERC20;
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
-    using TestConfig for TestConfig.Config;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     IPriceOracleGetter internal oracle;
 
-    constructor() TestSetup() MorphoStorage(config.load(vm.envString("NETWORK")).getAddress("addressesProvider")) {}
-
     function setUp() public virtual override {
+        super.setUp();
+
         _defaultMaxLoops = Types.MaxLoops(10, 10, 10, 10);
         _maxSortedUsers = 20;
 
@@ -51,7 +41,6 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         createTestMarket(usdt, 0, 3_333);
         createTestMarket(wNative, 0, 3_333);
 
-        fillBalance(address(this), type(uint256).max);
         ERC20(dai).approve(address(_POOL), type(uint256).max);
         ERC20(wbtc).approve(address(_POOL), type(uint256).max);
         ERC20(usdc).approve(address(_POOL), type(uint256).max);
@@ -458,23 +447,29 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
     }
 
     function testSetPauseStatus() public {
-        Types.PauseStatuses storage pauseStatuses = _market[dai].pauseStatuses;
+        for (uint256 marketIndex; marketIndex < testMarkets.length; ++marketIndex) {
+            _revert();
 
-        assertFalse(pauseStatuses.isSupplyPaused);
-        assertFalse(pauseStatuses.isBorrowPaused);
-        assertFalse(pauseStatuses.isRepayPaused);
-        assertFalse(pauseStatuses.isWithdrawPaused);
-        assertFalse(pauseStatuses.isLiquidateCollateralPaused);
-        assertFalse(pauseStatuses.isLiquidateBorrowPaused);
+            address underlying = testMarkets[marketIndex];
 
-        _setPauseStatus(dai, true);
+            Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
 
-        assertTrue(pauseStatuses.isSupplyPaused);
-        assertTrue(pauseStatuses.isBorrowPaused);
-        assertTrue(pauseStatuses.isRepayPaused);
-        assertTrue(pauseStatuses.isWithdrawPaused);
-        assertTrue(pauseStatuses.isLiquidateCollateralPaused);
-        assertTrue(pauseStatuses.isLiquidateBorrowPaused);
+            assertFalse(pauseStatuses.isSupplyPaused);
+            assertFalse(pauseStatuses.isBorrowPaused);
+            assertFalse(pauseStatuses.isRepayPaused);
+            assertFalse(pauseStatuses.isWithdrawPaused);
+            assertFalse(pauseStatuses.isLiquidateCollateralPaused);
+            assertFalse(pauseStatuses.isLiquidateBorrowPaused);
+
+            _setPauseStatus(underlying, true);
+
+            assertTrue(pauseStatuses.isSupplyPaused);
+            assertTrue(pauseStatuses.isBorrowPaused);
+            assertTrue(pauseStatuses.isRepayPaused);
+            assertTrue(pauseStatuses.isWithdrawPaused);
+            assertTrue(pauseStatuses.isLiquidateCollateralPaused);
+            assertTrue(pauseStatuses.isLiquidateBorrowPaused);
+        }
     }
 
     function testApproveManager(address owner, address manager, bool isAllowed) public {

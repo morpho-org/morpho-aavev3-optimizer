@@ -52,21 +52,13 @@ abstract contract MorphoInternal is MorphoStorage {
 
     /// INTERNAL ///
 
+    function _hashEIP712TypedData(bytes32 structHash) internal view returns (bytes32) {
+        return keccak256(abi.encodePacked(Constants.EIP712_MSG_PREFIX, _DOMAIN_SEPARATOR, structHash));
+    }
+
     function _approveManager(address owner, address manager, bool isAllowed) internal {
         _isManaging[owner][manager] = isAllowed;
         emit Events.ManagerApproval(owner, manager, isAllowed);
-    }
-
-    function _computeDomainSeparator() internal view returns (bytes32) {
-        return keccak256(
-            abi.encode(
-                Constants.DOMAIN_TYPEHASH,
-                keccak256(bytes(Constants.name)),
-                keccak256(bytes(Constants.version)),
-                block.chainid,
-                address(this)
-            )
-        );
     }
 
     function _getUserBalanceFromIndexes(
