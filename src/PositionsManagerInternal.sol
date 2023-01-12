@@ -516,8 +516,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         uint256 totalSupply = ERC20(_market[underlying].aToken).totalSupply();
         if (totalSupply + amount > supplyCap) {
-            _market[underlying].idleSupply += totalSupply + amount - supplyCap;
             toSupply = supplyCap - totalSupply;
+            _market[underlying].idleSupply += amount - toSupply;
         } else {
             toSupply = amount;
         }
