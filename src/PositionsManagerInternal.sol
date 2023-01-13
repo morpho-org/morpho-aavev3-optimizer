@@ -430,7 +430,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             uint256 matchedIdle =
                 Math.min(Math.min(market.idleSupply, amount), vars.inP2P.rayMul(indexes.supply.p2pIndex));
             market.idleSupply -= matchedIdle;
-            vars.inP2P -= matchedIdle.rayDiv(indexes.supply.p2pIndex);
         }
 
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
