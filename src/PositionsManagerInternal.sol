@@ -48,17 +48,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (!(owner == manager || _isManaging[owner][manager])) revert Errors.PermissionDenied();
     }
 
-    function _validateSupply(address underlying, uint256 amount, address user) internal view {
+    function _validateSupplyInput(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
         if (!market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
     }
 
-    function _validateSupplyCollateral(address underlying, uint256 amount, address user) internal view {
+    function _validateSupplyCollateralInput(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
         if (!market.pauseStatuses.isSupplyCollateralPaused) revert Errors.SupplyCollateralIsPaused();
     }
 
-    function _validateBorrow(address underlying, uint256 amount, address borrower) internal view {
+    function _validateBorrowInput(address underlying, uint256 amount, address borrower) internal view {
         _validatePermission(borrower, msg.sender);
 
         Types.Market storage market = _validateInput(underlying, amount, borrower);
@@ -78,12 +78,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
     }
 
-    function _validateRepay(address underlying, uint256 amount, address user) internal view {
-        Types.Market storage market = _validateInput(underlying, amount, user);
-        if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
+    function _validateBorrow(address underlying, uint256 amount, address borrower) internal view {
+        Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
+        if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
     }
 
-    function _validateWithdraw(address underlying, uint256 amount, address supplier, address receiver) internal view {
+    function _validateWithdrawInput(address underlying, uint256 amount, address supplier, address receiver)
+        internal
+        view
+    {
         _validatePermission(supplier, msg.sender);
 
         Types.Market storage market = _validateInput(underlying, amount, receiver);
@@ -97,7 +100,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
     }
 
-    function _validateWithdrawCollateral(address underlying, uint256 amount, address supplier, address receiver)
+    function _validateWithdrawCollateralInput(address underlying, uint256 amount, address supplier, address receiver)
         internal
         view
     {
@@ -105,6 +108,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         Types.Market storage market = _validateInput(underlying, amount, receiver);
         if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
+    }
+
+    function _validateWithdrawCollateral(address underlying, uint256 amount, address supplier) internal view {
+        if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+            revert Errors.UnauthorizedWithdraw();
+        }
+    }
+
+    function _validateRepayInput(address underlying, uint256 amount, address user) internal view {
+        Types.Market storage market = _validateInput(underlying, amount, user);
+        if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
     }
 
     function _validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
