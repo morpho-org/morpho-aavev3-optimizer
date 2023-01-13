@@ -1,31 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {TestHelpers} from "./helpers/TestHelpers.sol";
-import {TestConfig} from "./helpers/TestConfig.sol";
-
-import {TestSetup} from "./setup/TestSetup.sol";
-import {console2} from "@forge-std/console2.sol";
-
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
-import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
-import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {IPool, IPoolAddressesProvider} from "../src/interfaces/aave/IPool.sol";
 import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
-import {DataTypes} from "../src/libraries/aave/DataTypes.sol";
-import {ReserveConfiguration} from "../src/libraries/aave/ReserveConfiguration.sol";
+import {DataTypes} from "src/libraries/aave/DataTypes.sol";
+import {ReserveConfiguration} from "src/libraries/aave/ReserveConfiguration.sol";
 
-import {MorphoInternal, MorphoStorage} from "../src/MorphoInternal.sol";
-import {Types} from "../src/libraries/Types.sol";
-import {MarketLib} from "../src/libraries/MarketLib.sol";
-import {MarketBalanceLib} from "../src/libraries/MarketBalanceLib.sol";
-import {PoolLib} from "../src/libraries/PoolLib.sol";
+import {MorphoInternal, MorphoStorage} from "src/MorphoInternal.sol";
+import {MarketLib} from "src/libraries/MarketLib.sol";
+import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
+import {PoolLib} from "src/libraries/PoolLib.sol";
 
-contract TestMorphoInternal is TestSetup, MorphoInternal {
+import "test/helpers/InternalTest.sol";
+
+contract TestMorphoInternal is InternalTest, MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using PoolLib for IPool;
@@ -33,15 +24,14 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
     using PercentageMath for uint256;
     using SafeTransferLib for ERC20;
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
-    using TestConfig for TestConfig.Config;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     IPriceOracleGetter internal oracle;
 
-    constructor() TestSetup() MorphoStorage(config.load(vm.envString("NETWORK")).getAddress("addressesProvider")) {}
-
     function setUp() public virtual override {
+        super.setUp();
+
         _defaultMaxLoops = Types.MaxLoops(10, 10, 10, 10);
         _maxSortedUsers = 20;
 
@@ -51,7 +41,6 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         createTestMarket(usdt, 0, 3_333);
         createTestMarket(wNative, 0, 3_333);
 
-        fillBalance(address(this), type(uint256).max);
         ERC20(dai).approve(address(_POOL), type(uint256).max);
         ERC20(wbtc).approve(address(_POOL), type(uint256).max);
         ERC20(usdc).approve(address(_POOL), type(uint256).max);
@@ -222,8 +211,10 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         _POOL.setUserUseReserveAsCollateral(dai, false);
 
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
+        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
         (uint256 poolLtv, uint256 poolLt,, uint256 poolDecimals,,) = _POOL.getConfiguration(dai).getParams();
-        (uint256 price, uint256 ltv, uint256 lt, uint256 units) = _assetLiquidityData(dai, oracle, morphoPoolConfig);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), 0, oracle, eModeCategory, morphoPoolConfig);
+        (uint256 price, uint256 ltv, uint256 lt, uint256 units) = _assetLiquidityData(dai, vars);
 
         assertEq(price, oracle.getAssetPrice(dai), "price not equal to oracle price 1");
         assertEq(ltv, 0, "ltv not equal to 0");
@@ -232,8 +223,9 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
 
         _POOL.setUserUseReserveAsCollateral(dai, true);
         morphoPoolConfig = _POOL.getUserConfiguration(address(this));
+        vars.morphoPoolConfig = morphoPoolConfig;
 
-        (price, ltv, lt, units) = _assetLiquidityData(dai, oracle, morphoPoolConfig);
+        (price, ltv, lt, units) = _assetLiquidityData(dai, vars);
 
         assertGt(price, 0, "price not gt 0");
         assertGt(ltv, 0, "ltv not gt 0");
@@ -253,12 +245,13 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         _marketBalances[dai].collateral[address(1)] = amount.rayDivUp(_market[dai].indexes.supply.poolIndex);
 
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
+        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), 0, oracle, eModeCategory, morphoPoolConfig);
 
-        (uint256 collateral, uint256 borrowable, uint256 maxDebt) =
-            _collateralData(dai, Types.LiquidityStackVars(address(1), oracle, morphoPoolConfig), amountWithdrawn);
+        (uint256 collateral, uint256 borrowable, uint256 maxDebt) = _collateralData(dai, vars, amountWithdrawn);
 
         (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
-            _assetLiquidityData(dai, oracle, morphoPoolConfig);
+            _assetLiquidityData(dai, vars);
 
         amountWithdrawn = bound(
             amountWithdrawn,
@@ -286,12 +279,14 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         );
 
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
+        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), 0, oracle, eModeCategory, morphoPoolConfig);
 
         Types.Indexes256 memory indexes = _computeIndexes(dai);
 
-        uint256 debt = _debt(dai, Types.LiquidityStackVars(address(1), oracle, morphoPoolConfig), amountBorrowed);
+        uint256 debt = _debt(dai, vars, amountBorrowed);
 
-        (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(dai, oracle, morphoPoolConfig);
+        (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(dai, vars);
 
         uint256 expectedDebtValue = (_getUserBorrowBalanceFromIndexes(dai, address(1), indexes.borrow) + amountBorrowed)
             * underlyingPrice / tokenUnit;
@@ -308,7 +303,8 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         _userCollaterals[address(1)].add(usdc);
 
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
-        Types.LiquidityStackVars memory vars = Types.LiquidityStackVars(address(1), oracle, morphoPoolConfig);
+        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), 0, oracle, eModeCategory, morphoPoolConfig);
 
         (uint256 collateral, uint256 borrowable, uint256 maxDebt) = _totalCollateralData(dai, vars, 10 ether);
 
@@ -358,7 +354,8 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         _userBorrows[address(1)].add(usdc);
 
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
-        Types.LiquidityStackVars memory vars = Types.LiquidityStackVars(address(1), oracle, morphoPoolConfig);
+        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), 0, oracle, eModeCategory, morphoPoolConfig);
         uint256 debt = _totalDebt(dai, vars, 10 ether);
 
         uint256[3] memory debtSingles = [_debt(dai, vars, 10 ether), _debt(wbtc, vars, 0), _debt(usdc, vars, 0)];
@@ -403,7 +400,8 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
 
         Types.LiquidityData memory liquidityData = _liquidityData(dai, address(1), 10 ether, 10 ether);
-        Types.LiquidityStackVars memory vars = Types.LiquidityStackVars(address(1), oracle, morphoPoolConfig);
+        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), 0, oracle, eModeCategory, morphoPoolConfig);
 
         (uint256 collateral, uint256 borrowable, uint256 maxDebt) = _totalCollateralData(dai, vars, 10 ether);
         uint256 debt = _totalDebt(dai, vars, 10 ether);
@@ -449,23 +447,29 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
     }
 
     function testSetPauseStatus() public {
-        Types.PauseStatuses storage pauseStatuses = _market[dai].pauseStatuses;
+        for (uint256 marketIndex; marketIndex < testMarkets.length; ++marketIndex) {
+            _revert();
 
-        assertFalse(pauseStatuses.isSupplyPaused);
-        assertFalse(pauseStatuses.isBorrowPaused);
-        assertFalse(pauseStatuses.isRepayPaused);
-        assertFalse(pauseStatuses.isWithdrawPaused);
-        assertFalse(pauseStatuses.isLiquidateCollateralPaused);
-        assertFalse(pauseStatuses.isLiquidateBorrowPaused);
+            address underlying = testMarkets[marketIndex];
 
-        _setPauseStatus(dai, true);
+            Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
 
-        assertTrue(pauseStatuses.isSupplyPaused);
-        assertTrue(pauseStatuses.isBorrowPaused);
-        assertTrue(pauseStatuses.isRepayPaused);
-        assertTrue(pauseStatuses.isWithdrawPaused);
-        assertTrue(pauseStatuses.isLiquidateCollateralPaused);
-        assertTrue(pauseStatuses.isLiquidateBorrowPaused);
+            assertFalse(pauseStatuses.isSupplyPaused);
+            assertFalse(pauseStatuses.isBorrowPaused);
+            assertFalse(pauseStatuses.isRepayPaused);
+            assertFalse(pauseStatuses.isWithdrawPaused);
+            assertFalse(pauseStatuses.isLiquidateCollateralPaused);
+            assertFalse(pauseStatuses.isLiquidateBorrowPaused);
+
+            _setPauseStatus(underlying, true);
+
+            assertTrue(pauseStatuses.isSupplyPaused);
+            assertTrue(pauseStatuses.isBorrowPaused);
+            assertTrue(pauseStatuses.isRepayPaused);
+            assertTrue(pauseStatuses.isWithdrawPaused);
+            assertTrue(pauseStatuses.isLiquidateCollateralPaused);
+            assertTrue(pauseStatuses.isLiquidateBorrowPaused);
+        }
     }
 
     function testApproveManager(address owner, address manager, bool isAllowed) public {

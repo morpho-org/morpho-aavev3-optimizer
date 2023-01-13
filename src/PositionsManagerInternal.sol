@@ -22,6 +22,8 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 import {MatchingEngine} from "./MatchingEngine.sol";
 
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+
 abstract contract PositionsManagerInternal is MatchingEngine {
     using Math for uint256;
     using WadRayMath for uint256;
@@ -63,7 +65,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         Types.Market storage market = _validateInput(underlying, amount, borrower);
         if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
-        if (!_POOL.getConfiguration(underlying).getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
+
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+        if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
+
+        uint256 eMode = _POOL.getUserEMode(address(this));
+        if (eMode != 0 && eMode != config.getEModeCategory()) revert Errors.InconsistentEMode();
 
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
         // In response, Morpho mirrors this behavior.
@@ -223,6 +230,18 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
         vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
+        /// Idle borrow ///
+
+        {
+            uint256 idleSupply = market.idleSupply;
+            if (idleSupply > 0) {
+                uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
+                market.idleSupply -= matchedIdle;
+                amount -= matchedIdle;
+                vars.inP2P += matchedIdle.rayDiv(indexes.borrow.p2pIndex);
+            }
+        }
+
         /// Peer-to-peer borrow ///
 
         // Match the peer-to-peer supply delta.
@@ -290,7 +309,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             if (amount == 0) {
                 _updateBorrowerInDS(underlying, user, onPool, inP2P);
-                return (onPool, inP2P, toSupply, toRepay);
+                return (onPool, inP2P, 0, toRepay);
             }
         }
 
@@ -355,7 +374,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             deltas.p2pBorrowAmount -= Math.min(amount.rayDiv(indexes.borrow.p2pIndex), deltas.p2pBorrowAmount);
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
 
-            toSupply = amount;
+            /// Note: Only used in breaking repay. Suppliers should not be able to supply if the pool is supply capped.
+            toSupply = _handleSupplyCap(underlying, amount);
         }
     }
 
@@ -389,6 +409,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         vars.inP2P -= Math.min(vars.inP2P, amount.rayDiv(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
+
+        /// Idle Withdraw ///
+
+        if (amount > 0 && market.idleSupply > 0 && vars.inP2P > 0) {
+            uint256 matchedIdle =
+                Math.min(Math.min(market.idleSupply, amount), vars.inP2P.rayMul(indexes.supply.p2pIndex));
+            market.idleSupply -= matchedIdle;
+        }
+
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
 
         // Reduce the peer-to-peer supply delta.
@@ -442,7 +471,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         amountToLiquidate = maxToLiquidate;
         (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
             _POOL.getConfiguration(underlyingCollateral).getParams();
-        (,,, uint256 borrowTokenUnit,,) = _POOL.getConfiguration(underlyingBorrowed).getParams();
+        uint256 borrowTokenUnit = _POOL.getConfiguration(underlyingBorrowed).getDecimals();
 
         unchecked {
             collateralTokenUnit = 10 ** collateralTokenUnit;
@@ -463,6 +492,20 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             amountToLiquidate = (
                 (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
             ).percentDiv(liquidationBonus);
+        }
+    }
+
+    function _handleSupplyCap(address underlying, uint256 amount) internal returns (uint256 toSupply) {
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+        uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
+        if (supplyCap == 0) return amount;
+
+        uint256 totalSupply = ERC20(_market[underlying].aToken).totalSupply();
+        if (totalSupply + amount > supplyCap) {
+            toSupply = supplyCap - totalSupply;
+            _market[underlying].idleSupply += amount - toSupply;
+        } else {
+            toSupply = amount;
         }
     }
 }
