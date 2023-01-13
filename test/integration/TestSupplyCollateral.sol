@@ -3,17 +3,16 @@ pragma solidity ^0.8.17;
 
 import "test/helpers/IntegrationTest.sol";
 
-contract TestSupply is IntegrationTest {
+contract TestSupplyCollateral is IntegrationTest {
     using WadRayMath for uint256;
 
-    // TODO: reverts with supply cap for now because idle supply not yet implemented
-    function testShouldSupply(uint256 amount) public {
+    function testShouldSupplyCollateral(uint256 amount) public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
             TestMarket memory market = markets[marketIndex];
 
-            // TODO: pause supply collateral (thus we check if supply still works)
+            // TODO: pause supply (thus we check if supplyCollateral still works)
 
             amount = _boundSupply(market, amount);
 
@@ -30,35 +29,35 @@ contract TestSupply is IntegrationTest {
         }
     }
 
-    function testShouldRevertSupplyZero() public {
+    function testShouldRevertSupplyCollateralZero() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user1.supply(markets[marketIndex].underlying, 0);
+            user1.supplyCollateral(markets[marketIndex].underlying, 0);
         }
     }
 
-    function testShouldRevertSupplyOnBehalfZero() public {
+    function testShouldRevertSupplyCollateralOnBehalfZero() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.supply(markets[marketIndex].underlying, 100, address(0));
+            user1.supplyCollateral(markets[marketIndex].underlying, 100, address(0));
         }
     }
 
-    function testShouldRevertSupplyWhenMarketNotCreated() public {
+    function testShouldRevertSupplyCollateralWhenMarketNotCreated() public {
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user1.supply(sAvax, 100);
+        user1.supplyCollateral(sAvax, 100);
     }
 
-    function testShouldRevertSupplyWhenSupplyIsPaused() public {
+    function testShouldRevertSupplyCollateralWhenSupplyCollateralIsPaused() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
             TestMarket memory market = markets[marketIndex];
 
-            morpho.setIsSupplyPaused(market.underlying, true);
+            morpho.setIsSupplyCollateralPaused(market.underlying, true);
 
-            vm.expectRevert(Errors.SupplyIsPaused.selector);
-            user1.supply(market.underlying, 100);
+            vm.expectRevert(Errors.SupplyCollateralIsPaused.selector);
+            user1.supplyCollateral(market.underlying, 100);
         }
     }
 }

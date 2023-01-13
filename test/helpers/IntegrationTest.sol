@@ -15,17 +15,20 @@ import {Morpho} from "../../src/Morpho.sol";
 import "./ForkTest.sol";
 
 contract IntegrationTest is ForkTest {
+    using PercentageMath for uint256;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    uint256 internal constant INITIAL_BALANCE = 1_000_000 ether;
+    uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
+    uint256 internal constant MIN_USD_AMOUNT = 0.001e8; // AaveV3 base currency is USD, 8 decimals on all L2s.
+    uint256 internal constant MAX_USD_AMOUNT = 10_000_000_000e8; // AaveV3 base currency is USD, 8 decimals on all L2s.
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
 
     ProxyAdmin internal proxyAdmin;
 
-    TransparentUpgradeableProxy internal morphoProxy;
     IMorpho internal morphoImpl;
+    TransparentUpgradeableProxy internal morphoProxy;
 
     TestUser internal user1;
     TestUser internal user2;
@@ -37,11 +40,15 @@ contract IntegrationTest is ForkTest {
         address underlying;
         string symbol;
         uint256 decimals;
+        //
         uint256 ltv;
         uint256 lt;
         uint256 liquidationBonus;
+        //
         uint16 reserveFactor;
         uint16 p2pIndexCursor;
+        //
+        uint256 price;
     }
 
     TestMarket[] public markets;
@@ -60,9 +67,17 @@ contract IntegrationTest is ForkTest {
         _initMarket(wbtc, 0, 33_33);
         _initMarket(weth, 0, 33_33);
 
-        user1 = _initUser(string.concat("User1"));
-        user2 = _initUser(string.concat("User2"));
-        user3 = _initUser(string.concat("User3"));
+        user1 = _initUser();
+        user2 = _initUser();
+        user3 = _initUser();
+    }
+
+    function _label() internal override {
+        super._label();
+
+        vm.label(address(user1), "User1");
+        vm.label(address(user2), "User2");
+        vm.label(address(user3), "User3");
     }
 
     function _deploy() internal {
@@ -78,10 +93,9 @@ contract IntegrationTest is ForkTest {
         );
     }
 
-    function _initUser(string memory name) internal returns (TestUser user) {
+    function _initUser() internal returns (TestUser user) {
         user = new TestUser(address(morpho));
 
-        vm.label(address(user), name);
         _setBalances(address(user), INITIAL_BALANCE);
     }
 
@@ -106,7 +120,9 @@ contract IntegrationTest is ForkTest {
             lt: 0,
             liquidationBonus: 0,
             reserveFactor: reserveFactor,
-            p2pIndexCursor: p2pIndexCursor
+            p2pIndexCursor: p2pIndexCursor,
+            // Price is constant, equal to price at fork block number.
+            price: oracle.getAssetPrice(underlying)
         });
 
         (market.ltv, market.lt, market.liquidationBonus, market.decimals,,) = reserve.configuration.getParams();
@@ -114,5 +130,37 @@ contract IntegrationTest is ForkTest {
         markets.push(market);
 
         morpho.createMarket(underlying, reserveFactor, p2pIndexCursor);
+    }
+
+    function _boundSupply(TestMarket memory market, uint256 amount) internal view returns (uint256) {
+        return bound(
+            amount,
+            (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price,
+            // TODO: may need to cap to type(uint96).max
+            (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price
+        );
+    }
+
+    function _boundBorrow(TestMarket memory market, uint256 amount) internal view returns (uint256) {
+        return bound(
+            amount,
+            (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price,
+            // TODO: may need to cap to type(uint96).max / 2 to keep collateral < type(uint96).max
+            Math.min(
+                ERC20(market.underlying).balanceOf(market.aToken),
+                (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price
+            )
+        );
+    }
+
+    function _minimumCollateral(TestMarket memory collateralMarket, TestMarket memory borrowedMarket, uint256 amount)
+        internal
+        pure
+        returns (uint256)
+    {
+        return (
+            (amount * borrowedMarket.price * 10 ** collateralMarket.decimals).percentDiv(collateralMarket.ltv)
+                / (collateralMarket.price * 10 ** borrowedMarket.decimals)
+        );
     }
 }

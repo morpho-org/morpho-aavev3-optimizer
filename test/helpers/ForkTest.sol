@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {IPool, IPoolAddressesProvider} from "../../src/interfaces/aave/IPool.sol";
+import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
 
 import {Types} from "../../src/libraries/Types.sol";
 import {Events} from "../../src/libraries/Events.sol";
@@ -15,6 +16,7 @@ import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {console2} from "@forge-std/console2.sol";
+import {console} from "@forge-std/console.sol";
 import {Test} from "@forge-std/Test.sol";
 
 contract ForkTest is Test {
@@ -40,6 +42,7 @@ contract ForkTest is Test {
     address[] internal testMarkets;
 
     IPool internal pool;
+    IPriceOracleGetter internal oracle;
     IPoolAddressesProvider internal addressesProvider;
 
     uint256 snapshotId = type(uint256).max;
@@ -47,6 +50,7 @@ contract ForkTest is Test {
     constructor() {
         _initConfig();
         _loadConfig();
+        _label();
 
         _setBalances(address(this), type(uint256).max);
     }
@@ -72,6 +76,7 @@ contract ForkTest is Test {
 
         addressesProvider = IPoolAddressesProvider(config.getAddress("addressesProvider"));
         pool = IPool(addressesProvider.getPool());
+        oracle = IPriceOracleGetter(addressesProvider.getPriceOracle());
 
         dai = config.getAddress("DAI");
         frax = config.getAddress("FRAX");
@@ -90,18 +95,38 @@ contract ForkTest is Test {
         testMarkets = config.getTestMarkets();
     }
 
+    function _label() internal virtual {
+        vm.label(address(pool), "Pool");
+        vm.label(address(oracle), "PriceOracle");
+        vm.label(address(addressesProvider), "AddressesProvider");
+
+        vm.label(dai, "DAI");
+        vm.label(frax, "FRAX");
+        vm.label(mai, "MAI");
+        vm.label(usdc, "USDC");
+        vm.label(usdt, "USDT");
+        vm.label(aave, "AAVE");
+        vm.label(btcb, "BTCB");
+        vm.label(link, "LINK");
+        vm.label(sAvax, "sAVAX");
+        vm.label(wavax, "WAVAX");
+        vm.label(wbtc, "WBTC");
+        vm.label(weth, "WETH");
+        vm.label(wNative, "wNative");
+    }
+
     function _setBalances(address user, uint256 balance) internal {
         deal(dai, user, balance);
         deal(frax, user, balance);
         deal(mai, user, balance);
-        deal(usdc, user, balance);
-        deal(usdt, user, balance);
+        deal(usdc, user, balance / 1e6);
+        deal(usdt, user, balance / 1e6);
         deal(aave, user, balance);
-        deal(btcb, user, balance);
+        deal(btcb, user, balance / 1e8);
         deal(link, user, balance);
         deal(sAvax, user, balance);
         deal(wavax, user, balance);
-        deal(wbtc, user, balance);
+        deal(wbtc, user, balance / 1e8);
         deal(weth, user, balance);
         deal(wNative, user, balance);
     }

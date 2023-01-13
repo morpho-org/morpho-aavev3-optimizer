@@ -12,7 +12,7 @@ runs = 16
 test = "test/unit/"
 
 [profile.test-unit.fuzz]
-runs = 4096
+runs = 8192
 
 
 [profile.test-internal]
