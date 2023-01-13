@@ -209,16 +209,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
         vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
-        /// Idle borrow ///
-
-        uint256 idleSupply = market.idleSupply;
-        if (idleSupply > 0) {
-            uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
-            market.idleSupply -= matchedIdle;
-            amount -= matchedIdle;
-            vars.inP2P += matchedIdle.rayDiv(indexes.borrow.p2pIndex);
-        }
-
+        (amount, vars.inP2P) = _borrowIdle(market, amount, vars.inP2P, indexes.borrow.p2pIndex);
         (vars.toWithdraw, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, deltas.supply);
         uint256 toWithdrawSingle;
         (toWithdrawSingle, amount,) = _promotePool(
@@ -254,9 +245,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
         vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
-        /// Pool repay ///
-
-        // Repay borrow on pool.
         (vars.toRepay, amount, vars.onPool) =
             _processPoolAmountSubtraction(amount, vars.onPool, indexes.borrow.poolIndex);
         if (amount == 0) {
@@ -289,6 +277,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.toSupply = _demote(
             underlying, amount, maxLoops, indexes.supply, indexes.borrow, _demoteSuppliers, deltas.supply, deltas.borrow
         );
+        vars.toSupply = _handleSupplyCap(underlying, vars.toSupply);
     }
 
     function _executeWithdraw(
@@ -493,5 +482,19 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         } else {
             toSupply = amount;
         }
+    }
+
+    function _borrowIdle(Types.Market storage market, uint256 amount, uint256 inP2P, uint256 p2pBorrowIndex)
+        internal
+        returns (uint256, uint256)
+    {
+        uint256 idleSupply = market.idleSupply;
+        if (idleSupply > 0) {
+            uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
+            market.idleSupply -= matchedIdle;
+            amount -= matchedIdle;
+            inP2P += matchedIdle.rayDiv(p2pBorrowIndex);
+        }
+        return (amount, inP2P);
     }
 }
