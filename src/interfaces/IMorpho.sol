@@ -15,7 +15,6 @@ interface IMorphoGetters {
     function scaledPoolBorrowBalance(address underlying, address user) external view returns (uint256);
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256);
 
-    function maxSortedUsers() external view returns (uint256);
     function defaultMaxLoops() external view returns (Types.MaxLoops memory);
     function positionsManager() external view returns (address);
     function rewardsManager() external view returns (address);
@@ -32,11 +31,7 @@ interface IMorphoGetters {
 }
 
 interface IMorphoSetters {
-    function initialize(
-        address newPositionsManager,
-        Types.MaxLoops memory newDefaultMaxLoops,
-        uint256 newMaxSortedUsers
-    ) external;
+    function initialize(address newPositionsManager, Types.MaxLoops memory newDefaultMaxLoops) external;
 
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external;
     function increaseP2PDeltas(address underlying, uint256 amount) external;
@@ -53,7 +48,6 @@ interface IMorphoSetters {
     function setIsRepayPaused(address underlying, bool isPaused) external;
     function setIsSupplyPaused(address underlying, bool isPaused) external;
     function setIsWithdrawPaused(address underlying, bool isPaused) external;
-    function setMaxSortedUsers(uint256 newMaxSortedUsers) external;
     function setP2PIndexCursor(address underlying, uint16 p2pIndexCursor) external;
     function setReserveFactor(address underlying, uint16 newReserveFactor) external;
 }

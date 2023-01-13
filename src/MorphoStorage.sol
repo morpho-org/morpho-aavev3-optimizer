@@ -29,7 +29,6 @@ abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
     mapping(address => mapping(address => bool)) public _isManaging; // Whether a user is allowed to borrow or withdraw on behalf of another user. owner => manager => bool
     mapping(address => uint256) public _userNonce; // The nonce of a user. Used to prevent replay attacks.
 
-    uint256 internal _maxSortedUsers; // The max number of users to sort in the data structure.
     Types.MaxLoops internal _defaultMaxLoops;
 
     address internal _positionsManager;

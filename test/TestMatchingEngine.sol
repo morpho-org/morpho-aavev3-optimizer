@@ -35,7 +35,6 @@ contract TestMatchingEngine is TestSetup, MatchingEngine {
                 Types.MarketSideIndexes256(WadRayMath.RAY, WadRayMath.RAY)
             )
         );
-        _maxSortedUsers = 10;
     }
 
     function testPromote(
