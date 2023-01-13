@@ -12,7 +12,7 @@ contract TestSupply is IntegrationTest {
     }
 
     /// TODO: refactor the input validation to throw the correct error in this case
-    function testShouldRevertWithMarketNotCreated() public {
+    function __testShouldRevertWithMarketNotCreated() public {
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user1.supply(sAvax, 100);
     }

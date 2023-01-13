@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
 import {IPool} from "./interfaces/aave/IPool.sol";
+import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
-import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
+import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
+import {Permit2Lib} from "./libraries/Permit2Lib.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
@@ -20,8 +21,9 @@ import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 
 contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     using PoolLib for IPool;
-    using MarketBalanceLib for Types.MarketBalances;
+    using Permit2Lib for ERC20;
     using SafeTransferLib for ERC20;
+    using MarketBalanceLib for Types.MarketBalances;
 
     using WadRayMath for uint256;
     using PercentageMath for uint256;
@@ -40,7 +42,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        ERC20(underlying).safeTransferFrom(from, address(this), amount);
+        ERC20(underlying).transferFrom2(from, address(this), amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
             _executeSupply(underlying, amount, onBehalf, maxLoops, indexes);
@@ -61,7 +63,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        ERC20(underlying).safeTransferFrom(from, address(this), amount);
+        ERC20(underlying).transferFrom2(from, address(this), amount);
 
         _marketBalances[underlying].collateral[onBehalf] += amount.rayDiv(indexes.supply.poolIndex);
 
@@ -150,7 +152,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes.borrow), amount);
 
-        ERC20(underlying).safeTransferFrom(repayer, address(this), amount);
+        ERC20(underlying).transferFrom2(repayer, address(this), amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
             _executeRepay(underlying, amount, onBehalf, _defaultMaxLoops.repay, indexes);
@@ -197,7 +199,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
             underlyingBorrowed, underlyingCollateral, vars.amountToLiquidate, borrower, collateralIndexes.supply
         );
 
-        ERC20(underlyingBorrowed).safeTransferFrom(liquidator, address(this), vars.amountToLiquidate);
+        ERC20(underlyingBorrowed).transferFrom2(liquidator, address(this), vars.amountToLiquidate);
 
         (,, vars.toRepay, vars.toSupply) =
             _executeRepay(underlyingBorrowed, vars.amountToLiquidate, borrower, 0, borrowIndexes);
