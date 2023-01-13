@@ -373,25 +373,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return (toProcess, vars.amount, vars.maxLoops);
     }
 
-    function _updateDeltaP2PAmounts(
-        address underlying,
-        uint256 toRepayOrWithdraw,
-        uint256 p2pIndex,
-        uint256 inP2P,
-        Types.MarketSideDelta storage delta
-    ) internal returns (uint256) {
-        Types.Deltas storage deltas = _market[underlying].deltas;
-        if (toRepayOrWithdraw > 0) {
-            uint256 toProcessP2P = toRepayOrWithdraw.rayDiv(p2pIndex);
-
-            delta.amount += toProcessP2P;
-            inP2P += toProcessP2P;
-
-            emit Events.P2PAmountsUpdated(underlying, deltas.supply.amount, deltas.borrow.amount);
-        }
-        return inP2P;
-    }
-
     function _demoteRoutine(
         address underlying,
         uint256 amount,
@@ -436,6 +417,25 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             emit Events.P2PSupplyDeltaUpdated(underlying, sideDelta.delta);
         }
         return (toProcess, amount);
+    }
+
+    function _updateDeltaP2PAmounts(
+        address underlying,
+        uint256 toRepayOrWithdraw,
+        uint256 p2pIndex,
+        uint256 inP2P,
+        Types.MarketSideDelta storage delta
+    ) internal returns (uint256) {
+        Types.Deltas storage deltas = _market[underlying].deltas;
+        if (toRepayOrWithdraw > 0) {
+            uint256 toProcessP2P = toRepayOrWithdraw.rayDiv(p2pIndex);
+
+            delta.amount += toProcessP2P;
+            inP2P += toProcessP2P;
+
+            emit Events.P2PAmountsUpdated(underlying, deltas.supply.amount, deltas.borrow.amount);
+        }
+        return inP2P;
     }
 
     function _repayFee(address underlying, uint256 amount, Types.Indexes256 memory indexes)
