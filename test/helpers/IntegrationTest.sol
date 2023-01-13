@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.17;
+pragma solidity ^0.8.0;
 
 import {IPositionsManager} from "../../src/interfaces/IPositionsManager.sol";
 import {IMorpho} from "../../src/interfaces/IMorpho.sol";
 
-import {ReserveConfiguration} from "../../src/libraries/aave/ReserveConfiguration.sol";
+import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {TestUser} from "../helpers/TestUser.sol";
@@ -44,11 +44,13 @@ contract IntegrationTest is ForkTest {
         uint256 ltv;
         uint256 lt;
         uint256 liquidationBonus;
+        uint256 supplyCap;
         //
         uint16 reserveFactor;
         uint16 p2pIndexCursor;
         //
         uint256 price;
+        uint256 liquidity;
     }
 
     TestMarket[] public markets;
@@ -119,13 +121,16 @@ contract IntegrationTest is ForkTest {
             ltv: 0,
             lt: 0,
             liquidationBonus: 0,
+            supplyCap: 0,
             reserveFactor: reserveFactor,
             p2pIndexCursor: p2pIndexCursor,
             // Price is constant, equal to price at fork block number.
-            price: oracle.getAssetPrice(underlying)
+            price: oracle.getAssetPrice(underlying),
+            liquidity: IAToken(reserve.aTokenAddress).totalSupply()
         });
 
         (market.ltv, market.lt, market.liquidationBonus, market.decimals,,) = reserve.configuration.getParams();
+        market.supplyCap = reserve.configuration.getSupplyCap() * 10 ** market.decimals;
 
         markets.push(market);
 
@@ -137,7 +142,7 @@ contract IntegrationTest is ForkTest {
             amount,
             (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price,
             // TODO: may need to cap to type(uint96).max
-            (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price
+            Math.min((MAX_USD_AMOUNT * 10 ** market.decimals) / market.price, market.supplyCap - market.liquidity - 1)
         );
     }
 

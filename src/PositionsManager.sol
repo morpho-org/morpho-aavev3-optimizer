@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
-import {IPool} from "./interfaces/aave/IPool.sol";
+import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
