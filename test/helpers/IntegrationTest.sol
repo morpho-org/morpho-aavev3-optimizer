@@ -45,6 +45,7 @@ contract IntegrationTest is ForkTest {
         uint256 lt;
         uint256 liquidationBonus;
         uint256 supplyCap;
+        uint256 borrowCap;
         //
         uint16 reserveFactor;
         uint16 p2pIndexCursor;
@@ -54,12 +55,14 @@ contract IntegrationTest is ForkTest {
     }
 
     TestMarket[] public markets;
+    TestMarket[] public borrowableMarkets;
 
     function setUp() public virtual override {
         super.setUp();
 
         _deploy();
 
+        _initMarket(weth, 0, 33_33);
         _initMarket(dai, 0, 33_33);
         _initMarket(usdc, 0, 33_33);
         _initMarket(usdt, 0, 33_33);
@@ -67,7 +70,6 @@ contract IntegrationTest is ForkTest {
         _initMarket(link, 0, 33_33);
         _initMarket(wavax, 0, 33_33);
         _initMarket(wbtc, 0, 33_33);
-        _initMarket(weth, 0, 33_33);
 
         user1 = _initUser();
         user2 = _initUser();
@@ -122,6 +124,7 @@ contract IntegrationTest is ForkTest {
             lt: 0,
             liquidationBonus: 0,
             supplyCap: 0,
+            borrowCap: 0,
             reserveFactor: reserveFactor,
             p2pIndexCursor: p2pIndexCursor,
             // Price is constant, equal to price at fork block number.
@@ -131,6 +134,7 @@ contract IntegrationTest is ForkTest {
 
         (market.ltv, market.lt, market.liquidationBonus, market.decimals,,) = reserve.configuration.getParams();
         market.supplyCap = reserve.configuration.getSupplyCap() * 10 ** market.decimals;
+        market.borrowCap = reserve.configuration.getBorrowCap() * 10 ** market.decimals;
 
         markets.push(market);
 

@@ -6,14 +6,11 @@ import "test/helpers/IntegrationTest.sol";
 contract TestSupply is IntegrationTest {
     using WadRayMath for uint256;
 
-    function testShouldSupply(uint256 amount) public {
+    function testShouldSupplyPoolOnly(uint256 amount) public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
             TestMarket memory market = markets[marketIndex];
-
-            // Supply should still work if supplyCollateral is paused.
-            morpho.setIsSupplyCollateralPaused(market.underlying, true);
 
             amount = _boundSupply(market, amount);
 
@@ -21,13 +18,39 @@ contract TestSupply is IntegrationTest {
             uint256 supplied = user1.supply(market.underlying, amount);
 
             Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
-            uint256 supplyBalance = morpho.scaledPoolSupplyBalance(market.underlying, address(user1)).rayMul(
-                indexes.supply.poolIndex
-            ) + morpho.scaledP2PSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.p2pIndex);
+            uint256 poolSupply =
+                morpho.scaledPoolSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.poolIndex);
 
-            assertEq(supplied, amount);
-            assertApproxEqAbs(supplyBalance, amount, 1);
-            assertLe(supplyBalance, amount);
+            assertEq(supplied, amount, "supplied != amount");
+            assertLe(poolSupply, amount, "poolSupply > amount");
+            assertApproxEqAbs(poolSupply, amount, 1, "poolSupply != amount");
+        }
+    }
+
+    function testShouldSupplyP2POnly(uint256 amount) public {
+        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+            _revert();
+
+            TestMarket memory market = markets[marketIndex];
+
+            amount = _boundSupply(market, amount);
+
+            user2.approve(market.underlying, amount);
+            user2.supplyCollateral(market.underlying, amount);
+            user2.borrow(market.underlying, amount / 2);
+
+            _forward(1);
+
+            user1.approve(market.underlying, amount / 2);
+            uint256 supplied = user1.supply(market.underlying, amount / 2);
+
+            // Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
+            // uint256 poolSupply =
+            //     morpho.scaledPoolSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.poolIndex);
+
+            // assertEq(supplied, amount, "supplied != amount");
+            // assertLe(poolSupply, amount, "poolSupply > amount");
+            // assertApproxEqAbs(poolSupply, amount, 1, "poolSupply != amount");
         }
     }
 
@@ -75,6 +98,21 @@ contract TestSupply is IntegrationTest {
             user1.approve(market.underlying, allowance);
 
             vm.expectRevert();
+            user1.supply(market.underlying, amount);
+        }
+    }
+
+    function testShouldSupplyWhenSupplyCollateralPaused() public {
+        uint256 amount = 100;
+
+        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+            _revert();
+
+            TestMarket memory market = markets[marketIndex];
+
+            morpho.setIsSupplyCollateralPaused(market.underlying, true);
+
+            user1.approve(market.underlying, amount);
             user1.supply(market.underlying, amount);
         }
     }

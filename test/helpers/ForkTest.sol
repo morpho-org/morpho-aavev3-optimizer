@@ -135,7 +135,7 @@ contract ForkTest is Test {
     /// @dev Rolls & warps `_blocks` blocks forward the blockchain.
     function _forward(uint256 _blocks) internal {
         vm.roll(block.number + _blocks);
-        vm.warp(block.timestamp + _blocks * 12);
+        vm.warp(block.timestamp + _blocks * 12); // Block speed should depend on test network.
     }
 
     /// @dev Reverts the fork to its initial fork state.

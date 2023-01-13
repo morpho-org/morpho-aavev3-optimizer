@@ -71,8 +71,7 @@ contract TestPoolLibRepay is TestPoolLib {
         pool.supplyToPool(dai, MAX_AMOUNT);
         pool.borrowFromPool(dai, MAX_AMOUNT / 2);
 
-        vm.roll(block.number + 1);
-        vm.warp(block.timestamp + 1);
+        _forward(1);
     }
 
     function testRepayToPool(uint256 amount) public {
