@@ -251,6 +251,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
             return vars;
         }
+
         vars.inP2P -= Math.min(vars.inP2P, amount.rayDiv(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
         _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
 
@@ -302,14 +303,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
         vars.inP2P -= Math.min(vars.inP2P, amount.rayDiv(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
-        /// Idle Withdraw ///
-
-        if (amount > 0 && market.idleSupply > 0 && vars.inP2P > 0) {
-            uint256 matchedIdle =
-                Math.min(Math.min(market.idleSupply, amount), vars.inP2P.rayMul(indexes.supply.p2pIndex));
-            market.idleSupply -= matchedIdle;
-        }
-
+        _withdrawIdle(market, amount, vars.inP2P, indexes.supply.p2pIndex);
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
 
         (vars.toWithdraw, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, deltas.supply);
@@ -481,6 +475,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             _market[underlying].idleSupply += amount - toSupply;
         } else {
             toSupply = amount;
+        }
+    }
+
+    function _withdrawIdle(Types.Market storage market, uint256 amount, uint256 inP2P, uint256 p2pSupplyIndex)
+        internal
+    {
+        if (amount > 0 && market.idleSupply > 0 && inP2P > 0) {
+            uint256 matchedIdle = Math.min(Math.min(market.idleSupply, amount), inP2P.rayMul(p2pSupplyIndex));
+            market.idleSupply -= matchedIdle;
         }
     }
 
