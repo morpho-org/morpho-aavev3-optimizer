@@ -104,10 +104,9 @@ library InterestRatesLib {
 
         // Equivalent to:
         // lastP2PIndex * (
-        // p2pGrowthFactor *
-        // (1 - proportionDelta - proportionIdle)
-        // + poolGrowthFactor * proportionDelta + idleGrowthFactor * proportionIdle
-        // )
+        // p2pGrowthFactor * (1 - proportionDelta - proportionIdle) +
+        // poolGrowthFactor * proportionDelta +
+        // idleGrowthFactor * proportionIdle)
         return lastIndexes.p2pIndex.rayMul(
             p2pGrowthFactor.rayMul(WadRayMath.RAY - proportionDelta - proportionIdle)
                 + poolGrowthFactor.rayMul(proportionDelta) + proportionIdle
