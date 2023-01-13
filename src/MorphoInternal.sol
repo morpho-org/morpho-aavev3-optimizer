@@ -338,9 +338,8 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 idleSupply = market.idleSupply;
         if (idleSupply == 0) {
             return 0;
-        } else {
-            uint256 totalP2PSupplied = market.deltas.p2pSupplyAmount.rayMulDown(market.indexes.supply.p2pIndex);
-            return idleSupply.rayDivUp(totalP2PSupplied);
         }
+        uint256 totalP2PSupplied = market.deltas.p2pSupplyAmount.rayMul(market.indexes.supply.p2pIndex);
+        return idleSupply.rayDivUp(totalP2PSupplied);
     }
 }

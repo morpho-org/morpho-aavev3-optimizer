@@ -238,12 +238,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         {
             uint256 idleSupply = market.idleSupply;
             if (idleSupply > 0) {
-                uint256 idleToMatch = Math.min(idleSupply, amount); // In underlying.
-                market.idleSupply -= idleToMatch;
-                amount -= idleToMatch;
-                vars.inP2P += idleToMatch.rayDiv(indexes.borrow.p2pIndex);
+                uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
+                market.idleSupply -= matchedIdle;
+                amount -= matchedIdle;
+                vars.inP2P += matchedIdle.rayDiv(indexes.borrow.p2pIndex);
             }
         }
+
         /// Peer-to-peer borrow ///
 
         // Match the peer-to-peer supply delta.
@@ -424,6 +425,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.inP2P -= Math.min(vars.inP2P, amount.rayDiv(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
         /// Idle Withdraw ///
+
         if (amount > 0 && market.idleSupply > 0 && vars.inP2P > 0) {
             uint256 matchedIdle =
                 Math.min(Math.min(market.idleSupply, amount), vars.inP2P.rayMul(indexes.supply.p2pIndex));
