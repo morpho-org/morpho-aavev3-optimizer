@@ -28,15 +28,15 @@ library InterestRatesLib {
             growthFactors.poolSupplyGrowthFactor,
             growthFactors.p2pSupplyGrowthFactor,
             params.lastSupplyIndexes,
-            params.deltas.p2pSupplyDelta,
-            params.deltas.p2pSupplyAmount
+            params.deltas.supply.delta,
+            params.deltas.supply.amount
         );
         newP2PBorrowIndex = computeP2PIndex(
             growthFactors.poolBorrowGrowthFactor,
             growthFactors.p2pBorrowGrowthFactor,
             params.lastBorrowIndexes,
-            params.deltas.p2pBorrowDelta,
-            params.deltas.p2pBorrowAmount
+            params.deltas.borrow.delta,
+            params.deltas.borrow.amount
         );
     }
 
