@@ -174,7 +174,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.onPool = marketBalances.scaledPoolSupplyBalance(user);
         vars.inP2P = marketBalances.scaledP2PSupplyBalance(user);
 
-        (vars.toRepay, amount) = _matchDelta(underlying, amount, indexes.borrow.poolIndex, deltas.borrow);
+        (vars.toRepay, amount) = _matchDelta(underlying, amount, indexes.borrow.poolIndex, true);
         uint256 toRepayFromPromote;
         (toRepayFromPromote, amount,) = _promoteRoutine(
             Types.PromoteVars({
@@ -210,7 +210,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
         (amount, vars.inP2P) = _borrowIdle(market, amount, vars.inP2P, indexes.borrow.p2pIndex);
-        (vars.toWithdraw, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, deltas.supply);
+        (vars.toWithdraw, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, false);
         uint256 toWithdrawFromPromote;
         (toWithdrawFromPromote, amount,) = _promoteRoutine(
             Types.PromoteVars({
@@ -255,7 +255,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.inP2P -= Math.min(vars.inP2P, amount.rayDiv(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
         _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
 
-        (vars.toRepay, amount) = _matchDelta(underlying, amount, indexes.borrow.poolIndex, deltas.borrow);
+        (vars.toRepay, amount) = _matchDelta(underlying, amount, indexes.borrow.poolIndex, true);
         deltas.borrow.amount -= vars.toRepay.rayDiv(indexes.borrow.p2pIndex);
         emit Events.P2PAmountsUpdated(underlying, deltas.supply.amount, deltas.borrow.amount);
 
@@ -275,9 +275,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         );
         vars.toRepay += toRepayFromPromote;
 
-        vars.toSupply = _demoteRoutine(
-            underlying, amount, maxLoops, indexes.supply, indexes.borrow, _demoteSuppliers, deltas.supply, deltas.borrow
-        );
+        vars.toSupply = _demoteRoutine(underlying, amount, maxLoops, indexes, _demoteSuppliers, deltas, false);
         vars.toSupply = _handleSupplyCap(underlying, vars.toSupply);
     }
 
@@ -306,7 +304,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _withdrawIdle(market, amount, vars.inP2P, indexes.supply.p2pIndex);
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
 
-        (vars.toWithdraw, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, deltas.supply);
+        (vars.toWithdraw, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, false);
         deltas.supply.amount -= vars.toWithdraw.rayDiv(indexes.supply.p2pIndex);
         emit Events.P2PAmountsUpdated(underlying, deltas.supply.amount, deltas.borrow.amount);
 
@@ -324,9 +322,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         );
         vars.toWithdraw += toWithdrawFromPromote;
 
-        vars.toBorrow = _demoteRoutine(
-            underlying, amount, maxLoops, indexes.borrow, indexes.supply, _demoteBorrowers, deltas.borrow, deltas.supply
-        );
+        vars.toBorrow = _demoteRoutine(underlying, amount, maxLoops, indexes, _demoteBorrowers, deltas, true);
     }
 
     function _processPoolAmountAddition(uint256 amount, uint256 onPool, uint256 poolIndex)
@@ -377,20 +373,24 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address underlying,
         uint256 amount,
         uint256 maxLoops,
-        Types.MarketSideIndexes256 memory demotedIndexes,
-        Types.MarketSideIndexes256 memory counterIndexes,
+        Types.Indexes256 memory indexes,
         function(address, uint256, uint256) returns (uint256) demote,
-        Types.MarketSideDelta storage demotedDelta,
-        Types.MarketSideDelta storage counterDelta
+        Types.Deltas storage deltas,
+        bool borrow
     ) internal returns (uint256 toProcess) {
-        Types.Deltas storage deltas = _market[underlying].deltas;
+        Types.MarketSideIndexes256 memory demotedIndexes = borrow ? indexes.borrow : indexes.supply;
+        Types.MarketSideIndexes256 memory counterIndexes = borrow ? indexes.supply : indexes.borrow;
+        Types.MarketSideDelta storage demotedDelta = borrow ? deltas.borrow : deltas.supply;
+        Types.MarketSideDelta storage counterDelta = borrow ? deltas.supply : deltas.borrow;
+
         if (amount > 0) {
             uint256 demoted = demote(underlying, amount, maxLoops);
 
             // Increase the peer-to-peer supply delta.
             if (demoted < amount) {
                 demotedDelta.delta += (amount - demoted).rayDiv(demotedIndexes.poolIndex);
-                emit Events.P2PSupplyDeltaUpdated(underlying, demotedDelta.delta);
+                if (borrow) emit Events.P2PBorrowDeltaUpdated(underlying, demotedDelta.delta);
+                else emit Events.P2PSupplyDeltaUpdated(underlying, demotedDelta.delta);
             }
 
             // Math.min as the last decimal might flip.
@@ -402,10 +402,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
     }
 
-    function _matchDelta(address underlying, uint256 amount, uint256 poolIndex, Types.MarketSideDelta storage sideDelta)
+    function _matchDelta(address underlying, uint256 amount, uint256 poolIndex, bool borrow)
         internal
         returns (uint256, uint256)
     {
+        Types.MarketSideDelta storage sideDelta =
+            borrow ? _market[underlying].deltas.borrow : _market[underlying].deltas.supply;
         uint256 toProcess;
 
         if (sideDelta.delta > 0) {
@@ -414,7 +416,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             sideDelta.delta = sideDelta.delta.zeroFloorSub(amount.rayDiv(poolIndex));
             toProcess = matchedDelta;
             amount -= matchedDelta;
-            emit Events.P2PSupplyDeltaUpdated(underlying, sideDelta.delta);
+            if (borrow) emit Events.P2PBorrowDeltaUpdated(underlying, sideDelta.delta);
+            else emit Events.P2PSupplyDeltaUpdated(underlying, sideDelta.delta);
         }
         return (toProcess, amount);
     }
