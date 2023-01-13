@@ -77,6 +77,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Market storage market = _validateManagerInput(underlying, amount, borrower, receiver);
         if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
 
+        _validatePermission(borrower, msg.sender);
+
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
 
@@ -102,6 +104,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     {
         Types.Market storage market = _validateManagerInput(underlying, amount, supplier, receiver);
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
+
+        _validatePermission(supplier, msg.sender);
 
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
         // For safety concerns and as a withdraw on Morpho can trigger a borrow on pool, Morpho prevents withdrawals in such circumstances.
