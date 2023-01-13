@@ -176,7 +176,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         (vars.toRepay, amount) = _matchDelta(underlying, amount, indexes.borrow.poolIndex, deltas.borrow);
         uint256 toRepaySingle;
-        (toRepaySingle, amount,) = _promotePool(
+        (toRepaySingle, amount,) = _promoteRoutine(
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
@@ -212,7 +212,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         (amount, vars.inP2P) = _borrowIdle(market, amount, vars.inP2P, indexes.borrow.p2pIndex);
         (vars.toWithdraw, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, deltas.supply);
         uint256 toWithdrawSingle;
-        (toWithdrawSingle, amount,) = _promotePool(
+        (toWithdrawSingle, amount,) = _promoteRoutine(
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
@@ -261,7 +261,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         amount = _repayFee(underlying, amount, indexes);
 
         uint256 toRepaySingle;
-        (toRepaySingle, amount, maxLoops) = _promotePool(
+        (toRepaySingle, amount, maxLoops) = _promoteRoutine(
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
@@ -274,7 +274,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         );
         vars.toRepay += toRepaySingle;
 
-        vars.toSupply = _demote(
+        vars.toSupply = _demoteRoutine(
             underlying, amount, maxLoops, indexes.supply, indexes.borrow, _demoteSuppliers, deltas.supply, deltas.borrow
         );
         vars.toSupply = _handleSupplyCap(underlying, vars.toSupply);
@@ -317,7 +317,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         emit Events.P2PAmountsUpdated(underlying, deltas.supply.amount, deltas.borrow.amount);
 
         uint256 toWithdrawSingle;
-        (toWithdrawSingle, amount, maxLoops) = _promotePool(
+        (toWithdrawSingle, amount, maxLoops) = _promoteRoutine(
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
@@ -330,7 +330,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         );
         vars.toWithdraw += toWithdrawSingle;
 
-        vars.toBorrow = _demote(
+        vars.toBorrow = _demoteRoutine(
             underlying, amount, maxLoops, indexes.borrow, indexes.supply, _demoteBorrowers, deltas.borrow, deltas.supply
         );
     }
@@ -362,7 +362,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return (toProcess, amount, onPool);
     }
 
-    function _promotePool(
+    function _promoteRoutine(
         Types.PromoteVars memory vars,
         ThreeHeapOrdering.HeapArray storage heap,
         Types.MarketSideDelta storage promoteSideDelta
@@ -398,7 +398,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return inP2P;
     }
 
-    function _demote(
+    function _demoteRoutine(
         address underlying,
         uint256 amount,
         uint256 maxLoops,
