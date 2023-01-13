@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
+
 import {DataTypes} from "./aave/DataTypes.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 library Types {
     /// NESTED STRUCTS ///
@@ -60,11 +61,11 @@ library Types {
 
     // Contains storage-only dynamic arrays and mappings.
     struct MarketBalances {
-        ThreeHeapOrdering.HeapArray p2pSuppliers; // in scaled unit
-        ThreeHeapOrdering.HeapArray poolSuppliers; // in scaled unit
-        ThreeHeapOrdering.HeapArray p2pBorrowers; // in scaled unit
-        ThreeHeapOrdering.HeapArray poolBorrowers; // in scaled unit
-        mapping(address => uint256) collateral; // in scaled unit
+        LogarithmicBuckets.BucketList p2pSuppliers; // in scaled unit.
+        LogarithmicBuckets.BucketList poolSuppliers; // in scaled unit.
+        LogarithmicBuckets.BucketList p2pBorrowers; // in scaled unit.
+        LogarithmicBuckets.BucketList poolBorrowers; // in scaled unit.
+        mapping(address => uint256) collateral; // in scaled unit.
     }
 
     struct MaxLoops {

@@ -18,7 +18,7 @@ import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
-import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -33,7 +33,7 @@ abstract contract MorphoInternal is MorphoStorage {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
     using UserConfiguration for DataTypes.UserConfigurationMap;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
@@ -212,22 +212,23 @@ abstract contract MorphoInternal is MorphoStorage {
     function _updateInDS(
         address poolToken,
         address user,
-        ThreeHeapOrdering.HeapArray storage marketOnPool,
-        ThreeHeapOrdering.HeapArray storage marketInP2P,
+        LogarithmicBuckets.BucketList storage poolMarket,
+        LogarithmicBuckets.BucketList storage p2pMarket,
         uint256 onPool,
         uint256 inP2P
     ) internal {
-        uint256 formerOnPool = marketOnPool.getValueOf(user);
+        uint256 formerOnPool = poolMarket.getValueOf(user);
+        uint256 formerInP2P = p2pMarket.getValueOf(user);
 
         if (onPool != formerOnPool) {
             if (address(_rewardsManager) != address(0)) {
                 _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
 
-            marketOnPool.update(user, formerOnPool, onPool, _maxSortedUsers);
+            poolMarket.update(user, onPool);
         }
 
-        marketInP2P.update(user, marketInP2P.getValueOf(user), inP2P, _maxSortedUsers);
+        if (inP2P != formerInP2P) p2pMarket.update(user, inP2P);
     }
 
     function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P) internal {

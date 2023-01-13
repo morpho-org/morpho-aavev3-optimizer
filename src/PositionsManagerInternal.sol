@@ -17,7 +17,7 @@ import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
-import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {MatchingEngine} from "./MatchingEngine.sol";
@@ -29,7 +29,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     function _validateInput(address underlying, uint256 amount, address user)
@@ -183,12 +183,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         // Promote pool borrowers.
-        if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolBorrowers.getHead() != address(0)) {
+        if (amount > 0 && !market.pauseStatuses.isP2PDisabled) {
             (uint256 promoted,) = _promoteBorrowers(underlying, amount, maxLoops); // In underlying.
 
-            toRepay += promoted;
-            amount -= promoted;
-            deltas.p2pBorrowAmount += promoted.rayDiv(indexes.borrow.poolIndex);
+            if (promoted > 0) {
+                toRepay += promoted;
+                amount -= promoted;
+                deltas.p2pBorrowAmount += promoted.rayDiv(indexes.borrow.poolIndex);
+            }
         }
 
         if (toRepay > 0) {
@@ -239,15 +241,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         // Promote pool suppliers.
-        if (
-            amount > 0 && !market.pauseStatuses.isP2PDisabled
-                && _marketBalances[underlying].poolSuppliers.getHead() != address(0)
-        ) {
+        if (amount > 0 && !market.pauseStatuses.isP2PDisabled) {
             (uint256 promoted,) = _promoteSuppliers(underlying, amount, maxLoops); // In underlying.
 
-            vars.toWithdraw += promoted;
-            amount -= promoted;
-            deltas.p2pSupplyAmount += promoted.rayDiv(indexes.supply.p2pIndex);
+            if (promoted > 0) {
+                vars.toWithdraw += promoted;
+                amount -= promoted;
+                deltas.p2pSupplyAmount += promoted.rayDiv(indexes.supply.p2pIndex);
+            }
         }
 
         if (vars.toWithdraw > 0) {
@@ -339,11 +340,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Transfer repay ///
 
         // Promote pool borrowers.
-        if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolBorrowers.getHead() != address(0)) {
+        if (amount > 0 && !market.pauseStatuses.isP2PDisabled) {
             (uint256 promoted, uint256 loopsDone) = _promoteBorrowers(underlying, amount, maxLoops);
-            maxLoops -= loopsDone;
-            amount -= promoted;
-            toRepay += promoted;
+            if (promoted > 0) {
+                maxLoops -= loopsDone;
+                amount -= promoted;
+                toRepay += promoted;
+            }
         }
 
         /// Breaking repay ///
@@ -420,11 +423,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Transfer withdraw ///
 
         // Promote pool suppliers.
-        if (amount > 0 && !market.pauseStatuses.isP2PDisabled && marketBalances.poolSuppliers.getHead() != address(0)) {
+        if (amount > 0 && !market.pauseStatuses.isP2PDisabled) {
             (uint256 promoted, uint256 loopsDone) = _promoteSuppliers(underlying, amount, maxLoops);
-            maxLoops -= loopsDone;
-            amount -= promoted;
-            vars.toWithdraw += promoted;
+
+            if (promoted > 0) {
+                maxLoops -= loopsDone;
+                amount -= promoted;
+                vars.toWithdraw += promoted;
+            }
         }
 
         /// Breaking withdraw ///

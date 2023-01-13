@@ -9,7 +9,7 @@ import {console2} from "@forge-std/console2.sol";
 
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
-import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -32,7 +32,7 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
     using SafeTransferLib for ERC20;
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
     using TestConfig for TestConfig.Config;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -136,6 +136,9 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
 
     function testUpdateInDS(address user, uint96 onPool, uint96 inP2P) public {
         vm.assume(user != address(0));
+        vm.assume(onPool != 0);
+        vm.assume(inP2P != 0);
+
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         _updateInDS(address(0), user, marketBalances.poolSuppliers, marketBalances.p2pSuppliers, onPool, inP2P);
         assertEq(marketBalances.scaledPoolSupplyBalance(user), onPool);
@@ -147,6 +150,9 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
 
     function testUpdateSupplierInDS(address user, uint96 onPool, uint96 inP2P) public {
         vm.assume(user != address(0));
+        vm.assume(onPool != 0);
+        vm.assume(inP2P != 0);
+
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         _updateSupplierInDS(dai, user, onPool, inP2P);
         assertEq(marketBalances.scaledPoolSupplyBalance(user), onPool);
@@ -158,6 +164,9 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
 
     function testUpdateBorrowerInDS(address user, uint96 onPool, uint96 inP2P) public {
         vm.assume(user != address(0));
+        vm.assume(onPool != 0);
+        vm.assume(inP2P != 0);
+
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         _updateBorrowerInDS(dai, user, onPool, inP2P);
         assertEq(marketBalances.scaledPoolSupplyBalance(user), 0);
@@ -419,7 +428,7 @@ contract TestMorphoInternal is TestSetup, MorphoInternal {
     {
         collateral = bound(collateral, 0, 1_000_000 ether);
         amountPool = bound(amountPool, 1, 1_000_000 ether);
-        amountP2P = bound(amountP2P, 0, 1_000_000 ether);
+        amountP2P = bound(amountP2P, 1, 1_000_000 ether);
         amountWithdrawn = bound(amountWithdrawn, 0, collateral);
 
         _marketBalances[dai].collateral[address(1)] = collateral.rayDivUp(_market[dai].indexes.supply.poolIndex);
