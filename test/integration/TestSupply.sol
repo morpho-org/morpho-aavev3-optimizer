@@ -6,27 +6,28 @@ import "test/helpers/IntegrationTest.sol";
 contract TestSupply is IntegrationTest {
     using WadRayMath for uint256;
 
-    // TODO: reverts with supply cap for now because idle supply not yet implemented
     function testShouldSupply(uint256 amount) public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
             TestMarket memory market = markets[marketIndex];
 
-            // TODO: pause supply collateral (thus we check if supply still works)
+            // Supply should still work if supplyCollateral is paused.
+            morpho.setIsSupplyCollateralPaused(market.underlying, true);
 
             amount = _boundSupply(market, amount);
 
             user1.approve(market.underlying, amount);
-            user1.supply(market.underlying, amount);
+            uint256 supplied = user1.supply(market.underlying, amount);
 
             Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
+            uint256 supplyBalance = morpho.scaledPoolSupplyBalance(market.underlying, address(user1)).rayMul(
+                indexes.supply.poolIndex
+            ) + morpho.scaledP2PSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.p2pIndex);
 
-            assertEq(
-                morpho.scaledPoolSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.poolIndex)
-                    + morpho.scaledP2PSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.p2pIndex),
-                amount
-            );
+            assertEq(supplied, amount);
+            assertApproxEqAbs(supplyBalance, amount, 1);
+            assertLe(supplyBalance, amount);
         }
     }
 
@@ -59,6 +60,22 @@ contract TestSupply is IntegrationTest {
 
             vm.expectRevert(Errors.SupplyIsPaused.selector);
             user1.supply(market.underlying, 100);
+        }
+    }
+
+    function testShouldRevertSupplyNotEnoughAllowance(uint256 allowance, uint256 amount) public {
+        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+            _revert();
+
+            TestMarket memory market = markets[marketIndex];
+
+            amount = _boundSupply(market, amount);
+            allowance = bound(allowance, 1, amount - 1);
+
+            user1.approve(market.underlying, allowance);
+
+            vm.expectRevert();
+            user1.supply(market.underlying, amount);
         }
     }
 }

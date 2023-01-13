@@ -142,7 +142,7 @@ contract IntegrationTest is ForkTest {
             amount,
             (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price,
             // TODO: may need to cap to type(uint96).max
-            Math.min((MAX_USD_AMOUNT * 10 ** market.decimals) / market.price, market.supplyCap - market.liquidity - 1)
+            Math.min((MAX_USD_AMOUNT * 10 ** market.decimals) / market.price, market.supplyCap - market.liquidity)
         );
     }
 

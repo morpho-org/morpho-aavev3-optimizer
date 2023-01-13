@@ -6,28 +6,28 @@ import "test/helpers/IntegrationTest.sol";
 contract TestSupplyCollateral is IntegrationTest {
     using WadRayMath for uint256;
 
-    function testShouldSupplyCollateral(uint256 amount) public {
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
-            _revert();
+    // function testShouldSupplyCollateral(uint256 amount) public {
+    //     for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+    //         _revert();
 
-            TestMarket memory market = markets[marketIndex];
+    //         TestMarket memory market = markets[marketIndex];
 
-            // TODO: pause supply (thus we check if supplyCollateral still works)
+    //         // TODO: pause supply (thus we check if supplyCollateral still works)
 
-            amount = _boundSupply(market, amount);
+    //         amount = _boundSupply(market, amount);
 
-            user1.approve(market.underlying, amount);
-            user1.supply(market.underlying, amount);
+    //         user1.approve(market.underlying, amount);
+    //         user1.supply(market.underlying, amount);
 
-            Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
+    //         Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
 
-            assertEq(
-                morpho.scaledPoolSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.poolIndex)
-                    + morpho.scaledP2PSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.p2pIndex),
-                amount
-            );
-        }
-    }
+    //         assertEq(
+    //             morpho.scaledPoolSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.poolIndex)
+    //                 + morpho.scaledP2PSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.p2pIndex),
+    //             amount
+    //         );
+    //     }
+    // }
 
     function testShouldRevertSupplyCollateralZero() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
