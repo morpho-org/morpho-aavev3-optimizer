@@ -57,6 +57,8 @@ library Types {
         uint16 p2pIndexCursor; // 16 bits
         // SLOT 8
         address aToken; // 160 bits
+        // SLOT 9
+        uint256 idleSupply; // 256 bits
     }
 
     // Contains storage-only dynamic arrays and mappings.
@@ -92,6 +94,7 @@ library Types {
         uint256 reserveFactor; // The reserve factor percentage (10 000 = 100%).
         uint256 p2pIndexCursor; // The peer-to-peer index cursor (10 000 = 100%).
         Deltas deltas; // The deltas and peer-to-peer amounts.
+        uint256 proportionIdle; // In ray.
     }
 
     struct GrowthFactors {
@@ -109,6 +112,12 @@ library Types {
     struct Indexes256 {
         MarketSideIndexes256 supply;
         MarketSideIndexes256 borrow;
+    }
+
+    struct Signature {
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
     }
 
     struct MatchingEngineVars {

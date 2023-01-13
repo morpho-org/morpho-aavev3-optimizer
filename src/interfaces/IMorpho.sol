@@ -67,9 +67,7 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
         address onBehalf,
         uint256 maxLoops,
         uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        Types.Signature calldata signature
     ) external returns (uint256 supplied);
     function supplyCollateral(address underlying, uint256 amount, address onBehalf)
         external
@@ -79,9 +77,7 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
         uint256 amount,
         address onBehalf,
         uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        Types.Signature calldata signature
     ) external returns (uint256 supplied);
 
     function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
@@ -97,9 +93,7 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
         address onBehalf,
         uint256 maxLoops,
         uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        Types.Signature calldata signature
     ) external returns (uint256 repaid);
 
     function withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
@@ -116,9 +110,7 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
         bool isAllowed,
         uint256 nonce,
         uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        Types.Signature calldata signature
     ) external;
 
     function liquidate(address underlyingBorrowed, address underlyingCollateral, address user, uint256 amount)
