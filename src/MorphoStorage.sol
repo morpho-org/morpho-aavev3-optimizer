@@ -18,6 +18,7 @@ abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
 
     IPool internal immutable _POOL;
     IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER;
+    bytes32 internal immutable _DOMAIN_SEPARATOR;
 
     /// STORAGE ///
 
@@ -43,5 +44,15 @@ abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
 
         _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
         _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
+
+        _DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                Constants.EIP712_DOMAIN_TYPEHASH,
+                keccak256(bytes(Constants.EIP712_NAME)),
+                keccak256(bytes(Constants.EIP712_VERSION)),
+                block.chainid,
+                address(this)
+            )
+        );
     }
 }

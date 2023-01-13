@@ -1,13 +1,32 @@
 [profile.default]
-fs_permissions = [{ access = "read", path = "./"}]
 names = true
 sizes = true
 libs = ["node_modules", "lib"]
+fs_permissions = [{ access = "read", path = "./config/"}]
 
 [fuzz]
 runs = 16
 
-[profile.ci.fuzz]
+
+[profile.test-unit]
+test = "test/unit/"
+
+[profile.test-unit.fuzz]
+runs = 4096
+
+
+[profile.test-internal]
+test = "test/internal/"
+
+[profile.test-internal.fuzz]
+runs = 128
+
+
+[profile.test-integration]
+test = "test/integration/"
+
+[profile.test-integration.fuzz]
 runs = 512
+
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

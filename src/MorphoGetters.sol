@@ -22,7 +22,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     }
 
     function DOMAIN_SEPARATOR() external view returns (bytes32) {
-        return _computeDomainSeparator();
+        return _DOMAIN_SEPARATOR;
     }
 
     function market(address underlying) external view returns (Types.Market memory) {

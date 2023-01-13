@@ -6,6 +6,8 @@ import {Types} from "../libraries/Types.sol";
 interface IMorphoGetters {
     function POOL() external view returns (address);
     function ADDRESSES_PROVIDER() external view returns (address);
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+
     function market(address underlying) external view returns (Types.Market memory);
     function marketsCreated() external view returns (address[] memory);
 
@@ -14,6 +16,9 @@ interface IMorphoGetters {
     function scaledP2PSupplyBalance(address underlying, address user) external view returns (uint256);
     function scaledPoolBorrowBalance(address underlying, address user) external view returns (uint256);
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256);
+
+    function isManaging(address owner, address manager) external view returns (bool);
+    function userNonce(address user) external view returns (uint256);
 
     function defaultMaxLoops() external view returns (Types.MaxLoops memory);
     function positionsManager() external view returns (address);
