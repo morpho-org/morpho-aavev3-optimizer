@@ -250,6 +250,8 @@ abstract contract MorphoInternal is MorphoStorage {
             onPool,
             inP2P
         );
+        if (onPool == 0 && inP2P == 0) _userBorrows[user].remove(underlying);
+        else _userBorrows[user].add(underlying);
     }
 
     function _setPauseStatus(address underlying, bool isPaused) internal {

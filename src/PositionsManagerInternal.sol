@@ -168,8 +168,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         onPool = marketBalances.scaledPoolSupplyBalance(user);
         inP2P = marketBalances.scaledP2PSupplyBalance(user);
 
-        _userCollaterals[user].add(underlying);
-
         /// Peer-to-peer supply ///
 
         // Match the peer-to-peer borrow delta.
@@ -222,7 +220,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Deltas storage deltas = market.deltas;
 
-        _userBorrows[user].add(underlying);
         vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
         vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
@@ -293,11 +290,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             if (amount == 0) {
                 _updateBorrowerInDS(underlying, user, onPool, inP2P);
-
-                if (inP2P == 0 && onPool == 0) {
-                    _userBorrows[user].remove(underlying);
-                }
-
                 return (onPool, inP2P, toSupply, toRepay);
             }
         }
@@ -365,8 +357,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             toSupply = amount;
         }
-
-        if (inP2P == 0 && onPool == 0) _userBorrows[user].remove(underlying);
     }
 
     function _executeWithdraw(
@@ -393,10 +383,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             if (amount == 0) {
                 _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
-
-                if (vars.inP2P == 0 && vars.onPool == 0) {
-                    _userCollaterals[user].remove(underlying);
-                }
 
                 return vars;
             }
@@ -444,8 +430,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
             vars.toBorrow = amount;
         }
-
-        if (vars.inP2P == 0 && vars.onPool == 0) _userCollaterals[user].remove(underlying);
     }
 
     function _calculateAmountToSeize(

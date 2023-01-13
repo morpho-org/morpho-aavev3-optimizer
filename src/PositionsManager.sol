@@ -61,6 +61,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         ERC20(underlying).safeTransferFrom(from, address(this), amount);
 
         _marketBalances[underlying].collateral[onBehalf] += amount.rayDiv(indexes.supply.poolIndex);
+        _userCollaterals[onBehalf].add(underlying);
 
         _POOL.supplyToPool(underlying, amount);
 
@@ -114,7 +115,9 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, indexes.supply.poolIndex), amount);
         _validateWithdrawCollateral(underlying, amount, supplier, receiver);
 
-        _marketBalances[underlying].collateral[supplier] -= amount.rayDiv(indexes.supply.poolIndex);
+        uint256 newBalance = _marketBalances[underlying].collateral[supplier] - amount.rayDiv(indexes.supply.poolIndex);
+        _marketBalances[underlying].collateral[supplier] = newBalance;
+        if (newBalance == 0) _userCollaterals[user].remove(underlying);
 
         _POOL.withdrawFromPool(underlying, _market[underlying].aToken, amount);
         ERC20(underlying).safeTransfer(receiver, amount);
