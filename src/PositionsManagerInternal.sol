@@ -22,6 +22,8 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 import {MatchingEngine} from "./MatchingEngine.sol";
 
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+
 abstract contract PositionsManagerInternal is MatchingEngine {
     using Math for uint256;
     using WadRayMath for uint256;
@@ -63,7 +65,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         Types.Market storage market = _validateInput(underlying, amount, borrower);
         if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
-        if (!_POOL.getConfiguration(underlying).getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
+
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+        if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
+
+        uint256 eMode = _POOL.getUserEMode(address(this));
+        if (eMode != 0 && eMode != config.getEModeCategory()) revert Errors.InconsistentEMode();
 
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
         // In response, Morpho mirrors this behavior.
@@ -195,11 +202,22 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (Types.WithdrawBorrowVars memory vars) {
+        Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        Types.Deltas storage deltas = _market[underlying].deltas;
+        Types.Deltas storage deltas = market.deltas;
 
         vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
         vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
+
+        /// Idle borrow ///
+
+        uint256 idleSupply = market.idleSupply;
+        if (idleSupply > 0) {
+            uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
+            market.idleSupply -= matchedIdle;
+            amount -= matchedIdle;
+            vars.inP2P += matchedIdle.rayDiv(indexes.borrow.p2pIndex);
+        }
 
         (vars.toWithdraw, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, deltas.supply);
         uint256 toWithdrawSingle;
@@ -280,8 +298,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (Types.WithdrawBorrowVars memory vars) {
+        Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        Types.Deltas storage deltas = _market[underlying].deltas;
+        Types.Deltas storage deltas = market.deltas;
 
         vars.onPool = marketBalances.scaledPoolSupplyBalance(user);
         vars.inP2P = marketBalances.scaledP2PSupplyBalance(user);
@@ -293,6 +312,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             return vars;
         }
         vars.inP2P -= Math.min(vars.inP2P, amount.rayDiv(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
+
+        /// Idle Withdraw ///
+
+        if (amount > 0 && market.idleSupply > 0 && vars.inP2P > 0) {
+            uint256 matchedIdle =
+                Math.min(Math.min(market.idleSupply, amount), vars.inP2P.rayMul(indexes.supply.p2pIndex));
+            market.idleSupply -= matchedIdle;
+        }
+
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
 
         (vars.toWithdraw, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, deltas.supply);
@@ -451,5 +479,19 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             }
         }
         return amount;
+    }
+
+    function _handleSupplyCap(address underlying, uint256 amount) internal returns (uint256 toSupply) {
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+        uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
+        if (supplyCap == 0) return amount;
+
+        uint256 totalSupply = ERC20(_market[underlying].aToken).totalSupply();
+        if (totalSupply + amount > supplyCap) {
+            toSupply = supplyCap - totalSupply;
+            _market[underlying].idleSupply += amount - toSupply;
+        } else {
+            toSupply = amount;
+        }
     }
 }

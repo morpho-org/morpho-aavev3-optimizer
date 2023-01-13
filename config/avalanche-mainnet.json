@@ -1,6 +1,6 @@
 {
     "usesRpcPrefix": false,
-    "rpc": "https://api.avax.network/ext/bc/C/rpc",
+    "rpc": "https://avalanche-mainnet.infura.io/v3/4d3eaa358c4841e78cb1032d4f6d8726",
     "chainId": 43114,
     "testBlock": 24437213,
     "testMarkets": [

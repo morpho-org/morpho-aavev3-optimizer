@@ -29,14 +29,16 @@ library InterestRatesLib {
             growthFactors.p2pSupplyGrowthFactor,
             params.lastSupplyIndexes,
             params.deltas.supply.delta,
-            params.deltas.supply.amount
+            params.deltas.supply.amount,
+            params.proportionIdle
         );
         newP2PBorrowIndex = computeP2PIndex(
             growthFactors.poolBorrowGrowthFactor,
             growthFactors.p2pBorrowGrowthFactor,
             params.lastBorrowIndexes,
             params.deltas.borrow.delta,
-            params.deltas.borrow.amount
+            params.deltas.borrow.amount,
+            0
         );
     }
 
@@ -88,18 +90,26 @@ library InterestRatesLib {
         uint256 p2pGrowthFactor,
         Types.MarketSideIndexes256 memory lastIndexes,
         uint256 p2pDelta,
-        uint256 p2pAmount
+        uint256 p2pAmount,
+        uint256 proportionIdle
     ) internal pure returns (uint256) {
         if (p2pAmount == 0 || p2pDelta == 0) {
             return lastIndexes.p2pIndex.rayMul(p2pGrowthFactor);
         }
 
-        uint256 shareOfTheDelta = Math.min(
+        uint256 proportionDelta = Math.min(
             p2pDelta.rayMul(lastIndexes.poolIndex).rayDivUp(p2pAmount.rayMul(lastIndexes.p2pIndex)),
-            WadRayMath.RAY // To avoid shareOfTheDelta > 1 with rounding errors.
+            WadRayMath.RAY - proportionIdle // To avoid proportionDelta + proportionIdle > 1 with rounding errors.
         ); // In ray.
 
-        return
-            lastIndexes.p2pIndex.rayMul(WadRayMath.rayWeightedAvg(p2pGrowthFactor, poolGrowthFactor, shareOfTheDelta));
+        // Equivalent to:
+        // lastP2PIndex * (
+        // p2pGrowthFactor * (1 - proportionDelta - proportionIdle) +
+        // poolGrowthFactor * proportionDelta +
+        // idleGrowthFactor * proportionIdle)
+        return lastIndexes.p2pIndex.rayMul(
+            p2pGrowthFactor.rayMul(WadRayMath.RAY - proportionDelta - proportionIdle)
+                + poolGrowthFactor.rayMul(proportionDelta) + proportionIdle
+        );
     }
 }

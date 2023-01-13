@@ -50,6 +50,8 @@ interface IPool {
 
     function setUserUseReserveAsCollateral(address asset, bool useAsCollateral) external;
 
+    function setUserEMode(uint8 categoryId) external;
+
     function getUserAccountData(address user)
         external
         view
@@ -71,6 +73,10 @@ interface IPool {
     function getReserveNormalizedVariableDebt(address asset) external view returns (uint256);
 
     function getReserveData(address asset) external view returns (DataTypes.ReserveData memory);
+
+    function getEModeCategoryData(uint8 id) external view returns (DataTypes.EModeCategory memory);
+
+    function getUserEMode(address user) external view returns (uint256);
 
     function ADDRESSES_PROVIDER() external view returns (IPoolAddressesProvider);
 }

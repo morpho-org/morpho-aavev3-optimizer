@@ -49,73 +49,11 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external onlyOwner {
-        if (underlying == address(0)) revert Errors.AddressIsZero();
-        if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR || reserveFactor > PercentageMath.PERCENTAGE_FACTOR) {
-            revert Errors.ExceedsMaxBasisPoints();
-        }
-
-        if (!_POOL.getConfiguration(underlying).getActive()) revert Errors.MarketIsNotListedOnAave();
-
-        DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
-
-        Types.Market storage market = _market[underlying];
-
-        if (market.isCreated()) revert Errors.MarketAlreadyCreated();
-
-        Types.Indexes256 memory indexes;
-        indexes.supply.p2pIndex = WadRayMath.RAY;
-        indexes.borrow.p2pIndex = WadRayMath.RAY;
-        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
-
-        market.setIndexes(indexes);
-        market.lastUpdateTimestamp = uint32(block.timestamp);
-
-        market.underlying = underlying;
-        market.aToken = reserveData.aTokenAddress;
-        market.variableDebtToken = reserveData.variableDebtTokenAddress;
-        market.reserveFactor = reserveFactor;
-        market.p2pIndexCursor = p2pIndexCursor;
-
-        _marketsCreated.push(underlying);
-
-        ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
-
-        emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
+        _createMarket(underlying, reserveFactor, p2pIndexCursor);
     }
 
     function increaseP2PDeltas(address underlying, uint256 amount) external onlyOwner isMarketCreated(underlying) {
-        Types.Indexes256 memory indexes = _updateIndexes(underlying);
-
-        Types.Market storage market = _market[underlying];
-        Types.Deltas memory deltas = market.deltas;
-        uint256 poolSupplyIndex = indexes.supply.poolIndex;
-        uint256 poolBorrowIndex = indexes.borrow.poolIndex;
-
-        amount = Math.min(
-            amount,
-            Math.min(
-                deltas.supply.amount.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                    deltas.supply.delta.rayMul(poolSupplyIndex)
-                ),
-                deltas.borrow.amount.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                    deltas.borrow.delta.rayMul(poolBorrowIndex)
-                )
-            )
-        );
-        if (amount == 0) revert Errors.AmountIsZero();
-
-        uint256 newP2PSupplyDelta = deltas.supply.delta + amount.rayDiv(poolSupplyIndex);
-        uint256 newP2PBorrowDelta = deltas.borrow.delta + amount.rayDiv(poolBorrowIndex);
-
-        market.deltas.supply.delta = newP2PSupplyDelta;
-        market.deltas.borrow.delta = newP2PBorrowDelta;
-        emit Events.P2PSupplyDeltaUpdated(underlying, newP2PSupplyDelta);
-        emit Events.P2PBorrowDeltaUpdated(underlying, newP2PBorrowDelta);
-
-        _POOL.borrowFromPool(underlying, amount);
-        _POOL.supplyToPool(underlying, amount);
-
-        emit Events.P2PDeltasIncreased(underlying, amount);
+        _increaseP2PDeltas(underlying, amount);
     }
 
     function setMaxSortedUsers(uint256 newMaxSortedUsers) external onlyOwner {
@@ -224,5 +162,10 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     function setIsDeprecated(address underlying, bool isDeprecated) external onlyOwner isMarketCreated(underlying) {
         _market[underlying].pauseStatuses.isDeprecated = isDeprecated;
         emit Events.IsDeprecatedSet(underlying, isDeprecated);
+    }
+
+    function setEMode(uint8 categoryId) external onlyOwner {
+        _POOL.setUserEMode(categoryId);
+        emit Events.EModeSet(categoryId);
     }
 }

@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import "../../src/interfaces/aave/IPool.sol";
-
-import "../../src/Morpho.sol";
+import {IPool} from "../../src/interfaces/aave/IPool.sol";
+import {IMorpho} from "../../src/interfaces/IMorpho.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-contract User {
+contract TestUser {
     using SafeTransferLib for ERC20;
 
-    Morpho internal morpho;
+    IMorpho internal morpho;
     IPool internal pool;
 
     uint256 internal constant DEFAULT_MAX_LOOPS = 10;
 
-    constructor(Morpho _morpho) {
-        setMorphoAddresses(_morpho);
+    constructor(address _morpho) {
+        morpho = IMorpho(_morpho);
+        pool = IPool(morpho.POOL());
     }
 
     receive() external payable {}
@@ -117,10 +117,5 @@ contract User {
         external
     {
         morpho.liquidate(underlyingBorrowed, underlyingCollateral, borrower, amount);
-    }
-
-    function setMorphoAddresses(Morpho _morpho) public {
-        morpho = _morpho;
-        pool = IPool(_morpho.POOL());
     }
 }

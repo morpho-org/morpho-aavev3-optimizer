@@ -15,3 +15,7 @@ node_modules/
 
 # IDE
 .vscode
+
+# coverage
+coverage
+lcov.info
