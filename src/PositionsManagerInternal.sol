@@ -175,8 +175,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.inP2P = marketBalances.scaledP2PSupplyBalance(user);
 
         (vars.toRepay, amount) = _matchDelta(underlying, amount, indexes.borrow.poolIndex, deltas.borrow);
-        uint256 toRepaySingle;
-        (toRepaySingle, amount,) = _promoteRoutine(
+        uint256 toRepayFromPromote;
+        (toRepayFromPromote, amount,) = _promoteRoutine(
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
@@ -187,8 +187,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             _marketBalances[underlying].poolBorrowers,
             deltas.borrow
         );
-        vars.toRepay += toRepaySingle;
-        deltas.borrow.amount += toRepaySingle;
+        vars.toRepay += toRepayFromPromote;
+        deltas.borrow.amount += toRepayFromPromote;
         vars.inP2P =
             _updateDeltaP2PAmounts(underlying, vars.toRepay, indexes.supply.p2pIndex, vars.inP2P, deltas.supply);
         (vars.toSupply, vars.onPool) = _processPoolAmountAddition(amount, vars.onPool, indexes.supply.poolIndex);
@@ -211,8 +211,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         (amount, vars.inP2P) = _borrowIdle(market, amount, vars.inP2P, indexes.borrow.p2pIndex);
         (vars.toWithdraw, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, deltas.supply);
-        uint256 toWithdrawSingle;
-        (toWithdrawSingle, amount,) = _promoteRoutine(
+        uint256 toWithdrawFromPromote;
+        (toWithdrawFromPromote, amount,) = _promoteRoutine(
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
@@ -223,8 +223,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             _marketBalances[underlying].poolSuppliers,
             deltas.supply
         );
-        vars.toWithdraw += toWithdrawSingle;
-        deltas.supply.amount += toWithdrawSingle;
+        vars.toWithdraw += toWithdrawFromPromote;
+        deltas.supply.amount += toWithdrawFromPromote;
         vars.inP2P =
             _updateDeltaP2PAmounts(underlying, vars.toWithdraw, indexes.borrow.p2pIndex, vars.inP2P, deltas.borrow);
         (vars.toBorrow, vars.onPool) = _processPoolAmountAddition(amount, vars.onPool, indexes.borrow.poolIndex);
@@ -261,8 +261,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         amount = _repayFee(underlying, amount, indexes);
 
-        uint256 toRepaySingle;
-        (toRepaySingle, amount, maxLoops) = _promoteRoutine(
+        uint256 toRepayFromPromote;
+        (toRepayFromPromote, amount, maxLoops) = _promoteRoutine(
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
@@ -273,7 +273,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             _marketBalances[underlying].poolBorrowers,
             _market[underlying].deltas.borrow
         );
-        vars.toRepay += toRepaySingle;
+        vars.toRepay += toRepayFromPromote;
 
         vars.toSupply = _demoteRoutine(
             underlying, amount, maxLoops, indexes.supply, indexes.borrow, _demoteSuppliers, deltas.supply, deltas.borrow
@@ -310,8 +310,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         deltas.supply.amount -= vars.toWithdraw.rayDiv(indexes.supply.p2pIndex);
         emit Events.P2PAmountsUpdated(underlying, deltas.supply.amount, deltas.borrow.amount);
 
-        uint256 toWithdrawSingle;
-        (toWithdrawSingle, amount, maxLoops) = _promoteRoutine(
+        uint256 toWithdrawFromPromote;
+        (toWithdrawFromPromote, amount, maxLoops) = _promoteRoutine(
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
@@ -322,7 +322,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             _marketBalances[underlying].poolSuppliers,
             _market[underlying].deltas.supply
         );
-        vars.toWithdraw += toWithdrawSingle;
+        vars.toWithdraw += toWithdrawFromPromote;
 
         vars.toBorrow = _demoteRoutine(
             underlying, amount, maxLoops, indexes.borrow, indexes.supply, _demoteBorrowers, deltas.borrow, deltas.supply
