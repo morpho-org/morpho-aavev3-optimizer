@@ -73,32 +73,28 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return _borrow(underlying, amount, onBehalf, receiver, maxLoops);
     }
 
-    function repay(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
-        external
-        returns (uint256 repaid)
-    {
-        return _repay(underlying, amount, msg.sender, onBehalf, maxLoops);
+    function repay(address underlying, uint256 amount, address onBehalf) external returns (uint256 repaid) {
+        return _repay(underlying, amount, msg.sender, onBehalf);
     }
 
     function repayWithPermit(
         address underlying,
         uint256 amount,
         address onBehalf,
-        uint256 maxLoops,
         uint256 deadline,
         uint8 v,
         bytes32 r,
         bytes32 s
     ) external returns (uint256 repaid) {
         ERC20(underlying).permit(msg.sender, address(this), amount, deadline, v, r, s);
-        return _repay(underlying, amount, msg.sender, onBehalf, maxLoops);
+        return _repay(underlying, amount, msg.sender, onBehalf);
     }
 
-    function withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
+    function withdraw(address underlying, uint256 amount, address onBehalf, address receiver)
         external
         returns (uint256 withdrawn)
     {
-        return _withdraw(underlying, amount, onBehalf, receiver, maxLoops);
+        return _withdraw(underlying, amount, onBehalf, receiver);
     }
 
     function withdrawCollateral(address underlying, uint256 amount, address onBehalf, address receiver)
@@ -205,25 +201,23 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
-    function _repay(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)
+    function _repay(address underlying, uint256 amount, address from, address onBehalf)
         internal
         returns (uint256 repaid)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeWithSelector(IPositionsManager.repayLogic.selector, underlying, amount, from, onBehalf, maxLoops)
+            abi.encodeWithSelector(IPositionsManager.repayLogic.selector, underlying, amount, from, onBehalf)
         );
 
         return (abi.decode(returnData, (uint256)));
     }
 
-    function _withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
+    function _withdraw(address underlying, uint256 amount, address onBehalf, address receiver)
         internal
         returns (uint256 withdrawn)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeWithSelector(
-                IPositionsManager.withdrawLogic.selector, underlying, amount, onBehalf, receiver, maxLoops
-            )
+            abi.encodeWithSelector(IPositionsManager.withdrawLogic.selector, underlying, amount, onBehalf, receiver)
         );
 
         return (abi.decode(returnData, (uint256)));

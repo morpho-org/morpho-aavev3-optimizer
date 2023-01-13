@@ -32,6 +32,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
+    function _validatePermission(address owner, address manager) internal view {
+        if (!(owner == manager || _isManaging[owner][manager])) revert Errors.PermissionDenied();
+    }
+
     function _validateInput(address underlying, uint256 amount, address user)
         internal
         view
@@ -44,24 +48,33 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (!market.isCreated()) revert Errors.MarketNotCreated();
     }
 
-    function _validatePermission(address owner, address manager) internal view {
-        if (!(owner == manager || _isManaging[owner][manager])) revert Errors.PermissionDenied();
+    function _validateManagerInput(address underlying, uint256 amount, address onBehalf, address receiver)
+        internal
+        view
+        returns (Types.Market storage market)
+    {
+        if (onBehalf == address(0)) revert Errors.AddressIsZero();
+
+        market = _validateInput(underlying, amount, receiver);
+
+        _validatePermission(onBehalf, msg.sender);
     }
 
     function _validateSupplyInput(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
-        if (!market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
+        if (market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
     }
 
     function _validateSupplyCollateralInput(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
-        if (!market.pauseStatuses.isSupplyCollateralPaused) revert Errors.SupplyCollateralIsPaused();
+        if (market.pauseStatuses.isSupplyCollateralPaused) revert Errors.SupplyCollateralIsPaused();
     }
 
-    function _validateBorrowInput(address underlying, uint256 amount, address borrower) internal view {
-        _validatePermission(borrower, msg.sender);
-
-        Types.Market storage market = _validateInput(underlying, amount, borrower);
+    function _validateBorrowInput(address underlying, uint256 amount, address borrower, address receiver)
+        internal
+        view
+    {
+        Types.Market storage market = _validateManagerInput(underlying, amount, borrower, receiver);
         if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
 
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
@@ -87,9 +100,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         internal
         view
     {
-        _validatePermission(supplier, msg.sender);
-
-        Types.Market storage market = _validateInput(underlying, amount, receiver);
+        Types.Market storage market = _validateManagerInput(underlying, amount, supplier, receiver);
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
 
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
@@ -104,9 +115,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         internal
         view
     {
-        _validatePermission(supplier, msg.sender);
-
-        Types.Market storage market = _validateInput(underlying, amount, receiver);
+        Types.Market storage market = _validateManagerInput(underlying, amount, supplier, receiver);
         if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
     }
 
