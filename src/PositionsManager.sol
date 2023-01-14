@@ -15,6 +15,7 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {Permit2Lib} from "./libraries/Permit2Lib.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
@@ -24,6 +25,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     using Permit2Lib for ERC20;
     using SafeTransferLib for ERC20;
     using MarketBalanceLib for Types.MarketBalances;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     using WadRayMath for uint256;
     using PercentageMath for uint256;
@@ -66,6 +68,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         ERC20(underlying).transferFrom2(from, address(this), amount);
 
         _marketBalances[underlying].collateral[onBehalf] += amount.rayDiv(indexes.supply.poolIndex);
+        _userCollaterals[onBehalf].add(underlying);
 
         _POOL.supplyToPool(underlying, amount);
 
@@ -131,7 +134,9 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         // The following check requires storage indexes to be up-to-date.
         _validateWithdrawCollateral(underlying, amount, supplier);
 
-        _marketBalances[underlying].collateral[supplier] -= amount.rayDiv(indexes.supply.poolIndex);
+        uint256 newBalance = _marketBalances[underlying].collateral[supplier] - amount.rayDiv(indexes.supply.poolIndex);
+        _marketBalances[underlying].collateral[supplier] = newBalance;
+        if (newBalance == 0) _userCollaterals[supplier].remove(underlying);
 
         _POOL.withdrawFromPool(underlying, _market[underlying].aToken, amount);
         ERC20(underlying).safeTransfer(receiver, amount);
