@@ -165,12 +165,6 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         return amount;
     }
 
-    struct LiquidateVars {
-        uint256 closeFactor;
-        uint256 amountToLiquidate;
-        uint256 amountToSeize;
-    }
-
     function liquidateLogic(
         address underlyingBorrowed,
         address underlyingCollateral,
@@ -178,7 +172,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         address borrower,
         address liquidator
     ) external returns (uint256 liquidated, uint256 seized) {
-        LiquidateVars memory vars;
+        Types.LiquidateVars memory vars;
 
         Types.Indexes256 memory borrowIndexes = _updateIndexes(underlyingBorrowed);
         Types.Indexes256 memory collateralIndexes = _updateIndexes(underlyingCollateral);
