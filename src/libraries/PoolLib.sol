@@ -40,7 +40,6 @@ library PoolLib {
         view
         returns (uint256 poolSupplyIndex, uint256 poolBorrowIndex)
     {
-        // TODO: Take into account IBT.
         poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
         poolBorrowIndex = pool.getReserveNormalizedVariableDebt(underlying);
     }
