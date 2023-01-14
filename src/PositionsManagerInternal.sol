@@ -195,10 +195,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             deltas.borrow
         );
         vars.toRepay += toRepayFromPromote;
-        deltas.borrow.amount += toRepayFromPromote;
+        deltas.borrow.totalScaledP2P += toRepayFromPromote;
         vars.inP2P =
             _updateDeltaP2PAmounts(underlying, vars.toRepay, indexes.supply.p2pIndex, vars.inP2P, deltas.supply);
-        (vars.toSupply, vars.onPool) = _processPoolAmountAddition(amount, vars.onPool, indexes.supply.poolIndex);
+        (vars.toSupply, vars.onPool) = _addToPool(amount, vars.onPool, indexes.supply.poolIndex);
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
     }
 
@@ -231,10 +231,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             deltas.supply
         );
         vars.toWithdraw += toWithdrawFromPromote;
-        deltas.supply.amount += toWithdrawFromPromote;
+        deltas.supply.totalScaledP2P += toWithdrawFromPromote;
         vars.inP2P =
             _updateDeltaP2PAmounts(underlying, vars.toWithdraw, indexes.borrow.p2pIndex, vars.inP2P, deltas.borrow);
-        (vars.toBorrow, vars.onPool) = _processPoolAmountAddition(amount, vars.onPool, indexes.borrow.poolIndex);
+        (vars.toBorrow, vars.onPool) = _addToPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
         _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
     }
@@ -252,8 +252,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
         vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
-        (vars.toRepay, amount, vars.onPool) =
-            _processPoolAmountSubtraction(amount, vars.onPool, indexes.borrow.poolIndex);
+        (vars.toRepay, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.borrow.poolIndex);
         if (amount == 0) {
             _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
             return vars;
@@ -263,8 +262,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
 
         (vars.toRepay, amount) = _matchDelta(underlying, amount, indexes.borrow.poolIndex, true);
-        deltas.borrow.amount -= vars.toRepay.rayDiv(indexes.borrow.p2pIndex);
-        emit Events.P2PAmountsUpdated(underlying, deltas.supply.amount, deltas.borrow.amount);
+        deltas.borrow.totalScaledP2P -= vars.toRepay.rayDiv(indexes.borrow.p2pIndex);
+        emit Events.P2PAmountsUpdated(underlying, deltas.supply.totalScaledP2P, deltas.borrow.totalScaledP2P);
 
         amount = _repayFee(underlying, amount, indexes);
 
@@ -300,8 +299,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.onPool = marketBalances.scaledPoolSupplyBalance(user);
         vars.inP2P = marketBalances.scaledP2PSupplyBalance(user);
 
-        (vars.toWithdraw, amount, vars.onPool) =
-            _processPoolAmountSubtraction(amount, vars.onPool, indexes.supply.poolIndex);
+        (vars.toWithdraw, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.supply.poolIndex);
         if (amount == 0) {
             _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
             return vars;
@@ -312,8 +310,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
 
         (vars.toWithdraw, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, false);
-        deltas.supply.amount -= vars.toWithdraw.rayDiv(indexes.supply.p2pIndex);
-        emit Events.P2PAmountsUpdated(underlying, deltas.supply.amount, deltas.borrow.amount);
+        deltas.supply.totalScaledP2P -= vars.toWithdraw.rayDiv(indexes.supply.p2pIndex);
+        emit Events.P2PAmountsUpdated(underlying, deltas.supply.totalScaledP2P, deltas.borrow.totalScaledP2P);
 
         uint256 toWithdrawFromPromote;
         (toWithdrawFromPromote, amount, maxLoops) = _promoteRoutine(
@@ -332,11 +330,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.toBorrow = _demoteRoutine(underlying, amount, maxLoops, indexes, _demoteBorrowers, deltas, true);
     }
 
-    function _processPoolAmountAddition(uint256 amount, uint256 onPool, uint256 poolIndex)
-        internal
-        pure
-        returns (uint256, uint256)
-    {
+    function _addToPool(uint256 amount, uint256 onPool, uint256 poolIndex) internal pure returns (uint256, uint256) {
         uint256 toProcess;
         if (amount > 0) {
             onPool += amount.rayDiv(poolIndex); // In scaled balance.
@@ -345,7 +339,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return (toProcess, onPool);
     }
 
-    function _processPoolAmountSubtraction(uint256 amount, uint256 onPool, uint256 poolIndex)
+    function _subFromPool(uint256 amount, uint256 onPool, uint256 poolIndex)
         internal
         pure
         returns (uint256, uint256, uint256)
@@ -362,7 +356,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _promoteRoutine(
         Types.PromoteVars memory vars,
         ThreeHeapOrdering.HeapArray storage heap,
-        Types.MarketSideDelta storage promoteSideDelta
+        Types.MarketSideDelta storage promotedDelta
     ) internal returns (uint256, uint256, uint256) {
         uint256 toProcess;
         if (vars.amount > 0 && !_market[vars.underlying].pauseStatuses.isP2PDisabled && heap.getHead() != address(0)) {
@@ -370,7 +364,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             toProcess = promoted;
             vars.amount -= promoted;
-            promoteSideDelta.amount += promoted.rayDiv(vars.poolIndex);
+            promotedDelta.totalScaledP2P += promoted.rayDiv(vars.poolIndex);
             vars.maxLoops -= loopsDone;
         }
         return (toProcess, vars.amount, vars.maxLoops);
@@ -401,9 +395,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             }
 
             // Math.min as the last decimal might flip.
-            demotedDelta.amount -= Math.min(demoted.rayDiv(demotedIndexes.p2pIndex), demotedDelta.amount);
-            counterDelta.amount -= Math.min(amount.rayDiv(counterIndexes.p2pIndex), counterDelta.amount);
-            emit Events.P2PAmountsUpdated(underlying, deltas.supply.amount, deltas.borrow.amount);
+            demotedDelta.totalScaledP2P -=
+                Math.min(demoted.rayDiv(demotedIndexes.p2pIndex), demotedDelta.totalScaledP2P);
+            counterDelta.totalScaledP2P -= Math.min(amount.rayDiv(counterIndexes.p2pIndex), counterDelta.totalScaledP2P);
+            emit Events.P2PAmountsUpdated(underlying, deltas.supply.totalScaledP2P, deltas.borrow.totalScaledP2P);
 
             toProcess = amount;
         }
@@ -434,16 +429,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 toRepayOrWithdraw,
         uint256 p2pIndex,
         uint256 inP2P,
-        Types.MarketSideDelta storage delta
+        Types.MarketSideDelta storage marketSideDelta
     ) internal returns (uint256) {
         Types.Deltas storage deltas = _market[underlying].deltas;
         if (toRepayOrWithdraw > 0) {
             uint256 toProcessP2P = toRepayOrWithdraw.rayDiv(p2pIndex);
 
-            delta.amount += toProcessP2P;
+            marketSideDelta.totalScaledP2P += toProcessP2P;
             inP2P += toProcessP2P;
 
-            emit Events.P2PAmountsUpdated(underlying, deltas.supply.amount, deltas.borrow.amount);
+            emit Events.P2PAmountsUpdated(underlying, deltas.supply.totalScaledP2P, deltas.borrow.totalScaledP2P);
         }
         return inP2P;
     }
@@ -455,11 +450,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Deltas storage deltas = _market[underlying].deltas;
         // Repay the fee.
         if (amount > 0) {
-            // Fee = (borrow.amount - borrow.delta) - (supply.amount - supply.delta).
+            // Fee = (borrow.totalScaledP2P - borrow.delta) - (supply.totalScaledP2P - supply.delta).
             // No need to subtract borrow.delta as it is zero.
             uint256 feeToRepay = Math.zeroFloorSub(
-                deltas.borrow.amount.rayMul(indexes.borrow.p2pIndex),
-                deltas.supply.amount.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                deltas.borrow.totalScaledP2P.rayMul(indexes.borrow.p2pIndex),
+                deltas.supply.totalScaledP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
                     deltas.supply.delta.rayMul(indexes.supply.poolIndex)
                 )
             );
@@ -467,8 +462,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             if (feeToRepay > 0) {
                 feeToRepay = Math.min(feeToRepay, amount);
                 amount -= feeToRepay;
-                deltas.borrow.amount -= feeToRepay.rayDiv(indexes.borrow.p2pIndex);
-                emit Events.P2PAmountsUpdated(underlying, deltas.supply.amount, deltas.borrow.amount);
+                deltas.borrow.totalScaledP2P -= feeToRepay.rayDiv(indexes.borrow.p2pIndex);
+                emit Events.P2PAmountsUpdated(underlying, deltas.supply.totalScaledP2P, deltas.borrow.totalScaledP2P);
             }
         }
         return amount;

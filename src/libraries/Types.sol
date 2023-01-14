@@ -10,7 +10,7 @@ library Types {
 
     struct MarketSideDelta {
         uint256 delta;
-        uint256 amount;
+        uint256 totalScaledP2P;
     }
 
     struct Deltas {

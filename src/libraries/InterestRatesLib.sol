@@ -29,7 +29,7 @@ library InterestRatesLib {
             growthFactors.p2pSupplyGrowthFactor,
             params.lastSupplyIndexes,
             params.deltas.supply.delta,
-            params.deltas.supply.amount,
+            params.deltas.supply.totalScaledP2P,
             params.proportionIdle
         );
         newP2PBorrowIndex = computeP2PIndex(
@@ -37,7 +37,7 @@ library InterestRatesLib {
             growthFactors.p2pBorrowGrowthFactor,
             params.lastBorrowIndexes,
             params.deltas.borrow.delta,
-            params.deltas.borrow.amount,
+            params.deltas.borrow.totalScaledP2P,
             0
         );
     }

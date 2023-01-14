@@ -102,10 +102,10 @@ abstract contract MorphoInternal is MorphoStorage {
         amount = Math.min(
             amount,
             Math.min(
-                deltas.supply.amount.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                deltas.supply.totalScaledP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
                     deltas.supply.delta.rayMul(poolSupplyIndex)
                 ),
-                deltas.borrow.amount.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+                deltas.borrow.totalScaledP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
                     deltas.borrow.delta.rayMul(poolBorrowIndex)
                 )
             )
@@ -439,7 +439,7 @@ abstract contract MorphoInternal is MorphoStorage {
         if (idleSupply == 0) {
             return 0;
         }
-        uint256 totalP2PSupplied = market.deltas.supply.amount.rayMul(market.indexes.supply.p2pIndex);
+        uint256 totalP2PSupplied = market.deltas.supply.totalScaledP2P.rayMul(market.indexes.supply.p2pIndex);
         return idleSupply.rayDivUp(totalP2PSupplied);
     }
 }
