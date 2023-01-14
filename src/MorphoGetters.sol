@@ -60,20 +60,20 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     }
 
     function supplyBalance(address underlying, address user) external view returns (uint256) {
-        Types.MarketSideIndexes256 memory indexes = _market[underlying].getSupplyIndexes();
-        return _marketBalances[underlying].scaledPoolSupplyBalance(user).rayMul(indexes.poolIndex)
-            + _marketBalances[underlying].scaledP2PSupplyBalance(user).rayMul(indexes.p2pIndex);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
+        return _marketBalances[underlying].scaledPoolSupplyBalance(user).rayMul(indexes.supply.poolIndex)
+            + _marketBalances[underlying].scaledP2PSupplyBalance(user).rayMul(indexes.supply.p2pIndex);
     }
 
     function borrowBalance(address underlying, address user) external view returns (uint256) {
-        Types.MarketSideIndexes256 memory indexes = _market[underlying].getBorrowIndexes();
-        return _marketBalances[underlying].scaledPoolBorrowBalance(user).rayMul(indexes.poolIndex)
-            + _marketBalances[underlying].scaledP2PBorrowBalance(user).rayMul(indexes.p2pIndex);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
+        return _marketBalances[underlying].scaledPoolBorrowBalance(user).rayMul(indexes.borrow.poolIndex)
+            + _marketBalances[underlying].scaledP2PBorrowBalance(user).rayMul(indexes.borrow.p2pIndex);
     }
 
     function collateralBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledCollateralBalance(user).rayMul(
-            _market[underlying].indexes.supply.poolIndex
+            _POOL.getReserveNormalizedIncome(underlying)
         );
     }
 
