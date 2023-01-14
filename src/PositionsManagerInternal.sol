@@ -330,15 +330,23 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.toBorrow = _demoteRoutine(underlying, amount, maxLoops, indexes, _demoteBorrowers, deltas, true);
     }
 
+    /// @notice Given variables from a market side, calculates the amount to supply/borrow and a new on pool amount.
+    /// @param amount The amount to supply/borrow.
+    /// @param onPool The current user's scaled on pool balance.
+    /// @param poolIndex The current pool index.
+    /// @return The amount to supply/borrow and the new on pool amount.
     function _addToPool(uint256 amount, uint256 onPool, uint256 poolIndex) internal pure returns (uint256, uint256) {
-        uint256 toProcess;
         if (amount > 0) {
             onPool += amount.rayDiv(poolIndex); // In scaled balance.
-            toProcess = amount;
         }
-        return (toProcess, onPool);
+        return (amount, onPool);
     }
 
+    /// @notice Given variables from a market side, calculates the amount to repay/withdraw, the amount left to process, and a new on pool amount.
+    /// @param amount The amount to repay/withdraw.
+    /// @param onPool The current user's scaled on pool balance.
+    /// @param poolIndex The current pool index.
+    /// @return The amount to repay/withdraw, the amount left to process, and the new on pool amount.
     function _subFromPool(uint256 amount, uint256 onPool, uint256 poolIndex)
         internal
         pure
@@ -353,6 +361,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return (toProcess, amount, onPool);
     }
 
+    /// @notice Given variables from a market side, promotes users and calculates the amount to repay/withdraw from promote,
+    ///         the amount left to process, and the number of loops left. Updates the market side delta accordingly.
+    /// @param vars The variables for promotion.
+    /// @param heap The heap to promote.
+    /// @param promotedDelta The market side delta to update.
+    /// @return The amount to repay/withdraw from promote, the amount left to process, and the number of loops left.
     function _promoteRoutine(
         Types.PromoteVars memory vars,
         ThreeHeapOrdering.HeapArray storage heap,
@@ -370,6 +384,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return (toProcess, vars.amount, vars.maxLoops);
     }
 
+    /// @notice Given variables from a market side, demotes users and calculates the amount to supply/borrow from demote.
+    ///         Updates the market side delta accordingly.
+    /// @param underlying The underlying address.
+    /// @param amount The amount to supply/borrow.
+    /// @param maxLoops The maximum number of loops to run.
+    /// @param indexes The current indexes.
+    /// @param demote The demote function.
+    /// @param deltas The market side deltas to update.
+    /// @param borrow Whether the market side is borrow.
+    /// @return toProcess The amount to supply/borrow from demote.
     function _demoteRoutine(
         address underlying,
         uint256 amount,
@@ -404,6 +428,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
     }
 
+    /// @notice Given variables from a market side, matches the delta and calculates the amount to supply/borrow from delta.
+    ///         Updates the market side delta accordingly.
+    /// @param underlying The underlying address.
+    /// @param amount The amount to supply/borrow.
+    /// @param poolIndex The current pool index.
+    /// @param borrow Whether the market side is borrow.
+    /// @return The amount to repay/withdraw and the amount left to process.
     function _matchDelta(address underlying, uint256 amount, uint256 poolIndex, bool borrow)
         internal
         returns (uint256, uint256)
@@ -424,6 +455,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return (toProcess, amount);
     }
 
+    /// @notice Updates the delta and p2p amounts for a repay or withdraw after a promotion.
+    /// @param underlying The underlying address.
+    /// @param toRepayOrWithdraw The amount to repay/withdraw.
+    /// @param p2pIndex The current p2p index.
+    /// @param inP2P The amount in p2p.
+    /// @param marketSideDelta The market side delta to update.
+    /// @return The new amount in p2p.
     function _updateDeltaP2PAmounts(
         address underlying,
         uint256 toRepayOrWithdraw,
@@ -443,6 +481,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return inP2P;
     }
 
+    /// @notice Calculates a new amount accounting for any fee required to be deducted by the delta.
+    /// @param underlying The underlying address.
+    /// @param amount The amount to repay/withdraw.
+    /// @param indexes The current indexes.
+    /// @return The new amount left to process.
     function _repayFee(address underlying, uint256 amount, Types.Indexes256 memory indexes)
         internal
         returns (uint256)
@@ -469,6 +512,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return amount;
     }
 
+    /// @notice Adds to idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
+    /// @param underlying The underlying address.
+    /// @param amount The amount to repay. (by supplying on pool)
+    /// @return toSupply The new amount to supply.
     function _handleSupplyCap(address underlying, uint256 amount) internal returns (uint256 toSupply) {
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
@@ -483,6 +530,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
     }
 
+    /// @notice Withdraws idle supply.
+    /// @param market The market storage.
+    /// @param amount The amount to withdraw.
+    /// @param inP2P The user's amount in p2p.
+    /// @param p2pSupplyIndex The current p2p supply index.
     function _withdrawIdle(Types.Market storage market, uint256 amount, uint256 inP2P, uint256 p2pSupplyIndex)
         internal
     {
@@ -492,6 +544,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
     }
 
+    /// @notice Borrows idle supply and returns an updated p2p balance.
+    /// @param market The market storage.
+    /// @param amount The amount to borrow.
+    /// @param inP2P The user's amount in p2p.
+    /// @param p2pBorrowIndex The current p2p borrow index.
+    /// @return The amount left to process, and the updated p2p amount of the user.
     function _borrowIdle(Types.Market storage market, uint256 amount, uint256 inP2P, uint256 p2pBorrowIndex)
         internal
         returns (uint256, uint256)
