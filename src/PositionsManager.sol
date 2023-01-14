@@ -26,6 +26,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     using SafeTransferLib for ERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
     using MarketBalanceLib for Types.MarketBalances;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     using WadRayMath for uint256;
     using PercentageMath for uint256;
@@ -40,8 +41,9 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256 supplied)
     {
+        _validateSupplyInput(underlying, amount, onBehalf);
+
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        _validateSupply(underlying, amount, onBehalf);
 
         ERC20(underlying).transferFrom2(from, address(this), amount);
 
@@ -58,8 +60,9 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256 supplied)
     {
+        _validateSupplyCollateralInput(underlying, amount, onBehalf);
+
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        _validateSupplyCollateral(underlying, amount, onBehalf);
 
         ERC20(underlying).transferFrom2(from, address(this), amount);
 
@@ -71,6 +74,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         emit Events.CollateralSupplied(
             from, onBehalf, underlying, amount, _marketBalances[underlying].collateral[onBehalf]
             );
+
         return amount;
     }
 
@@ -78,7 +82,11 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256 borrowed)
     {
+        _validateBorrowInput(underlying, amount, borrower);
+
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
+
+        // The following check requires storage indexes to be up-to-date.
         _validateBorrow(underlying, amount, borrower);
 
         Types.WithdrawBorrowVars memory vars = _executeBorrow(underlying, amount, borrower, maxLoops, indexes);
@@ -88,6 +96,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         ERC20(underlying).safeTransfer(receiver, amount);
 
         emit Events.Borrowed(borrower, underlying, amount, vars.onPool, vars.inP2P);
+
         return amount;
     }
 
@@ -95,9 +104,10 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256 withdrawn)
     {
+        _validateWithdrawInput(underlying, amount, supplier, receiver);
+
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.supply), amount);
-        _validateWithdraw(underlying, amount, supplier, receiver);
 
         Types.WithdrawBorrowVars memory vars =
             _executeWithdraw(underlying, amount, supplier, _defaultMaxLoops.withdraw, indexes);
@@ -107,6 +117,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         ERC20(underlying).safeTransfer(receiver, amount);
 
         emit Events.Withdrawn(supplier, receiver, underlying, amount, vars.onPool, vars.inP2P);
+
         return amount;
     }
 
@@ -116,12 +127,13 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, indexes.supply.poolIndex), amount);
-        _validateWithdrawCollateral(underlying, amount, supplier, receiver);
 
-        _marketBalances[underlying].collateral[supplier] -= amount.rayDiv(indexes.supply.poolIndex);
-        if (_marketBalances[underlying].collateral[supplier] == 0) {
-            _userCollaterals[supplier].remove(underlying);
-        }
+        // The following check requires storage indexes to be up-to-date.
+        _validateWithdrawCollateral(underlying, amount, supplier);
+
+        uint256 newBalance = _marketBalances[underlying].collateral[supplier] - amount.rayDiv(indexes.supply.poolIndex);
+        _marketBalances[underlying].collateral[supplier] = newBalance;
+        if (newBalance == 0) _userCollaterals[supplier].remove(underlying);
 
         _POOL.withdrawFromPool(underlying, _market[underlying].aToken, amount);
         ERC20(underlying).safeTransfer(receiver, amount);
@@ -129,6 +141,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         emit Events.CollateralWithdrawn(
             supplier, receiver, underlying, amount, _marketBalances[underlying].collateral[supplier]
             );
+
         return amount;
     }
 
@@ -136,9 +149,10 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256 repaid)
     {
+        _validateRepayInput(underlying, amount, onBehalf);
+
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes.borrow), amount);
-        _validateRepay(underlying, amount, onBehalf);
 
         ERC20(underlying).transferFrom2(repayer, address(this), amount);
 
