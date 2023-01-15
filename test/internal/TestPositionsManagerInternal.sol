@@ -233,6 +233,10 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         _validateWithdrawCollateralInput(underlying, amount, supplier, receiver);
     }
 
+    function validateWithdrawCollateral(address underlying, uint256 amount, address supplier) external view {
+        _validateWithdrawCollateral(underlying, amount, supplier);
+    }
+
     function testValidateWithdrawCollateralShouldRevertIfWithdrawCollateralPaused() public {
         _market[dai].pauseStatuses.isWithdrawCollateralPaused = true;
 
@@ -250,7 +254,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         _updateBorrowerInDS(dai, address(this), onPool.rayDiv(indexes.borrow.poolIndex) / 2, 0);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorizedWithdraw.selector));
-        _validateWithdrawCollateral(dai, onPool.rayDiv(indexes.supply.poolIndex) / 2, address(this));
+        this.validateWithdrawCollateral(dai, onPool.rayDiv(indexes.supply.poolIndex) / 2, address(this));
     }
 
     function testValidateWithdrawCollateralInput(uint256 onPool) public {
