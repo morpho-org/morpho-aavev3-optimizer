@@ -38,6 +38,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
     using PoolLib for IPool;
     using MarketLib for Types.Market;
     using SafeTransferLib for ERC20;
+    using Math for uint256;
 
     uint256 constant MIN_AMOUNT = 1 ether;
     uint256 constant MAX_AMOUNT = type(uint96).max / 2;
@@ -376,4 +377,114 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         uint256 closeFactor = this.validateLiquidate(dai, dai, address(this));
         assertEq(closeFactor, Constants.DEFAULT_CLOSE_FACTOR);
     }
+
+    function testAddToPool(uint256 amount, uint256 onPool, uint256 poolIndex) public {
+        amount = bound(amount, 0, MAX_AMOUNT);
+        onPool = bound(onPool, 0, MAX_AMOUNT);
+        poolIndex = bound(poolIndex, WadRayMath.RAY, WadRayMath.RAY * 10);
+
+        (uint256 newAmount, uint256 newOnPool) = _addToPool(amount, onPool, poolIndex);
+        assertEq(newAmount, amount);
+        assertEq(newOnPool, onPool + amount.rayDiv(poolIndex));
+    }
+
+    function testSubFromPool(uint256 amount, uint256 onPool, uint256 poolIndex) public {
+        amount = bound(amount, 0, MAX_AMOUNT);
+        onPool = bound(onPool, 0, MAX_AMOUNT);
+        poolIndex = bound(poolIndex, WadRayMath.RAY, WadRayMath.RAY * 10);
+
+        (uint256 newAmount, uint256 newAmountLeft, uint256 newOnPool) = _subFromPool(amount, onPool, poolIndex);
+        assertEq(newAmount, Math.min(onPool.rayMul(poolIndex), amount));
+        assertEq(newAmountLeft, amount - newAmount);
+        assertEq(newOnPool, onPool - Math.min(onPool, newAmount.rayDiv(poolIndex)));
+    }
+
+    struct PromoteVars {
+        address underlying;
+        uint256 amount;
+        uint256 poolIndex;
+        uint256 maxLoops;
+        function(address, uint256, uint256) returns (uint256, uint256) promote;
+    }
+
+    function testPromoteSuppliersRoutine(uint256 amount, uint256 maxLoops) public {
+        amount = bound(amount, 0, 1 ether * 20);
+        maxLoops = bound(maxLoops, 0, 10);
+
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+
+        for (uint256 i; i < 10; i++) {
+            _updateSupplierInDS(dai, vm.addr(i + 1), uint256(1 ether).rayDiv(indexes.supply.poolIndex), 0);
+        }
+
+        Types.PromoteVars memory vars = Types.PromoteVars({
+            underlying: dai,
+            amount: amount,
+            poolIndex: indexes.supply.poolIndex,
+            maxLoops: maxLoops,
+            promote: _promoteSuppliers
+        });
+
+        (uint256 toProcess, uint256 amountLeft, uint256 maxLoopsLeft) =
+            _promoteRoutine(vars, _marketBalances[dai].poolSuppliers, _market[dai].deltas.supply);
+
+        uint256 expectedLoops = amount > 1 ether * maxLoops ? maxLoops : amount.divUp(1 ether);
+
+        uint256 expectedToProcess = Math.min(amount, maxLoops * 1 ether);
+        uint256 expectedAmountLeft = amount - expectedToProcess;
+        uint256 expectedMaxLoopsLeft = maxLoops - expectedLoops;
+        assertEq(toProcess, expectedToProcess, "toProcess");
+        assertEq(amountLeft, expectedAmountLeft, "amountLeft");
+        assertEq(maxLoopsLeft, expectedMaxLoopsLeft, "maxLoopsLeft");
+        assertEq(_market[dai].deltas.supply.totalScaledP2P, expectedToProcess.rayDiv(indexes.supply.poolIndex), "delta");
+    }
+
+    function testPromoteBorrowersRoutine(uint256 amount, uint256 maxLoops) public {
+        amount = bound(amount, 0, 1 ether * 20);
+        maxLoops = bound(maxLoops, 0, 10);
+
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+
+        for (uint256 i; i < 10; i++) {
+            _updateBorrowerInDS(dai, vm.addr(i + 1), uint256(1 ether).rayDiv(indexes.borrow.poolIndex), 0);
+        }
+
+        Types.PromoteVars memory vars = Types.PromoteVars({
+            underlying: dai,
+            amount: amount,
+            poolIndex: indexes.borrow.poolIndex,
+            maxLoops: maxLoops,
+            promote: _promoteBorrowers
+        });
+
+        (uint256 toProcess, uint256 amountLeft, uint256 maxLoopsLeft) =
+            _promoteRoutine(vars, _marketBalances[dai].poolBorrowers, _market[dai].deltas.borrow);
+
+        uint256 expectedLoops = amount > 1 ether * maxLoops ? maxLoops : amount.divUp(1 ether);
+
+        uint256 expectedToProcess = Math.min(amount, maxLoops * 1 ether);
+        uint256 expectedAmountLeft = amount - expectedToProcess;
+        uint256 expectedMaxLoopsLeft = maxLoops - expectedLoops;
+        assertEq(toProcess, expectedToProcess, "toProcess");
+        assertEq(amountLeft, expectedAmountLeft, "amountLeft");
+        assertEq(maxLoopsLeft, expectedMaxLoopsLeft, "maxLoopsLeft");
+        assertEq(_market[dai].deltas.borrow.totalScaledP2P, expectedToProcess.rayDiv(indexes.borrow.poolIndex), "delta");
+    }
+
+    // function _promoteRoutine(
+    //     Types.PromoteVars memory vars,
+    //     ThreeHeapOrdering.HeapArray storage heap,
+    //     Types.MarketSideDelta storage promotedDelta
+    // ) internal returns (uint256, uint256, uint256) {
+    //     uint256 toProcess;
+    //     if (vars.amount > 0 && !_market[vars.underlying].pauseStatuses.isP2PDisabled && heap.getHead() != address(0)) {
+    //         (uint256 promoted, uint256 loopsDone) = vars.promote(vars.underlying, vars.amount, vars.maxLoops); // In underlying.
+
+    //         toProcess = promoted;
+    //         vars.amount -= promoted;
+    //         promotedDelta.totalScaledP2P += promoted.rayDiv(vars.poolIndex);
+    //         vars.maxLoops -= loopsDone;
+    //     }
+    //     return (toProcess, vars.amount, vars.maxLoops);
+    // }
 }
