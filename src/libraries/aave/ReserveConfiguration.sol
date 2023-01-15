@@ -31,6 +31,7 @@ library ReserveConfiguration {
     uint256 internal constant LIQUIDATION_THRESHOLD_START_BIT_POSITION = 16;
     uint256 internal constant LIQUIDATION_BONUS_START_BIT_POSITION = 32;
     uint256 internal constant RESERVE_DECIMALS_START_BIT_POSITION = 48;
+    uint256 internal constant BORROWING_ENABLED_START_BIT_POSITION = 58;
     uint256 internal constant RESERVE_FACTOR_START_BIT_POSITION = 64;
     uint256 internal constant EMODE_CATEGORY_START_BIT_POSITION = 168;
     uint256 internal constant SUPPLY_CAP_START_BIT_POSITION = 116;
@@ -86,5 +87,9 @@ library ReserveConfiguration {
 
     function getEModeCategory(DataTypes.ReserveConfigurationMap memory self) internal pure returns (uint256) {
         return (self.data & ~EMODE_CATEGORY_MASK) >> EMODE_CATEGORY_START_BIT_POSITION;
+    }
+
+    function setBorrowingEnabled(DataTypes.ReserveConfigurationMap memory self, bool enabled) internal pure {
+        self.data = (self.data & BORROWING_MASK) | (uint256(enabled ? 1 : 0) << BORROWING_ENABLED_START_BIT_POSITION);
     }
 }

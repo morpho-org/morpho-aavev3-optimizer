@@ -79,4 +79,6 @@ interface IPool {
     function getUserEMode(address user) external view returns (uint256);
 
     function ADDRESSES_PROVIDER() external view returns (IPoolAddressesProvider);
+
+    function setConfiguration(address asset, DataTypes.ReserveConfigurationMap calldata configuration) external;
 }
