@@ -526,4 +526,144 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         );
         assertEq(_market[dai].deltas.borrow.totalScaledP2P, expectedTotalScaledP2P, "scaled p2p borrow");
     }
+
+    function testMatchDeltaSupply(uint256 amount, uint256 delta) public {
+        amount = bound(amount, 0, 20 ether);
+        delta = bound(delta, 0, 20 ether);
+
+        Types.MarketSideDelta storage supplyDelta = _market[dai].deltas.supply;
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+
+        supplyDelta.delta = delta;
+        (uint256 toProcess, uint256 amountLeft) = _matchDelta(dai, amount, indexes.supply.poolIndex, false);
+
+        uint256 expectedMatched = Math.min(delta.rayMul(indexes.supply.poolIndex), amount);
+
+        assertEq(toProcess, expectedMatched, "toProcess");
+        assertEq(amountLeft, amount - expectedMatched, "amountLeft");
+        assertEq(supplyDelta.delta, delta - expectedMatched.rayDiv(indexes.supply.poolIndex), "delta");
+    }
+
+    function testMatchDeltaBorrow(uint256 amount, uint256 delta) public {
+        amount = bound(amount, 0, 20 ether);
+        delta = bound(delta, 0, 20 ether);
+
+        Types.MarketSideDelta storage borrowDelta = _market[dai].deltas.borrow;
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+
+        borrowDelta.delta = delta;
+        (uint256 toProcess, uint256 amountLeft) = _matchDelta(dai, amount, indexes.borrow.poolIndex, true);
+
+        uint256 expectedMatched = Math.min(delta.rayMul(indexes.borrow.poolIndex), amount);
+
+        assertEq(toProcess, expectedMatched, "toProcess");
+        assertEq(amountLeft, amount - expectedMatched, "amountLeft");
+        assertEq(borrowDelta.delta, delta - expectedMatched.rayDiv(indexes.borrow.poolIndex), "delta");
+    }
+
+    function testUpdateDeltaP2PSupplyAmount(uint256 amount, uint256 totalP2P) public {
+        amount = bound(amount, 0, MAX_AMOUNT);
+        totalP2P = bound(totalP2P, 0, MAX_AMOUNT);
+        Types.Deltas storage deltas = _market[dai].deltas;
+        deltas.supply.totalScaledP2P = totalP2P;
+
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+
+        uint256 inP2P = _updateDeltaP2PAmounts(dai, amount, indexes.supply.p2pIndex, 0, deltas.supply);
+
+        uint256 expectedInP2P = amount.rayDiv(indexes.supply.p2pIndex);
+        uint256 expectedInTotalScaledP2P = totalP2P + expectedInP2P;
+
+        assertEq(inP2P, expectedInP2P, "inP2P");
+        assertEq(deltas.supply.totalScaledP2P, expectedInTotalScaledP2P, "totalScaledP2P");
+    }
+
+    function testUpdateDeltaP2PBorrowAmount(uint256 amount, uint256 totalP2P) public {
+        amount = bound(amount, 0, MAX_AMOUNT);
+        totalP2P = bound(totalP2P, 0, MAX_AMOUNT);
+        Types.Deltas storage deltas = _market[dai].deltas;
+        deltas.borrow.totalScaledP2P = totalP2P;
+
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+
+        uint256 inP2P = _updateDeltaP2PAmounts(dai, amount, indexes.borrow.p2pIndex, 0, deltas.borrow);
+
+        uint256 expectedInP2P = amount.rayDiv(indexes.borrow.p2pIndex);
+        uint256 expectedInTotalScaledP2P = totalP2P + expectedInP2P;
+
+        assertEq(inP2P, expectedInP2P, "inP2P");
+        assertEq(deltas.borrow.totalScaledP2P, expectedInTotalScaledP2P, "totalScaledP2P");
+    }
+
+    function testRepayFee(
+        uint256 amount,
+        uint256 supplyDelta,
+        uint256 borrowDelta,
+        uint256 totalScaledP2PSupply,
+        uint256 totalScaledP2PBorrow
+    ) public {
+        amount = bound(amount, 0, MAX_AMOUNT);
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+
+        totalScaledP2PSupply = bound(totalScaledP2PSupply, 0, MAX_AMOUNT);
+        totalScaledP2PBorrow = bound(totalScaledP2PBorrow, 0, MAX_AMOUNT);
+
+        supplyDelta =
+            bound(supplyDelta, 0, totalScaledP2PSupply.rayMul(indexes.supply.p2pIndex).rayDiv(indexes.supply.poolIndex));
+        borrowDelta =
+            bound(borrowDelta, 0, totalScaledP2PBorrow.rayMul(indexes.borrow.p2pIndex).rayDiv(indexes.borrow.poolIndex));
+
+        Types.Deltas storage deltas = _market[dai].deltas;
+        deltas.supply.delta = supplyDelta;
+        deltas.borrow.delta = borrowDelta;
+        deltas.supply.totalScaledP2P = totalScaledP2PSupply;
+        deltas.borrow.totalScaledP2P = totalScaledP2PBorrow;
+
+        uint256 toProcess = _repayFee(dai, amount, indexes);
+
+        uint256 expectedFeeToRepay = Math.zeroFloorSub(
+            totalScaledP2PBorrow.rayMul(indexes.borrow.p2pIndex),
+            totalScaledP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                supplyDelta.rayMul(indexes.supply.poolIndex)
+            )
+        );
+        expectedFeeToRepay = Math.min(amount, expectedFeeToRepay);
+
+        assertEq(toProcess, amount - expectedFeeToRepay, "toProcess");
+        assertEq(
+            deltas.borrow.totalScaledP2P,
+            totalScaledP2PBorrow - expectedFeeToRepay.rayDiv(indexes.borrow.p2pIndex),
+            "totalScaledP2PBorrow"
+        );
+
+        assertEq(deltas.supply.delta, supplyDelta, "supplyDelta");
+        assertEq(deltas.borrow.delta, borrowDelta, "borrowDelta");
+        assertEq(deltas.supply.totalScaledP2P, totalScaledP2PSupply, "totalScaledP2PSupply");
+    }
+
+    function testHandleSupplyCap() public {
+        console2.log("To implement");
+    }
+
+    function testWithdrawIdle() public {
+        console2.log("To implement");
+    }
+
+    function testBorrowIdle() public {
+        console2.log("To implement");
+    }
+
+    // function _handleSupplyCap(address underlying, uint256 amount) internal returns (uint256 toSupply) {
+    //     DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+    //     uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
+    //     if (supplyCap == 0) return amount;
+
+    //     uint256 totalSupply = ERC20(_market[underlying].aToken).totalSupply();
+    //     if (totalSupply + amount > supplyCap) {
+    //         toSupply = supplyCap - totalSupply;
+    //         _market[underlying].idleSupply += amount - toSupply;
+    //     } else {
+    //         toSupply = amount;
+    //     }
+    // }
 }
