@@ -399,17 +399,9 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         assertEq(newOnPool, onPool - Math.min(onPool, newAmount.rayDiv(poolIndex)));
     }
 
-    struct PromoteVars {
-        address underlying;
-        uint256 amount;
-        uint256 poolIndex;
-        uint256 maxLoops;
-        function(address, uint256, uint256) returns (uint256, uint256) promote;
-    }
-
     function testPromoteSuppliersRoutine(uint256 amount, uint256 maxLoops) public {
         amount = bound(amount, 0, 1 ether * 20);
-        maxLoops = bound(maxLoops, 0, 10);
+        maxLoops = bound(maxLoops, 0, 20);
 
         Types.Indexes256 memory indexes = _computeIndexes(dai);
 
@@ -428,9 +420,10 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         (uint256 toProcess, uint256 amountLeft, uint256 maxLoopsLeft) =
             _promoteRoutine(vars, _marketBalances[dai].poolSuppliers, _market[dai].deltas.supply);
 
-        uint256 expectedLoops = amount > 1 ether * maxLoops ? maxLoops : amount.divUp(1 ether);
+        uint256 maxExpectedLoops = Math.min(maxLoops, 10);
+        uint256 expectedLoops = amount > 1 ether * maxExpectedLoops ? maxExpectedLoops : amount.divUp(1 ether);
 
-        uint256 expectedToProcess = Math.min(amount, maxLoops * 1 ether);
+        uint256 expectedToProcess = Math.min(amount, expectedLoops * 1 ether);
         uint256 expectedAmountLeft = amount - expectedToProcess;
         uint256 expectedMaxLoopsLeft = maxLoops - expectedLoops;
         assertEq(toProcess, expectedToProcess, "toProcess");
@@ -441,7 +434,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
 
     function testPromoteBorrowersRoutine(uint256 amount, uint256 maxLoops) public {
         amount = bound(amount, 0, 1 ether * 20);
-        maxLoops = bound(maxLoops, 0, 10);
+        maxLoops = bound(maxLoops, 0, 20);
 
         Types.Indexes256 memory indexes = _computeIndexes(dai);
 
@@ -460,9 +453,10 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         (uint256 toProcess, uint256 amountLeft, uint256 maxLoopsLeft) =
             _promoteRoutine(vars, _marketBalances[dai].poolBorrowers, _market[dai].deltas.borrow);
 
-        uint256 expectedLoops = amount > 1 ether * maxLoops ? maxLoops : amount.divUp(1 ether);
+        uint256 maxExpectedLoops = Math.min(maxLoops, 10);
+        uint256 expectedLoops = amount > 1 ether * maxExpectedLoops ? maxExpectedLoops : amount.divUp(1 ether);
 
-        uint256 expectedToProcess = Math.min(amount, maxLoops * 1 ether);
+        uint256 expectedToProcess = Math.min(amount, maxExpectedLoops * 1 ether);
         uint256 expectedAmountLeft = amount - expectedToProcess;
         uint256 expectedMaxLoopsLeft = maxLoops - expectedLoops;
         assertEq(toProcess, expectedToProcess, "toProcess");
@@ -471,20 +465,65 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         assertEq(_market[dai].deltas.borrow.totalScaledP2P, expectedToProcess.rayDiv(indexes.borrow.poolIndex), "delta");
     }
 
-    // function _promoteRoutine(
-    //     Types.PromoteVars memory vars,
-    //     ThreeHeapOrdering.HeapArray storage heap,
-    //     Types.MarketSideDelta storage promotedDelta
-    // ) internal returns (uint256, uint256, uint256) {
-    //     uint256 toProcess;
-    //     if (vars.amount > 0 && !_market[vars.underlying].pauseStatuses.isP2PDisabled && heap.getHead() != address(0)) {
-    //         (uint256 promoted, uint256 loopsDone) = vars.promote(vars.underlying, vars.amount, vars.maxLoops); // In underlying.
+    function testDemoteSuppliersRoutine(uint256 amount, uint256 maxLoops) public {
+        amount = bound(amount, 0, 1 ether * 20);
+        maxLoops = bound(maxLoops, 0, 20);
 
-    //         toProcess = promoted;
-    //         vars.amount -= promoted;
-    //         promotedDelta.totalScaledP2P += promoted.rayDiv(vars.poolIndex);
-    //         vars.maxLoops -= loopsDone;
-    //     }
-    //     return (toProcess, vars.amount, vars.maxLoops);
-    // }
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+
+        for (uint256 i; i < 10; i++) {
+            uint256 amountPerSupplier = uint256(1 ether).rayDiv(indexes.supply.p2pIndex);
+            _updateSupplierInDS(dai, vm.addr(i + 1), 0, amountPerSupplier);
+            _market[dai].deltas.supply.totalScaledP2P += amountPerSupplier;
+        }
+
+        uint256 totalScaledP2PBefore = _market[dai].deltas.supply.totalScaledP2P;
+
+        uint256 toProcess = _demoteRoutine(dai, amount, maxLoops, indexes, _demoteSuppliers, _market[dai].deltas, false);
+
+        uint256 maxExpectedLoops = Math.min(maxLoops, 10);
+
+        uint256 expectedToProcess = Math.min(amount, maxExpectedLoops * 1 ether);
+        uint256 expectedTotalScaledP2P = totalScaledP2PBefore - expectedToProcess.rayDiv(indexes.supply.p2pIndex);
+
+        assertEq(toProcess, amount, "toProcess");
+
+        assertEq(
+            _market[dai].deltas.supply.delta,
+            amount > expectedToProcess ? (amount - expectedToProcess).rayDiv(indexes.supply.poolIndex) : 0,
+            "delta"
+        );
+        assertEq(_market[dai].deltas.supply.totalScaledP2P, expectedTotalScaledP2P, "scaled p2p supply");
+    }
+
+    function testDemoteBorrowersRoutine(uint256 amount, uint256 maxLoops) public {
+        amount = bound(amount, 0, 1 ether * 20);
+        maxLoops = bound(maxLoops, 0, 20);
+
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+
+        for (uint256 i; i < 10; i++) {
+            uint256 amountPerBorrower = uint256(1 ether).rayDiv(indexes.borrow.p2pIndex);
+            _updateBorrowerInDS(dai, vm.addr(i + 1), 0, amountPerBorrower);
+            _market[dai].deltas.borrow.totalScaledP2P += amountPerBorrower;
+        }
+
+        uint256 totalScaledP2PBefore = _market[dai].deltas.borrow.totalScaledP2P;
+
+        uint256 toProcess = _demoteRoutine(dai, amount, maxLoops, indexes, _demoteBorrowers, _market[dai].deltas, true);
+
+        uint256 maxExpectedLoops = Math.min(maxLoops, 10);
+
+        uint256 expectedToProcess = Math.min(amount, maxExpectedLoops * 1 ether);
+        uint256 expectedTotalScaledP2P = totalScaledP2PBefore - expectedToProcess.rayDiv(indexes.borrow.p2pIndex);
+
+        assertEq(toProcess, amount, "toProcess");
+
+        assertEq(
+            _market[dai].deltas.borrow.delta,
+            amount > expectedToProcess ? (amount - expectedToProcess).rayDiv(indexes.borrow.poolIndex) : 0,
+            "delta"
+        );
+        assertEq(_market[dai].deltas.borrow.totalScaledP2P, expectedTotalScaledP2P, "scaled p2p borrow");
+    }
 }
