@@ -87,33 +87,53 @@ contract TestWithdraw is IntegrationTest {
 
     // TODO: add delta tests
 
-    function testShouldRevertWithdrawZero() public {
+    function _prepare(uint256 amount, address onBehalf) internal {
+        vm.assume(amount > 0);
+        vm.assume(onBehalf != address(0) && onBehalf != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
+
+        if (onBehalf != address(user1)) {
+            vm.prank(onBehalf);
+            morpho.approveManager(address(user1), true);
+        }
+    }
+
+    function testShouldRevertWithdrawZero(address onBehalf) public {
+        _prepare(1, onBehalf);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
             user1.withdraw(markets[marketIndex].underlying, 0);
         }
     }
 
-    function testShouldRevertWithdrawOnBehalfZero() public {
+    function testShouldRevertWithdrawOnBehalfZero(uint256 amount) public {
+        vm.assume(amount > 0);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.withdraw(markets[marketIndex].underlying, 100, address(0));
+            user1.withdraw(markets[marketIndex].underlying, amount, address(0));
         }
     }
 
-    function testShouldRevertWithdrawToZero() public {
+    function testShouldRevertWithdrawToZero(uint256 amount, address onBehalf) public {
+        _prepare(amount, onBehalf);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.withdraw(markets[marketIndex].underlying, 100, address(user1), address(0));
+            user1.withdraw(markets[marketIndex].underlying, amount, onBehalf, address(0));
         }
     }
 
-    function testShouldRevertWithdrawWhenMarketNotCreated() public {
+    function testShouldRevertWithdrawWhenMarketNotCreated(uint256 amount, address onBehalf) public {
+        _prepare(amount, onBehalf);
+
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user1.withdraw(sAvax, 100);
+        user1.withdraw(sAvax, amount, onBehalf);
     }
 
-    function testShouldRevertWithdrawWhenWithdrawPaused() public {
+    function testShouldRevertWithdrawWhenWithdrawPaused(uint256 amount, address onBehalf) public {
+        _prepare(amount, onBehalf);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
@@ -126,22 +146,25 @@ contract TestWithdraw is IntegrationTest {
         }
     }
 
-    function testShouldRevertWithdrawWhenNotManaging(address managed) public {
-        vm.assume(managed != address(0) && managed != address(user1));
+    function testShouldRevertWithdrawWhenNotManaging(uint256 amount, address onBehalf) public {
+        vm.assume(amount > 0);
+        vm.assume(onBehalf != address(0) && onBehalf != address(user1));
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);
-            user1.withdraw(markets[marketIndex].underlying, 100, managed);
+            user1.withdraw(markets[marketIndex].underlying, 100, onBehalf);
         }
     }
 
-    function testShouldWithdrawWhenWithdrawCollateralPaused() public {
-        uint256 amount = 100;
+    function testShouldWithdrawWhenWithdrawCollateralPaused(uint256 amount, address onBehalf) public {
+        _prepare(amount, onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
             TestMarket memory market = markets[marketIndex];
+
+            amount = _boundSupply(market, amount);
 
             user1.approve(market.underlying, amount);
             user1.supply(market.underlying, amount);

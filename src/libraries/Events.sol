@@ -57,7 +57,11 @@ library Events {
     event ManagerApproval(address indexed owner, address indexed manager, bool isAllowed);
 
     event PositionUpdated(
-        bool borrow, address indexed user, address indexed underlying, uint256 balanceOnPool, uint256 balanceInP2P
+        bool indexed borrow,
+        address indexed user,
+        address indexed underlying,
+        uint256 balanceOnPool,
+        uint256 balanceInP2P
     );
 
     event RewardsClaimed(address indexed user, address indexed rewardToken, uint256 amountClaimed);

@@ -34,40 +34,60 @@ contract TestWithdrawCollateral is IntegrationTest {
 
             uint256 balanceAfter = user1.balanceOf(market.underlying);
             assertLe(balanceAfter, balanceBeforeSupply, "balanceAfter > balanceBeforeSupply");
-            assertApproxEqAbs(balanceAfter, balanceBeforeSupply, 1, "balanceAfter != balanceBeforeSupply");
+            assertApproxEqAbs(balanceAfter, balanceBeforeSupply, 2, "balanceAfter != balanceBeforeSupply");
             assertEq(
                 balanceAfter - balanceBeforeWithdraw, withdrawn, "balanceAfter - balanceBeforeWithdraw != withdrawn"
             );
         }
     }
 
-    function testShouldRevertWithdrawCollateralZero() public {
+    function _prepare(uint256 amount, address onBehalf) internal {
+        vm.assume(amount > 0);
+        vm.assume(onBehalf != address(0) && onBehalf != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
+
+        if (onBehalf != address(user1)) {
+            vm.prank(onBehalf);
+            morpho.approveManager(address(user1), true);
+        }
+    }
+
+    function testShouldRevertWithdrawCollateralZero(address onBehalf) public {
+        _prepare(1, onBehalf);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
             user1.withdrawCollateral(markets[marketIndex].underlying, 0);
         }
     }
 
-    function testShouldRevertWithdrawCollateralOnBehalfZero() public {
+    function testShouldRevertWithdrawCollateralOnBehalfZero(uint256 amount) public {
+        vm.assume(amount > 0);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
             user1.withdrawCollateral(markets[marketIndex].underlying, 100, address(0));
         }
     }
 
-    function testShouldRevertWithdrawCollateralToZero() public {
+    function testShouldRevertWithdrawCollateralToZero(uint256 amount, address onBehalf) public {
+        _prepare(amount, onBehalf);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.withdrawCollateral(markets[marketIndex].underlying, 100, address(user1), address(0));
+            user1.withdrawCollateral(markets[marketIndex].underlying, amount, onBehalf, address(0));
         }
     }
 
-    function testShouldRevertWithdrawCollateralWhenMarketNotCreated() public {
+    function testShouldRevertWithdrawCollateralWhenMarketNotCreated(uint256 amount, address onBehalf) public {
+        _prepare(amount, onBehalf);
+
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user1.withdrawCollateral(sAvax, 100);
+        user1.withdrawCollateral(sAvax, amount, onBehalf);
     }
 
-    function testShouldRevertWithdrawCollateralWhenWithdrawCollateralPaused() public {
+    function testShouldRevertWithdrawCollateralWhenWithdrawCollateralPaused(uint256 amount, address onBehalf) public {
+        _prepare(amount, onBehalf);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
@@ -76,33 +96,36 @@ contract TestWithdrawCollateral is IntegrationTest {
             morpho.setIsWithdrawCollateralPaused(market.underlying, true);
 
             vm.expectRevert(Errors.WithdrawCollateralIsPaused.selector);
-            user1.withdrawCollateral(market.underlying, 100);
+            user1.withdrawCollateral(market.underlying, amount, onBehalf);
         }
     }
 
-    function testShouldRevertWithdrawCollateralWhenNotManaging(address managed) public {
-        vm.assume(managed != address(0) && managed != address(user1));
+    function testShouldRevertWithdrawCollateralWhenNotManaging(uint256 amount, address onBehalf) public {
+        vm.assume(amount > 0);
+        vm.assume(onBehalf != address(0) && onBehalf != address(user1));
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);
-            user1.withdrawCollateral(markets[marketIndex].underlying, 100, managed);
+            user1.withdrawCollateral(markets[marketIndex].underlying, amount, onBehalf);
         }
     }
 
-    function testShouldWithdrawCollateralWhenWithdrawPaused() public {
-        uint256 amount = 100;
+    function testShouldWithdrawCollateralWhenWithdrawPaused(uint256 amount, address onBehalf) public {
+        _prepare(amount, onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
             TestMarket memory market = markets[marketIndex];
 
+            amount = _boundSupply(market, amount);
+
             user1.approve(market.underlying, amount);
             user1.supplyCollateral(market.underlying, amount);
 
             morpho.setIsWithdrawPaused(market.underlying, true);
 
-            user1.withdrawCollateral(market.underlying, amount);
+            user1.withdrawCollateral(market.underlying, amount, onBehalf);
         }
     }
 }

@@ -6,7 +6,9 @@ import "test/helpers/IntegrationTest.sol";
 contract TestSupply is IntegrationTest {
     using WadRayMath for uint256;
 
-    function testShouldSupplyPoolOnly(uint256 amount) public {
+    function testShouldSupplyPoolOnly(uint256 amount, address onBehalf) public {
+        vm.assume(onBehalf != address(0));
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
@@ -17,14 +19,16 @@ contract TestSupply is IntegrationTest {
             uint256 balanceBefore = user1.balanceOf(market.underlying);
 
             user1.approve(market.underlying, amount);
-            uint256 supplied = user1.supply(market.underlying, amount); // 100% pool.
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.Supplied(address(user1), onBehalf, market.underlying, 0, 0, 0);
+
+            uint256 supplied = user1.supply(market.underlying, amount, onBehalf); // 100% pool.
 
             Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
             uint256 poolSupply =
-                morpho.scaledPoolSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.poolIndex);
-            uint256 scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, address(user1));
-
-            // TODO: test emitted events
+                morpho.scaledPoolSupplyBalance(market.underlying, onBehalf).rayMul(indexes.supply.poolIndex);
+            uint256 scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
 
             assertEq(scaledP2PSupply, 0, "p2pSupply != 0");
             assertEq(supplied, amount, "supplied != amount");
@@ -38,7 +42,9 @@ contract TestSupply is IntegrationTest {
         }
     }
 
-    function testShouldSupplyP2POnly(uint256 amount) public {
+    function testShouldSupplyP2POnly(uint256 amount, address onBehalf) public {
+        vm.assume(onBehalf != address(0));
+
         for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
             _revert();
 
@@ -51,12 +57,22 @@ contract TestSupply is IntegrationTest {
             uint256 morphoBalanceBefore = ERC20(market.aToken).balanceOf(address(morpho));
 
             user1.approve(market.underlying, amount);
-            uint256 supplied = user1.supply(market.underlying, amount); // 100% peer-to-peer.
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.PositionUpdated(true, address(promoter), market.underlying, 0, 0);
+
+            vm.expectEmit(true, false, false, false, address(morpho));
+            emit Events.P2PAmountsUpdated(market.underlying, 0, 0);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.Supplied(address(user1), onBehalf, market.underlying, 0, 0, 0);
+
+            uint256 supplied = user1.supply(market.underlying, amount, onBehalf); // 100% peer-to-peer.
 
             Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
             uint256 p2pSupply =
-                morpho.scaledP2PSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.p2pIndex);
-            uint256 scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, address(user1));
+                morpho.scaledP2PSupplyBalance(market.underlying, onBehalf).rayMul(indexes.supply.p2pIndex);
+            uint256 scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
 
             assertEq(scaledPoolSupply, 0, "poolSupply != 0");
             assertEq(supplied, amount, "supplied != amount");
@@ -75,26 +91,39 @@ contract TestSupply is IntegrationTest {
 
     // TODO: add delta tests
 
-    function testShouldRevertSupplyZero() public {
+    function _prepare(uint256 amount, address onBehalf) internal pure {
+        vm.assume(amount > 0);
+        vm.assume(onBehalf != address(0));
+    }
+
+    function testShouldRevertSupplyZero(address onBehalf) public {
+        vm.assume(onBehalf != address(0));
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user1.supply(markets[marketIndex].underlying, 0);
+            user1.supply(markets[marketIndex].underlying, 0, onBehalf);
         }
     }
 
-    function testShouldRevertSupplyOnBehalfZero() public {
+    function testShouldRevertSupplyOnBehalfZero(uint256 amount) public {
+        vm.assume(amount > 0);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.supply(markets[marketIndex].underlying, 100, address(0));
+            user1.supply(markets[marketIndex].underlying, amount, address(0));
         }
     }
 
-    function testShouldRevertSupplyWhenMarketNotCreated() public {
+    function testShouldRevertSupplyWhenMarketNotCreated(uint256 amount, address onBehalf) public {
+        _prepare(amount, onBehalf);
+
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user1.supply(sAvax, 100);
+        user1.supply(sAvax, amount, onBehalf);
     }
 
-    function testShouldRevertSupplyWhenSupplyPaused() public {
+    function testShouldRevertSupplyWhenSupplyPaused(uint256 amount, address onBehalf) public {
+        _prepare(amount, onBehalf);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
@@ -103,11 +132,13 @@ contract TestSupply is IntegrationTest {
             morpho.setIsSupplyPaused(market.underlying, true);
 
             vm.expectRevert(Errors.SupplyIsPaused.selector);
-            user1.supply(market.underlying, 100);
+            user1.supply(market.underlying, amount, onBehalf);
         }
     }
 
-    function testShouldRevertSupplyNotEnoughAllowance(uint256 allowance, uint256 amount) public {
+    function testShouldRevertSupplyNotEnoughAllowance(uint256 allowance, uint256 amount, address onBehalf) public {
+        _prepare(amount, onBehalf);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
@@ -118,23 +149,25 @@ contract TestSupply is IntegrationTest {
 
             user1.approve(market.underlying, allowance);
 
-            vm.expectRevert();
-            user1.supply(market.underlying, amount);
+            vm.expectRevert(); // Cannot specify the revert reason as it depends on the ERC20 implementation.
+            user1.supply(market.underlying, amount, onBehalf);
         }
     }
 
-    function testShouldSupplyWhenSupplyCollateralPaused() public {
-        uint256 amount = 100;
+    function testShouldSupplyWhenSupplyCollateralPaused(uint256 amount, address onBehalf) public {
+        _prepare(amount, onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
             TestMarket memory market = markets[marketIndex];
 
+            amount = _boundSupply(market, amount);
+
             morpho.setIsSupplyCollateralPaused(market.underlying, true);
 
             user1.approve(market.underlying, amount);
-            user1.supply(market.underlying, amount);
+            user1.supply(market.underlying, amount, onBehalf);
         }
     }
 }
