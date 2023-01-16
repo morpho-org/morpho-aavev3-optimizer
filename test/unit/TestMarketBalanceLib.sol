@@ -12,6 +12,7 @@ contract TestMarketLib is Test {
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
 
     uint256 internal constant MAX_SORTED_USERS = 20;
+    bool internal constant IS_LIFO = true;
 
     Types.MarketBalances internal marketBalances;
 
@@ -20,7 +21,7 @@ contract TestMarketLib is Test {
         vm.assume(amount != 0);
         assertEq(marketBalances.scaledPoolSupplyBalance(user), 0);
 
-        marketBalances.poolSuppliers.update(user, amount);
+        marketBalances.poolSuppliers.update(user, amount, IS_LIFO);
 
         assertEq(marketBalances.scaledPoolSupplyBalance(user), amount);
     }
@@ -30,7 +31,7 @@ contract TestMarketLib is Test {
         vm.assume(amount != 0);
         assertEq(marketBalances.scaledPoolBorrowBalance(user), 0);
 
-        marketBalances.poolBorrowers.update(user, amount);
+        marketBalances.poolBorrowers.update(user, amount, IS_LIFO);
 
         assertEq(marketBalances.scaledPoolBorrowBalance(user), amount);
     }
@@ -40,7 +41,7 @@ contract TestMarketLib is Test {
         vm.assume(amount != 0);
         assertEq(marketBalances.scaledP2PSupplyBalance(user), 0);
 
-        marketBalances.p2pSuppliers.update(user, amount);
+        marketBalances.p2pSuppliers.update(user, amount, IS_LIFO);
 
         assertEq(marketBalances.scaledP2PSupplyBalance(user), amount);
     }
@@ -50,7 +51,7 @@ contract TestMarketLib is Test {
         vm.assume(amount != 0);
         assertEq(marketBalances.scaledP2PBorrowBalance(user), 0);
 
-        marketBalances.p2pBorrowers.update(user, amount);
+        marketBalances.p2pBorrowers.update(user, amount, IS_LIFO);
 
         assertEq(marketBalances.scaledP2PBorrowBalance(user), amount);
     }

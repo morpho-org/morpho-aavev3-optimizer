@@ -111,11 +111,10 @@ abstract contract MatchingEngine is MorphoInternal {
         if (vars.maxLoops == 0) return (0, 0);
 
         uint256 remaining = vars.amount;
-        (LogarithmicBuckets.BucketList storage workingBuckets, bool isLifo) =
-            vars.promoting ? (poolBuckets, false) : (p2pBuckets, true);
+        LogarithmicBuckets.BucketList storage workingBuckets = vars.promoting ? poolBuckets : p2pBuckets;
 
         for (; loopsDone < vars.maxLoops && remaining != 0; ++loopsDone) {
-            address firstUser = workingBuckets.getMatch(remaining, isLifo);
+            address firstUser = workingBuckets.getMatch(remaining);
             if (firstUser == address(0)) break;
 
             uint256 onPool;
