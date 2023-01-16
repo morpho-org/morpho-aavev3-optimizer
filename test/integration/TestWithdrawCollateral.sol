@@ -12,20 +12,32 @@ contract TestWithdrawCollateral is IntegrationTest {
 
             amount = _boundSupply(market, amount);
 
+            uint256 balanceBeforeSupply = user1.balanceOf(market.underlying);
+
             user1.approve(market.underlying, amount);
             user1.supplyCollateral(market.underlying, amount);
 
-            input = bound(input, amount + 1, type(uint256).max);
+            uint256 balanceBeforeWithdraw = user1.balanceOf(market.underlying);
 
+            input = bound(input, amount + 1, type(uint256).max);
             uint256 withdrawn = user1.withdrawCollateral(market.underlying, input);
 
             uint256 p2pSupply = morpho.scaledP2PSupplyBalance(market.underlying, address(user1));
             uint256 poolSupply = morpho.scaledPoolSupplyBalance(market.underlying, address(user1));
+            uint256 collateral = morpho.scaledCollateralBalance(market.underlying, address(user1));
 
             assertEq(p2pSupply, 0, "p2pSupply != 0");
             assertEq(poolSupply, 0, "poolSupply != 0");
+            assertEq(collateral, 0, "collateral != 0");
             assertLe(withdrawn, amount, "withdrawn > amount");
             assertApproxEqAbs(withdrawn, amount, 2, "withdrawn != amount");
+
+            uint256 balanceAfter = user1.balanceOf(market.underlying);
+            assertLe(balanceAfter, balanceBeforeSupply, "balanceAfter > balanceBeforeSupply");
+            assertApproxEqAbs(balanceAfter, balanceBeforeSupply, 1, "balanceAfter != balanceBeforeSupply");
+            assertEq(
+                balanceAfter - balanceBeforeWithdraw, withdrawn, "balanceAfter - balanceBeforeWithdraw != withdrawn"
+            );
         }
     }
 

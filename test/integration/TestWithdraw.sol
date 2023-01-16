@@ -12,10 +12,12 @@ contract TestWithdraw is IntegrationTest {
 
             TestMarket memory market = markets[marketIndex];
 
-            uint256 supplied = _borrow50Pct(market, amount);
+            (uint256 supplied,) = _borrowUpTo(market, market, amount, 50_00);
 
             user1.approve(market.underlying, supplied);
             user1.supply(market.underlying, supplied); // >= 50% pool.
+
+            uint256 balanceBeforeWithdraw = user1.balanceOf(market.underlying);
 
             amount = supplied / 2;
             uint256 withdrawn = user1.withdraw(market.underlying, amount);
@@ -32,33 +34,58 @@ contract TestWithdraw is IntegrationTest {
             assertEq(withdrawn, amount, "withdrawn != amount");
             assertLe(p2pSupply, amount, "p2pSupply > amount");
             assertApproxEqAbs(totalSupply, amount, 2, "supply != amount");
+
+            assertEq(
+                user1.balanceOf(market.underlying) - balanceBeforeWithdraw,
+                amount,
+                "balanceAfter - balanceBeforeWithdraw != amount"
+            );
         }
     }
 
-    function testShouldWithdrawAll(uint256 amount, uint256 input) public {
+    function testShouldWithdrawAllSupply(uint256 amount, uint256 input) public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
             TestMarket memory market = markets[marketIndex];
 
-            amount = _borrow50Pct(market, amount);
+            (amount,) = _borrowUpTo(market, market, amount, 50_00);
+
+            uint256 balanceBeforeSupply = user1.balanceOf(market.underlying);
 
             user1.approve(market.underlying, amount);
             user1.supply(market.underlying, amount); // >= 50% pool.
 
-            input = bound(input, amount + 1, type(uint256).max);
+            uint256 balanceBeforeWithdraw = user1.balanceOf(market.underlying);
 
+            input = bound(input, amount + 1, type(uint256).max);
             uint256 withdrawn = user1.withdraw(market.underlying, input);
 
             uint256 p2pSupply = morpho.scaledP2PSupplyBalance(market.underlying, address(user1));
             uint256 poolSupply = morpho.scaledPoolSupplyBalance(market.underlying, address(user1));
+            uint256 collateral = morpho.scaledCollateralBalance(market.underlying, address(user1));
 
             assertEq(p2pSupply, 0, "p2pSupply != 0");
             assertEq(poolSupply, 0, "poolSupply != 0");
+            assertEq(collateral, 0, "collateral != 0");
             assertLe(withdrawn, amount, "withdrawn > amount");
             assertApproxEqAbs(withdrawn, amount, 2, "withdrawn != amount");
+
+            uint256 balanceAfter = user1.balanceOf(market.underlying);
+            assertLe(balanceAfter, balanceBeforeSupply, "balanceAfter > balanceBeforeSupply");
+            assertApproxEqAbs(
+                balanceAfter,
+                balanceBeforeSupply,
+                10 ** (market.decimals / 2), // TODO: is it ok to lose up to 1e9?
+                "balanceAfter != balanceBeforeSupply"
+            );
+            assertEq(
+                balanceAfter - balanceBeforeWithdraw, withdrawn, "balanceAfter - balanceBeforeWithdraw != withdrawn"
+            );
         }
     }
+
+    // TODO: add delta tests
 
     function testShouldRevertWithdrawZero() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {

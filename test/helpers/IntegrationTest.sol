@@ -145,9 +145,13 @@ contract IntegrationTest is ForkTest {
                 && market.borrowCap > market.totalBorrow
         ) borrowableMarkets.push(market);
 
+        vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
+        vm.label(reserve.variableDebtTokenAddress, string.concat("d", market.symbol));
+
         morpho.createMarket(underlying, reserveFactor, p2pIndexCursor);
     }
 
+    /// @dev Bounds the input between the minimum & the maximum USD amount expected in tests, without exceeding the market's supply cap.
     function _boundSupply(TestMarket memory market, uint256 amount) internal view returns (uint256) {
         return bound(
             amount,
@@ -156,6 +160,7 @@ contract IntegrationTest is ForkTest {
         );
     }
 
+    /// @dev Bounds the input between 0 and the maximum borrowable quantity, without exceeding the market's liquidity nor its borrow cap.
     function _boundBorrow(TestMarket memory collateralMarket, TestMarket memory borrowedMarket, uint256 collateral)
         internal
         view
@@ -176,6 +181,7 @@ contract IntegrationTest is ForkTest {
         );
     }
 
+    /// @dev Calculates the maximum borrowable quantity collateralized by the given quantity of collateral.
     function _borrowable(TestMarket memory collateralMarket, TestMarket memory borrowedMarket, uint256 collateral)
         internal
         pure
@@ -187,6 +193,7 @@ contract IntegrationTest is ForkTest {
         );
     }
 
+    /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt.
     function _minCollateral(TestMarket memory collateralMarket, TestMarket memory borrowedMarket, uint256 amount)
         internal
         pure
@@ -198,13 +205,24 @@ contract IntegrationTest is ForkTest {
         );
     }
 
-    function _borrow50Pct(TestMarket memory market, uint256 amount) internal returns (uint256 supplied) {
+    /// @dev Makes the promoter supply up to 50% of the supply cap, then use a portion of their collateral power to borrow from the same market.
+    /// @return supplied Always equal to the collateral supplied by the promoter.
+    /// @return borrowed Equal to the debt borrowed by the promoter iff the market is borrowable.
+    function _borrowUpTo(
+        TestMarket memory collateralMarket,
+        TestMarket memory borrowMarket,
+        uint256 amount,
+        uint256 utilizationBps
+    ) internal returns (uint256 supplied, uint256 borrowed) {
         // Divided by 2 because will be supplied by promoter & promoted and may thus reach supply cap otherwise.
-        supplied = _boundSupply(market, amount) / 2;
+        supplied = _boundSupply(collateralMarket, amount) / 2;
+        borrowed = _boundBorrow(collateralMarket, borrowMarket, supplied.percentMul(utilizationBps));
 
-        user2.approve(market.underlying, supplied);
-        user2.supplyCollateral(market.underlying, supplied);
-        try user2.borrow(market.underlying, _boundBorrow(market, market, supplied)) {} catch {}
+        promoter.approve(collateralMarket.underlying, supplied);
+        promoter.supplyCollateral(collateralMarket.underlying, supplied);
+
+        // Reverts if the market is not borrowable.
+        try promoter.borrow(borrowMarket.underlying, borrowed) {} catch {}
 
         _forward(1);
     }

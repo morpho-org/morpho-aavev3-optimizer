@@ -14,6 +14,8 @@ contract TestSupply is IntegrationTest {
 
             amount = _boundSupply(market, amount);
 
+            uint256 balanceBefore = user1.balanceOf(market.underlying);
+
             user1.approve(market.underlying, amount);
             uint256 supplied = user1.supply(market.underlying, amount); // 100% pool.
 
@@ -23,11 +25,16 @@ contract TestSupply is IntegrationTest {
             uint256 scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, address(user1));
 
             // TODO: test emitted events
-            // TODO: test morpho supply on pool
+
             assertEq(scaledP2PSupply, 0, "p2pSupply != 0");
             assertEq(supplied, amount, "supplied != amount");
             assertLe(poolSupply, amount, "poolSupply > amount");
             assertApproxEqAbs(poolSupply, amount, 1, "poolSupply != amount");
+
+            uint256 morphoBalance = ERC20(market.aToken).balanceOf(address(morpho));
+            assertApproxEqAbs(morphoBalance, supplied, 1, "morphoBalance != supplied");
+
+            assertEq(balanceBefore - user1.balanceOf(market.underlying), amount, "balanceDiff != amount");
         }
     }
 
@@ -37,14 +44,11 @@ contract TestSupply is IntegrationTest {
 
             TestMarket memory market = borrowableMarkets[marketIndex];
 
-            uint256 collateral = _boundSupply(market, amount);
-            amount = _boundBorrow(market, market, collateral);
+            uint256 collateral;
+            (collateral, amount) = _borrowUpTo(market, market, amount, 100_00);
 
-            user2.approve(market.underlying, collateral);
-            user2.supplyCollateral(market.underlying, collateral);
-            user2.borrow(market.underlying, amount);
-
-            _forward(1);
+            uint256 balanceBefore = user1.balanceOf(market.underlying);
+            uint256 morphoBalanceBefore = ERC20(market.aToken).balanceOf(address(morpho));
 
             user1.approve(market.underlying, amount);
             uint256 supplied = user1.supply(market.underlying, amount); // 100% peer-to-peer.
@@ -58,6 +62,14 @@ contract TestSupply is IntegrationTest {
             assertEq(supplied, amount, "supplied != amount");
             assertLe(p2pSupply, amount, "p2pSupply > amount");
             assertApproxEqAbs(p2pSupply, amount, 1, "p2pSupply != amount");
+
+            assertEq(
+                ERC20(market.aToken).balanceOf(address(morpho)),
+                morphoBalanceBefore,
+                "morphoBalanceAfter != morphoBalanceBefore"
+            );
+
+            assertEq(balanceBefore - user1.balanceOf(market.underlying), amount, "balanceDiff != amount");
         }
     }
 
