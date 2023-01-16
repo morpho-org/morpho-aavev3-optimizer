@@ -83,7 +83,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256 borrowed)
     {
-        _validateBorrowInput(underlying, amount, borrower);
+        _validateBorrowInput(underlying, amount, borrower, receiver);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
