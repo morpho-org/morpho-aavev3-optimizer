@@ -17,6 +17,8 @@ library Constants {
     bytes32 internal constant BORROWING_MASK = 0x5555555555555555555555555555555555555555555555555555555555555555;
     bytes32 internal constant ONE = 0x0000000000000000000000000000000000000000000000000000000000000001;
 
+    bool internal constant HEAD = true;
+
     string internal constant EIP712_MSG_PREFIX = "\x19\x01";
     string internal constant EIP712_NAME = "Morpho-AaveV3";
     string internal constant EIP712_VERSION = "0";
