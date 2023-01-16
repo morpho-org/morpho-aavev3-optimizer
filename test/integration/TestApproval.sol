@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IMorpho} from "src/interfaces/IMorpho.sol";
+
 import {Errors} from "src/libraries/Errors.sol";
 
 import {Morpho} from "src/Morpho.sol";
@@ -44,7 +46,8 @@ contract TestApproval is IntegrationTest {
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(OWNER_PK, digest);
+        Types.Signature memory sig;
+        (sig.v, sig.r, sig.s) = vm.sign(OWNER_PK, digest);
 
         morpho.approveManagerWithSig(
             authorization.owner,
@@ -52,9 +55,7 @@ contract TestApproval is IntegrationTest {
             authorization.isAllowed,
             authorization.nonce,
             authorization.deadline,
-            v,
-            r,
-            s
+            sig
         );
 
         assertEq(morpho.isManaging(OWNER, MANAGER), true);
@@ -73,8 +74,8 @@ contract TestApproval is IntegrationTest {
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(OWNER_PK, digest);
+        Types.Signature memory sig;
+        (sig.v, sig.r, sig.s) = vm.sign(OWNER_PK, digest);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.SignatureExpired.selector));
         morpho.approveManagerWithSig(
@@ -83,9 +84,7 @@ contract TestApproval is IntegrationTest {
             authorization.isAllowed,
             authorization.nonce,
             authorization.deadline,
-            v,
-            r,
-            s
+            sig
         );
     }
 
@@ -99,8 +98,8 @@ contract TestApproval is IntegrationTest {
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(MANAGER_PK, digest); // manager signs owner's approval.
+        Types.Signature memory sig;
+        (sig.v, sig.r, sig.s) = vm.sign(MANAGER_PK, digest); // manager signs owner's approval.
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidSignatory.selector));
         morpho.approveManagerWithSig(
@@ -109,9 +108,7 @@ contract TestApproval is IntegrationTest {
             authorization.isAllowed,
             authorization.nonce,
             authorization.deadline,
-            v,
-            r,
-            s
+            sig
         );
     }
 
@@ -127,8 +124,8 @@ contract TestApproval is IntegrationTest {
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(OWNER_PK, digest);
+        Types.Signature memory sig;
+        (sig.v, sig.r, sig.s) = vm.sign(OWNER_PK, digest);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidNonce.selector));
         morpho.approveManagerWithSig(
@@ -137,9 +134,7 @@ contract TestApproval is IntegrationTest {
             authorization.isAllowed,
             authorization.nonce,
             authorization.deadline,
-            v,
-            r,
-            s
+            sig
         );
     }
 
@@ -153,8 +148,8 @@ contract TestApproval is IntegrationTest {
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(OWNER_PK, digest);
+        Types.Signature memory sig;
+        (sig.v, sig.r, sig.s) = vm.sign(OWNER_PK, digest);
 
         morpho.approveManagerWithSig(
             authorization.owner,
@@ -162,9 +157,7 @@ contract TestApproval is IntegrationTest {
             authorization.isAllowed,
             authorization.nonce,
             authorization.deadline,
-            v,
-            r,
-            s
+            sig
         );
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidNonce.selector));
@@ -174,9 +167,7 @@ contract TestApproval is IntegrationTest {
             authorization.isAllowed,
             authorization.nonce,
             authorization.deadline,
-            v,
-            r,
-            s
+            sig
         );
     }
 }
