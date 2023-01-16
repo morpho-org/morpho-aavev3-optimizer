@@ -641,29 +641,82 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         assertEq(deltas.supply.totalScaledP2P, totalScaledP2PSupply, "totalScaledP2PSupply");
     }
 
-    function testHandleSupplyCap() public {
-        console2.log("To implement");
+    function handleSupplyCap(address underlying, uint256 amount) external returns (uint256) {
+        return _handleSupplyCap(underlying, amount);
     }
 
-    function testWithdrawIdle() public {
-        console2.log("To implement");
+    function testHandleSupplyCapZero(uint256 amount) public {
+        DataTypes.ReserveConfigurationMap memory reserveConfig = _POOL.getConfiguration(dai);
+        reserveConfig.setSupplyCap(0);
+        vm.prank(poolConfigurator);
+        _POOL.setConfiguration(dai, reserveConfig);
+
+        uint256 toSupply = _handleSupplyCap(dai, amount);
+        assertEq(toSupply, amount);
     }
 
-    function testBorrowIdle() public {
-        console2.log("To implement");
+    function testHandleSupplyCapAlreadyCapped(uint256 amount, uint256 supplyCap) public {
+        DataTypes.ReserveConfigurationMap memory reserveConfig = _POOL.getConfiguration(dai);
+        uint256 totalSupply = ERC20(_market[dai].aToken).totalSupply();
+        uint256 decimals = reserveConfig.getDecimals();
+        supplyCap = bound(supplyCap, 1, totalSupply / (10 ** decimals));
+        amount = bound(amount, 0, MAX_AMOUNT);
+
+        reserveConfig.setSupplyCap(supplyCap);
+        vm.prank(poolConfigurator);
+        _POOL.setConfiguration(dai, reserveConfig);
+
+        assertEq(_market[dai].idleSupply, 0);
+
+        // Expects underflow
+        vm.expectRevert();
+        uint256 toSupply = this.handleSupplyCap(dai, amount);
     }
 
-    // function _handleSupplyCap(address underlying, uint256 amount) internal returns (uint256 toSupply) {
-    //     DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
-    //     uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
-    //     if (supplyCap == 0) return amount;
+    function testHandleSupplyCap(uint256 amount, uint256 supplyCap) public {
+        DataTypes.ReserveConfigurationMap memory reserveConfig = _POOL.getConfiguration(dai);
+        uint256 totalSupply = ERC20(_market[dai].aToken).totalSupply();
+        uint256 decimals = reserveConfig.getDecimals();
+        supplyCap = bound(supplyCap, totalSupply / (10 ** decimals) + 1, totalSupply * 2 / (10 ** decimals));
+        uint256 supplyCapScaled = supplyCap * (10 ** decimals);
+        amount = bound(amount, 0, supplyCapScaled);
 
-    //     uint256 totalSupply = ERC20(_market[underlying].aToken).totalSupply();
-    //     if (totalSupply + amount > supplyCap) {
-    //         toSupply = supplyCap - totalSupply;
-    //         _market[underlying].idleSupply += amount - toSupply;
-    //     } else {
-    //         toSupply = amount;
-    //     }
-    // }
+        reserveConfig.setSupplyCap(supplyCap);
+        vm.prank(poolConfigurator);
+        _POOL.setConfiguration(dai, reserveConfig);
+
+        uint256 toSupply = _handleSupplyCap(dai, amount);
+        assertEq(
+            _market[dai].idleSupply, supplyCapScaled < totalSupply + amount ? totalSupply + amount - supplyCapScaled : 0
+        );
+        assertEq(toSupply, supplyCapScaled < totalSupply + amount ? supplyCapScaled - totalSupply : amount);
+    }
+
+    function testWithdrawIdle(uint256 amount, uint256 idle, uint256 inP2P) public {
+        amount = bound(amount, 0, MAX_AMOUNT);
+        idle = bound(idle, 0, MAX_AMOUNT);
+        inP2P = bound(inP2P, 0, MAX_AMOUNT);
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        uint256 p2pSupplyIndex = indexes.supply.p2pIndex;
+
+        _market[dai].idleSupply = idle;
+        _withdrawIdle(_market[dai], amount, inP2P, p2pSupplyIndex);
+
+        assertEq(_market[dai].idleSupply, idle - Math.min(Math.min(idle, amount), inP2P.rayMul(p2pSupplyIndex)));
+    }
+
+    function testBorrowIdle(uint256 amount, uint256 idle, uint256 inP2P) public {
+        amount = bound(amount, 0, MAX_AMOUNT);
+        idle = bound(idle, 0, MAX_AMOUNT);
+        inP2P = bound(inP2P, 0, MAX_AMOUNT);
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        uint256 p2pBorrowIndex = indexes.borrow.p2pIndex;
+
+        _market[dai].idleSupply = idle;
+        (uint256 newAmount, uint256 newInP2P) = _borrowIdle(_market[dai], amount, inP2P, p2pBorrowIndex);
+
+        assertEq(_market[dai].idleSupply, idle - Math.min(idle, amount));
+        assertEq(newAmount, amount - Math.min(idle, amount));
+        assertEq(newInP2P, inP2P + Math.min(idle, amount).rayDiv(p2pBorrowIndex));
+    }
 }
