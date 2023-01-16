@@ -5,7 +5,6 @@ import "test/helpers/IntegrationTest.sol";
 
 contract TestSupply is IntegrationTest {
     using WadRayMath for uint256;
-    using PercentageMath for uint256;
 
     function testShouldSupplyPoolOnly(uint256 amount) public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
@@ -16,12 +15,16 @@ contract TestSupply is IntegrationTest {
             amount = _boundSupply(market, amount);
 
             user1.approve(market.underlying, amount);
-            uint256 supplied = user1.supply(market.underlying, amount);
+            uint256 supplied = user1.supply(market.underlying, amount); // 100% pool.
 
             Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
             uint256 poolSupply =
                 morpho.scaledPoolSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.poolIndex);
+            uint256 scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, address(user1));
 
+            // TODO: test emitted events
+            // TODO: test morpho supply on pool
+            assertEq(scaledP2PSupply, 0, "p2pSupply != 0");
             assertEq(supplied, amount, "supplied != amount");
             assertLe(poolSupply, amount, "poolSupply > amount");
             assertApproxEqAbs(poolSupply, amount, 1, "poolSupply != amount");
@@ -35,7 +38,7 @@ contract TestSupply is IntegrationTest {
             TestMarket memory market = borrowableMarkets[marketIndex];
 
             uint256 collateral = _boundSupply(market, amount);
-            amount = _boundBorrow(market, collateral);
+            amount = _boundBorrow(market, market, collateral);
 
             user2.approve(market.underlying, collateral);
             user2.supplyCollateral(market.underlying, collateral);
@@ -44,17 +47,21 @@ contract TestSupply is IntegrationTest {
             _forward(1);
 
             user1.approve(market.underlying, amount);
-            uint256 supplied = user1.supply(market.underlying, amount);
+            uint256 supplied = user1.supply(market.underlying, amount); // 100% peer-to-peer.
 
             Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
             uint256 p2pSupply =
                 morpho.scaledP2PSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.p2pIndex);
+            uint256 scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, address(user1));
 
+            assertEq(scaledPoolSupply, 0, "poolSupply != 0");
             assertEq(supplied, amount, "supplied != amount");
             assertLe(p2pSupply, amount, "p2pSupply > amount");
             assertApproxEqAbs(p2pSupply, amount, 1, "p2pSupply != amount");
         }
     }
+
+    // TODO: add delta tests
 
     function testShouldRevertSupplyZero() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {

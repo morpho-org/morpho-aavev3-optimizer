@@ -32,7 +32,7 @@ contract IntegrationTest is ForkTest {
 
     TestUser internal user1;
     TestUser internal user2;
-    TestUser internal user3;
+    TestUser internal promoter;
 
     struct TestMarket {
         address aToken;
@@ -74,15 +74,19 @@ contract IntegrationTest is ForkTest {
 
         user1 = _initUser();
         user2 = _initUser();
-        user3 = _initUser();
+        promoter = _initUser();
     }
 
     function _label() internal override {
         super._label();
 
+        vm.label(address(morpho), "Morpho");
+        vm.label(address(morphoImpl), "MorphoImpl");
+        vm.label(address(positionsManager), "PositionsManager");
+
         vm.label(address(user1), "User1");
         vm.label(address(user2), "User2");
-        vm.label(address(user3), "User3");
+        vm.label(address(promoter), "Promoter");
     }
 
     function _deploy() internal {
@@ -96,6 +100,11 @@ contract IntegrationTest is ForkTest {
         morpho.initialize(
             address(positionsManager), Types.MaxLoops({supply: 10, borrow: 10, repay: 10, withdraw: 10}), 20
         );
+
+        // Supply dust on WETH to make UserConfigurationMap.isUsingAsCollateralOne() always return true.
+        deal(weth, address(this), 1e9);
+        ERC20(weth).approve(address(pool), 1e9);
+        pool.deposit(weth, 1e9, address(morpho), 0);
     }
 
     function _initUser() internal returns (TestUser user) {
@@ -147,14 +156,34 @@ contract IntegrationTest is ForkTest {
         );
     }
 
-    function _boundBorrow(TestMarket memory market, uint256 collateral) internal view returns (uint256) {
+    function _boundBorrow(TestMarket memory collateralMarket, TestMarket memory borrowedMarket, uint256 collateral)
+        internal
+        view
+        returns (uint256)
+    {
         return bound(
             collateral,
             0,
             Math.min(
-                ERC20(market.underlying).balanceOf(market.aToken),
-                Math.min(collateral.percentMul(market.ltv - 1), market.borrowCap - market.totalBorrow)
+                ERC20(borrowedMarket.underlying).balanceOf(borrowedMarket.aToken),
+                Math.min(
+                    _borrowable(collateralMarket, borrowedMarket, collateral),
+                    borrowedMarket.borrowCap > 0
+                        ? borrowedMarket.borrowCap - borrowedMarket.totalBorrow
+                        : type(uint256).max
+                )
             )
+        );
+    }
+
+    function _borrowable(TestMarket memory collateralMarket, TestMarket memory borrowedMarket, uint256 collateral)
+        internal
+        pure
+        returns (uint256)
+    {
+        return (
+            (collateral * collateralMarket.price * 10 ** borrowedMarket.decimals).percentMul(collateralMarket.ltv - 1)
+                / (borrowedMarket.price * 10 ** collateralMarket.decimals)
         );
     }
 
@@ -167,5 +196,16 @@ contract IntegrationTest is ForkTest {
             (amount * borrowedMarket.price * 10 ** collateralMarket.decimals).percentDiv(collateralMarket.ltv)
                 / (collateralMarket.price * 10 ** borrowedMarket.decimals)
         );
+    }
+
+    function _borrow50Pct(TestMarket memory market, uint256 amount) internal returns (uint256 supplied) {
+        // Divided by 2 because will be supplied by promoter & promoted and may thus reach supply cap otherwise.
+        supplied = _boundSupply(market, amount) / 2;
+
+        user2.approve(market.underlying, supplied);
+        user2.supplyCollateral(market.underlying, supplied);
+        try user2.borrow(market.underlying, _boundBorrow(market, market, supplied)) {} catch {}
+
+        _forward(1);
     }
 }
