@@ -18,6 +18,8 @@ import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
+import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -28,6 +30,8 @@ import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+
 abstract contract MorphoInternal is MorphoStorage {
     using PoolLib for IPool;
     using MarketLib for Types.Market;
@@ -36,6 +40,7 @@ abstract contract MorphoInternal is MorphoStorage {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using UserConfiguration for DataTypes.UserConfigurationMap;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using SafeTransferLib for ERC20;
 
     using Math for uint256;
     using WadRayMath for uint256;
@@ -51,6 +56,75 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// INTERNAL ///
+
+    function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
+        if (underlying == address(0)) revert Errors.AddressIsZero();
+        if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR || reserveFactor > PercentageMath.PERCENTAGE_FACTOR) {
+            revert Errors.ExceedsMaxBasisPoints();
+        }
+
+        DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
+        if (!reserveData.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
+
+        Types.Market storage market = _market[underlying];
+
+        if (market.isCreated()) revert Errors.MarketAlreadyCreated();
+
+        Types.Indexes256 memory indexes;
+        indexes.supply.p2pIndex = WadRayMath.RAY;
+        indexes.borrow.p2pIndex = WadRayMath.RAY;
+        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
+
+        market.setIndexes(indexes);
+        market.lastUpdateTimestamp = uint32(block.timestamp);
+
+        market.underlying = underlying;
+        market.aToken = reserveData.aTokenAddress;
+        market.variableDebtToken = reserveData.variableDebtTokenAddress;
+        market.reserveFactor = reserveFactor;
+        market.p2pIndexCursor = p2pIndexCursor;
+
+        _marketsCreated.push(underlying);
+
+        ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
+
+        emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
+    }
+
+    function _increaseP2PDeltas(address underlying, uint256 amount) internal {
+        Types.Indexes256 memory indexes = _updateIndexes(underlying);
+
+        Types.Market storage market = _market[underlying];
+        Types.Deltas memory deltas = market.deltas;
+        uint256 poolSupplyIndex = indexes.supply.poolIndex;
+        uint256 poolBorrowIndex = indexes.borrow.poolIndex;
+
+        amount = Math.min(
+            amount,
+            Math.min(
+                deltas.p2pSupplyAmount.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                    deltas.p2pSupplyDelta.rayMul(poolSupplyIndex)
+                ),
+                deltas.p2pBorrowAmount.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+                    deltas.p2pBorrowDelta.rayMul(poolBorrowIndex)
+                )
+            )
+        );
+        if (amount == 0) revert Errors.AmountIsZero();
+
+        uint256 newP2PSupplyDelta = deltas.p2pSupplyDelta + amount.rayDiv(poolSupplyIndex);
+        uint256 newP2PBorrowDelta = deltas.p2pBorrowDelta + amount.rayDiv(poolBorrowIndex);
+
+        market.deltas.p2pSupplyDelta = newP2PSupplyDelta;
+        market.deltas.p2pBorrowDelta = newP2PBorrowDelta;
+        emit Events.P2PSupplyDeltaUpdated(underlying, newP2PSupplyDelta);
+        emit Events.P2PBorrowDeltaUpdated(underlying, newP2PBorrowDelta);
+
+        _POOL.borrowFromPool(underlying, amount);
+        _POOL.supplyToPool(underlying, amount);
+
+        emit Events.P2PDeltasIncreased(underlying, amount);
+    }
 
     function _hashEIP712TypedData(bytes32 structHash) internal view returns (bytes32) {
         return keccak256(abi.encodePacked(Constants.EIP712_MSG_PREFIX, _DOMAIN_SEPARATOR, structHash));
@@ -259,6 +333,8 @@ abstract contract MorphoInternal is MorphoStorage {
             onPool,
             inP2P
         );
+        if (onPool == 0 && inP2P == 0) _userBorrows[user].remove(underlying);
+        else _userBorrows[user].add(underlying);
     }
 
     function _setPauseStatus(address underlying, bool isPaused) internal {
@@ -307,7 +383,8 @@ abstract contract MorphoInternal is MorphoStorage {
                 poolBorrowIndex: indexes.borrow.poolIndex,
                 reserveFactor: market.reserveFactor,
                 p2pIndexCursor: market.p2pIndexCursor,
-                deltas: market.deltas
+                deltas: market.deltas,
+                proportionIdle: _proportionIdle(underlying)
             })
         );
     }
@@ -323,5 +400,16 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.LiquidityData memory liquidityData = _liquidityData(underlying, user, withdrawnAmount, 0);
 
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
+    }
+
+    /// @dev Returns a ray.
+    function _proportionIdle(address underlying) internal view returns (uint256) {
+        Types.Market storage market = _market[underlying];
+        uint256 idleSupply = market.idleSupply;
+        if (idleSupply == 0) {
+            return 0;
+        }
+        uint256 totalP2PSupplied = market.deltas.p2pSupplyAmount.rayMul(market.indexes.supply.p2pIndex);
+        return idleSupply.rayDivUp(totalP2PSupplied);
     }
 }
