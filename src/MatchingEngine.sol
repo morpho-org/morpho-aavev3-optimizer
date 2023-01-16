@@ -34,7 +34,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 maxLoops: maxLoops,
                 borrow: false,
                 updateDS: _updateSupplierInDS,
-                promoting: true,
+                demoting: false,
                 step: _promote
             })
         );
@@ -55,7 +55,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 maxLoops: maxLoops,
                 borrow: true,
                 updateDS: _updateBorrowerInDS,
-                promoting: true,
+                demoting: false,
                 step: _promote
             })
         );
@@ -76,7 +76,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 maxLoops: maxLoops,
                 borrow: false,
                 updateDS: _updateSupplierInDS,
-                promoting: false,
+                demoting: true,
                 step: _demote
             })
         );
@@ -97,7 +97,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 maxLoops: maxLoops,
                 borrow: true,
                 updateDS: _updateBorrowerInDS,
-                promoting: false,
+                demoting: true,
                 step: _demote
             })
         );
@@ -111,7 +111,7 @@ abstract contract MatchingEngine is MorphoInternal {
         if (vars.maxLoops == 0) return (0, 0);
 
         uint256 remaining = vars.amount;
-        LogarithmicBuckets.BucketList storage workingBuckets = vars.promoting ? poolBuckets : p2pBuckets;
+        LogarithmicBuckets.BucketList storage workingBuckets = vars.demoting ? p2pBuckets : poolBuckets;
 
         for (; loopsDone < vars.maxLoops && remaining != 0; ++loopsDone) {
             address firstUser = workingBuckets.getMatch(remaining);
@@ -123,7 +123,7 @@ abstract contract MatchingEngine is MorphoInternal {
             (onPool, inP2P, remaining) =
                 vars.step(poolBuckets.getValueOf(firstUser), p2pBuckets.getValueOf(firstUser), vars.indexes, remaining);
 
-            vars.updateDS(vars.underlying, firstUser, onPool, inP2P, vars.promoting);
+            vars.updateDS(vars.underlying, firstUser, onPool, inP2P, vars.demoting);
             emit Events.PositionUpdated(vars.borrow, firstUser, vars.underlying, onPool, inP2P);
         }
 
