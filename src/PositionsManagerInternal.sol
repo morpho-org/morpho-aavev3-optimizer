@@ -182,8 +182,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.inP2P = marketBalances.scaledP2PSupplyBalance(user);
 
         (vars.toRepay, amount) = _matchDelta(underlying, amount, indexes.borrow.poolIndex, true);
-        uint256 promoted;
 
+        uint256 promoted;
         (promoted, amount,) = _promoteRoutine(
             Types.PromoteVars({
                 underlying: underlying,
@@ -211,7 +211,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
-    ) internal returns (Types.WithdrawBorrowVars memory vars) {
+    ) internal returns (Types.BorrowWithdrawVars memory vars) {
         Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Deltas storage deltas = market.deltas;
@@ -297,7 +297,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address user,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
-    ) internal returns (Types.WithdrawBorrowVars memory vars) {
+    ) internal returns (Types.BorrowWithdrawVars memory vars) {
         Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Deltas storage deltas = market.deltas;

@@ -150,7 +150,7 @@ library Types {
         function(address, uint256, uint256) returns (uint256, uint256) promote;
     }
 
-    struct WithdrawBorrowVars {
+    struct BorrowWithdrawVars {
         uint256 onPool;
         uint256 inP2P;
         uint256 toWithdraw;
