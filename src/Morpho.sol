@@ -5,9 +5,12 @@ import {IMorpho} from "./interfaces/IMorpho.sol";
 import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
 import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol";
 
+import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {Constants} from "./libraries/Constants.sol";
+
+import {Permit2Lib} from "./libraries/Permit2Lib.sol";
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
@@ -16,6 +19,7 @@ import {MorphoGetters} from "./MorphoGetters.sol";
 import {MorphoSetters} from "./MorphoSetters.sol";
 
 contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
+    using Permit2Lib for ERC20;
     using DelegateCall for address;
     using SafeTransferLib for ERC20;
 
@@ -38,11 +42,9 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         address onBehalf,
         uint256 maxLoops,
         uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        Types.Signature calldata signature
     ) external returns (uint256 supplied) {
-        ERC20(underlying).permit(msg.sender, address(this), amount, deadline, v, r, s);
+        ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         return _supply(underlying, amount, msg.sender, onBehalf, maxLoops);
     }
 
@@ -58,11 +60,9 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 amount,
         address onBehalf,
         uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        Types.Signature calldata signature
     ) external returns (uint256 supplied) {
-        ERC20(underlying).permit(msg.sender, address(this), amount, deadline, v, r, s);
+        ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         return _supplyCollateral(underlying, amount, msg.sender, onBehalf);
     }
 
@@ -82,11 +82,9 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 amount,
         address onBehalf,
         uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        Types.Signature calldata signature
     ) external returns (uint256 repaid) {
-        ERC20(underlying).permit(msg.sender, address(this), amount, deadline, v, r, s);
+        ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         return _repay(underlying, amount, msg.sender, onBehalf);
     }
 
@@ -121,18 +119,16 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         bool isAllowed,
         uint256 nonce,
         uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        Types.Signature calldata signature
     ) external {
-        if (uint256(s) > Constants.MAX_VALID_ECDSA_S) revert Errors.InvalidValueS();
+        if (uint256(signature.s) > Constants.MAX_VALID_ECDSA_S) revert Errors.InvalidValueS();
         // v ∈ {27, 28} (source: https://ethereum.github.io/yellowpaper/paper.pdf #308)
-        if (v != 27 && v != 28) revert Errors.InvalidValueV();
+        if (signature.v != 27 && signature.v != 28) revert Errors.InvalidValueV();
 
         bytes32 structHash =
             keccak256(abi.encode(Constants.EIP712_AUTHORIZATION_TYPEHASH, owner, manager, isAllowed, nonce, deadline));
         bytes32 digest = _hashEIP712TypedData(structHash);
-        address signatory = ecrecover(digest, v, r, s);
+        address signatory = ecrecover(digest, signature.v, signature.r, signature.s);
 
         if (signatory == address(0) || owner != signatory) revert Errors.InvalidSignatory();
         if (nonce != _userNonce[signatory]++) revert Errors.InvalidNonce();
