@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IAToken} from "../../src/interfaces/aave/IAToken.sol";
+import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
 import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
 

@@ -5,6 +5,7 @@ import "test/helpers/IntegrationTest.sol";
 
 contract TestSupply is IntegrationTest {
     using WadRayMath for uint256;
+    using PercentageMath for uint256;
 
     function testShouldSupplyPoolOnly(uint256 amount) public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
@@ -28,29 +29,30 @@ contract TestSupply is IntegrationTest {
     }
 
     function testShouldSupplyP2POnly(uint256 amount) public {
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
             _revert();
 
-            TestMarket memory market = markets[marketIndex];
+            TestMarket memory market = borrowableMarkets[marketIndex];
 
-            amount = _boundSupply(market, amount);
+            uint256 collateral = _boundSupply(market, amount);
+            amount = _boundBorrow(market, collateral);
 
-            user2.approve(market.underlying, amount);
-            user2.supplyCollateral(market.underlying, amount);
-            user2.borrow(market.underlying, amount / 2);
+            user2.approve(market.underlying, collateral);
+            user2.supplyCollateral(market.underlying, collateral);
+            user2.borrow(market.underlying, amount);
 
             _forward(1);
 
-            user1.approve(market.underlying, amount / 2);
-            uint256 supplied = user1.supply(market.underlying, amount / 2);
+            user1.approve(market.underlying, amount);
+            uint256 supplied = user1.supply(market.underlying, amount);
 
-            // Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
-            // uint256 poolSupply =
-            //     morpho.scaledPoolSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.poolIndex);
+            Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
+            uint256 p2pSupply =
+                morpho.scaledP2PSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.p2pIndex);
 
-            // assertEq(supplied, amount, "supplied != amount");
-            // assertLe(poolSupply, amount, "poolSupply > amount");
-            // assertApproxEqAbs(poolSupply, amount, 1, "poolSupply != amount");
+            assertEq(supplied, amount, "supplied != amount");
+            assertLe(p2pSupply, amount, "p2pSupply > amount");
+            assertApproxEqAbs(p2pSupply, amount, 1, "p2pSupply != amount");
         }
     }
 
@@ -73,7 +75,7 @@ contract TestSupply is IntegrationTest {
         user1.supply(sAvax, 100);
     }
 
-    function testShouldRevertSupplyWhenSupplyIsPaused() public {
+    function testShouldRevertSupplyWhenSupplyPaused() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 

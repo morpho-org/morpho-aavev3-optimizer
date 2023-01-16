@@ -6,28 +6,26 @@ import "test/helpers/IntegrationTest.sol";
 contract TestSupplyCollateral is IntegrationTest {
     using WadRayMath for uint256;
 
-    // function testShouldSupplyCollateral(uint256 amount) public {
-    //     for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
-    //         _revert();
+    function testShouldSupplyCollateral(uint256 amount) public {
+        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+            _revert();
 
-    //         TestMarket memory market = markets[marketIndex];
+            TestMarket memory market = markets[marketIndex];
 
-    //         // TODO: pause supply (thus we check if supplyCollateral still works)
+            amount = _boundSupply(market, amount);
 
-    //         amount = _boundSupply(market, amount);
+            user1.approve(market.underlying, amount);
+            uint256 supplied = user1.supplyCollateral(market.underlying, amount);
 
-    //         user1.approve(market.underlying, amount);
-    //         user1.supply(market.underlying, amount);
+            Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
+            uint256 collateral =
+                morpho.scaledCollateralBalance(market.underlying, address(user1)).rayMul(indexes.supply.poolIndex); // TODO: rayMulDown?
 
-    //         Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
-
-    //         assertEq(
-    //             morpho.scaledPoolSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.poolIndex)
-    //                 + morpho.scaledP2PSupplyBalance(market.underlying, address(user1)).rayMul(indexes.supply.p2pIndex),
-    //             amount
-    //         );
-    //     }
-    // }
+            assertEq(supplied, amount, "supplied != amount");
+            assertLe(collateral, amount, "collateral > amount"); // TODO: assertEq?
+            assertApproxEqAbs(collateral, amount, 1, "collateral != amount");
+        }
+    }
 
     function testShouldRevertSupplyCollateralZero() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
@@ -48,7 +46,7 @@ contract TestSupplyCollateral is IntegrationTest {
         user1.supplyCollateral(sAvax, 100);
     }
 
-    function testShouldRevertSupplyCollateralWhenSupplyCollateralIsPaused() public {
+    function testShouldRevertSupplyCollateralWhenSupplyCollateralPaused() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
@@ -58,6 +56,21 @@ contract TestSupplyCollateral is IntegrationTest {
 
             vm.expectRevert(Errors.SupplyCollateralIsPaused.selector);
             user1.supplyCollateral(market.underlying, 100);
+        }
+    }
+
+    function testShouldSupplyCollateralWhenSupplyPaused() public {
+        uint256 amount = 100;
+
+        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+            _revert();
+
+            TestMarket memory market = markets[marketIndex];
+
+            morpho.setIsSupplyPaused(market.underlying, true);
+
+            user1.approve(market.underlying, amount);
+            user1.supplyCollateral(market.underlying, amount);
         }
     }
 }

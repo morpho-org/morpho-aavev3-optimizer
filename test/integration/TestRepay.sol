@@ -23,7 +23,7 @@ contract TestRepay is IntegrationTest {
         user1.repay(sAvax, 100);
     }
 
-    function testShouldRevertRepayWhenRepayIsPaused() public {
+    function testShouldRevertRepayWhenRepayPaused() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 

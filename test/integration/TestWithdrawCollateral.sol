@@ -30,7 +30,7 @@ contract TestWithdrawCollateral is IntegrationTest {
         user1.withdrawCollateral(sAvax, 100);
     }
 
-    function testShouldRevertWithdrawCollateralWhenWithdrawCollateralIsPaused() public {
+    function testShouldRevertWithdrawCollateralWhenWithdrawCollateralPaused() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 

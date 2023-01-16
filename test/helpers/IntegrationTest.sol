@@ -51,11 +51,12 @@ contract IntegrationTest is ForkTest {
         uint16 p2pIndexCursor;
         //
         uint256 price;
-        uint256 liquidity;
+        uint256 totalSupply;
+        uint256 totalBorrow;
     }
 
-    TestMarket[] public markets;
-    TestMarket[] public borrowableMarkets;
+    TestMarket[] internal markets;
+    TestMarket[] internal borrowableMarkets;
 
     function setUp() public virtual override {
         super.setUp();
@@ -111,32 +112,29 @@ contract IntegrationTest is ForkTest {
     }
 
     function _initMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
-        string memory symbol = ERC20(underlying).symbol();
         DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
 
-        TestMarket memory market = TestMarket({
-            aToken: reserve.aTokenAddress,
-            debtToken: reserve.variableDebtTokenAddress,
-            underlying: underlying,
-            symbol: symbol,
-            decimals: 0,
-            ltv: 0,
-            lt: 0,
-            liquidationBonus: 0,
-            supplyCap: 0,
-            borrowCap: 0,
-            reserveFactor: reserveFactor,
-            p2pIndexCursor: p2pIndexCursor,
-            // Price is constant, equal to price at fork block number.
-            price: oracle.getAssetPrice(underlying),
-            liquidity: IAToken(reserve.aTokenAddress).totalSupply()
-        });
+        TestMarket memory market;
+        market.aToken = reserve.aTokenAddress;
+        market.debtToken = reserve.variableDebtTokenAddress;
+        market.underlying = underlying;
+        market.symbol = ERC20(underlying).symbol();
+        market.reserveFactor = reserveFactor;
+        market.p2pIndexCursor = p2pIndexCursor;
+        market.price = oracle.getAssetPrice(underlying); // Price is constant, equal to price at fork block number.
+        market.totalSupply = ERC20(reserve.aTokenAddress).totalSupply();
+        market.totalBorrow = ERC20(reserve.variableDebtTokenAddress).totalSupply();
 
         (market.ltv, market.lt, market.liquidationBonus, market.decimals,,) = reserve.configuration.getParams();
         market.supplyCap = reserve.configuration.getSupplyCap() * 10 ** market.decimals;
         market.borrowCap = reserve.configuration.getBorrowCap() * 10 ** market.decimals;
 
         markets.push(market);
+        if (
+            market.ltv > 0 && reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
+                && !reserve.configuration.getBorrowableInIsolation() && market.borrowCap > 0
+                && market.borrowCap > market.totalBorrow
+        ) borrowableMarkets.push(market);
 
         morpho.createMarket(underlying, reserveFactor, p2pIndexCursor);
     }
@@ -145,24 +143,22 @@ contract IntegrationTest is ForkTest {
         return bound(
             amount,
             (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price,
-            // TODO: may need to cap to type(uint96).max
-            Math.min((MAX_USD_AMOUNT * 10 ** market.decimals) / market.price, market.supplyCap - market.liquidity)
+            Math.min((MAX_USD_AMOUNT * 10 ** market.decimals) / market.price, market.supplyCap - market.totalSupply)
         );
     }
 
-    function _boundBorrow(TestMarket memory market, uint256 amount) internal view returns (uint256) {
+    function _boundBorrow(TestMarket memory market, uint256 collateral) internal view returns (uint256) {
         return bound(
-            amount,
-            (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price,
-            // TODO: may need to cap to type(uint96).max / 2 to keep collateral < type(uint96).max
+            collateral,
+            0,
             Math.min(
                 ERC20(market.underlying).balanceOf(market.aToken),
-                (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price
+                Math.min(collateral.percentMul(market.ltv - 1), market.borrowCap - market.totalBorrow)
             )
         );
     }
 
-    function _minimumCollateral(TestMarket memory collateralMarket, TestMarket memory borrowedMarket, uint256 amount)
+    function _minCollateral(TestMarket memory collateralMarket, TestMarket memory borrowedMarket, uint256 amount)
         internal
         pure
         returns (uint256)

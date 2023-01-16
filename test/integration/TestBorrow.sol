@@ -65,7 +65,7 @@ contract TestBorrow is IntegrationTest {
         user1.borrow(sAvax, 100);
     }
 
-    function testShouldRevertBorrowWhenBorrowIsPaused() public {
+    function testShouldRevertBorrowWhenBorrowPaused() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 

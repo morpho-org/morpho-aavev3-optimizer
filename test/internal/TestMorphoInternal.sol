@@ -2,12 +2,9 @@
 pragma solidity ^0.8.17;
 
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
-
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-
-import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
-import {DataTypes} from "src/libraries/aave/DataTypes.sol";
-import {ReserveConfiguration} from "src/libraries/aave/ReserveConfiguration.sol";
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {MorphoInternal, MorphoStorage} from "src/MorphoInternal.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
@@ -26,8 +23,6 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
     using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
-
-    IPriceOracleGetter internal oracle;
 
     function setUp() public virtual override {
         super.setUp();

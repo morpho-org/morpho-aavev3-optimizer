@@ -30,7 +30,7 @@ contract TestWithdraw is IntegrationTest {
         user1.withdraw(sAvax, 100);
     }
 
-    function testShouldRevertWithdrawWhenWithdrawIsPaused() public {
+    function testShouldRevertWithdrawWhenWithdrawPaused() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
