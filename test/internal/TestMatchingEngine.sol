@@ -80,7 +80,7 @@ contract TestMatchingEngine is InternalTest, MatchingEngine {
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
 
         for (uint256 i; i < numSuppliers; i++) {
-            _updateSupplierInDS(dai, vm.addr(i + 1), USER_AMOUNT, 0);
+            _updateSupplierInDS(dai, vm.addr(i + 1), USER_AMOUNT, 0, true);
         }
 
         (uint256 promoted, uint256 loopsDone) = _promoteSuppliers(dai, amountToPromote, maxLoops);
@@ -114,7 +114,7 @@ contract TestMatchingEngine is InternalTest, MatchingEngine {
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
 
         for (uint256 i; i < numBorrowers; i++) {
-            _updateBorrowerInDS(dai, vm.addr(i + 1), USER_AMOUNT, 0);
+            _updateBorrowerInDS(dai, vm.addr(i + 1), USER_AMOUNT, 0, true);
         }
 
         (uint256 promoted, uint256 loopsDone) = _promoteBorrowers(dai, amountToPromote, maxLoops);
@@ -148,7 +148,7 @@ contract TestMatchingEngine is InternalTest, MatchingEngine {
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
 
         for (uint256 i; i < numSuppliers; i++) {
-            _updateSupplierInDS(dai, vm.addr(i + 1), 0, USER_AMOUNT);
+            _updateSupplierInDS(dai, vm.addr(i + 1), 0, USER_AMOUNT, true);
         }
 
         uint256 demoted = _demoteSuppliers(dai, amountToDemote, maxLoops);
@@ -179,7 +179,7 @@ contract TestMatchingEngine is InternalTest, MatchingEngine {
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
 
         for (uint256 i; i < numBorrowers; i++) {
-            _updateBorrowerInDS(dai, vm.addr(i + 1), 0, USER_AMOUNT);
+            _updateBorrowerInDS(dai, vm.addr(i + 1), 0, USER_AMOUNT, true);
         }
 
         uint256 demoted = _demoteBorrowers(dai, amountToDemote, maxLoops);

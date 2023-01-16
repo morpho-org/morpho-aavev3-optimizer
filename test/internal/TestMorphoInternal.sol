@@ -122,13 +122,13 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
         assertGt(indexes3.borrow.poolIndex, indexes2.borrow.poolIndex);
     }
 
-    function testUpdateInDS(address user, uint96 onPool, uint96 inP2P) public {
+    function testUpdateInDS(address user, uint96 onPool, uint96 inP2P, bool head) public {
         vm.assume(user != address(0));
         vm.assume(onPool != 0);
         vm.assume(inP2P != 0);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateInDS(address(0), user, marketBalances.poolSuppliers, marketBalances.p2pSuppliers, onPool, inP2P);
+        _updateInDS(address(0), user, marketBalances.poolSuppliers, marketBalances.p2pSuppliers, onPool, inP2P, head);
         assertEq(marketBalances.scaledPoolSupplyBalance(user), onPool);
         assertEq(marketBalances.scaledP2PSupplyBalance(user), inP2P);
         assertEq(marketBalances.scaledPoolBorrowBalance(user), 0);
@@ -136,13 +136,13 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
         assertEq(marketBalances.scaledCollateralBalance(user), 0);
     }
 
-    function testUpdateSupplierInDS(address user, uint96 onPool, uint96 inP2P) public {
+    function testUpdateSupplierInDS(address user, uint96 onPool, uint96 inP2P, bool head) public {
         vm.assume(user != address(0));
         vm.assume(onPool != 0);
         vm.assume(inP2P != 0);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateSupplierInDS(dai, user, onPool, inP2P);
+        _updateSupplierInDS(dai, user, onPool, inP2P, head);
         assertEq(marketBalances.scaledPoolSupplyBalance(user), onPool);
         assertEq(marketBalances.scaledP2PSupplyBalance(user), inP2P);
         assertEq(marketBalances.scaledPoolBorrowBalance(user), 0);
@@ -150,13 +150,13 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
         assertEq(marketBalances.scaledCollateralBalance(user), 0);
     }
 
-    function testUpdateBorrowerInDS(address user, uint96 onPool, uint96 inP2P) public {
+    function testUpdateBorrowerInDS(address user, uint96 onPool, uint96 inP2P, bool head) public {
         vm.assume(user != address(0));
         vm.assume(onPool != 0);
         vm.assume(inP2P != 0);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateBorrowerInDS(dai, user, onPool, inP2P);
+        _updateBorrowerInDS(dai, user, onPool, inP2P, head);
         assertEq(marketBalances.scaledPoolSupplyBalance(user), 0);
         assertEq(marketBalances.scaledP2PSupplyBalance(user), 0);
         assertEq(marketBalances.scaledPoolBorrowBalance(user), onPool);
@@ -183,7 +183,7 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
         vm.assume(user != address(0));
         poolSupplyIndex = bound(poolSupplyIndex, WadRayMath.RAY, 10 * WadRayMath.RAY);
         p2pSupplyIndex = bound(p2pSupplyIndex, WadRayMath.RAY, 10 * WadRayMath.RAY);
-        _updateSupplierInDS(dai, user, onPool, inP2P);
+        _updateSupplierInDS(dai, user, onPool, inP2P, true);
 
         uint256 balance =
             _getUserSupplyBalanceFromIndexes(dai, user, Types.MarketSideIndexes256(poolSupplyIndex, p2pSupplyIndex));
@@ -198,13 +198,14 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
         address user,
         uint96 onPool,
         uint96 inP2P,
+        bool head,
         uint256 poolBorrowIndex,
         uint256 p2pBorrowIndex
     ) public {
         vm.assume(user != address(0));
         poolBorrowIndex = bound(poolBorrowIndex, WadRayMath.RAY, 10 * WadRayMath.RAY);
         p2pBorrowIndex = bound(p2pBorrowIndex, WadRayMath.RAY, 10 * WadRayMath.RAY);
-        _updateBorrowerInDS(dai, user, onPool, inP2P);
+        _updateBorrowerInDS(dai, user, onPool, inP2P, head);
 
         uint256 balance =
             _getUserBorrowBalanceFromIndexes(dai, user, Types.MarketSideIndexes256(poolBorrowIndex, p2pBorrowIndex));
@@ -283,7 +284,8 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
             dai,
             address(1),
             amountPool.rayDiv(_market[dai].indexes.borrow.poolIndex),
-            amountP2P.rayDiv(_market[dai].indexes.borrow.p2pIndex)
+            amountP2P.rayDiv(_market[dai].indexes.borrow.p2pIndex),
+            true
         );
 
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
@@ -342,19 +344,22 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
             dai,
             address(1),
             uint256(100 ether).rayDiv(_market[dai].indexes.borrow.poolIndex),
-            uint256(100 ether).rayDiv(_market[dai].indexes.borrow.p2pIndex)
+            uint256(100 ether).rayDiv(_market[dai].indexes.borrow.p2pIndex),
+            true
         );
         _updateBorrowerInDS(
             wbtc,
             address(1),
             uint256(1e8).rayDiv(_market[wbtc].indexes.borrow.poolIndex),
-            uint256(1e8).rayDiv(_market[wbtc].indexes.borrow.p2pIndex)
+            uint256(1e8).rayDiv(_market[wbtc].indexes.borrow.p2pIndex),
+            true
         );
         _updateBorrowerInDS(
             usdc,
             address(1),
             uint256(1e8).rayDiv(_market[usdc].indexes.borrow.poolIndex),
-            uint256(1e8).rayDiv(_market[usdc].indexes.borrow.p2pIndex)
+            uint256(1e8).rayDiv(_market[usdc].indexes.borrow.p2pIndex),
+            true
         );
 
         _userBorrows[address(1)].add(dai);
@@ -386,19 +391,22 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
             dai,
             address(1),
             uint256(100 ether).rayDiv(_market[dai].indexes.borrow.poolIndex),
-            uint256(100 ether).rayDiv(_market[dai].indexes.borrow.p2pIndex)
+            uint256(100 ether).rayDiv(_market[dai].indexes.borrow.p2pIndex),
+            true
         );
         _updateBorrowerInDS(
             wbtc,
             address(1),
             uint256(1e8).rayDiv(_market[wbtc].indexes.borrow.poolIndex),
-            uint256(1e8).rayDiv(_market[wbtc].indexes.borrow.p2pIndex)
+            uint256(1e8).rayDiv(_market[wbtc].indexes.borrow.p2pIndex),
+            true
         );
         _updateBorrowerInDS(
             usdc,
             address(1),
             uint256(1e8).rayDiv(_market[usdc].indexes.borrow.poolIndex),
-            uint256(1e8).rayDiv(_market[usdc].indexes.borrow.p2pIndex)
+            uint256(1e8).rayDiv(_market[usdc].indexes.borrow.p2pIndex),
+            true
         );
 
         _userBorrows[address(1)].add(dai);
@@ -420,9 +428,13 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
         assertEq(liquidityData.debt, debt, "debt not equal");
     }
 
-    function testGetUserHealthFactor(uint256 collateral, uint256 amountPool, uint256 amountP2P, uint256 amountWithdrawn)
-        public
-    {
+    function testGetUserHealthFactor(
+        uint256 collateral,
+        uint256 amountPool,
+        uint256 amountP2P,
+        uint256 amountWithdrawn,
+        bool head
+    ) public {
         collateral = bound(collateral, 0, 1_000_000 ether);
         amountPool = bound(amountPool, 1, 1_000_000 ether);
         amountP2P = bound(amountP2P, 1, 1_000_000 ether);
@@ -442,7 +454,8 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
             dai,
             address(1),
             amountPool.rayDiv(_market[dai].indexes.borrow.poolIndex),
-            amountP2P.rayDiv(_market[dai].indexes.borrow.p2pIndex)
+            amountP2P.rayDiv(_market[dai].indexes.borrow.p2pIndex),
+            head
         );
 
         Types.LiquidityData memory liquidityData = _liquidityData(dai, address(1), amountWithdrawn, 0);

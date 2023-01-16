@@ -217,7 +217,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             toSupply = amount;
         }
 
-        _updateSupplierInDS(underlying, user, onPool, inP2P);
+        _updateSupplierInDS(underlying, user, onPool, inP2P, false);
     }
 
     function _executeBorrow(
@@ -286,7 +286,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             vars.toBorrow = amount;
         }
 
-        _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
+        _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
     }
 
     function _executeRepay(
@@ -312,7 +312,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             onPool -= Math.min(onPool, toRepay.rayDiv(indexes.borrow.poolIndex)); // In scaled balance.
 
             if (amount == 0) {
-                _updateBorrowerInDS(underlying, user, onPool, inP2P);
+                _updateBorrowerInDS(underlying, user, onPool, inP2P, false);
 
                 if (inP2P == 0 && onPool == 0) {
                     _userBorrows[user].remove(underlying);
@@ -323,7 +323,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         inP2P -= Math.min(inP2P, amount.rayDiv(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
-        _updateBorrowerInDS(underlying, user, onPool, inP2P);
+        _updateBorrowerInDS(underlying, user, onPool, inP2P, true);
 
         // Reduce the peer-to-peer borrow delta.
         if (amount > 0 && deltas.p2pBorrowDelta > 0) {
@@ -415,7 +415,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             vars.onPool -= Math.min(vars.onPool, vars.toWithdraw.rayDiv(indexes.supply.poolIndex));
 
             if (amount == 0) {
-                _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
+                _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
 
                 if (vars.inP2P == 0 && vars.onPool == 0) {
                     _userCollaterals[user].remove(underlying);
@@ -435,7 +435,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             market.idleSupply -= matchedIdle;
         }
 
-        _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
+        _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, true);
 
         // Reduce the peer-to-peer supply delta.
         if (amount > 0 && deltas.p2pSupplyDelta > 0) {

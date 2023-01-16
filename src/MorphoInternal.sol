@@ -295,7 +295,8 @@ abstract contract MorphoInternal is MorphoStorage {
         LogarithmicBuckets.BucketList storage poolMarket,
         LogarithmicBuckets.BucketList storage p2pMarket,
         uint256 onPool,
-        uint256 inP2P
+        uint256 inP2P,
+        bool promoting
     ) internal {
         uint256 formerOnPool = poolMarket.getValueOf(user);
         uint256 formerInP2P = p2pMarket.getValueOf(user);
@@ -305,31 +306,37 @@ abstract contract MorphoInternal is MorphoStorage {
                 _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
 
-            poolMarket.update(user, onPool, false);
+            poolMarket.update(user, onPool, !promoting);
         }
 
         if (inP2P != formerInP2P) p2pMarket.update(user, inP2P, true);
     }
 
-    function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P) internal {
+    function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool promoting)
+        internal
+    {
         _updateInDS(
             _market[underlying].aToken,
             user,
             _marketBalances[underlying].poolSuppliers,
             _marketBalances[underlying].p2pSuppliers,
             onPool,
-            inP2P
+            inP2P,
+            promoting
         );
     }
 
-    function _updateBorrowerInDS(address underlying, address user, uint256 onPool, uint256 inP2P) internal {
+    function _updateBorrowerInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool promoting)
+        internal
+    {
         _updateInDS(
             _market[underlying].variableDebtToken,
             user,
             _marketBalances[underlying].poolBorrowers,
             _marketBalances[underlying].p2pBorrowers,
             onPool,
-            inP2P
+            inP2P,
+            promoting
         );
     }
 
