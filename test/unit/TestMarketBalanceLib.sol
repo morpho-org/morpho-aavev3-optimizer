@@ -2,7 +2,6 @@
 pragma solidity 0.8.17;
 
 import {Types} from "src/libraries/Types.sol";
-import {Constants} from "src/libraries/Constants.sol";
 import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
@@ -13,6 +12,7 @@ contract TestMarketLib is Test {
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
 
     uint256 internal constant MAX_SORTED_USERS = 20;
+    bool internal constant IS_LIFO = true;
 
     Types.MarketBalances internal marketBalances;
 
@@ -21,7 +21,7 @@ contract TestMarketLib is Test {
         vm.assume(amount != 0);
         assertEq(marketBalances.scaledPoolSupplyBalance(user), 0);
 
-        marketBalances.poolSuppliers.update(user, amount, Constants.HEAD);
+        marketBalances.poolSuppliers.update(user, amount, IS_LIFO);
 
         assertEq(marketBalances.scaledPoolSupplyBalance(user), amount);
     }
@@ -31,7 +31,7 @@ contract TestMarketLib is Test {
         vm.assume(amount != 0);
         assertEq(marketBalances.scaledPoolBorrowBalance(user), 0);
 
-        marketBalances.poolBorrowers.update(user, amount, Constants.HEAD);
+        marketBalances.poolBorrowers.update(user, amount, IS_LIFO);
 
         assertEq(marketBalances.scaledPoolBorrowBalance(user), amount);
     }
@@ -41,7 +41,7 @@ contract TestMarketLib is Test {
         vm.assume(amount != 0);
         assertEq(marketBalances.scaledP2PSupplyBalance(user), 0);
 
-        marketBalances.p2pSuppliers.update(user, amount, Constants.HEAD);
+        marketBalances.p2pSuppliers.update(user, amount, IS_LIFO);
 
         assertEq(marketBalances.scaledP2PSupplyBalance(user), amount);
     }
@@ -51,7 +51,7 @@ contract TestMarketLib is Test {
         vm.assume(amount != 0);
         assertEq(marketBalances.scaledP2PBorrowBalance(user), 0);
 
-        marketBalances.p2pBorrowers.update(user, amount, Constants.HEAD);
+        marketBalances.p2pBorrowers.update(user, amount, IS_LIFO);
 
         assertEq(marketBalances.scaledP2PBorrowBalance(user), amount);
     }

@@ -7,13 +7,6 @@ import {DataTypes} from "./aave/DataTypes.sol";
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 library Types {
-    /// ENUMS ///
-
-    enum Method {
-        LIFO,
-        FIFO
-    }
-
     /// NESTED STRUCTS ///
 
     struct Deltas {
