@@ -275,14 +275,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.inP2P -= Math.min(vars.inP2P, amount.rayDiv(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
         _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
 
-        (vars.toRepay, amount) = _matchDelta(underlying, amount, indexes.borrow.poolIndex, true);
+        uint256 toRepaySingle;
+        (toRepaySingle, amount) = _matchDelta(underlying, amount, indexes.borrow.poolIndex, true);
+        vars.toRepay += toRepaySingle;
+
         deltas.borrow.scaledTotalP2P -= vars.toRepay.rayDiv(indexes.borrow.p2pIndex);
         emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
 
         amount = _repayFee(underlying, amount, indexes);
 
-        uint256 toRepayFromPromote;
-        (toRepayFromPromote, amount, maxLoops) = _promoteRoutine(
+        (toRepaySingle, amount, maxLoops) = _promoteRoutine(
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
@@ -293,7 +295,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             _marketBalances[underlying].poolBorrowers,
             _market[underlying].deltas.borrow
         );
-        vars.toRepay += toRepayFromPromote;
+        vars.toRepay += toRepaySingle;
 
         vars.toSupply = _demoteRoutine(underlying, amount, maxLoops, indexes, _demoteSuppliers, deltas, false);
 
@@ -324,12 +326,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _withdrawIdle(market, amount, vars.inP2P, indexes.supply.p2pIndex);
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
 
-        (vars.toWithdraw, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, false);
+        uint256 toWithdrawSingle;
+        (toWithdrawSingle, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, false);
+        vars.toWithdraw += toWithdrawSingle;
         deltas.supply.scaledTotalP2P -= vars.toWithdraw.rayDiv(indexes.supply.p2pIndex);
         emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
 
-        uint256 toWithdrawFromPromote;
-        (toWithdrawFromPromote, amount, maxLoops) = _promoteRoutine(
+        (toWithdrawSingle, amount, maxLoops) = _promoteRoutine(
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
@@ -340,7 +343,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             _marketBalances[underlying].poolSuppliers,
             _market[underlying].deltas.supply
         );
-        vars.toWithdraw += toWithdrawFromPromote;
+        vars.toWithdraw += toWithdrawSingle;
 
         vars.toBorrow = _demoteRoutine(underlying, amount, maxLoops, indexes, _demoteBorrowers, deltas, true);
     }
