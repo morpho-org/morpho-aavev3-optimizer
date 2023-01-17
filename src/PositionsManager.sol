@@ -181,34 +181,33 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         vars.closeFactor = _validateLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
 
-        vars.amountToLiquidate = Math.min(
+        vars.repaid = Math.min(
             amount,
             _getUserBorrowBalanceFromIndexes(underlyingBorrowed, borrower, borrowIndexes.borrow).percentMul(
                 vars.closeFactor
             ) // Max liquidatable debt.
         );
 
-        (vars.amountToLiquidate, vars.amountToSeize) = _calculateAmountToSeize(
-            underlyingBorrowed, underlyingCollateral, vars.amountToLiquidate, borrower, collateralIndexes.supply
+        (vars.repaid, vars.seized) = _calculateLiquidation(
+            underlyingBorrowed, underlyingCollateral, vars.repaid, borrower, collateralIndexes.supply
         );
 
-        ERC20(underlyingBorrowed).transferFrom2(liquidator, address(this), vars.amountToLiquidate);
+        ERC20(underlyingBorrowed).transferFrom2(liquidator, address(this), vars.repaid);
 
         Types.SupplyRepayVars memory repayVars =
-            _executeRepay(underlyingBorrowed, vars.amountToLiquidate, borrower, 0, borrowIndexes);
+            _executeRepay(underlyingBorrowed, vars.repaid, borrower, 0, borrowIndexes);
         Types.BorrowWithdrawVars memory withdrawVars =
-            _executeWithdraw(underlyingCollateral, vars.amountToSeize, borrower, 0, collateralIndexes);
+            _executeWithdraw(underlyingCollateral, vars.seized, borrower, 0, collateralIndexes);
 
         _POOL.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, repayVars.toRepay);
         _POOL.supplyToPool(underlyingBorrowed, repayVars.toSupply);
         _POOL.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, withdrawVars.toWithdraw);
         _POOL.borrowFromPool(underlyingCollateral, withdrawVars.toBorrow);
 
-        ERC20(underlyingCollateral).safeTransfer(liquidator, vars.amountToSeize);
+        ERC20(underlyingCollateral).safeTransfer(liquidator, vars.seized);
 
-        emit Events.Liquidated(
-            liquidator, borrower, underlyingBorrowed, vars.amountToLiquidate, underlyingCollateral, vars.amountToSeize
-            );
-        return (vars.amountToLiquidate, vars.amountToSeize);
+        emit Events.Liquidated(liquidator, borrower, underlyingBorrowed, vars.repaid, underlyingCollateral, vars.seized);
+
+        return (vars.repaid, vars.seized);
     }
 }

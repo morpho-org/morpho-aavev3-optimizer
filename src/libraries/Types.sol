@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
-import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
+import {IAaveOracle} from "@aave/core-v3/contracts/interfaces/IAaveOracle.sol";
 import {DataTypes} from "./aave/DataTypes.sol";
 
 library Types {
@@ -137,7 +137,7 @@ library Types {
     struct LiquidityVars {
         address user;
         uint8 eMode;
-        IPriceOracleGetter oracle;
+        IAaveOracle oracle;
         DataTypes.EModeCategory eModeCategory;
         DataTypes.UserConfigurationMap morphoPoolConfig;
     }
@@ -166,7 +166,7 @@ library Types {
 
     struct LiquidateVars {
         uint256 closeFactor;
-        uint256 amountToLiquidate;
-        uint256 amountToSeize;
+        uint256 repaid;
+        uint256 seized;
     }
 }

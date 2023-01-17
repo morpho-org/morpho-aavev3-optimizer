@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import {IPool} from "./interfaces/aave/IPool.sol";
 import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
-import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
+import {IAaveOracle} from "@aave/core-v3/contracts/interfaces/IAaveOracle.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
@@ -183,7 +183,7 @@ abstract contract MorphoInternal is MorphoStorage {
         vars.eMode = uint8(_POOL.getUserEMode(address(this)));
         if (vars.eMode != 0) vars.eModeCategory = _POOL.getEModeCategoryData(vars.eMode);
         vars.morphoPoolConfig = _POOL.getUserConfiguration(address(this));
-        vars.oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        vars.oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.user = user;
 
         (liquidityData.collateral, liquidityData.borrowable, liquidityData.maxDebt) =
@@ -198,10 +198,12 @@ abstract contract MorphoInternal is MorphoStorage {
         returns (uint256 collateral, uint256 borrowable, uint256 maxDebt)
     {
         address[] memory userCollaterals = _userCollaterals[vars.user].values();
+        uint256[] memory prices = vars.oracle.getAssetsPrices(userCollaterals);
 
         for (uint256 i; i < userCollaterals.length; ++i) {
-            (uint256 collateralSingle, uint256 borrowableSingle, uint256 maxDebtSingle) =
-                _collateralData(userCollaterals[i], vars, userCollaterals[i] == assetWithdrawn ? amountWithdrawn : 0);
+            (uint256 collateralSingle, uint256 borrowableSingle, uint256 maxDebtSingle) = _collateralData(
+                userCollaterals[i], prices[i], vars, userCollaterals[i] == assetWithdrawn ? amountWithdrawn : 0
+            );
 
             collateral += collateralSingle;
             borrowable += borrowableSingle;
@@ -215,51 +217,57 @@ abstract contract MorphoInternal is MorphoStorage {
         returns (uint256 debt)
     {
         address[] memory userBorrows = _userBorrows[vars.user].values();
+        uint256[] memory prices = vars.oracle.getAssetsPrices(userBorrows);
 
         for (uint256 i; i < userBorrows.length; ++i) {
-            debt += _debt(userBorrows[i], vars, userBorrows[i] == assetBorrowed ? amountBorrowed : 0);
+            debt += _debt(userBorrows[i], prices[i], vars, userBorrows[i] == assetBorrowed ? amountBorrowed : 0);
         }
         if (assetBorrowed != address(0) && !_userBorrows[vars.user].contains(assetBorrowed)) {
-            debt += _debt(assetBorrowed, vars, amountBorrowed);
+            debt += _debt(assetBorrowed, vars.oracle.getAssetPrice(assetBorrowed), vars, amountBorrowed);
         }
     }
 
-    function _collateralData(address underlying, Types.LiquidityVars memory vars, uint256 amountWithdrawn)
-        internal
-        view
-        returns (uint256 collateral, uint256 borrowable, uint256 maxDebt)
-    {
-        (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
-            _assetLiquidityData(underlying, vars);
+    function _collateralData(
+        address underlying,
+        uint256 price,
+        Types.LiquidityVars memory vars,
+        uint256 amountWithdrawn
+    ) internal view returns (uint256 collateral, uint256 borrowable, uint256 maxDebt) {
+        uint256 ltv;
+        uint256 liquidationThreshold;
+        uint256 tokenUnit;
+        (price, ltv, liquidationThreshold, tokenUnit) = _assetLiquidityData(underlying, price, vars);
 
         Types.Indexes256 memory indexes = _computeIndexes(underlying);
         collateral = (
             _getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex) - amountWithdrawn
-        ) * underlyingPrice / tokenUnit;
+        ) * price / tokenUnit;
 
         borrowable = collateral.percentMulDown(ltv);
         maxDebt = collateral.percentMulDown(liquidationThreshold);
     }
 
-    function _debt(address underlying, Types.LiquidityVars memory vars, uint256 amountBorrowed)
+    function _debt(address underlying, uint256 price, Types.LiquidityVars memory vars, uint256 amountBorrowed)
         internal
         view
         returns (uint256 debtValue)
     {
-        (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(underlying, vars);
+        uint256 tokenUnit;
+        (price,,, tokenUnit) = _assetLiquidityData(underlying, price, vars);
 
         Types.Indexes256 memory indexes = _computeIndexes(underlying);
-        debtValue = (
-            (_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes.borrow) + amountBorrowed) * underlyingPrice
-        ).divUp(tokenUnit);
+        debtValue = ((_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes.borrow) + amountBorrowed) * price)
+            .divUp(tokenUnit);
     }
 
-    function _assetLiquidityData(address underlying, Types.LiquidityVars memory vars)
+    function _assetLiquidityData(address underlying, uint256 price, Types.LiquidityVars memory vars)
         internal
         view
-        returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit)
+        returns (uint256, uint256, uint256, uint256)
     {
-        underlyingPrice = vars.oracle.getAssetPrice(underlying);
+        uint256 ltv;
+        uint256 liquidationThreshold;
+        uint256 tokenUnit;
 
         uint256 decimals;
         uint256 eModeCat;
@@ -267,16 +275,13 @@ abstract contract MorphoInternal is MorphoStorage {
         (ltv, liquidationThreshold,, decimals,, eModeCat) = reserveData.configuration.getParams();
 
         if (vars.eMode != 0 && vars.eMode == eModeCat) {
-            uint256 eModeUnderlyingPrice;
             if (vars.eModeCategory.priceSource != address(0)) {
-                eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
+                uint256 eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
+                if (eModeUnderlyingPrice != 0) price = eModeUnderlyingPrice;
             }
-            underlyingPrice = eModeUnderlyingPrice != 0 ? eModeUnderlyingPrice : vars.oracle.getAssetPrice(underlying);
 
             if (ltv != 0) ltv = vars.eModeCategory.ltv;
             liquidationThreshold = vars.eModeCategory.liquidationThreshold;
-        } else {
-            underlyingPrice = vars.oracle.getAssetPrice(underlying);
         }
 
         // LTV should be zero if Morpho has not enabled this asset as collateral
@@ -293,6 +298,8 @@ abstract contract MorphoInternal is MorphoStorage {
         unchecked {
             tokenUnit = 10 ** decimals;
         }
+
+        return (price, ltv, liquidationThreshold, tokenUnit);
     }
 
     function _updateInDS(
@@ -405,14 +412,15 @@ abstract contract MorphoInternal is MorphoStorage {
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
     }
 
-    function _calculateAmountToSeize(
+    function _calculateLiquidation(
         address underlyingBorrowed,
         address underlyingCollateral,
-        uint256 maxToLiquidate,
+        uint256 liquidatable,
         address borrower,
         Types.MarketSideIndexes256 memory collateralIndexes
-    ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
-        amountToLiquidate = maxToLiquidate;
+    ) internal view returns (uint256 repaid, uint256 seized) {
+        repaid = liquidatable;
+
         (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
             _POOL.getConfiguration(underlyingCollateral).getParams();
         (,,, uint256 borrowTokenUnit,,) = _POOL.getConfiguration(underlyingBorrowed).getParams();
@@ -422,20 +430,25 @@ abstract contract MorphoInternal is MorphoStorage {
             borrowTokenUnit = 10 ** borrowTokenUnit;
         }
 
-        IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
-        uint256 borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
-        uint256 collateralPrice = oracle.getAssetPrice(underlyingCollateral);
+        address[] memory assets = new address[](2);
+        assets[0] = underlyingBorrowed;
+        assets[1] = underlyingCollateral;
 
-        amountToSeize = ((amountToLiquidate * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
-            .percentMul(liquidationBonus);
+        IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
+        uint256[] memory prices = oracle.getAssetsPrices(assets);
+        uint256 borrowPrice = prices[0];
+        uint256 collateralPrice = prices[1];
+
+        seized = ((repaid * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice)).percentMul(
+            liquidationBonus
+        );
 
         uint256 collateralBalance = _getUserSupplyBalanceFromIndexes(underlyingCollateral, borrower, collateralIndexes);
 
-        if (amountToSeize > collateralBalance) {
-            amountToSeize = collateralBalance;
-            amountToLiquidate = (
-                (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
-            ).percentDiv(liquidationBonus);
+        if (seized > collateralBalance) {
+            seized = collateralBalance;
+            repaid = ((collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit))
+                .percentDiv(liquidationBonus);
         }
     }
 
