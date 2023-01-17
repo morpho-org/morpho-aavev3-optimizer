@@ -299,7 +299,6 @@ abstract contract MorphoInternal is MorphoStorage {
         bool demoting
     ) internal {
         uint256 formerOnPool = poolMarket.getValueOf(user);
-        uint256 formerInP2P = p2pMarket.getValueOf(user);
 
         if (onPool != formerOnPool) {
             if (address(_rewardsManager) != address(0)) {
@@ -309,7 +308,7 @@ abstract contract MorphoInternal is MorphoStorage {
             poolMarket.update(user, onPool, demoting);
         }
 
-        if (inP2P != formerInP2P) p2pMarket.update(user, inP2P, true);
+        p2pMarket.update(user, inP2P, true);
     }
 
     function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
