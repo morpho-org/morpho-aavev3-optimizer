@@ -64,9 +64,13 @@ library Events {
 
     event IsSupplyPausedSet(address indexed underlying, bool isPaused);
 
+    event IsSupplyCollateralPausedSet(address indexed underlying, bool isPaused);
+
     event IsBorrowPausedSet(address indexed underlying, bool isPaused);
 
     event IsWithdrawPausedSet(address indexed underlying, bool isPaused);
+
+    event IsWithdrawCollateralPausedSet(address indexed underlying, bool isPaused);
 
     event IsRepayPausedSet(address indexed underlying, bool isPaused);
 
