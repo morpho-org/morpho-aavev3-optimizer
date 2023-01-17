@@ -6,8 +6,16 @@ import "test/helpers/IntegrationTest.sol";
 contract TestSupplyCollateral is IntegrationTest {
     using WadRayMath for uint256;
 
-    function testShouldSupplyCollateral(uint256 amount, address onBehalf) public {
+    function _assumeAmount(uint256 amount) internal pure {
+        vm.assume(amount > 0);
+    }
+
+    function _assumeOnBehalf(address onBehalf) internal pure {
         vm.assume(onBehalf != address(0));
+    }
+
+    function testShouldSupplyCollateral(uint256 amount, address onBehalf) public {
+        _assumeOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
@@ -33,13 +41,8 @@ contract TestSupplyCollateral is IntegrationTest {
         }
     }
 
-    function _prepare(uint256 amount, address onBehalf) internal pure {
-        vm.assume(amount > 0);
-        vm.assume(onBehalf != address(0));
-    }
-
     function testShouldRevertSupplyCollateralZero(address onBehalf) public {
-        vm.assume(onBehalf != address(0));
+        _assumeOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -48,7 +51,7 @@ contract TestSupplyCollateral is IntegrationTest {
     }
 
     function testShouldRevertSupplyCollateralOnBehalfZero(uint256 amount) public {
-        vm.assume(amount > 0);
+        _assumeAmount(amount);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
@@ -57,14 +60,16 @@ contract TestSupplyCollateral is IntegrationTest {
     }
 
     function testShouldRevertSupplyCollateralWhenMarketNotCreated(uint256 amount, address onBehalf) public {
-        _prepare(amount, onBehalf);
+        _assumeAmount(amount);
+        _assumeOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user1.supplyCollateral(sAvax, amount, onBehalf);
     }
 
     function testShouldRevertSupplyCollateralWhenSupplyCollateralPaused(uint256 amount, address onBehalf) public {
-        _prepare(amount, onBehalf);
+        _assumeAmount(amount);
+        _assumeOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
@@ -79,7 +84,8 @@ contract TestSupplyCollateral is IntegrationTest {
     }
 
     function testShouldSupplyCollateralWhenSupplyPaused(uint256 amount, address onBehalf) public {
-        _prepare(amount, onBehalf);
+        _assumeAmount(amount);
+        _assumeOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();

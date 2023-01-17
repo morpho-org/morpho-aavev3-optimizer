@@ -110,6 +110,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.supply), amount);
 
+        if (amount == 0) return 0;
+
         Types.OutPositionVars memory vars =
             _executeWithdraw(underlying, amount, supplier, _defaultMaxLoops.withdraw, indexes);
 
@@ -130,6 +132,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, indexes.supply.poolIndex), amount);
+
+        if (amount == 0) return 0;
 
         // The following check requires storage indexes to be up-to-date.
         _validateWithdrawCollateral(underlying, amount, supplier);
@@ -158,6 +162,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes.borrow), amount);
 
+        if (amount == 0) return 0;
+
         ERC20(underlying).transferFrom2(repayer, address(this), amount);
 
         (uint256 onPool, uint256 inP2P, uint256 toRepay, uint256 toSupply) =
@@ -167,7 +173,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         _POOL.supplyToPool(underlying, toSupply);
 
         emit Events.Repaid(repayer, onBehalf, underlying, amount, onPool, inP2P);
-        return amount;
+
+        return toSupply + toRepay;
     }
 
     struct LiquidateVars {

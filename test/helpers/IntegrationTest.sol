@@ -15,6 +15,7 @@ import {Morpho} from "../../src/Morpho.sol";
 import "./ForkTest.sol";
 
 contract IntegrationTest is ForkTest {
+    using stdStorage for StdStorage;
     using PercentageMath for uint256;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
@@ -151,6 +152,11 @@ contract IntegrationTest is ForkTest {
         morpho.createMarket(underlying, reserveFactor, p2pIndexCursor);
     }
 
+    /// @dev Disables the same block borrow/repay limitation by resetting the previous index of Morpho on AaveV3.
+    function _resetPreviousIndex(TestMarket memory market) internal {
+        vm.store(market.debtToken, keccak256(abi.encode(address(morpho), 56)), 0);
+    }
+
     /// @dev Bounds the input between the minimum & the maximum USD amount expected in tests, without exceeding the market's supply cap.
     function _boundSupply(TestMarket memory market, uint256 amount) internal view returns (uint256) {
         return bound(
@@ -224,6 +230,6 @@ contract IntegrationTest is ForkTest {
         // Reverts if the market is not borrowable.
         try promoter.borrow(borrowMarket.underlying, borrowed) {} catch {}
 
-        _forward(1);
+        _resetPreviousIndex(borrowMarket);
     }
 }

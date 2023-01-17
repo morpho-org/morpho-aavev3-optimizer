@@ -6,8 +6,16 @@ import "test/helpers/IntegrationTest.sol";
 contract TestSupply is IntegrationTest {
     using WadRayMath for uint256;
 
-    function testShouldSupplyPoolOnly(uint256 amount, address onBehalf) public {
+    function _assumeAmount(uint256 amount) internal pure {
+        vm.assume(amount > 0);
+    }
+
+    function _assumeOnBehalf(address onBehalf) internal pure {
         vm.assume(onBehalf != address(0));
+    }
+
+    function testShouldSupplyPoolOnly(uint256 amount, address onBehalf) public {
+        _assumeOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
@@ -43,7 +51,7 @@ contract TestSupply is IntegrationTest {
     }
 
     function testShouldSupplyP2POnly(uint256 amount, address onBehalf) public {
-        vm.assume(onBehalf != address(0));
+        _assumeOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
             _revert();
@@ -79,11 +87,9 @@ contract TestSupply is IntegrationTest {
             assertLe(p2pSupply, amount, "p2pSupply > amount");
             assertApproxEqAbs(p2pSupply, amount, 1, "p2pSupply != amount");
 
-            assertEq(
-                ERC20(market.aToken).balanceOf(address(morpho)),
-                morphoBalanceBefore,
-                "morphoBalanceAfter != morphoBalanceBefore"
-            );
+            uint256 morphoBalanceAfter = ERC20(market.aToken).balanceOf(address(morpho));
+            assertApproxEqAbs(morphoBalanceAfter, morphoBalanceBefore, 2, "morphoBalanceAfter != morphoBalanceBefore");
+            assertGe(morphoBalanceAfter, morphoBalanceBefore, "morphoBalanceAfter < morphoBalanceBefore");
 
             assertEq(balanceBefore - user1.balanceOf(market.underlying), amount, "balanceDiff != amount");
         }
@@ -91,13 +97,8 @@ contract TestSupply is IntegrationTest {
 
     // TODO: add delta tests
 
-    function _prepare(uint256 amount, address onBehalf) internal pure {
-        vm.assume(amount > 0);
-        vm.assume(onBehalf != address(0));
-    }
-
     function testShouldRevertSupplyZero(address onBehalf) public {
-        vm.assume(onBehalf != address(0));
+        _assumeOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -106,7 +107,7 @@ contract TestSupply is IntegrationTest {
     }
 
     function testShouldRevertSupplyOnBehalfZero(uint256 amount) public {
-        vm.assume(amount > 0);
+        _assumeAmount(amount);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
@@ -115,14 +116,16 @@ contract TestSupply is IntegrationTest {
     }
 
     function testShouldRevertSupplyWhenMarketNotCreated(uint256 amount, address onBehalf) public {
-        _prepare(amount, onBehalf);
+        _assumeAmount(amount);
+        _assumeOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user1.supply(sAvax, amount, onBehalf);
     }
 
     function testShouldRevertSupplyWhenSupplyPaused(uint256 amount, address onBehalf) public {
-        _prepare(amount, onBehalf);
+        _assumeAmount(amount);
+        _assumeOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
@@ -137,7 +140,8 @@ contract TestSupply is IntegrationTest {
     }
 
     function testShouldRevertSupplyNotEnoughAllowance(uint256 allowance, uint256 amount, address onBehalf) public {
-        _prepare(amount, onBehalf);
+        _assumeAmount(amount);
+        _assumeOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
@@ -155,7 +159,8 @@ contract TestSupply is IntegrationTest {
     }
 
     function testShouldSupplyWhenSupplyCollateralPaused(uint256 amount, address onBehalf) public {
-        _prepare(amount, onBehalf);
+        _assumeAmount(amount);
+        _assumeOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();

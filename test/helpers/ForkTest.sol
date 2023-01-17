@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IAToken} from "../../src/interfaces/aave/IAToken.sol";
 import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
+import {IScaledBalanceToken} from "@aave-v3-core/interfaces/IScaledBalanceToken.sol";
 import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
 
@@ -17,6 +18,7 @@ import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
+import {stdStorage, StdStorage} from "@forge-std/StdStorage.sol";
 import {console2} from "@forge-std/console2.sol";
 import {console} from "@forge-std/console.sol";
 import {Test} from "@forge-std/Test.sol";

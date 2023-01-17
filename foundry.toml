@@ -26,7 +26,7 @@ runs = 128
 test = "test/integration/"
 
 [profile.test-integration.fuzz]
-runs = 512
+runs = 1024
 
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
