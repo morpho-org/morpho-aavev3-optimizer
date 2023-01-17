@@ -219,6 +219,9 @@ abstract contract MorphoInternal is MorphoStorage {
         for (uint256 i; i < userBorrows.length; ++i) {
             debt += _debt(userBorrows[i], vars, userBorrows[i] == assetBorrowed ? amountBorrowed : 0);
         }
+        if (assetBorrowed != address(0) && !_userBorrows[vars.user].contains(assetBorrowed)) {
+            debt += _debt(assetBorrowed, vars, amountBorrowed);
+        }
     }
 
     function _collateralData(address underlying, Types.LiquidityVars memory vars, uint256 amountWithdrawn)
