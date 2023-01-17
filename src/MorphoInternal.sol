@@ -99,23 +99,23 @@ abstract contract MorphoInternal is MorphoStorage {
         amount = Math.min(
             amount,
             Math.min(
-                deltas.p2pSupplyAmount.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                    deltas.p2pSupplyDelta.rayMul(poolSupplyIndex)
+                deltas.supply.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                    deltas.supply.scaledDeltaPool.rayMul(poolSupplyIndex)
                 ),
-                deltas.p2pBorrowAmount.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                    deltas.p2pBorrowDelta.rayMul(poolBorrowIndex)
+                deltas.borrow.scaledTotalP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+                    deltas.borrow.scaledDeltaPool.rayMul(poolBorrowIndex)
                 )
             )
         );
         if (amount == 0) revert Errors.AmountIsZero();
 
-        uint256 newP2PSupplyDelta = deltas.p2pSupplyDelta + amount.rayDiv(poolSupplyIndex);
-        uint256 newP2PBorrowDelta = deltas.p2pBorrowDelta + amount.rayDiv(poolBorrowIndex);
+        uint256 newSupplyDelta = deltas.supply.scaledDeltaPool + amount.rayDiv(poolSupplyIndex);
+        uint256 newBorrowDelta = deltas.borrow.scaledDeltaPool + amount.rayDiv(poolBorrowIndex);
 
-        market.deltas.p2pSupplyDelta = newP2PSupplyDelta;
-        market.deltas.p2pBorrowDelta = newP2PBorrowDelta;
-        emit Events.P2PSupplyDeltaUpdated(underlying, newP2PSupplyDelta);
-        emit Events.P2PBorrowDeltaUpdated(underlying, newP2PBorrowDelta);
+        market.deltas.supply.scaledDeltaPool = newSupplyDelta;
+        market.deltas.borrow.scaledDeltaPool = newBorrowDelta;
+        emit Events.P2PSupplyDeltaUpdated(underlying, newSupplyDelta);
+        emit Events.P2PBorrowDeltaUpdated(underlying, newBorrowDelta);
 
         _POOL.borrowFromPool(underlying, amount);
         _POOL.supplyToPool(underlying, amount);
@@ -215,6 +215,9 @@ abstract contract MorphoInternal is MorphoStorage {
 
         for (uint256 i; i < userBorrows.length; ++i) {
             debt += _debt(userBorrows[i], vars, userBorrows[i] == assetBorrowed ? amountBorrowed : 0);
+        }
+        if (assetBorrowed != address(0) && !_userBorrows[vars.user].contains(assetBorrowed)) {
+            debt += _debt(assetBorrowed, vars, amountBorrowed);
         }
     }
 
@@ -407,6 +410,40 @@ abstract contract MorphoInternal is MorphoStorage {
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
     }
 
+    function _calculateAmountToSeize(
+        address underlyingBorrowed,
+        address underlyingCollateral,
+        uint256 maxToLiquidate,
+        address borrower,
+        Types.MarketSideIndexes256 memory collateralIndexes
+    ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
+        amountToLiquidate = maxToLiquidate;
+        (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
+            _POOL.getConfiguration(underlyingCollateral).getParams();
+        (,,, uint256 borrowTokenUnit,,) = _POOL.getConfiguration(underlyingBorrowed).getParams();
+
+        unchecked {
+            collateralTokenUnit = 10 ** collateralTokenUnit;
+            borrowTokenUnit = 10 ** borrowTokenUnit;
+        }
+
+        IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        uint256 borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
+        uint256 collateralPrice = oracle.getAssetPrice(underlyingCollateral);
+
+        amountToSeize = ((amountToLiquidate * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
+            .percentMul(liquidationBonus);
+
+        uint256 collateralBalance = _getUserSupplyBalanceFromIndexes(underlyingCollateral, borrower, collateralIndexes);
+
+        if (amountToSeize > collateralBalance) {
+            amountToSeize = collateralBalance;
+            amountToLiquidate = (
+                (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
+            ).percentDiv(liquidationBonus);
+        }
+    }
+
     /// @dev Returns a ray.
     function _proportionIdle(address underlying) internal view returns (uint256) {
         Types.Market storage market = _market[underlying];
@@ -414,7 +451,7 @@ abstract contract MorphoInternal is MorphoStorage {
         if (idleSupply == 0) {
             return 0;
         }
-        uint256 totalP2PSupplied = market.deltas.p2pSupplyAmount.rayMul(market.indexes.supply.p2pIndex);
+        uint256 totalP2PSupplied = market.deltas.supply.scaledTotalP2P.rayMul(market.indexes.supply.p2pIndex);
         return idleSupply.rayDivUp(totalP2PSupplied);
     }
 }
