@@ -130,8 +130,11 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
     }
 
     // Can't expect a revert if the internal function does not call a function that immediately reverts, so an external helper is needed.
-    function validateBorrowInput(address underlying, uint256 amount, address user) external view {
-        _validateBorrowInput(underlying, amount, user);
+    function validateBorrowInput(address underlying, uint256 amount, address borrower, address receiver)
+        external
+        view
+    {
+        _validateBorrowInput(underlying, amount, borrower, receiver);
     }
 
     function validateBorrow(address underlying, uint256 amount, address user) external view {
@@ -141,7 +144,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
     function testValidateBorrowInputShouldRevertIfBorrowPaused() public {
         _market[dai].pauseStatuses.isBorrowPaused = true;
         vm.expectRevert(abi.encodeWithSelector(Errors.BorrowIsPaused.selector));
-        this.validateBorrowInput(dai, 1, address(this));
+        this.validateBorrowInput(dai, 1, address(this), address(this));
     }
 
     function testValidateBorrowInputShouldRevertIfBorrowingNotEnabled() public {
@@ -153,7 +156,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         _POOL.setConfiguration(dai, reserveConfig);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.BorrowingNotEnabled.selector));
-        this.validateBorrowInput(dai, 1, address(this));
+        this.validateBorrowInput(dai, 1, address(this), address(this));
     }
 
     function testValidateBorrowInputShouldRevertIfPriceOracleSentinelBorrowDisabled() public {
@@ -164,7 +167,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         _ADDRESSES_PROVIDER.setPriceOracleSentinel(address(priceOracleSentinel));
 
         vm.expectRevert(abi.encodeWithSelector(Errors.PriceOracleSentinelBorrowDisabled.selector));
-        this.validateBorrowInput(dai, 1, address(this));
+        this.validateBorrowInput(dai, 1, address(this), address(this));
     }
 
     function testValidateBorrowShouldFailIfDebtTooHigh(uint256 onPool) public {
@@ -186,7 +189,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = onPool.rayDiv(indexes.supply.poolIndex);
 
-        this.validateBorrowInput(dai, onPool / 4, address(this));
+        this.validateBorrowInput(dai, onPool / 4, address(this), address(this));
     }
 
     function testValidateRepayInputShouldRevertIfRepayPaused() public {
@@ -429,7 +432,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         assertEq(toProcess, expectedToProcess, "toProcess");
         assertEq(amountLeft, expectedAmountLeft, "amountLeft");
         assertEq(maxLoopsLeft, expectedMaxLoopsLeft, "maxLoopsLeft");
-        assertEq(_market[dai].deltas.supply.totalScaledP2P, expectedToProcess.rayDiv(indexes.supply.poolIndex), "delta");
+        assertEq(_market[dai].deltas.supply.scaledTotalP2P, expectedToProcess.rayDiv(indexes.supply.poolIndex), "delta");
     }
 
     function testPromoteBorrowersRoutine(uint256 amount, uint256 maxLoops) public {
@@ -462,7 +465,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         assertEq(toProcess, expectedToProcess, "toProcess");
         assertEq(amountLeft, expectedAmountLeft, "amountLeft");
         assertEq(maxLoopsLeft, expectedMaxLoopsLeft, "maxLoopsLeft");
-        assertEq(_market[dai].deltas.borrow.totalScaledP2P, expectedToProcess.rayDiv(indexes.borrow.poolIndex), "delta");
+        assertEq(_market[dai].deltas.borrow.scaledTotalP2P, expectedToProcess.rayDiv(indexes.borrow.poolIndex), "delta");
     }
 
     function testDemoteSuppliersRoutine(uint256 amount, uint256 maxLoops) public {
@@ -474,10 +477,10 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         for (uint256 i; i < 10; i++) {
             uint256 amountPerSupplier = uint256(1 ether).rayDiv(indexes.supply.p2pIndex);
             _updateSupplierInDS(dai, vm.addr(i + 1), 0, amountPerSupplier);
-            _market[dai].deltas.supply.totalScaledP2P += amountPerSupplier;
+            _market[dai].deltas.supply.scaledTotalP2P += amountPerSupplier;
         }
 
-        uint256 totalScaledP2PBefore = _market[dai].deltas.supply.totalScaledP2P;
+        uint256 totalScaledP2PBefore = _market[dai].deltas.supply.scaledTotalP2P;
 
         uint256 toProcess = _demoteRoutine(dai, amount, maxLoops, indexes, _demoteSuppliers, _market[dai].deltas, false);
 
@@ -489,11 +492,11 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         assertEq(toProcess, amount, "toProcess");
 
         assertEq(
-            _market[dai].deltas.supply.delta,
+            _market[dai].deltas.supply.scaledDeltaPool,
             amount > expectedToProcess ? (amount - expectedToProcess).rayDiv(indexes.supply.poolIndex) : 0,
             "delta"
         );
-        assertEq(_market[dai].deltas.supply.totalScaledP2P, expectedTotalScaledP2P, "scaled p2p supply");
+        assertEq(_market[dai].deltas.supply.scaledTotalP2P, expectedTotalScaledP2P, "scaled p2p supply");
     }
 
     function testDemoteBorrowersRoutine(uint256 amount, uint256 maxLoops) public {
@@ -505,10 +508,10 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         for (uint256 i; i < 10; i++) {
             uint256 amountPerBorrower = uint256(1 ether).rayDiv(indexes.borrow.p2pIndex);
             _updateBorrowerInDS(dai, vm.addr(i + 1), 0, amountPerBorrower);
-            _market[dai].deltas.borrow.totalScaledP2P += amountPerBorrower;
+            _market[dai].deltas.borrow.scaledTotalP2P += amountPerBorrower;
         }
 
-        uint256 totalScaledP2PBefore = _market[dai].deltas.borrow.totalScaledP2P;
+        uint256 totalScaledP2PBefore = _market[dai].deltas.borrow.scaledTotalP2P;
 
         uint256 toProcess = _demoteRoutine(dai, amount, maxLoops, indexes, _demoteBorrowers, _market[dai].deltas, true);
 
@@ -520,11 +523,11 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         assertEq(toProcess, amount, "toProcess");
 
         assertEq(
-            _market[dai].deltas.borrow.delta,
+            _market[dai].deltas.borrow.scaledDeltaPool,
             amount > expectedToProcess ? (amount - expectedToProcess).rayDiv(indexes.borrow.poolIndex) : 0,
             "delta"
         );
-        assertEq(_market[dai].deltas.borrow.totalScaledP2P, expectedTotalScaledP2P, "scaled p2p borrow");
+        assertEq(_market[dai].deltas.borrow.scaledTotalP2P, expectedTotalScaledP2P, "scaled p2p borrow");
     }
 
     function testMatchDeltaSupply(uint256 amount, uint256 delta) public {
@@ -534,14 +537,14 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         Types.MarketSideDelta storage supplyDelta = _market[dai].deltas.supply;
         Types.Indexes256 memory indexes = _computeIndexes(dai);
 
-        supplyDelta.delta = delta;
+        supplyDelta.scaledDeltaPool = delta;
         (uint256 toProcess, uint256 amountLeft) = _matchDelta(dai, amount, indexes.supply.poolIndex, false);
 
         uint256 expectedMatched = Math.min(delta.rayMul(indexes.supply.poolIndex), amount);
 
         assertEq(toProcess, expectedMatched, "toProcess");
         assertEq(amountLeft, amount - expectedMatched, "amountLeft");
-        assertEq(supplyDelta.delta, delta - expectedMatched.rayDiv(indexes.supply.poolIndex), "delta");
+        assertEq(supplyDelta.scaledDeltaPool, delta - expectedMatched.rayDiv(indexes.supply.poolIndex), "delta");
     }
 
     function testMatchDeltaBorrow(uint256 amount, uint256 delta) public {
@@ -551,48 +554,48 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         Types.MarketSideDelta storage borrowDelta = _market[dai].deltas.borrow;
         Types.Indexes256 memory indexes = _computeIndexes(dai);
 
-        borrowDelta.delta = delta;
+        borrowDelta.scaledDeltaPool = delta;
         (uint256 toProcess, uint256 amountLeft) = _matchDelta(dai, amount, indexes.borrow.poolIndex, true);
 
         uint256 expectedMatched = Math.min(delta.rayMul(indexes.borrow.poolIndex), amount);
 
         assertEq(toProcess, expectedMatched, "toProcess");
         assertEq(amountLeft, amount - expectedMatched, "amountLeft");
-        assertEq(borrowDelta.delta, delta - expectedMatched.rayDiv(indexes.borrow.poolIndex), "delta");
+        assertEq(borrowDelta.scaledDeltaPool, delta - expectedMatched.rayDiv(indexes.borrow.poolIndex), "delta");
     }
 
     function testUpdateDeltaP2PSupplyAmount(uint256 amount, uint256 totalP2P) public {
         amount = bound(amount, 0, MAX_AMOUNT);
         totalP2P = bound(totalP2P, 0, MAX_AMOUNT);
         Types.Deltas storage deltas = _market[dai].deltas;
-        deltas.supply.totalScaledP2P = totalP2P;
+        deltas.supply.scaledTotalP2P = totalP2P;
 
         Types.Indexes256 memory indexes = _computeIndexes(dai);
 
-        uint256 inP2P = _updateDeltaP2PAmounts(dai, amount, indexes.supply.p2pIndex, 0, deltas.supply);
+        uint256 inP2P = _updateP2PDelta(dai, amount, indexes.supply.p2pIndex, 0, deltas.supply);
 
         uint256 expectedInP2P = amount.rayDiv(indexes.supply.p2pIndex);
         uint256 expectedInTotalScaledP2P = totalP2P + expectedInP2P;
 
         assertEq(inP2P, expectedInP2P, "inP2P");
-        assertEq(deltas.supply.totalScaledP2P, expectedInTotalScaledP2P, "totalScaledP2P");
+        assertEq(deltas.supply.scaledTotalP2P, expectedInTotalScaledP2P, "totalScaledP2P");
     }
 
     function testUpdateDeltaP2PBorrowAmount(uint256 amount, uint256 totalP2P) public {
         amount = bound(amount, 0, MAX_AMOUNT);
         totalP2P = bound(totalP2P, 0, MAX_AMOUNT);
         Types.Deltas storage deltas = _market[dai].deltas;
-        deltas.borrow.totalScaledP2P = totalP2P;
+        deltas.borrow.scaledTotalP2P = totalP2P;
 
         Types.Indexes256 memory indexes = _computeIndexes(dai);
 
-        uint256 inP2P = _updateDeltaP2PAmounts(dai, amount, indexes.borrow.p2pIndex, 0, deltas.borrow);
+        uint256 inP2P = _updateP2PDelta(dai, amount, indexes.borrow.p2pIndex, 0, deltas.borrow);
 
         uint256 expectedInP2P = amount.rayDiv(indexes.borrow.p2pIndex);
         uint256 expectedInTotalScaledP2P = totalP2P + expectedInP2P;
 
         assertEq(inP2P, expectedInP2P, "inP2P");
-        assertEq(deltas.borrow.totalScaledP2P, expectedInTotalScaledP2P, "totalScaledP2P");
+        assertEq(deltas.borrow.scaledTotalP2P, expectedInTotalScaledP2P, "totalScaledP2P");
     }
 
     function testRepayFee(
@@ -614,10 +617,10 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
             bound(borrowDelta, 0, totalScaledP2PBorrow.rayMul(indexes.borrow.p2pIndex).rayDiv(indexes.borrow.poolIndex));
 
         Types.Deltas storage deltas = _market[dai].deltas;
-        deltas.supply.delta = supplyDelta;
-        deltas.borrow.delta = borrowDelta;
-        deltas.supply.totalScaledP2P = totalScaledP2PSupply;
-        deltas.borrow.totalScaledP2P = totalScaledP2PBorrow;
+        deltas.supply.scaledDeltaPool = supplyDelta;
+        deltas.borrow.scaledDeltaPool = borrowDelta;
+        deltas.supply.scaledTotalP2P = totalScaledP2PSupply;
+        deltas.borrow.scaledTotalP2P = totalScaledP2PBorrow;
 
         uint256 toProcess = _repayFee(dai, amount, indexes);
 
@@ -631,14 +634,14 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
 
         assertEq(toProcess, amount - expectedFeeToRepay, "toProcess");
         assertEq(
-            deltas.borrow.totalScaledP2P,
+            deltas.borrow.scaledTotalP2P,
             totalScaledP2PBorrow - expectedFeeToRepay.rayDiv(indexes.borrow.p2pIndex),
             "totalScaledP2PBorrow"
         );
 
-        assertEq(deltas.supply.delta, supplyDelta, "supplyDelta");
-        assertEq(deltas.borrow.delta, borrowDelta, "borrowDelta");
-        assertEq(deltas.supply.totalScaledP2P, totalScaledP2PSupply, "totalScaledP2PSupply");
+        assertEq(deltas.supply.scaledDeltaPool, supplyDelta, "supplyDelta");
+        assertEq(deltas.borrow.scaledDeltaPool, borrowDelta, "borrowDelta");
+        assertEq(deltas.supply.scaledTotalP2P, totalScaledP2PSupply, "totalScaledP2PSupply");
     }
 
     function handleSupplyCap(address underlying, uint256 amount) external returns (uint256) {
