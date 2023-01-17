@@ -410,7 +410,7 @@ abstract contract MorphoInternal is MorphoStorage {
         address underlyingCollateral,
         uint256 maxToLiquidate,
         address borrower,
-        Types.MarketSideIndexes256 memory collateralIndexes
+        uint256 poolSupplyIndex
     ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
         amountToLiquidate = maxToLiquidate;
         (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
@@ -429,7 +429,7 @@ abstract contract MorphoInternal is MorphoStorage {
         amountToSeize = ((amountToLiquidate * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
             .percentMul(liquidationBonus);
 
-        uint256 collateralBalance = _getUserSupplyBalanceFromIndexes(underlyingCollateral, borrower, collateralIndexes);
+        uint256 collateralBalance = _getUserCollateralBalanceFromIndex(underlyingCollateral, borrower, poolSupplyIndex);
 
         if (amountToSeize > collateralBalance) {
             amountToSeize = collateralBalance;

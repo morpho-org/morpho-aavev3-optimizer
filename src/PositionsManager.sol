@@ -189,7 +189,11 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         );
 
         (vars.amountToLiquidate, vars.amountToSeize) = _calculateAmountToSeize(
-            underlyingBorrowed, underlyingCollateral, vars.amountToLiquidate, borrower, collateralIndexes.supply
+            underlyingBorrowed,
+            underlyingCollateral,
+            vars.amountToLiquidate,
+            borrower,
+            collateralIndexes.supply.poolIndex
         );
 
         ERC20(underlyingBorrowed).transferFrom2(liquidator, address(this), vars.amountToLiquidate);
