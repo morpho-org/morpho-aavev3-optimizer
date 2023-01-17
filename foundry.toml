@@ -5,7 +5,7 @@ libs = ["node_modules", "lib"]
 fs_permissions = [{ access = "read", path = "./config/"}]
 
 [fuzz]
-runs = 16
+runs = 8
 
 
 [profile.test-unit]

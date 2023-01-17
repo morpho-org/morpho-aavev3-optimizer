@@ -151,7 +151,7 @@ contract TestWithdrawCollateral is IntegrationTest {
         _prepareOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user1.withdrawCollateral(sAvax, amount, onBehalf);
+        user1.withdrawCollateral(sAvax, amount, onBehalf, receiver);
     }
 
     function testShouldRevertWithdrawCollateralWhenWithdrawCollateralPaused(
