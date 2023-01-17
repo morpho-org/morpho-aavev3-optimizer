@@ -17,7 +17,7 @@ import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
-import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {MatchingEngine} from "./MatchingEngine.sol";
@@ -31,7 +31,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     function _validatePermission(address owner, address manager) internal view {
@@ -201,7 +201,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
                 maxLoops: maxLoops,
                 promote: _promoteBorrowers
             }),
-            _marketBalances[underlying].poolBorrowers,
             deltas.borrow
         );
         vars.toRepay += promoted;
@@ -211,7 +210,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         (vars.toSupply, vars.onPool) = _addToPool(amount, vars.onPool, indexes.supply.poolIndex);
 
-        _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
+        _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
     }
 
     function _executeBorrow(
@@ -240,7 +239,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
                 maxLoops: maxLoops,
                 promote: _promoteSuppliers
             }),
-            _marketBalances[underlying].poolSuppliers,
             deltas.supply
         );
         vars.toWithdraw += promoted;
@@ -250,7 +248,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         (vars.toBorrow, vars.onPool) = _addToPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
-        _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
+        _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
     }
 
     function _executeRepay(
@@ -268,12 +266,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         (vars.toRepay, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.borrow.poolIndex);
         if (amount == 0) {
-            _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
+            _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
             return vars;
         }
 
         vars.inP2P -= Math.min(vars.inP2P, amount.rayDiv(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
-        _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
+        _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
 
         uint256 toRepaySingle;
         (toRepaySingle, amount) = _matchDelta(underlying, amount, indexes.borrow.poolIndex, true);
@@ -292,7 +290,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
                 maxLoops: maxLoops,
                 promote: _promoteBorrowers
             }),
-            _marketBalances[underlying].poolBorrowers,
             _market[underlying].deltas.borrow
         );
         vars.toRepay += toRepaySingle;
@@ -318,13 +315,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         (vars.toWithdraw, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.supply.poolIndex);
         if (amount == 0) {
-            _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
+            _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
             return vars;
         }
         vars.inP2P -= Math.min(vars.inP2P, amount.rayDiv(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
         _withdrawIdle(market, amount, vars.inP2P, indexes.supply.p2pIndex);
-        _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
+        _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
 
         uint256 toWithdrawSingle;
         (toWithdrawSingle, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, false);
@@ -340,7 +337,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
                 maxLoops: maxLoops,
                 promote: _promoteSuppliers
             }),
-            _marketBalances[underlying].poolSuppliers,
             _market[underlying].deltas.supply
         );
         vars.toWithdraw += toWithdrawSingle;
@@ -382,16 +378,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     /// @notice Given variables from a market side, promotes users and calculates the amount to repay/withdraw from promote,
     ///         the amount left to process, and the number of loops left. Updates the market side delta accordingly.
     /// @param vars The variables for promotion.
-    /// @param heap The heap to promote.
     /// @param promotedDelta The market side delta to update.
     /// @return The amount to repay/withdraw from promote, the amount left to process, and the number of loops left.
-    function _promoteRoutine(
-        Types.PromoteVars memory vars,
-        ThreeHeapOrdering.HeapArray storage heap,
-        Types.MarketSideDelta storage promotedDelta
-    ) internal returns (uint256, uint256, uint256) {
+    function _promoteRoutine(Types.PromoteVars memory vars, Types.MarketSideDelta storage promotedDelta)
+        internal
+        returns (uint256, uint256, uint256)
+    {
         uint256 toProcess;
-        if (vars.amount > 0 && !_market[vars.underlying].pauseStatuses.isP2PDisabled && heap.getHead() != address(0)) {
+        if (vars.amount > 0 && !_market[vars.underlying].pauseStatuses.isP2PDisabled) {
             (uint256 promoted, uint256 loopsDone) = vars.promote(vars.underlying, vars.amount, vars.maxLoops); // In underlying.
 
             toProcess = promoted;

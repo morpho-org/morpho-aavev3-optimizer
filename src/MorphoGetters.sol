@@ -61,10 +61,6 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _userNonce[user];
     }
 
-    function maxSortedUsers() external view returns (uint256) {
-        return _maxSortedUsers;
-    }
-
     function defaultMaxLoops() external view returns (Types.MaxLoops memory) {
         return _defaultMaxLoops;
     }

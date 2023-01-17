@@ -33,19 +33,11 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
     /// SETTERS ///
 
-    function initialize(
-        address newPositionsManager,
-        Types.MaxLoops memory newDefaultMaxLoops,
-        uint256 newMaxSortedUsers
-    ) external initializer {
-        if (newMaxSortedUsers == 0) revert Errors.MaxSortedUsersCannotBeZero();
-
+    function initialize(address newPositionsManager, Types.MaxLoops memory newDefaultMaxLoops) external initializer {
         __Ownable_init_unchained();
 
         _positionsManager = newPositionsManager;
-
         _defaultMaxLoops = newDefaultMaxLoops;
-        _maxSortedUsers = newMaxSortedUsers;
     }
 
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external onlyOwner {
@@ -54,12 +46,6 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
     function increaseP2PDeltas(address underlying, uint256 amount) external onlyOwner isMarketCreated(underlying) {
         _increaseP2PDeltas(underlying, amount);
-    }
-
-    function setMaxSortedUsers(uint256 newMaxSortedUsers) external onlyOwner {
-        if (newMaxSortedUsers == 0) revert Errors.MaxSortedUsersCannotBeZero();
-        _maxSortedUsers = newMaxSortedUsers;
-        emit Events.MaxSortedUsersSet(newMaxSortedUsers);
     }
 
     function setDefaultMaxLoops(Types.MaxLoops calldata defaultMaxLoops) external onlyOwner {

@@ -19,10 +19,6 @@
 [submodule "lib/morpho-utils"]
 	path = lib/morpho-utils
 	url = https://github.com/morpho-dao/morpho-utils
-[submodule "lib/morpho-data-structures"]
-	path = lib/morpho-data-structures
-	url = https://github.com/morpho-dao/morpho-data-structures
-
 [submodule "lib/aave-v3-core"]
 	path = lib/aave-v3-core
 	url = https://github.com/aave/aave-v3-core
@@ -31,3 +27,8 @@
 	path = lib/aave-v3-periphery
 	url = https://github.com/aave/aave-v3-periphery
 	branch = v3.0.1
+
+[submodule "lib/morpho-data-structures"]
+	path = lib/morpho-data-structures
+	url = git@github.com:morpho-labs/morpho-data-structures-private.git
+	branch = feat/log-buckets
