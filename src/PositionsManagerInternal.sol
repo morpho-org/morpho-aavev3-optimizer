@@ -276,7 +276,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             return vars;
         }
 
-        vars.inP2P -= Math.min(vars.inP2P, amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
+        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
         _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
 
         uint256 matchedDelta;
@@ -322,7 +322,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
             return vars;
         }
-        vars.inP2P -= Math.min(vars.inP2P, amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
+        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
         _withdrawIdle(market, amount, vars.inP2P, indexes.supply.p2pIndex);
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
@@ -375,7 +375,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (onPool > 0) {
             toProcess = Math.min(onPool.rayMul(poolIndex), amount);
             amount -= toProcess;
-            onPool -= Math.min(onPool, toProcess.rayDivUp(poolIndex)); // In scaled balance.
+            onPool = onPool.zeroFloorSub(toProcess.rayDivUp(poolIndex)); // In scaled balance.
         }
 
         return (toProcess, amount, onPool);
@@ -442,8 +442,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         // Math.min as the last decimal might flip.
-        demotedDelta.scaledTotalP2P -= Math.min(demoted.rayDiv(demotedIndexes.p2pIndex), demotedDelta.scaledTotalP2P);
-        counterDelta.scaledTotalP2P -= Math.min(amount.rayDiv(counterIndexes.p2pIndex), counterDelta.scaledTotalP2P);
+        demotedDelta.scaledTotalP2P = demotedDelta.scaledTotalP2P.zeroFloorSub(demoted.rayDiv(demotedIndexes.p2pIndex));
+        counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P.zeroFloorSub(amount.rayDiv(counterIndexes.p2pIndex));
 
         emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
 
