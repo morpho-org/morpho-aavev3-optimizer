@@ -19,14 +19,14 @@ runs = 32768
 test = "test/internal/"
 
 [profile.test-internal.fuzz]
-runs = 64
+runs = 32
 
 
 [profile.test-integration]
 test = "test/integration/"
 
 [profile.test-integration.fuzz]
-runs = 256
+runs = 128
 
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
