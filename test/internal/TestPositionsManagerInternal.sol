@@ -673,7 +673,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
 
         // Expects underflow
         vm.expectRevert();
-        uint256 toSupply = this.handleSupplyCap(dai, amount);
+        this.handleSupplyCap(dai, amount);
     }
 
     function testHandleSupplyCap(uint256 amount, uint256 supplyCap) public {
