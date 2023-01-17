@@ -234,7 +234,9 @@ abstract contract MorphoInternal is MorphoStorage {
 
         Types.Indexes256 memory indexes = _computeIndexes(underlying);
         collateral = (
-            _getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex) - amountWithdrawn
+            _getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex).zeroFloorSub(
+                amountWithdrawn
+            )
         ) * underlyingPrice / tokenUnit;
 
         borrowable = collateral.percentMulDown(ltv);
