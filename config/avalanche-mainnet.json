@@ -1,6 +1,6 @@
 {
     "usesRpcPrefix": false,
-    "rpc": "https://api.avax.network/ext/bc/C/rpc",
+    "rpc": "https://rpc.ankr.com/avalanche",
     "chainId": 43114,
     "testBlock": 24800000,
     "testMarkets": [

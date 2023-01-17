@@ -107,6 +107,4 @@ library Events {
     event IsP2PDisabledSet(address indexed underlying, bool isP2PDisabled);
 
     event IsDeprecatedSet(address indexed underlying, bool isDeprecated);
-
-    event EModeSet(uint8 categoryId);
 }

@@ -28,6 +28,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    using Math for uint256;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
@@ -92,13 +93,15 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.BorrowWithdrawVars memory vars = _executeBorrow(underlying, amount, borrower, maxLoops, indexes);
 
+        amount = vars.toBorrow + vars.toWithdraw;
+
         _POOL.withdrawFromPool(underlying, _market[underlying].aToken, vars.toWithdraw);
         _POOL.borrowFromPool(underlying, vars.toBorrow);
         ERC20(underlying).safeTransfer(receiver, amount);
 
         emit Events.Borrowed(borrower, underlying, amount, vars.onPool, vars.inP2P);
 
-        return vars.toBorrow + vars.toWithdraw;
+        return amount;
     }
 
     function withdrawLogic(address underlying, uint256 amount, address supplier, address receiver)
@@ -141,7 +144,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         _validateWithdrawCollateral(underlying, amount, supplier);
 
         uint256 newBalance =
-            _marketBalances[underlying].collateral[supplier] - amount.rayDivUp(indexes.supply.poolIndex);
+            _marketBalances[underlying].collateral[supplier].zeroFloorSub(amount.rayDivUp(indexes.supply.poolIndex));
         _marketBalances[underlying].collateral[supplier] = newBalance;
         if (newBalance == 0) _userCollaterals[supplier].remove(underlying);
 

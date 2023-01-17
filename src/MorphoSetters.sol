@@ -186,7 +186,5 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         _eModeCategoryId = categoryId;
 
         _POOL.setUserEMode(categoryId);
-
-        emit Events.EModeSet(categoryId);
     }
 }
