@@ -490,32 +490,22 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
         uint256 amountToLiquidate;
     }
 
-    function testCalculateAmountToSeize() public {
-        uint256 maxToLiquidate = 29421591608680888406964;
-        uint256 collateralAmount = 999999999999999999999998;
-
-        // maxToLiquidate = bound(maxToLiquidate, 0, 1_000_000 ether);
-        // collateralAmount = bound(collateralAmount, 0, 1_000_000 ether);
+    function testCalculateAmountToSeize(uint256 maxToLiquidate, uint256 collateralAmount) public {
+        maxToLiquidate = bound(maxToLiquidate, 0, 1_000_000 ether);
+        collateralAmount = bound(collateralAmount, 0, 1_000_000 ether);
         Types.Indexes256 memory indexes = _computeIndexes(dai);
         TestSeizeVars1 memory vars;
 
         _marketBalances[dai].collateral[address(1)] = collateralAmount.rayDivUp(indexes.supply.poolIndex);
-        console2.log(_marketBalances[dai].collateral[address(1)]);
 
         (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = _POOL.getConfiguration(dai).getParams();
-        (,,, vars.borrowTokenUnit,,) = _POOL.getConfiguration(dai).getParams();
+        (,,, vars.borrowTokenUnit,,) = _POOL.getConfiguration(wbtc).getParams();
 
         vars.collateralTokenUnit = 10 ** vars.collateralTokenUnit;
         vars.borrowTokenUnit = 10 ** vars.borrowTokenUnit;
 
-        vars.borrowPrice = oracle.getAssetPrice(dai);
+        vars.borrowPrice = oracle.getAssetPrice(wbtc);
         vars.collateralPrice = oracle.getAssetPrice(dai);
-
-        console2.log(vars.liquidationBonus);
-        console2.log(vars.collateralTokenUnit);
-        console2.log(vars.borrowTokenUnit);
-        console2.log(vars.borrowPrice);
-        console2.log(vars.collateralPrice);
 
         TestSeizeVars2 memory expected;
         TestSeizeVars2 memory actual;
@@ -536,7 +526,7 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
         );
 
         (actual.amountToLiquidate, actual.amountToSeize) =
-            _calculateAmountToSeize(dai, dai, maxToLiquidate, address(1), indexes.supply.poolIndex);
+            _calculateAmountToSeize(wbtc, dai, maxToLiquidate, address(1), indexes.supply.poolIndex);
 
         assertApproxEqAbs(actual.amountToSeize, expected.amountToSeize, 1, "amount to seize not equal");
         assertApproxEqAbs(actual.amountToLiquidate, expected.amountToLiquidate, 1, "amount to liquidate not equal");
