@@ -338,21 +338,27 @@ abstract contract MorphoInternal is MorphoStorage {
             inP2P,
             demoting
         );
+        if (onPool == 0 && inP2P == 0) _userBorrows[user].remove(underlying);
+        else _userBorrows[user].add(underlying);
     }
 
     function _setPauseStatus(address underlying, bool isPaused) internal {
         Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
 
         pauseStatuses.isSupplyPaused = isPaused;
+        pauseStatuses.isSupplyCollateralPaused = isPaused;
         pauseStatuses.isBorrowPaused = isPaused;
         pauseStatuses.isWithdrawPaused = isPaused;
+        pauseStatuses.isWithdrawCollateralPaused = isPaused;
         pauseStatuses.isRepayPaused = isPaused;
         pauseStatuses.isLiquidateCollateralPaused = isPaused;
         pauseStatuses.isLiquidateBorrowPaused = isPaused;
 
         emit Events.IsSupplyPausedSet(underlying, isPaused);
+        emit Events.IsSupplyCollateralPausedSet(underlying, isPaused);
         emit Events.IsBorrowPausedSet(underlying, isPaused);
         emit Events.IsWithdrawPausedSet(underlying, isPaused);
+        emit Events.IsWithdrawCollateralPausedSet(underlying, isPaused);
         emit Events.IsRepayPausedSet(underlying, isPaused);
         emit Events.IsLiquidateCollateralPausedSet(underlying, isPaused);
         emit Events.IsLiquidateBorrowPausedSet(underlying, isPaused);

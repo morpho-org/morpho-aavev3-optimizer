@@ -52,7 +52,9 @@ interface IMorphoSetters {
     function setIsPausedForAllMarkets(bool isPaused) external;
     function setIsRepayPaused(address underlying, bool isPaused) external;
     function setIsSupplyPaused(address underlying, bool isPaused) external;
+    function setIsSupplyCollateralPaused(address underlying, bool isPaused) external;
     function setIsWithdrawPaused(address underlying, bool isPaused) external;
+    function setIsWithdrawCollateralPaused(address underlying, bool isPaused) external;
     function setP2PIndexCursor(address underlying, uint16 p2pIndexCursor) external;
     function setReserveFactor(address underlying, uint16 newReserveFactor) external;
 }
@@ -84,19 +86,16 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
         external
         returns (uint256 borrowed);
 
-    function repay(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
-        external
-        returns (uint256 repaid);
+    function repay(address underlying, uint256 amount, address onBehalf) external returns (uint256 repaid);
     function repayWithPermit(
         address underlying,
         uint256 amount,
         address onBehalf,
-        uint256 maxLoops,
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256 repaid);
 
-    function withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
+    function withdraw(address underlying, uint256 amount, address onBehalf, address receiver)
         external
         returns (uint256 withdrawn);
     function withdrawCollateral(address underlying, uint256 amount, address onBehalf, address receiver)

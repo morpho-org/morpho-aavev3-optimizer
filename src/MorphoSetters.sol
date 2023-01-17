@@ -96,6 +96,15 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         emit Events.IsSupplyPausedSet(underlying, isPaused);
     }
 
+    function setIsSupplyCollateralPaused(address underlying, bool isPaused)
+        external
+        onlyOwner
+        isMarketCreated(underlying)
+    {
+        _market[underlying].pauseStatuses.isSupplyCollateralPaused = isPaused;
+        emit Events.IsSupplyCollateralPausedSet(underlying, isPaused);
+    }
+
     function setIsBorrowPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
         _market[underlying].pauseStatuses.isBorrowPaused = isPaused;
         emit Events.IsBorrowPausedSet(underlying, isPaused);
@@ -109,6 +118,15 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     function setIsWithdrawPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
         _market[underlying].pauseStatuses.isWithdrawPaused = isPaused;
         emit Events.IsWithdrawPausedSet(underlying, isPaused);
+    }
+
+    function setIsWithdrawCollateralPaused(address underlying, bool isPaused)
+        external
+        onlyOwner
+        isMarketCreated(underlying)
+    {
+        _market[underlying].pauseStatuses.isWithdrawCollateralPaused = isPaused;
+        emit Events.IsWithdrawCollateralPausedSet(underlying, isPaused);
     }
 
     function setIsLiquidateCollateralPaused(address underlying, bool isPaused)

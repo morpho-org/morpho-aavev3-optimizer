@@ -34,6 +34,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
+    function _validatePermission(address owner, address manager) internal view {
+        if (!(owner == manager || _isManaging[owner][manager])) revert Errors.PermissionDenied();
+    }
+
     function _validateInput(address underlying, uint256 amount, address user)
         internal
         view
@@ -46,24 +50,33 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (!market.isCreated()) revert Errors.MarketNotCreated();
     }
 
-    function _validatePermission(address owner, address manager) internal view {
-        if (!(owner == manager || _isManaging[owner][manager])) revert Errors.PermissionDenied();
+    function _validateManagerInput(address underlying, uint256 amount, address onBehalf, address receiver)
+        internal
+        view
+        returns (Types.Market storage market)
+    {
+        if (onBehalf == address(0)) revert Errors.AddressIsZero();
+
+        market = _validateInput(underlying, amount, receiver);
+
+        _validatePermission(onBehalf, msg.sender);
     }
 
-    function _validateSupply(address underlying, uint256 amount, address user) internal view {
+    function _validateSupplyInput(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
-        if (!market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
+        if (market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
     }
 
-    function _validateSupplyCollateral(address underlying, uint256 amount, address user) internal view {
+    function _validateSupplyCollateralInput(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
-        if (!market.pauseStatuses.isSupplyCollateralPaused) revert Errors.SupplyCollateralIsPaused();
+        if (market.pauseStatuses.isSupplyCollateralPaused) revert Errors.SupplyCollateralIsPaused();
     }
 
-    function _validateBorrow(address underlying, uint256 amount, address borrower) internal view {
-        _validatePermission(borrower, msg.sender);
-
-        Types.Market storage market = _validateInput(underlying, amount, borrower);
+    function _validateBorrowInput(address underlying, uint256 amount, address borrower, address receiver)
+        internal
+        view
+    {
+        Types.Market storage market = _validateManagerInput(underlying, amount, borrower, receiver);
         if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
 
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
@@ -78,20 +91,18 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
             revert Errors.PriceOracleSentinelBorrowDisabled();
         }
+    }
 
+    function _validateBorrow(address underlying, uint256 amount, address borrower) internal view {
         Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
-        if (values.debt > values.borrowable) revert Errors.UnauthorisedBorrow();
+        if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
     }
 
-    function _validateRepay(address underlying, uint256 amount, address user) internal view {
-        Types.Market storage market = _validateInput(underlying, amount, user);
-        if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
-    }
-
-    function _validateWithdraw(address underlying, uint256 amount, address supplier, address receiver) internal view {
-        _validatePermission(supplier, msg.sender);
-
-        Types.Market storage market = _validateInput(underlying, amount, receiver);
+    function _validateWithdrawInput(address underlying, uint256 amount, address supplier, address receiver)
+        internal
+        view
+    {
+        Types.Market storage market = _validateManagerInput(underlying, amount, supplier, receiver);
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
 
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
@@ -102,18 +113,23 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
     }
 
-    function _validateWithdrawCollateral(address underlying, uint256 amount, address supplier, address receiver)
+    function _validateWithdrawCollateralInput(address underlying, uint256 amount, address supplier, address receiver)
         internal
         view
     {
-        _validatePermission(supplier, msg.sender);
-
-        Types.Market storage market = _validateInput(underlying, amount, receiver);
+        Types.Market storage market = _validateManagerInput(underlying, amount, supplier, receiver);
         if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
+    }
 
+    function _validateWithdrawCollateral(address underlying, uint256 amount, address supplier) internal view {
         if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
-            revert Errors.WithdrawUnauthorized();
+            revert Errors.UnauthorizedWithdraw();
         }
+    }
+
+    function _validateRepayInput(address underlying, uint256 amount, address user) internal view {
+        Types.Market storage market = _validateInput(underlying, amount, user);
+        if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
     }
 
     function _validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
@@ -150,9 +166,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
                 priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
                     && healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD
             ) {
-                revert Errors.UnauthorisedLiquidate();
+                revert Errors.UnauthorizedLiquidate();
             } else if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
-                revert Errors.UnauthorisedLiquidate();
+                revert Errors.UnauthorizedLiquidate();
             }
 
             closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
@@ -174,8 +190,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         onPool = marketBalances.scaledPoolSupplyBalance(user);
         inP2P = marketBalances.scaledP2PSupplyBalance(user);
-
-        _userCollaterals[user].add(underlying);
 
         /// Peer-to-peer supply ///
 
@@ -231,7 +245,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Deltas storage deltas = market.deltas;
 
-        _userBorrows[user].add(underlying);
         vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
         vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
@@ -313,11 +326,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             if (amount == 0) {
                 _updateBorrowerInDS(underlying, user, onPool, inP2P, false);
-
-                if (inP2P == 0 && onPool == 0) {
-                    _userBorrows[user].remove(underlying);
-                }
-
                 return (onPool, inP2P, 0, toRepay);
             }
         }
@@ -388,8 +396,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             /// Note: Only used in breaking repay. Suppliers should not be able to supply if the pool is supply capped.
             toSupply = _handleSupplyCap(underlying, amount);
         }
-
-        if (inP2P == 0 && onPool == 0) _userBorrows[user].remove(underlying);
     }
 
     function _executeWithdraw(
@@ -416,10 +422,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             if (amount == 0) {
                 _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
-
-                if (vars.inP2P == 0 && vars.onPool == 0) {
-                    _userCollaterals[user].remove(underlying);
-                }
 
                 return vars;
             }
@@ -479,8 +481,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             emit Events.P2PAmountsUpdated(underlying, deltas.p2pSupplyAmount, deltas.p2pBorrowAmount);
             vars.toBorrow = amount;
         }
-
-        if (vars.inP2P == 0 && vars.onPool == 0) _userCollaterals[user].remove(underlying);
     }
 
     function _calculateAmountToSeize(
