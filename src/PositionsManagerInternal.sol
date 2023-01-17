@@ -231,7 +231,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             toSupply = amount;
         }
 
-        _updateSupplierInDS(underlying, user, onPool, inP2P, false);
+        _updateSupplierInDS(underlying, user, onPool, inP2P);
     }
 
     function _executeBorrow(
@@ -299,7 +299,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             vars.toBorrow = amount;
         }
 
-        _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
+        _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P);
     }
 
     function _executeRepay(
@@ -325,13 +325,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             onPool -= Math.min(onPool, toRepay.rayDiv(indexes.borrow.poolIndex)); // In scaled balance.
 
             if (amount == 0) {
-                _updateBorrowerInDS(underlying, user, onPool, inP2P, false);
+                _updateBorrowerInDS(underlying, user, onPool, inP2P);
                 return (onPool, inP2P, 0, toRepay);
             }
         }
 
         inP2P -= Math.min(inP2P, amount.rayDiv(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
-        _updateBorrowerInDS(underlying, user, onPool, inP2P, false);
+        _updateBorrowerInDS(underlying, user, onPool, inP2P);
 
         // Reduce the peer-to-peer borrow delta.
         if (amount > 0 && deltas.p2pBorrowDelta > 0) {
@@ -421,7 +421,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             vars.onPool -= Math.min(vars.onPool, vars.toWithdraw.rayDiv(indexes.supply.poolIndex));
 
             if (amount == 0) {
-                _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
+                _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
 
                 return vars;
             }
@@ -437,7 +437,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             market.idleSupply -= matchedIdle;
         }
 
-        _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
+        _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P);
 
         // Reduce the peer-to-peer supply delta.
         if (amount > 0 && deltas.p2pSupplyDelta > 0) {

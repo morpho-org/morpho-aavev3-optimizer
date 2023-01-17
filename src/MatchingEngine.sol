@@ -33,7 +33,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
-                updateDS: _updateSupplierInDS,
+                updateDS: _moveSupplierInDS,
                 demoting: false,
                 step: _promote
             })
@@ -54,7 +54,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
-                updateDS: _updateBorrowerInDS,
+                updateDS: _moveBorrowerInDS,
                 demoting: false,
                 step: _promote
             })
@@ -75,7 +75,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: false,
-                updateDS: _updateSupplierInDS,
+                updateDS: _moveSupplierInDS,
                 demoting: true,
                 step: _demote
             })
@@ -96,7 +96,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 amount: amount,
                 maxLoops: maxLoops,
                 borrow: true,
-                updateDS: _updateBorrowerInDS,
+                updateDS: _moveBorrowerInDS,
                 demoting: true,
                 step: _demote
             })

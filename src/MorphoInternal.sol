@@ -312,7 +312,19 @@ abstract contract MorphoInternal is MorphoStorage {
         if (inP2P != formerInP2P) p2pMarket.update(user, inP2P, true);
     }
 
-    function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
+    function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P) internal {
+        _updateInDS(
+            _market[underlying].aToken,
+            user,
+            _marketBalances[underlying].poolSuppliers,
+            _marketBalances[underlying].p2pSuppliers,
+            onPool,
+            inP2P,
+            false
+        );
+    }
+
+    function _moveSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
         internal
     {
         _updateInDS(
@@ -326,7 +338,19 @@ abstract contract MorphoInternal is MorphoStorage {
         );
     }
 
-    function _updateBorrowerInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
+    function _updateBorrowerInDS(address underlying, address user, uint256 onPool, uint256 inP2P) internal {
+        _updateInDS(
+            _market[underlying].variableDebtToken,
+            user,
+            _marketBalances[underlying].poolBorrowers,
+            _marketBalances[underlying].p2pBorrowers,
+            onPool,
+            inP2P,
+            false
+        );
+    }
+
+    function _moveBorrowerInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
         internal
     {
         _updateInDS(
