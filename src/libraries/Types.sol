@@ -9,8 +9,8 @@ library Types {
     /// NESTED STRUCTS ///
 
     struct MarketSideDelta {
-        uint256 delta;
-        uint256 totalScaledP2P;
+        uint256 scaledDeltaPool; // in pool unit
+        uint256 scaledTotalP2P; // in p2p unit
     }
 
     struct Deltas {
