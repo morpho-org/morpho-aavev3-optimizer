@@ -8,11 +8,24 @@ import {DataTypes} from "./aave/DataTypes.sol";
 library Types {
     /// NESTED STRUCTS ///
 
+    struct MarketSideDelta {
+        uint256 scaledDeltaPool; // in pool unit
+        uint256 scaledTotalP2P; // in p2p unit
+    }
+
     struct Deltas {
-        uint256 p2pSupplyDelta; // Difference between the stored peer-to-peer supply amount and the real peer-to-peer supply amount (in pool supply unit).
-        uint256 p2pBorrowDelta; // Difference between the stored peer-to-peer borrow amount and the real peer-to-peer borrow amount (in pool borrow unit).
-        uint256 p2pSupplyAmount; // Sum of all stored peer-to-peer supply (in peer-to-peer supply unit).
-        uint256 p2pBorrowAmount; // Sum of all stored peer-to-peer borrow (in peer-to-peer borrow unit).
+        MarketSideDelta supply;
+        MarketSideDelta borrow;
+    }
+
+    struct MarketSideIndexes {
+        uint128 poolIndex;
+        uint128 p2pIndex;
+    }
+
+    struct Indexes {
+        MarketSideIndexes supply;
+        MarketSideIndexes borrow;
     }
 
     struct PauseStatuses {
@@ -26,16 +39,6 @@ library Types {
         bool isLiquidateCollateralPaused;
         bool isLiquidateBorrowPaused;
         bool isDeprecated;
-    }
-
-    struct MarketSideIndexes {
-        uint128 poolIndex;
-        uint128 p2pIndex;
-    }
-
-    struct Indexes {
-        MarketSideIndexes supply;
-        MarketSideIndexes borrow;
     }
 
     /// STORAGE STRUCTS ///
@@ -139,10 +142,31 @@ library Types {
         DataTypes.UserConfigurationMap morphoPoolConfig;
     }
 
-    struct OutPositionVars {
+    struct PromoteVars {
+        address underlying;
+        uint256 amount;
+        uint256 poolIndex;
+        uint256 maxLoops;
+        function(address, uint256, uint256) returns (uint256, uint256) promote;
+    }
+
+    struct BorrowWithdrawVars {
         uint256 onPool;
         uint256 inP2P;
         uint256 toWithdraw;
         uint256 toBorrow;
+    }
+
+    struct SupplyRepayVars {
+        uint256 onPool;
+        uint256 inP2P;
+        uint256 toSupply;
+        uint256 toRepay;
+    }
+
+    struct LiquidateVars {
+        uint256 closeFactor;
+        uint256 amountToLiquidate;
+        uint256 amountToSeize;
     }
 }
