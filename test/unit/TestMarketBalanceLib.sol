@@ -11,7 +11,6 @@ contract TestMarketLib is Test {
     using MarketBalanceLib for Types.MarketBalances;
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
 
-    uint256 internal constant MAX_SORTED_USERS = 20;
     bool internal constant IS_LIFO = true;
 
     Types.MarketBalances internal marketBalances;
