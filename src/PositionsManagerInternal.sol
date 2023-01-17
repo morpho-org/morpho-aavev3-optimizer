@@ -84,8 +84,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
 
-        uint256 eMode = _POOL.getUserEMode(address(this));
-        if (eMode != 0 && eMode != config.getEModeCategory()) revert Errors.InconsistentEMode();
+        uint256 eModeCategoryId = _eModeCategoryId;
+        if (eModeCategoryId != 0 && eModeCategoryId != config.getEModeCategory()) revert Errors.InconsistentEMode();
 
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
         // In response, Morpho mirrors this behavior.
