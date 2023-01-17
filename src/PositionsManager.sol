@@ -82,14 +82,14 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256 borrowed)
     {
-        _validateBorrowInput(underlying, amount, borrower);
+        _validateBorrowInput(underlying, amount, borrower, receiver);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
         // The following check requires storage indexes to be up-to-date.
         _validateBorrow(underlying, amount, borrower);
 
-        Types.WithdrawBorrowVars memory vars = _executeBorrow(underlying, amount, borrower, maxLoops, indexes);
+        Types.BorrowWithdrawVars memory vars = _executeBorrow(underlying, amount, borrower, maxLoops, indexes);
 
         _POOL.withdrawFromPool(underlying, _market[underlying].aToken, vars.toWithdraw);
         _POOL.borrowFromPool(underlying, vars.toBorrow);
@@ -109,7 +109,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.supply), amount);
 
-        Types.WithdrawBorrowVars memory vars =
+        Types.BorrowWithdrawVars memory vars =
             _executeWithdraw(underlying, amount, supplier, _defaultMaxLoops.withdraw, indexes);
 
         _POOL.withdrawFromPool(underlying, _market[underlying].aToken, vars.toWithdraw);
@@ -126,6 +126,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         returns (uint256 withdrawn)
     {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
+        _validateWithdrawCollateralInput(underlying, amount, supplier, receiver);
+
         amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, indexes.supply.poolIndex), amount);
 
         // The following check requires storage indexes to be up-to-date.
@@ -192,13 +194,13 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         ERC20(underlyingBorrowed).transferFrom2(liquidator, address(this), vars.amountToLiquidate);
 
-        Types.SupplyRepayVars memory supplyVars =
+        Types.SupplyRepayVars memory repayVars =
             _executeRepay(underlyingBorrowed, vars.amountToLiquidate, borrower, 0, borrowIndexes);
-        Types.WithdrawBorrowVars memory withdrawVars =
+        Types.BorrowWithdrawVars memory withdrawVars =
             _executeWithdraw(underlyingCollateral, vars.amountToSeize, borrower, 0, collateralIndexes);
 
-        _POOL.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, supplyVars.toRepay);
-        _POOL.supplyToPool(underlyingBorrowed, supplyVars.toSupply);
+        _POOL.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, repayVars.toRepay);
+        _POOL.supplyToPool(underlyingBorrowed, repayVars.toSupply);
         _POOL.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, withdrawVars.toWithdraw);
         _POOL.borrowFromPool(underlyingCollateral, withdrawVars.toBorrow);
 

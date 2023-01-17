@@ -9,8 +9,8 @@ library Types {
     /// NESTED STRUCTS ///
 
     struct MarketSideDelta {
-        uint256 delta;
-        uint256 totalScaledP2P;
+        uint256 scaledDeltaPool; // in pool unit
+        uint256 scaledTotalP2P; // in p2p unit
     }
 
     struct Deltas {
@@ -150,7 +150,7 @@ library Types {
         function(address, uint256, uint256) returns (uint256, uint256) promote;
     }
 
-    struct WithdrawBorrowVars {
+    struct BorrowWithdrawVars {
         uint256 onPool;
         uint256 inP2P;
         uint256 toWithdraw;

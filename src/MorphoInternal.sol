@@ -102,23 +102,23 @@ abstract contract MorphoInternal is MorphoStorage {
         amount = Math.min(
             amount,
             Math.min(
-                deltas.supply.totalScaledP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                    deltas.supply.delta.rayMul(poolSupplyIndex)
+                deltas.supply.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                    deltas.supply.scaledDeltaPool.rayMul(poolSupplyIndex)
                 ),
-                deltas.borrow.totalScaledP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                    deltas.borrow.delta.rayMul(poolBorrowIndex)
+                deltas.borrow.scaledTotalP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+                    deltas.borrow.scaledDeltaPool.rayMul(poolBorrowIndex)
                 )
             )
         );
         if (amount == 0) revert Errors.AmountIsZero();
 
-        uint256 newP2PSupplyDelta = deltas.supply.delta + amount.rayDiv(poolSupplyIndex);
-        uint256 newP2PBorrowDelta = deltas.borrow.delta + amount.rayDiv(poolBorrowIndex);
+        uint256 newSupplyDelta = deltas.supply.scaledDeltaPool + amount.rayDiv(poolSupplyIndex);
+        uint256 newBorrowDelta = deltas.borrow.scaledDeltaPool + amount.rayDiv(poolBorrowIndex);
 
-        market.deltas.supply.delta = newP2PSupplyDelta;
-        market.deltas.borrow.delta = newP2PBorrowDelta;
-        emit Events.P2PSupplyDeltaUpdated(underlying, newP2PSupplyDelta);
-        emit Events.P2PBorrowDeltaUpdated(underlying, newP2PBorrowDelta);
+        market.deltas.supply.scaledDeltaPool = newSupplyDelta;
+        market.deltas.borrow.scaledDeltaPool = newBorrowDelta;
+        emit Events.P2PSupplyDeltaUpdated(underlying, newSupplyDelta);
+        emit Events.P2PBorrowDeltaUpdated(underlying, newBorrowDelta);
 
         _POOL.borrowFromPool(underlying, amount);
         _POOL.supplyToPool(underlying, amount);
@@ -344,15 +344,19 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
 
         pauseStatuses.isSupplyPaused = isPaused;
+        pauseStatuses.isSupplyCollateralPaused = isPaused;
         pauseStatuses.isBorrowPaused = isPaused;
         pauseStatuses.isWithdrawPaused = isPaused;
+        pauseStatuses.isWithdrawCollateralPaused = isPaused;
         pauseStatuses.isRepayPaused = isPaused;
         pauseStatuses.isLiquidateCollateralPaused = isPaused;
         pauseStatuses.isLiquidateBorrowPaused = isPaused;
 
         emit Events.IsSupplyPausedSet(underlying, isPaused);
+        emit Events.IsSupplyCollateralPausedSet(underlying, isPaused);
         emit Events.IsBorrowPausedSet(underlying, isPaused);
         emit Events.IsWithdrawPausedSet(underlying, isPaused);
+        emit Events.IsWithdrawCollateralPausedSet(underlying, isPaused);
         emit Events.IsRepayPausedSet(underlying, isPaused);
         emit Events.IsLiquidateCollateralPausedSet(underlying, isPaused);
         emit Events.IsLiquidateBorrowPausedSet(underlying, isPaused);
@@ -442,7 +446,7 @@ abstract contract MorphoInternal is MorphoStorage {
         if (idleSupply == 0) {
             return 0;
         }
-        uint256 totalP2PSupplied = market.deltas.supply.totalScaledP2P.rayMul(market.indexes.supply.p2pIndex);
+        uint256 totalP2PSupplied = market.deltas.supply.scaledTotalP2P.rayMul(market.indexes.supply.p2pIndex);
         return idleSupply.rayDivUp(totalP2PSupplied);
     }
 }
