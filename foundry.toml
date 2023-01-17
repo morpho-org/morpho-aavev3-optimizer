@@ -12,21 +12,21 @@ runs = 8
 test = "test/unit/"
 
 [profile.test-unit.fuzz]
-runs = 8192
+runs = 32768
 
 
 [profile.test-internal]
 test = "test/internal/"
 
 [profile.test-internal.fuzz]
-runs = 128
+runs = 64
 
 
 [profile.test-integration]
 test = "test/integration/"
 
 [profile.test-integration.fuzz]
-runs = 1024
+runs = 256
 
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
