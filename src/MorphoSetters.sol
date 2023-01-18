@@ -183,8 +183,6 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     function setEMode(uint8 categoryId) external onlyOwner {
-        _eModeCategoryId = categoryId;
-
-        _POOL.setUserEMode(categoryId);
+        _POOL.setUserEMode(categoryId); // Emits UserEModeSet event.
     }
 }
