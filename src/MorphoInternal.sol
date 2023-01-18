@@ -294,7 +294,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     function _updateInDS(
-        address underlying,
+        address poolToken,
         address user,
         LogarithmicBuckets.BucketList storage poolMarket,
         LogarithmicBuckets.BucketList storage p2pMarket,
@@ -307,7 +307,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
         if (onPool != formerOnPool) {
             if (address(_rewardsManager) != address(0)) {
-                _rewardsManager.updateUserRewards(user, underlying, formerOnPool);
+                _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
 
             poolMarket.update(user, onPool, demoting);
@@ -373,8 +373,7 @@ abstract contract MorphoInternal is MorphoStorage {
         (cached, indexes) = _computeIndexes(underlying);
 
         if (!cached) {
-            Types.Market storage market = _market[underlying];
-            market.setIndexes(indexes);
+            _market[underlying].setIndexes(indexes);
 
             emit Events.IndexesUpdated(
                 underlying,
@@ -391,7 +390,7 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.Indexes256 memory lastIndexes = market.getIndexes();
 
         cached = block.timestamp == market.lastUpdateTimestamp;
-        if (cached) return (false, lastIndexes);
+        if (cached) return (true, lastIndexes);
 
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
