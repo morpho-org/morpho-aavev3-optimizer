@@ -30,7 +30,6 @@ library Errors {
     error ExceedsMaxBasisPoints();
     error MarketIsNotListedOnAave();
     error MarketAlreadyCreated();
-    error MaxSortedUsersCannotBeZero();
 
     error ClaimRewardsPaused();
 

@@ -5,7 +5,7 @@ import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 
 import {MarketLib} from "./libraries/MarketLib.sol";
-import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
@@ -14,7 +14,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MatchingEngine is MorphoInternal {
     using MarketLib for Types.Market;
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
 
     using Math for uint256;
     using WadRayMath for uint256;
@@ -34,7 +34,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 maxLoops: maxLoops,
                 borrow: false,
                 updateDS: _updateSupplierInDS,
-                promoting: true,
+                demoting: false,
                 step: _promote
             })
         );
@@ -55,7 +55,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 maxLoops: maxLoops,
                 borrow: true,
                 updateDS: _updateBorrowerInDS,
-                promoting: true,
+                demoting: false,
                 step: _promote
             })
         );
@@ -76,7 +76,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 maxLoops: maxLoops,
                 borrow: false,
                 updateDS: _updateSupplierInDS,
-                promoting: false,
+                demoting: true,
                 step: _demote
             })
         );
@@ -97,33 +97,33 @@ abstract contract MatchingEngine is MorphoInternal {
                 maxLoops: maxLoops,
                 borrow: true,
                 updateDS: _updateBorrowerInDS,
-                promoting: false,
+                demoting: true,
                 step: _demote
             })
         );
     }
 
     function _promoteOrDemote(
-        ThreeHeapOrdering.HeapArray storage heapOnPool,
-        ThreeHeapOrdering.HeapArray storage heapInP2P,
+        LogarithmicBuckets.BucketList storage poolBuckets,
+        LogarithmicBuckets.BucketList storage p2pBuckets,
         Types.MatchingEngineVars memory vars
     ) internal returns (uint256 processed, uint256 loopsDone) {
         if (vars.maxLoops == 0) return (0, 0);
 
         uint256 remaining = vars.amount;
-        ThreeHeapOrdering.HeapArray storage workingHeap = vars.promoting ? heapOnPool : heapInP2P;
+        LogarithmicBuckets.BucketList storage workingBuckets = vars.demoting ? p2pBuckets : poolBuckets;
 
         for (; loopsDone < vars.maxLoops && remaining != 0; ++loopsDone) {
-            address firstUser = workingHeap.getHead();
+            address firstUser = workingBuckets.getMatch(remaining);
             if (firstUser == address(0)) break;
 
             uint256 onPool;
             uint256 inP2P;
 
             (onPool, inP2P, remaining) =
-                vars.step(heapOnPool.getValueOf(firstUser), heapInP2P.getValueOf(firstUser), vars.indexes, remaining);
+                vars.step(poolBuckets.getValueOf(firstUser), p2pBuckets.getValueOf(firstUser), vars.indexes, remaining);
 
-            vars.updateDS(vars.underlying, firstUser, onPool, inP2P);
+            vars.updateDS(vars.underlying, firstUser, onPool, inP2P, vars.demoting);
             emit Events.PositionUpdated(vars.borrow, firstUser, vars.underlying, onPool, inP2P);
         }
 

@@ -2,10 +2,10 @@
 pragma solidity ^0.8.17;
 
 import {Types} from "./Types.sol";
-import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 library MarketBalanceLib {
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
 
     function scaledP2PSupplyBalance(Types.MarketBalances storage marketBalances, address user)
         internal

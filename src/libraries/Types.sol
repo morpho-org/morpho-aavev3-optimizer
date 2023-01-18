@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
 import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
+
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 library Types {
     /// NESTED STRUCTS ///
@@ -65,11 +66,11 @@ library Types {
 
     // Contains storage-only dynamic arrays and mappings.
     struct MarketBalances {
-        ThreeHeapOrdering.HeapArray p2pSuppliers; // in scaled unit
-        ThreeHeapOrdering.HeapArray poolSuppliers; // in scaled unit
-        ThreeHeapOrdering.HeapArray p2pBorrowers; // in scaled unit
-        ThreeHeapOrdering.HeapArray poolBorrowers; // in scaled unit
-        mapping(address => uint256) collateral; // in scaled unit
+        LogarithmicBuckets.BucketList p2pSuppliers; // in scaled unit.
+        LogarithmicBuckets.BucketList poolSuppliers; // in scaled unit.
+        LogarithmicBuckets.BucketList p2pBorrowers; // in scaled unit.
+        LogarithmicBuckets.BucketList poolBorrowers; // in scaled unit.
+        mapping(address => uint256) collateral; // in scaled unit.
     }
 
     struct MaxLoops {
@@ -128,8 +129,8 @@ library Types {
         uint256 amount;
         uint256 maxLoops;
         bool borrow;
-        function (address, address, uint256, uint256) updateDS; // This function will be used to update the data-structure.
-        bool promoting; // True for promote, False for demote.
+        function (address, address, uint256, uint256, bool) updateDS; // This function will be used to update the data-structure.
+        bool demoting; // True for demote, False for promote.
         function(uint256, uint256, MarketSideIndexes256 memory, uint256)
             pure returns (uint256, uint256, uint256) step; // This function will be used to decide whether to use the algorithm for promoting or for demoting.
     }
