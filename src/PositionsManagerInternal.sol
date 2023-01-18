@@ -438,10 +438,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Increase the peer-to-peer supply delta.
         if (demoted < amount) {
-            demotedDelta.scaledDeltaPool += (amount - demoted).rayDiv(demotedIndexes.poolIndex);
+            uint256 newScaledDeltaPool =
+                demotedDelta.scaledDeltaPool + (amount - demoted).rayDiv(demotedIndexes.poolIndex);
 
-            if (borrow) emit Events.P2PBorrowDeltaUpdated(underlying, demotedDelta.scaledDeltaPool);
-            else emit Events.P2PSupplyDeltaUpdated(underlying, demotedDelta.scaledDeltaPool);
+            demotedDelta.scaledDeltaPool = newScaledDeltaPool;
+
+            if (borrow) emit Events.P2PBorrowDeltaUpdated(underlying, newScaledDeltaPool);
+            else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledDeltaPool);
         }
 
         // Math.min as the last decimal might flip.
@@ -467,14 +470,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.MarketSideDelta storage sideDelta =
             borrow ? _market[underlying].deltas.borrow : _market[underlying].deltas.supply;
 
-        if (sideDelta.scaledDeltaPool == 0) return (0, amount);
+        uint256 scaledDeltaPool = sideDelta.scaledDeltaPool;
+        if (scaledDeltaPool == 0) return (0, amount);
 
-        uint256 matchedDelta = Math.min(sideDelta.scaledDeltaPool.rayMulUp(poolIndex), amount); // In underlying.
+        uint256 matchedDelta = Math.min(scaledDeltaPool.rayMulUp(poolIndex), amount); // In underlying.
+        uint256 newScaledDeltaPool = scaledDeltaPool.zeroFloorSub(matchedDelta.rayDivDown(poolIndex));
 
-        sideDelta.scaledDeltaPool = sideDelta.scaledDeltaPool.zeroFloorSub(matchedDelta.rayDivDown(poolIndex));
+        sideDelta.scaledDeltaPool = newScaledDeltaPool;
 
-        if (borrow) emit Events.P2PBorrowDeltaUpdated(underlying, sideDelta.scaledDeltaPool);
-        else emit Events.P2PSupplyDeltaUpdated(underlying, sideDelta.scaledDeltaPool);
+        if (borrow) emit Events.P2PBorrowDeltaUpdated(underlying, newScaledDeltaPool);
+        else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledDeltaPool);
 
         return (matchedDelta, amount - matchedDelta);
     }

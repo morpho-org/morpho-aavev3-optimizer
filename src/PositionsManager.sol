@@ -70,19 +70,20 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
 
-        marketBalances.collateral[onBehalf] += amount.rayDivDown(indexes.supply.poolIndex);
+        uint256 newBalance = marketBalances.collateral[onBehalf] + amount.rayDivDown(indexes.supply.poolIndex);
+        marketBalances.collateral[onBehalf] = newBalance;
         _userCollaterals[onBehalf].add(underlying);
 
         _POOL.supplyToPool(underlying, amount);
 
-        emit Events.CollateralSupplied(from, onBehalf, underlying, amount, marketBalances.collateral[onBehalf]);
+        emit Events.CollateralSupplied(from, onBehalf, underlying, amount, newBalance);
 
         return amount;
     }
 
     function borrowLogic(address underlying, uint256 amount, address borrower, address receiver, uint256 maxLoops)
         external
-        returns (uint256 borrowed)
+        returns (uint256)
     {
         Types.Market storage market = _validateBorrowInput(underlying, amount, borrower, receiver);
 
@@ -96,16 +97,16 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
         _POOL.borrowFromPool(underlying, vars.toBorrow);
 
-        borrowed = vars.toWithdraw + vars.toBorrow;
+        ERC20(underlying).safeTransfer(receiver, amount);
 
-        ERC20(underlying).safeTransfer(receiver, borrowed);
+        emit Events.Borrowed(borrower, underlying, amount, vars.onPool, vars.inP2P);
 
-        emit Events.Borrowed(borrower, underlying, borrowed, vars.onPool, vars.inP2P);
+        return amount;
     }
 
     function withdrawLogic(address underlying, uint256 amount, address supplier, address receiver)
         external
-        returns (uint256 withdrawn)
+        returns (uint256)
     {
         Types.Market storage market = _validateWithdrawInput(underlying, amount, supplier, receiver);
 
@@ -120,11 +121,11 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
         _POOL.borrowFromPool(underlying, vars.toBorrow);
 
-        withdrawn = vars.toWithdraw + vars.toBorrow;
+        ERC20(underlying).safeTransfer(receiver, amount);
 
-        ERC20(underlying).safeTransfer(receiver, withdrawn);
+        emit Events.Withdrawn(supplier, receiver, underlying, amount, vars.onPool, vars.inP2P);
 
-        emit Events.Withdrawn(supplier, receiver, underlying, withdrawn, vars.onPool, vars.inP2P);
+        return amount;
     }
 
     function withdrawCollateralLogic(address underlying, uint256 amount, address supplier, address receiver)
@@ -150,7 +151,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         _POOL.withdrawFromPool(underlying, market.aToken, amount);
         ERC20(underlying).safeTransfer(receiver, amount);
 
-        emit Events.CollateralWithdrawn(supplier, receiver, underlying, amount, marketBalances.collateral[supplier]);
+        emit Events.CollateralWithdrawn(supplier, receiver, underlying, amount, newBalance);
 
         return amount;
     }
