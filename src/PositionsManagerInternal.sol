@@ -62,21 +62,30 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _validatePermission(onBehalf, msg.sender);
     }
 
-    function _validateSupplyInput(address underlying, uint256 amount, address user) internal view {
-        Types.Market storage market = _validateInput(underlying, amount, user);
+    function _validateSupplyInput(address underlying, uint256 amount, address user)
+        internal
+        view
+        returns (Types.Market storage market)
+    {
+        market = _validateInput(underlying, amount, user);
         if (market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
     }
 
-    function _validateSupplyCollateralInput(address underlying, uint256 amount, address user) internal view {
-        Types.Market storage market = _validateInput(underlying, amount, user);
+    function _validateSupplyCollateralInput(address underlying, uint256 amount, address user)
+        internal
+        view
+        returns (Types.Market storage market)
+    {
+        market = _validateInput(underlying, amount, user);
         if (market.pauseStatuses.isSupplyCollateralPaused) revert Errors.SupplyCollateralIsPaused();
     }
 
     function _validateBorrowInput(address underlying, uint256 amount, address borrower, address receiver)
         internal
         view
+        returns (Types.Market storage market)
     {
-        Types.Market storage market = _validateManagerInput(underlying, amount, borrower, receiver);
+        market = _validateManagerInput(underlying, amount, borrower, receiver);
         if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
 
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
@@ -101,8 +110,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _validateWithdrawInput(address underlying, uint256 amount, address supplier, address receiver)
         internal
         view
+        returns (Types.Market storage market)
     {
-        Types.Market storage market = _validateManagerInput(underlying, amount, supplier, receiver);
+        market = _validateManagerInput(underlying, amount, supplier, receiver);
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
 
         // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
@@ -116,8 +126,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _validateWithdrawCollateralInput(address underlying, uint256 amount, address supplier, address receiver)
         internal
         view
+        returns (Types.Market storage market)
     {
-        Types.Market storage market = _validateManagerInput(underlying, amount, supplier, receiver);
+        market = _validateManagerInput(underlying, amount, supplier, receiver);
         if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
     }
 
@@ -127,8 +138,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
     }
 
-    function _validateRepayInput(address underlying, uint256 amount, address user) internal view {
-        Types.Market storage market = _validateInput(underlying, amount, user);
+    function _validateRepayInput(address underlying, uint256 amount, address user)
+        internal
+        view
+        returns (Types.Market storage market)
+    {
+        market = _validateInput(underlying, amount, user);
         if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
     }
 
@@ -187,9 +202,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Deltas storage deltas = _market[underlying].deltas;
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
 
-        vars.onPool = marketBalances.scaledPoolSupplyBalance(user);
-        vars.inP2P = marketBalances.scaledP2PSupplyBalance(user);
-
         (vars.toRepay, amount) = _matchDelta(underlying, amount, indexes.borrow.poolIndex, true);
 
         uint256 promoted;
@@ -206,9 +218,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.toRepay += promoted;
         deltas.borrow.scaledTotalP2P += promoted;
 
-        vars.inP2P = _addP2PDelta(underlying, vars.toRepay, indexes.supply.p2pIndex, vars.inP2P, deltas.supply);
+        vars.inP2P = _addP2PDelta(
+            underlying,
+            vars.toRepay,
+            indexes.supply.p2pIndex,
+            marketBalances.scaledP2PSupplyBalance(user),
+            deltas.supply
+        );
 
-        (vars.toSupply, vars.onPool) = _addToPool(amount, vars.onPool, indexes.supply.poolIndex);
+        (vars.toSupply, vars.onPool) =
+            _addToPool(amount, marketBalances.scaledPoolSupplyBalance(user), indexes.supply.poolIndex);
 
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
     }
@@ -261,17 +280,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Deltas storage deltas = _market[underlying].deltas;
 
-        vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
-        vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
+        (vars.toRepay, amount, vars.onPool) =
+            _subFromPool(amount, marketBalances.scaledPoolBorrowBalance(user), indexes.borrow.poolIndex);
 
-        (vars.toRepay, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.borrow.poolIndex);
-        if (amount == 0) {
-            _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
-            return vars;
-        }
+        vars.inP2P = marketBalances.scaledP2PBorrowBalance(user).zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
 
-        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
         _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
+
+        if (amount == 0) return vars;
 
         uint256 toRepayStep;
         (toRepayStep, amount) = _matchDelta(underlying, amount, indexes.borrow.poolIndex, true);
@@ -307,18 +323,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         Types.Deltas storage deltas = market.deltas;
 
-        vars.onPool = marketBalances.scaledPoolSupplyBalance(user);
-        vars.inP2P = marketBalances.scaledP2PSupplyBalance(user);
+        (vars.toWithdraw, amount, vars.onPool) =
+            _subFromPool(amount, marketBalances.scaledPoolSupplyBalance(user), indexes.supply.poolIndex);
 
-        (vars.toWithdraw, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.supply.poolIndex);
-        if (amount == 0) {
-            _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
-            return vars;
-        }
-        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
+        vars.inP2P = marketBalances.scaledP2PSupplyBalance(user).zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
-        _withdrawIdle(market, amount, vars.inP2P, indexes.supply.p2pIndex);
+        amount = _withdrawIdle(market, amount);
+
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
+
+        if (amount == 0) return vars;
 
         uint256 toWithdrawStep;
         (toWithdrawStep, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, false);
@@ -545,15 +559,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     /// @notice Withdraws idle supply.
     /// @param market The market storage.
     /// @param amount The amount to withdraw.
-    /// @param inP2P The user's amount in p2p.
-    /// @param p2pSupplyIndex The current p2p supply index.
-    function _withdrawIdle(Types.Market storage market, uint256 amount, uint256 inP2P, uint256 p2pSupplyIndex)
-        internal
-    {
-        if (amount > 0 && market.idleSupply > 0 && inP2P > 0) {
-            uint256 matchedIdle = Math.min(Math.min(market.idleSupply, amount), inP2P.rayMulDown(p2pSupplyIndex));
-            market.idleSupply -= matchedIdle;
-        }
+    function _withdrawIdle(Types.Market storage market, uint256 amount) internal returns (uint256) {
+        if (amount == 0) return 0;
+
+        uint256 idleSupply = market.idleSupply;
+        if (idleSupply == 0) return 0;
+
+        uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
+        market.idleSupply = market.idleSupply.zeroFloorSub(matchedIdle);
+
+        return amount - matchedIdle;
     }
 
     /// @notice Borrows idle supply and returns an updated p2p balance.
