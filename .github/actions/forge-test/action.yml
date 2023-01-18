@@ -45,22 +45,25 @@ runs:
         key: ${{ github.base_ref || github.ref_name }}-forge-test-${{ inputs.network }} # always keep compiled contracts from base branch
 
     - name: Run unit tests
-      run: forge test -vvv --match-contract TestUnit --fuzz-runs 32768
+      run: make test-unit
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
+        FOUNDRY_FUZZ_RUNS: 32768
 
     - name: Run internal tests
-      run: forge test -vvv --match-contract TestInternal --fuzz-runs 64
+      run: make test-internal
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
+        FOUNDRY_FUZZ_RUNS: 64
 
-    - name: Run tests
-      run: forge test -vvv --match-contract TestIntegration --fuzz-runs 256
+    - name: Run integration tests
+      run: make test-integration
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
+        FOUNDRY_FUZZ_RUNS: 256
 
     - name: Generate lcov coverage report
       if: ${{ inputs.codecovToken != '' }}
