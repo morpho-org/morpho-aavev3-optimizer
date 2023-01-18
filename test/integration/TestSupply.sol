@@ -67,7 +67,8 @@ contract TestIntegrationSupply is IntegrationTest {
 
             TestMarket memory market = borrowableMarkets[marketIndex];
 
-            (, amount) = _borrowUpTo(market, market, amount, 100_00);
+            amount = _boundSupply(market, amount);
+            amount = _promoteSupply(market, amount); // 100% peer-to-peer.
 
             uint256 balanceBefore = user1.balanceOf(market.underlying);
             uint256 morphoBalanceBefore = ERC20(market.aToken).balanceOf(address(morpho));
@@ -83,7 +84,7 @@ contract TestIntegrationSupply is IntegrationTest {
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.Supplied(address(user1), onBehalf, market.underlying, 0, 0, 0);
 
-            uint256 supplied = user1.supply(market.underlying, amount, onBehalf); // 100% peer-to-peer.
+            uint256 supplied = user1.supply(market.underlying, amount, onBehalf);
 
             Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
             uint256 p2pSupply =

@@ -5,6 +5,7 @@ import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationWithdraw is IntegrationTest {
     using WadRayMath for uint256;
+    using PercentageMath for uint256;
 
     function _boundAmount(uint256 amount) internal view returns (uint256) {
         return bound(amount, 1, type(uint256).max);
@@ -38,11 +39,12 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             TestMarket memory market = markets[marketIndex];
 
-            (uint256 supplied,) = _borrowUpTo(market, market, amount, 50_00);
-            amount = supplied / 2;
+            uint256 supplied = _boundSupply(market, amount);
+            uint256 promoted = _promoteSupply(market, supplied.percentMul(50_00)); // 50% peer-to-peer.
+            amount = supplied - promoted;
 
             user1.approve(market.underlying, supplied);
-            user1.supply(market.underlying, supplied, onBehalf); // >= 50% pool.
+            user1.supply(market.underlying, supplied, onBehalf); // <= 50% peer-to-peer because market is not guaranteed to be borrowable.
 
             uint256 balanceBeforeWithdraw = ERC20(market.underlying).balanceOf(receiver);
 
@@ -58,19 +60,26 @@ contract TestIntegrationWithdraw is IntegrationTest {
                 morpho.scaledPoolSupplyBalance(market.underlying, onBehalf).rayMul(indexes.supply.poolIndex);
             uint256 totalSupply = poolSupply + p2pSupply;
 
-            assertGe(poolSupply, 0, "poolSupply == 0");
-            assertLe(poolSupply, amount, "poolSupply > amount");
-            assertEq(withdrawn, amount, "withdrawn != amount");
-            assertLe(p2pSupply, amount, "p2pSupply > amount");
-            assertApproxEqAbs(totalSupply, amount, 2, "supply != amount");
+            if (promoted == 0) {
+                assertEq(poolSupply, 0, "poolSupply != 0");
+            } else {
+                assertGe(poolSupply, 0, "poolSupply == 0");
+                assertLe(poolSupply, supplied - withdrawn, "poolSupply > supplied - withdrawn");
+            }
+
+            assertLe(withdrawn, amount, "withdrawn > amount");
+            assertApproxEqAbs(withdrawn, amount, 1, "withdrawn != amount");
+            assertLe(p2pSupply, promoted, "p2pSupply > promoted");
+            assertApproxEqAbs(p2pSupply, promoted, 2, "p2pSupply != promoted");
 
             assertEq(
                 morpho.supplyBalance(market.underlying, onBehalf), totalSupply, "totalSupply != poolSupply + p2pSupply"
             );
 
-            assertEq(
+            assertApproxEqAbs(
                 ERC20(market.underlying).balanceOf(receiver) - balanceBeforeWithdraw,
                 amount,
+                1,
                 "balanceAfter - balanceBeforeWithdraw != amount"
             );
         }
@@ -87,11 +96,12 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             TestMarket memory market = markets[marketIndex];
 
-            (amount,) = _borrowUpTo(market, market, amount, 50_00);
+            amount = _boundSupply(market, amount);
             input = bound(input, amount + 1, type(uint256).max);
+            _promoteSupply(market, amount.percentMul(50_00)); // 50% peer-to-peer.
 
             user1.approve(market.underlying, amount);
-            user1.supply(market.underlying, amount, onBehalf); // >= 50% pool.
+            user1.supply(market.underlying, amount, onBehalf); // <= 50% peer-to-peer because market is not guaranteed to be borrowable.
 
             uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
@@ -115,6 +125,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
             assertEq(collateral, 0, "collateral != 0");
             assertLe(withdrawn, amount, "withdrawn > amount");
             assertApproxEqAbs(withdrawn, amount, 2, "withdrawn != amount");
+
             assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "totalSupply != 0");
 
             assertEq(
@@ -131,12 +142,13 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             TestMarket memory market = markets[marketIndex];
 
-            (amount,) = _borrowUpTo(market, market, amount, 50_00);
+            amount = _boundSupply(market, amount);
+            _promoteSupply(market, amount.percentMul(50_00)); // 50% peer-to-peer.
 
             uint256 balanceBefore = user1.balanceOf(market.underlying);
 
             user1.approve(market.underlying, amount);
-            user1.supply(market.underlying, amount); // >= 50% pool.
+            user1.supply(market.underlying, amount); // <= 50% peer-to-peer because market is not guaranteed to be borrowable.
 
             user1.withdraw(market.underlying, type(uint256).max);
 
@@ -169,49 +181,49 @@ contract TestIntegrationWithdraw is IntegrationTest {
         }
     }
 
-    // function testShouldUpdateIndexesAfterWithdraw(uint256 amount, address onBehalf) public {
-    //     onBehalf = _boundOnBehalf(onBehalf);
+    function testShouldUpdateIndexesAfterWithdraw(uint256 amount, address onBehalf) public {
+        onBehalf = _boundOnBehalf(onBehalf);
 
-    //     for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
-    //         _revert();
+        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+            _revert();
 
-    //         TestMarket memory market = markets[marketIndex];
+            TestMarket memory market = markets[marketIndex];
 
-    //         amount = _boundSupply(market, amount);
+            amount = _boundSupply(market, amount);
 
-    //         Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
+            Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
 
-    //         user1.approve(market.underlying, amount);
+            user1.approve(market.underlying, amount);
 
-    //         vm.expectEmit(true, false, false, false, address(morpho));
-    //         emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
+            vm.expectEmit(true, false, false, false, address(morpho));
+            emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
 
-    //         user1.supplyCollateral(market.underlying, amount, onBehalf);
+            user1.withdraw(market.underlying, type(uint256).max);
 
-    //         Types.Market memory morphoMarket = morpho.market(market.underlying);
-    //         assertEq(
-    //             morphoMarket.indexes.supply.poolIndex,
-    //             futureIndexes.supply.poolIndex,
-    //             "poolSupplyIndex != futurePoolSupplyIndex"
-    //         );
-    //         assertEq(
-    //             morphoMarket.indexes.borrow.poolIndex,
-    //             futureIndexes.borrow.poolIndex,
-    //             "poolBorrowIndex != futurePoolBorrowIndex"
-    //         );
+            Types.Market memory morphoMarket = morpho.market(market.underlying);
+            assertEq(
+                morphoMarket.indexes.supply.poolIndex,
+                futureIndexes.supply.poolIndex,
+                "poolSupplyIndex != futurePoolSupplyIndex"
+            );
+            assertEq(
+                morphoMarket.indexes.borrow.poolIndex,
+                futureIndexes.borrow.poolIndex,
+                "poolBorrowIndex != futurePoolBorrowIndex"
+            );
 
-    //         assertEq(
-    //             morphoMarket.indexes.supply.p2pIndex,
-    //             futureIndexes.supply.p2pIndex,
-    //             "p2pSupplyIndex != futureP2PSupplyIndex"
-    //         );
-    //         assertEq(
-    //             morphoMarket.indexes.borrow.p2pIndex,
-    //             futureIndexes.borrow.p2pIndex,
-    //             "p2pBorrowIndex != futureP2PBorrowIndex"
-    //         );
-    //     }
-    // }
+            assertEq(
+                morphoMarket.indexes.supply.p2pIndex,
+                futureIndexes.supply.p2pIndex,
+                "p2pSupplyIndex != futureP2PSupplyIndex"
+            );
+            assertEq(
+                morphoMarket.indexes.borrow.p2pIndex,
+                futureIndexes.borrow.p2pIndex,
+                "p2pBorrowIndex != futureP2PBorrowIndex"
+            );
+        }
+    }
 
     // TODO: add delta tests
 

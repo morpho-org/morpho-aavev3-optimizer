@@ -21,7 +21,7 @@ contract IntegrationTest is ForkTest {
 
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
     uint256 internal constant MIN_USD_AMOUNT = 0.001e8; // AaveV3 base currency is USD, 8 decimals on all L2s.
-    uint256 internal constant MAX_USD_AMOUNT = 10_000_000_000e8; // AaveV3 base currency is USD, 8 decimals on all L2s.
+    uint256 internal constant MAX_USD_AMOUNT = 100_000_000e8; // AaveV3 base currency is USD, 8 decimals on all L2s.
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
@@ -62,7 +62,7 @@ contract IntegrationTest is ForkTest {
 
         _deploy();
 
-        _initMarket(weth, 0, 33_33);
+        _initMarket(weth, 0, 33_33); // Needs to be first, so that markets[0] == weth.
         _initMarket(dai, 0, 33_33);
         _initMarket(usdc, 0, 33_33);
         _initMarket(usdt, 0, 33_33);
@@ -101,9 +101,7 @@ contract IntegrationTest is ForkTest {
         morpho.initialize(address(positionsManager), Types.MaxLoops({supply: 10, borrow: 10, repay: 10, withdraw: 10}));
 
         // Supply dust on WETH to make UserConfigurationMap.isUsingAsCollateralOne() always return true.
-        deal(weth, address(this), 1e9);
-        ERC20(weth).approve(address(pool), 1e9);
-        pool.deposit(weth, 1e9, address(morpho), 0);
+        _deposit(weth, 1e9, address(morpho));
     }
 
     function _initUser() internal returns (TestUser user) {
@@ -151,6 +149,13 @@ contract IntegrationTest is ForkTest {
     /// @dev Disables the same block borrow/repay limitation by resetting the previous index of Morpho on AaveV3.
     function _resetPreviousIndex(TestMarket memory market) internal {
         vm.store(market.debtToken, keccak256(abi.encode(address(morpho), 56)), 0);
+    }
+
+    /// @dev Deposits the given amount of tokens on behalf of the given address, on AaveV3.
+    function _deposit(address underlying, uint256 amount, address onBehalf) internal {
+        deal(underlying, address(this), amount);
+        ERC20(underlying).approve(address(pool), amount);
+        pool.deposit(underlying, amount, onBehalf, 0);
     }
 
     /// @dev Bounds the input between the minimum & the maximum USD amount expected in tests, without exceeding the market's supply cap.
@@ -205,30 +210,32 @@ contract IntegrationTest is ForkTest {
         returns (uint256)
     {
         return (
-            (amount * borrowedMarket.price * 10 ** collateralMarket.decimals).percentDiv(collateralMarket.ltv)
+            (amount * borrowedMarket.price * 10 ** collateralMarket.decimals).percentDiv(collateralMarket.ltv - 1)
                 / (collateralMarket.price * 10 ** borrowedMarket.decimals)
         );
     }
 
-    /// @dev Makes the promoter supply up to 50% of the supply cap, then use a portion of their collateral power to borrow from the same market.
-    /// @return supplied Always equal to the collateral supplied by the promoter.
-    /// @return borrowed Equal to the debt borrowed by the promoter iff the market is borrowable.
-    function _borrowUpTo(
-        TestMarket memory collateralMarket,
-        TestMarket memory borrowMarket,
-        uint256 amount,
-        uint256 utilizationBps
-    ) internal returns (uint256 supplied, uint256 borrowed) {
-        // Divided by 2 because will be supplied by promoter & promoted and may thus reach supply cap otherwise.
-        supplied = _boundSupply(collateralMarket, amount) / 2;
-        borrowed = _boundBorrow(collateralMarket, borrowMarket, supplied.percentMul(utilizationBps));
+    /// @dev Promotes the incoming (or already provided) supply, without collateral.
+    function _promoteSupply(TestMarket memory market, uint256 amount) internal returns (uint256 borrowed) {
+        borrowed = bound(
+            amount,
+            (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price,
+            Math.min(
+                ERC20(market.underlying).balanceOf(market.aToken),
+                market.borrowCap > 0 ? market.borrowCap - ERC20(market.debtToken).totalSupply() : type(uint256).max
+            )
+        );
 
-        promoter.approve(collateralMarket.underlying, supplied);
-        promoter.supplyCollateral(collateralMarket.underlying, supplied);
+        oracle.setAssetPrice(market.underlying, 0);
 
         // Reverts if the market is not borrowable.
-        try promoter.borrow(borrowMarket.underlying, borrowed) {} catch {}
+        try promoter.borrow(market.underlying, borrowed) {
+            _resetPreviousIndex(market);
+            _deposit(weth, _minCollateral(markets[0], market, borrowed), address(morpho));
+        } catch {
+            borrowed = 0;
+        }
 
-        _resetPreviousIndex(borrowMarket);
+        oracle.setAssetPrice(market.underlying, market.price);
     }
 }

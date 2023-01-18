@@ -47,8 +47,6 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         _POOL.supplyToPool(usdc, 1e8);
         _POOL.supplyToPool(usdt, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
-
-        oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
     }
 
     function createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
