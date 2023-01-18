@@ -6,16 +6,16 @@ import "test/helpers/IntegrationTest.sol";
 contract TestIntegrationSupply is IntegrationTest {
     using WadRayMath for uint256;
 
-    function _assumeAmount(uint256 amount) internal pure {
-        vm.assume(amount > 0);
+    function _boundAmount(uint256 amount) internal view returns (uint256) {
+        return bound(amount, 1, type(uint256).max);
     }
 
-    function _assumeOnBehalf(address onBehalf) internal pure {
-        vm.assume(onBehalf != address(0));
+    function _boundOnBehalf(address onBehalf) internal view returns (address) {
+        return address(uint160(bound(uint256(uint160(onBehalf)), 1, type(uint160).max)));
     }
 
     function testShouldSupplyPoolOnly(uint256 amount, address onBehalf) public {
-        _assumeOnBehalf(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
@@ -43,23 +43,31 @@ contract TestIntegrationSupply is IntegrationTest {
             assertLe(poolSupply, amount, "poolSupply > amount");
             assertApproxEqAbs(poolSupply, amount, 1, "poolSupply != amount");
 
+            assertEq(morpho.supplyBalance(market.underlying, onBehalf), poolSupply, "totalSupply != poolSupply");
+
             uint256 morphoBalance = ERC20(market.aToken).balanceOf(address(morpho));
             assertApproxEqAbs(morphoBalance, supplied, 1, "morphoBalance != supplied");
 
             assertEq(balanceBefore - user1.balanceOf(market.underlying), amount, "balanceDiff != amount");
+
+            Types.Market memory morphoMarket = morpho.market(market.underlying);
+            assertEq(morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
+            assertEq(morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
+            assertEq(morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
+            assertEq(morphoMarket.deltas.borrow.scaledTotalP2P, 0, "scaledTotalBorrowP2P != 0");
+            assertEq(morphoMarket.idleSupply, 0, "idleSupply != 0");
         }
     }
 
     function testShouldSupplyP2POnly(uint256 amount, address onBehalf) public {
-        _assumeOnBehalf(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
             _revert();
 
             TestMarket memory market = borrowableMarkets[marketIndex];
 
-            uint256 collateral;
-            (collateral, amount) = _borrowUpTo(market, market, amount, 100_00);
+            (, amount) = _borrowUpTo(market, market, amount, 100_00);
 
             uint256 balanceBefore = user1.balanceOf(market.underlying);
             uint256 morphoBalanceBefore = ERC20(market.aToken).balanceOf(address(morpho));
@@ -87,18 +95,71 @@ contract TestIntegrationSupply is IntegrationTest {
             assertLe(p2pSupply, amount, "p2pSupply > amount");
             assertApproxEqAbs(p2pSupply, amount, 1, "p2pSupply != amount");
 
+            assertEq(morpho.supplyBalance(market.underlying, onBehalf), p2pSupply, "totalSupply != p2pSupply");
+
             uint256 morphoBalanceAfter = ERC20(market.aToken).balanceOf(address(morpho));
             assertApproxEqAbs(morphoBalanceAfter, morphoBalanceBefore, 2, "morphoBalanceAfter != morphoBalanceBefore");
             assertGe(morphoBalanceAfter, morphoBalanceBefore, "morphoBalanceAfter < morphoBalanceBefore");
 
             assertEq(balanceBefore - user1.balanceOf(market.underlying), amount, "balanceDiff != amount");
+
+            Types.Market memory morphoMarket = morpho.market(market.underlying);
+            assertEq(morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
+            assertEq(morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
+            assertEq(morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
+            assertEq(morphoMarket.deltas.borrow.scaledTotalP2P, 0, "scaledTotalBorrowP2P != 0");
+            assertEq(morphoMarket.idleSupply, 0, "idleSupply != 0");
+        }
+    }
+
+    function testShouldUpdateIndexesAfterSupply(uint256 amount, address onBehalf) public {
+        onBehalf = _boundOnBehalf(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+            _revert();
+
+            TestMarket memory market = markets[marketIndex];
+
+            amount = _boundSupply(market, amount);
+
+            Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
+
+            user1.approve(market.underlying, amount);
+
+            vm.expectEmit(true, false, false, false, address(morpho));
+            emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
+
+            user1.supply(market.underlying, amount, onBehalf); // 100% pool.
+
+            Types.Market memory morphoMarket = morpho.market(market.underlying);
+            assertEq(
+                morphoMarket.indexes.supply.poolIndex,
+                futureIndexes.supply.poolIndex,
+                "poolSupplyIndex != futurePoolSupplyIndex"
+            );
+            assertEq(
+                morphoMarket.indexes.borrow.poolIndex,
+                futureIndexes.borrow.poolIndex,
+                "poolBorrowIndex != futurePoolBorrowIndex"
+            );
+
+            assertEq(
+                morphoMarket.indexes.supply.p2pIndex,
+                futureIndexes.supply.p2pIndex,
+                "p2pSupplyIndex != futureP2PSupplyIndex"
+            );
+            assertEq(
+                morphoMarket.indexes.borrow.p2pIndex,
+                futureIndexes.borrow.p2pIndex,
+                "p2pBorrowIndex != futureP2PBorrowIndex"
+            );
         }
     }
 
     // TODO: add delta tests
 
     function testShouldRevertSupplyZero(address onBehalf) public {
-        _assumeOnBehalf(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -107,7 +168,7 @@ contract TestIntegrationSupply is IntegrationTest {
     }
 
     function testShouldRevertSupplyOnBehalfZero(uint256 amount) public {
-        _assumeAmount(amount);
+        amount = _boundAmount(amount);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
@@ -116,16 +177,16 @@ contract TestIntegrationSupply is IntegrationTest {
     }
 
     function testShouldRevertSupplyWhenMarketNotCreated(uint256 amount, address onBehalf) public {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user1.supply(sAvax, amount, onBehalf);
     }
 
     function testShouldRevertSupplyWhenSupplyPaused(uint256 amount, address onBehalf) public {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
@@ -140,8 +201,8 @@ contract TestIntegrationSupply is IntegrationTest {
     }
 
     function testShouldRevertSupplyNotEnoughAllowance(uint256 allowance, uint256 amount, address onBehalf) public {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
@@ -159,8 +220,8 @@ contract TestIntegrationSupply is IntegrationTest {
     }
 
     function testShouldSupplyWhenSupplyCollateralPaused(uint256 amount, address onBehalf) public {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();

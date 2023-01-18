@@ -52,8 +52,6 @@ contract IntegrationTest is ForkTest {
         uint16 p2pIndexCursor;
         //
         uint256 price;
-        uint256 totalSupply;
-        uint256 totalBorrow;
     }
 
     TestMarket[] internal markets;
@@ -72,6 +70,8 @@ contract IntegrationTest is ForkTest {
         _initMarket(link, 0, 33_33);
         _initMarket(wavax, 0, 33_33);
         _initMarket(wbtc, 0, 33_33);
+
+        _forward(1); // All markets are outdated in Morpho's storage.
 
         user1 = _initUser();
         user2 = _initUser();
@@ -130,8 +130,6 @@ contract IntegrationTest is ForkTest {
         market.reserveFactor = reserveFactor;
         market.p2pIndexCursor = p2pIndexCursor;
         market.price = oracle.getAssetPrice(underlying); // Price is constant, equal to price at fork block number.
-        market.totalSupply = ERC20(reserve.aTokenAddress).totalSupply();
-        market.totalBorrow = ERC20(reserve.variableDebtTokenAddress).totalSupply();
 
         (market.ltv, market.lt, market.liquidationBonus, market.decimals,,) = reserve.configuration.getParams();
         market.supplyCap = reserve.configuration.getSupplyCap() * 10 ** market.decimals;
@@ -141,7 +139,7 @@ contract IntegrationTest is ForkTest {
         if (
             market.ltv > 0 && reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
                 && !reserve.configuration.getBorrowableInIsolation() && market.borrowCap > 0
-                && market.borrowCap > market.totalBorrow
+                && market.borrowCap > ERC20(market.debtToken).totalSupply()
         ) borrowableMarkets.push(market);
 
         vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
@@ -160,7 +158,10 @@ contract IntegrationTest is ForkTest {
         return bound(
             amount,
             (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price,
-            Math.min((MAX_USD_AMOUNT * 10 ** market.decimals) / market.price, market.supplyCap - market.totalSupply)
+            Math.min(
+                (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price,
+                market.supplyCap - ERC20(market.aToken).totalSupply()
+            )
         );
     }
 
@@ -178,7 +179,7 @@ contract IntegrationTest is ForkTest {
                 Math.min(
                     _borrowable(collateralMarket, borrowedMarket, collateral),
                     borrowedMarket.borrowCap > 0
-                        ? borrowedMarket.borrowCap - borrowedMarket.totalBorrow
+                        ? borrowedMarket.borrowCap - ERC20(borrowedMarket.debtToken).totalSupply()
                         : type(uint256).max
                 )
             )

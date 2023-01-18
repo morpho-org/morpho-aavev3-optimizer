@@ -6,16 +6,18 @@ import "test/helpers/IntegrationTest.sol";
 contract TestIntegrationBorrow is IntegrationTest {
     using WadRayMath for uint256;
 
-    function _assumeAmount(uint256 amount) internal pure {
-        vm.assume(amount > 0);
+    function _boundAmount(uint256 amount) internal view returns (uint256) {
+        return bound(amount, 1, type(uint256).max);
     }
 
-    function _assumeOnBehalf(address onBehalf) internal view {
-        vm.assume(onBehalf != address(0) && onBehalf != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
+    function _boundOnBehalf(address onBehalf) internal view returns (address) {
+        vm.assume(onBehalf != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
+
+        return address(uint160(bound(uint256(uint160(onBehalf)), 1, type(uint160).max)));
     }
 
-    function _assumeReceiver(address receiver) internal pure {
-        vm.assume(receiver != address(0));
+    function _boundReceiver(address receiver) internal view returns (address) {
+        return address(uint160(bound(uint256(uint160(receiver)), 1, type(uint160).max)));
     }
 
     function _prepareOnBehalf(address onBehalf) internal {
@@ -65,8 +67,8 @@ contract TestIntegrationBorrow is IntegrationTest {
     // }
 
     function testShouldRevertBorrowZero(address onBehalf, address receiver) public {
-        _assumeOnBehalf(onBehalf);
-        _assumeReceiver(receiver);
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -75,8 +77,8 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function testShouldRevertBorrowOnBehalfZero(uint256 amount, address receiver) public {
-        _assumeAmount(amount);
-        _assumeReceiver(receiver);
+        amount = _boundAmount(amount);
+        receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
@@ -85,8 +87,8 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function testShouldRevertBorrowToZero(uint256 amount, address onBehalf) public {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         _prepareOnBehalf(onBehalf);
 
@@ -97,9 +99,9 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function testShouldRevertBorrowWhenMarketNotCreated(uint256 amount, address onBehalf, address receiver) public {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
-        _assumeReceiver(receiver);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -108,9 +110,9 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function testShouldRevertBorrowWhenBorrowPaused(uint256 amount, address onBehalf, address receiver) public {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
-        _assumeReceiver(receiver);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -127,10 +129,10 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function testShouldRevertBorrowWhenNotManaging(uint256 amount, address onBehalf, address receiver) public {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
         vm.assume(onBehalf != address(user1));
-        _assumeReceiver(receiver);
+        receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);

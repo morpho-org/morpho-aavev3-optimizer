@@ -4,16 +4,16 @@ pragma solidity ^0.8.17;
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationRepay is IntegrationTest {
-    function _assumeAmount(uint256 amount) internal pure {
-        vm.assume(amount > 0);
+    function _boundAmount(uint256 amount) internal view returns (uint256) {
+        return bound(amount, 1, type(uint256).max);
     }
 
-    function _assumeOnBehalf(address onBehalf) internal pure {
-        vm.assume(onBehalf != address(0));
+    function _boundOnBehalf(address onBehalf) internal view returns (address) {
+        return address(uint160(bound(uint256(uint160(onBehalf)), 1, type(uint160).max)));
     }
 
     function testShouldRevertRepayZero(address onBehalf) public {
-        _assumeOnBehalf(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -22,7 +22,7 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldRevertRepayOnBehalfZero(uint256 amount) public {
-        _assumeAmount(amount);
+        amount = _boundAmount(amount);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
@@ -31,16 +31,16 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldRevertRepayWhenMarketNotCreated(uint256 amount, address onBehalf) public {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user1.repay(sAvax, amount, onBehalf);
     }
 
     function testShouldRevertRepayWhenRepayPaused(uint256 amount, address onBehalf) public {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
         vm.assume(onBehalf != address(user1));
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {

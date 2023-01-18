@@ -4,16 +4,18 @@ pragma solidity ^0.8.0;
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationWithdrawCollateral is IntegrationTest {
-    function _assumeAmount(uint256 amount) internal pure {
-        vm.assume(amount > 0);
+    function _boundAmount(uint256 amount) internal view returns (uint256) {
+        return bound(amount, 1, type(uint256).max);
     }
 
-    function _assumeOnBehalf(address onBehalf) internal view {
-        vm.assume(onBehalf != address(0) && onBehalf != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
+    function _boundOnBehalf(address onBehalf) internal view returns (address) {
+        vm.assume(onBehalf != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
+
+        return address(uint160(bound(uint256(uint160(onBehalf)), 1, type(uint160).max)));
     }
 
-    function _assumeReceiver(address receiver) internal pure {
-        vm.assume(receiver != address(0));
+    function _boundReceiver(address receiver) internal view returns (address) {
+        return address(uint160(bound(uint256(uint160(receiver)), 1, type(uint160).max)));
     }
 
     function _prepareOnBehalf(address onBehalf) internal {
@@ -26,8 +28,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     function testShouldWithdrawAllCollateral(uint256 amount, uint256 input, address onBehalf, address receiver)
         public
     {
-        _assumeOnBehalf(onBehalf);
-        _assumeReceiver(receiver);
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -59,6 +61,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             assertLe(withdrawn, amount, "withdrawn > amount");
             assertApproxEqAbs(withdrawn, amount, 2, "withdrawn != amount");
 
+            assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateralBalance != 0");
+
             assertEq(
                 ERC20(market.underlying).balanceOf(receiver) - balanceBefore,
                 withdrawn,
@@ -89,9 +93,9 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     }
 
     function testShouldNotWithdrawWhenNoCollateral(uint256 amount, address onBehalf, address receiver) public {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
-        _assumeReceiver(receiver);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -112,8 +116,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     }
 
     function testShouldRevertWithdrawCollateralZero(address onBehalf, address receiver) public {
-        _assumeOnBehalf(onBehalf);
-        _assumeReceiver(receiver);
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -122,8 +126,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     }
 
     function testShouldRevertWithdrawCollateralOnBehalfZero(uint256 amount, address receiver) public {
-        _assumeAmount(amount);
-        _assumeReceiver(receiver);
+        amount = _boundAmount(amount);
+        receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
@@ -132,8 +136,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     }
 
     function testShouldRevertWithdrawCollateralToZero(uint256 amount, address onBehalf) public {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         _prepareOnBehalf(onBehalf);
 
@@ -146,9 +150,9 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     function testShouldRevertWithdrawCollateralWhenMarketNotCreated(uint256 amount, address onBehalf, address receiver)
         public
     {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
-        _assumeReceiver(receiver);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -161,9 +165,9 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         address onBehalf,
         address receiver
     ) public {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
-        _assumeReceiver(receiver);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -182,10 +186,10 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     function testShouldRevertWithdrawCollateralWhenNotManaging(uint256 amount, address onBehalf, address receiver)
         public
     {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
         vm.assume(onBehalf != address(user1));
-        _assumeReceiver(receiver);
+        receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);
@@ -196,9 +200,9 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     function testShouldWithdrawCollateralWhenWithdrawPaused(uint256 amount, address onBehalf, address receiver)
         public
     {
-        _assumeAmount(amount);
-        _assumeOnBehalf(onBehalf);
-        _assumeReceiver(receiver);
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
