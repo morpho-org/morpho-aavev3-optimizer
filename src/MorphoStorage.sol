@@ -20,6 +20,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     IPool internal immutable _POOL;
     IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER;
     bytes32 internal immutable _DOMAIN_SEPARATOR;
+    uint8 internal immutable _E_MODE_CATEGORY_ID;
 
     /// STORAGE ///
 
@@ -40,7 +41,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
 
     /// @dev The contract is automatically marked as initialized when deployed to prevent highjacking the implementation contract.
-    constructor(address addressesProvider) {
+    constructor(address addressesProvider, uint8 eModeCategoryId) {
         _disableInitializers();
 
         _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
@@ -55,5 +56,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
                 address(this)
             )
         );
+
+        _E_MODE_CATEGORY_ID = eModeCategoryId;
     }
 }
