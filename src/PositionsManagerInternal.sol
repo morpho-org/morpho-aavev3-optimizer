@@ -564,11 +564,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     /// @notice Withdraws idle supply.
     /// @param market The market storage.
     /// @param amount The amount to withdraw.
+    /// @return The amount left to process.
     function _withdrawIdle(Types.Market storage market, uint256 amount) internal returns (uint256) {
         if (amount == 0) return 0;
 
         uint256 idleSupply = market.idleSupply;
-        if (idleSupply == 0) return 0;
+        if (idleSupply == 0) return amount;
 
         uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
         market.idleSupply = idleSupply.zeroFloorSub(matchedIdle);
