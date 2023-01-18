@@ -6,7 +6,7 @@ import {MarketLib} from "src/libraries/MarketLib.sol";
 
 import {Test} from "@forge-std/Test.sol";
 
-contract TestMarketLib is Test {
+contract TestUnitMarketLib is Test {
     using MarketLib for Types.Market;
 
     Types.Market internal market;

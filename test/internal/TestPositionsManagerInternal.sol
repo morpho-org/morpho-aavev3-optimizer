@@ -7,7 +7,7 @@ import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
 
 import "test/helpers/InternalTest.sol";
 
-contract TestPositionsManager is InternalTest, PositionsManagerInternal {
+contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerInternal {
     function testValidatePermission(address owner, address manager) public {
         _validatePermission(owner, owner);
 

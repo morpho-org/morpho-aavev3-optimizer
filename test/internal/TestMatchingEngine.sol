@@ -10,7 +10,7 @@ import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
 
 import "test/helpers/InternalTest.sol";
 
-contract TestMatchingEngine is InternalTest, MatchingEngine {
+contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using WadRayMath for uint256;

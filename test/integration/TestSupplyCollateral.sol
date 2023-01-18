@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "test/helpers/IntegrationTest.sol";
 
-contract TestSupplyCollateral is IntegrationTest {
+contract TestIntegrationSupplyCollateral is IntegrationTest {
     using WadRayMath for uint256;
 
     function _assumeAmount(uint256 amount) internal pure {

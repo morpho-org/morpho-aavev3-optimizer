@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "test/helpers/IntegrationTest.sol";
 
-contract TestBorrow is IntegrationTest {
+contract TestIntegrationBorrow is IntegrationTest {
     using WadRayMath for uint256;
 
     // function testShouldBorrowPoolOnly(address managed, uint256 amount) public {

@@ -6,7 +6,7 @@ import {MorphoGetters} from "src/MorphoGetters.sol";
 
 import "test/helpers/InternalTest.sol";
 
-contract TestMorphoGetters is InternalTest, MorphoGetters {
+contract TestInternalMorphoGetters is InternalTest, MorphoGetters {
     function testIsManaging(address owner, address manager, bool isAllowed) public {
         _approveManager(owner, manager, isAllowed);
         assertEq(this.isManaging(owner, manager), isAllowed);

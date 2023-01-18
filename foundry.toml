@@ -8,25 +8,4 @@ fs_permissions = [{ access = "read", path = "./config/"}]
 runs = 8
 
 
-[profile.test-unit]
-test = "test/unit/"
-
-[profile.test-unit.fuzz]
-runs = 32768
-
-
-[profile.test-internal]
-test = "test/internal/"
-
-[profile.test-internal.fuzz]
-runs = 64
-
-
-[profile.test-integration]
-test = "test/integration/"
-
-[profile.test-integration.fuzz]
-runs = 256
-
-
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

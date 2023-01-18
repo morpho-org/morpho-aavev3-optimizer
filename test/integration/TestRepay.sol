@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "test/helpers/IntegrationTest.sol";
 
-contract TestRepay is IntegrationTest {
+contract TestIntegrationRepay is IntegrationTest {
     function testShouldRevertRepayZero() public {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);

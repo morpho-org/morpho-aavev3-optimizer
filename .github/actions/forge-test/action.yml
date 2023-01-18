@@ -44,20 +44,20 @@ runs:
           out
         key: ${{ github.base_ref || github.ref_name }}-forge-test-${{ inputs.network }} # always keep compiled contracts from base branch
 
-    - name: Run tests
-      run: make test-unit
+    - name: Run unit tests
+      run: forge test -vvv --match-contract TestUnit --fuzz-runs 32768
+      shell: bash
+      env:
+        NETWORK: ${{ inputs.network }}
+
+    - name: Run internal tests
+      run: forge test -vvv --match-contract TestInternal --fuzz-runs 64
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
 
     - name: Run tests
-      run: make test-internal
-      shell: bash
-      env:
-        NETWORK: ${{ inputs.network }}
-
-    - name: Run tests
-      run: make test-integration
+      run: forge test -vvv --match-contract TestIntegration --fuzz-runs 256
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}

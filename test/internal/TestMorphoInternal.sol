@@ -14,7 +14,7 @@ import {PoolLib} from "src/libraries/PoolLib.sol";
 
 import "test/helpers/InternalTest.sol";
 
-contract TestMorphoInternal is InternalTest, MorphoInternal {
+contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using PoolLib for IPool;

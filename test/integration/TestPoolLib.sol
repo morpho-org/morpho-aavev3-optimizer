@@ -26,7 +26,7 @@ contract TestPoolLib is ForkTest {
     }
 }
 
-contract TestPoolLibSupply is TestPoolLib {
+contract TestIntegrationPoolLibSupply is TestPoolLib {
     using PoolLib for IPool;
 
     function testSupplyToPool(uint256 amount) public {
@@ -42,7 +42,7 @@ contract TestPoolLibSupply is TestPoolLib {
     }
 }
 
-contract TestPoolLibBorrow is TestPoolLib {
+contract TestIntegrationPoolLibBorrow is TestPoolLib {
     using PoolLib for IPool;
 
     function setUp() public virtual override {
@@ -63,7 +63,7 @@ contract TestPoolLibBorrow is TestPoolLib {
     }
 }
 
-contract TestPoolLibRepay is TestPoolLib {
+contract TestIntegrationPoolLibRepay is TestPoolLib {
     using PoolLib for IPool;
 
     function setUp() public virtual override {
@@ -87,7 +87,7 @@ contract TestPoolLibRepay is TestPoolLib {
     }
 }
 
-contract TestPoolLibWithdraw is TestPoolLib {
+contract TestIntegrationPoolLibWithdraw is TestPoolLib {
     using PoolLib for IPool;
 
     function setUp() public virtual override {

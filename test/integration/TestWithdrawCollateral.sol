@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "test/helpers/IntegrationTest.sol";
 
-contract TestWithdrawCollateral is IntegrationTest {
+contract TestIntegrationWithdrawCollateral is IntegrationTest {
     function _assumeAmount(uint256 amount) internal pure {
         vm.assume(amount > 0);
     }
