@@ -11,7 +11,7 @@ test/=test/
 @openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
 @openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
 
-@aave/core-v3/=lib/aave-v3-core/
-@aave/periphery-v3/=lib/aave-v3-periphery/
+@aave-v3-core/=lib/aave-v3-core/contracts/
+@aave-v3-periphery/=lib/aave-v3-periphery/contracts/
 
 @solmate/=lib/solmate/src/

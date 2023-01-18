@@ -2,11 +2,11 @@
 pragma solidity ^0.8.17;
 
 import {IMorpho} from "./interfaces/IMorpho.sol";
-import {IPool} from "./interfaces/aave/IPool.sol";
+import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IPoolToken} from "./interfaces/aave/IPoolToken.sol";
-import {IScaledBalanceToken} from "@aave/core-v3/contracts/interfaces/IScaledBalanceToken.sol";
-import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol";
-import {IRewardsDistributor} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsDistributor.sol";
+import {IScaledBalanceToken} from "@aave-v3-core/interfaces/IScaledBalanceToken.sol";
+import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewardsController.sol";
+import {IRewardsDistributor} from "@aave-v3-periphery/rewards/interfaces/IRewardsDistributor.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Types} from "./libraries/Types.sol";

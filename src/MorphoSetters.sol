@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import {IMorphoSetters} from "./interfaces/IMorpho.sol";
 import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
-import {IPoolAddressesProvider, IPool} from "./interfaces/aave/IPool.sol";
+import {IPoolAddressesProvider, IPool} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
@@ -11,8 +11,8 @@ import {Errors} from "./libraries/Errors.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
 
-import {DataTypes} from "./libraries/aave/DataTypes.sol";
-import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
@@ -166,10 +166,5 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     function setIsDeprecated(address underlying, bool isDeprecated) external onlyOwner isMarketCreated(underlying) {
         _market[underlying].pauseStatuses.isDeprecated = isDeprecated;
         emit Events.IsDeprecatedSet(underlying, isDeprecated);
-    }
-
-    function setEMode(uint8 categoryId) external onlyOwner {
-        _POOL.setUserEMode(categoryId);
-        emit Events.EModeSet(categoryId);
     }
 }

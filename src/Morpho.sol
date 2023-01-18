@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import {IMorpho} from "./interfaces/IMorpho.sol";
 import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
-import {IRewardsController} from "@aave/periphery-v3/contracts/rewards/interfaces/IRewardsController.sol";
+import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewardsController.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
@@ -25,7 +25,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     /// CONSTRUCTOR ///
 
-    constructor(address addressesProvider) MorphoStorage(addressesProvider) {}
+    constructor(address addressesProvider, uint8 eModeCategoryId) MorphoStorage(addressesProvider, eModeCategoryId) {}
 
     /// EXTERNAL ///
 

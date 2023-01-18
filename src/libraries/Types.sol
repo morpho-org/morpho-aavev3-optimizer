@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
+import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
 
-import {DataTypes} from "./aave/DataTypes.sol";
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 library Types {
@@ -137,7 +137,6 @@ library Types {
 
     struct LiquidityVars {
         address user;
-        uint8 eMode;
         IPriceOracleGetter oracle;
         DataTypes.EModeCategory eModeCategory;
         DataTypes.UserConfigurationMap morphoPoolConfig;
