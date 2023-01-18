@@ -11,7 +11,7 @@ library InterestRatesLib {
     using PercentageMath for uint256;
 
     function computeP2PIndexes(Types.RatesParams memory params)
-        internal
+        external
         pure
         returns (uint256 newP2PSupplyIndex, uint256 newP2PBorrowIndex)
     {

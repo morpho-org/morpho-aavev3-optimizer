@@ -177,8 +177,7 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         Types.LiquidityVars memory vars;
 
-        vars.eMode = uint8(_POOL.getUserEMode(address(this)));
-        if (vars.eMode != 0) vars.eModeCategory = _POOL.getEModeCategoryData(vars.eMode);
+        if (_E_MODE_CATEGORY_ID != 0) vars.eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
         vars.morphoPoolConfig = _POOL.getUserConfiguration(address(this));
         vars.oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.user = user;
@@ -265,7 +264,7 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
         (ltv, liquidationThreshold,, decimals,, eModeCat) = reserveData.configuration.getParams();
 
-        if (vars.eMode != 0 && vars.eMode == eModeCat) {
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == eModeCat) {
             uint256 eModeUnderlyingPrice;
             if (vars.eModeCategory.priceSource != address(0)) {
                 eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
@@ -417,7 +416,7 @@ abstract contract MorphoInternal is MorphoStorage {
         address underlyingCollateral,
         uint256 maxToLiquidate,
         address borrower,
-        Types.MarketSideIndexes256 memory collateralIndexes
+        uint256 poolSupplyIndex
     ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
         amountToLiquidate = maxToLiquidate;
         (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
@@ -436,7 +435,7 @@ abstract contract MorphoInternal is MorphoStorage {
         amountToSeize = ((amountToLiquidate * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
             .percentMul(liquidationBonus);
 
-        uint256 collateralBalance = _getUserSupplyBalanceFromIndexes(underlyingCollateral, borrower, collateralIndexes);
+        uint256 collateralBalance = _getUserCollateralBalanceFromIndex(underlyingCollateral, borrower, poolSupplyIndex);
 
         if (amountToSeize > collateralBalance) {
             amountToSeize = collateralBalance;

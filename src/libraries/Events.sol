@@ -88,7 +88,7 @@ library Events {
 
     event P2PSupplyDeltaUpdated(address indexed underlying, uint256 p2pSupplyDelta);
 
-    event P2PDeltasIncreased(address indexed _poolToken, uint256 _amount);
+    event P2PDeltasIncreased(address indexed poolToken, uint256 amount);
 
     event MarketCreated(address indexed underlying, uint16 reserveFactor, uint16 p2pIndexCursor);
 

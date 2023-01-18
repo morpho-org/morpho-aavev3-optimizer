@@ -8,5 +8,5 @@ import "./ForkTest.sol";
 contract InternalTest is ForkTest, MorphoStorage {
     using TestConfigLib for TestConfig;
 
-    constructor() MorphoStorage(_initConfig().getAddress("addressesProvider")) {}
+    constructor() MorphoStorage(_initConfig().getAddress("addressesProvider"), 0) {}
 }

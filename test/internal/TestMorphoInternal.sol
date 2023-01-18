@@ -493,4 +493,59 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         _approveManager(owner, manager, isAllowed);
         assertEq(_isManaging[owner][manager], isAllowed);
     }
+
+    struct TestSeizeVars1 {
+        uint256 liquidationBonus;
+        uint256 collateralTokenUnit;
+        uint256 borrowTokenUnit;
+        uint256 borrowPrice;
+        uint256 collateralPrice;
+    }
+
+    struct TestSeizeVars2 {
+        uint256 amountToSeize;
+        uint256 amountToLiquidate;
+    }
+
+    function testCalculateAmountToSeize(uint256 maxToLiquidate, uint256 collateralAmount) public {
+        maxToLiquidate = bound(maxToLiquidate, 0, 1_000_000 ether);
+        collateralAmount = bound(collateralAmount, 0, 1_000_000 ether);
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        TestSeizeVars1 memory vars;
+
+        _marketBalances[dai].collateral[address(1)] = collateralAmount.rayDivUp(indexes.supply.poolIndex);
+
+        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = _POOL.getConfiguration(dai).getParams();
+        (,,, vars.borrowTokenUnit,,) = _POOL.getConfiguration(wbtc).getParams();
+
+        vars.collateralTokenUnit = 10 ** vars.collateralTokenUnit;
+        vars.borrowTokenUnit = 10 ** vars.borrowTokenUnit;
+
+        vars.borrowPrice = oracle.getAssetPrice(wbtc);
+        vars.collateralPrice = oracle.getAssetPrice(dai);
+
+        TestSeizeVars2 memory expected;
+        TestSeizeVars2 memory actual;
+
+        expected.amountToSeize = Math.min(
+            (
+                (maxToLiquidate * vars.borrowPrice * vars.collateralTokenUnit)
+                    / (vars.borrowTokenUnit * vars.collateralPrice)
+            ).percentMul(vars.liquidationBonus),
+            collateralAmount
+        );
+        expected.amountToLiquidate = Math.min(
+            maxToLiquidate,
+            (
+                (collateralAmount * vars.collateralPrice * vars.borrowTokenUnit)
+                    / (vars.borrowPrice * vars.collateralTokenUnit)
+            ).percentDiv(vars.liquidationBonus)
+        );
+
+        (actual.amountToLiquidate, actual.amountToSeize) =
+            _calculateAmountToSeize(wbtc, dai, maxToLiquidate, address(1), indexes.supply.poolIndex);
+
+        assertApproxEqAbs(actual.amountToSeize, expected.amountToSeize, 1, "amount to seize not equal");
+        assertApproxEqAbs(actual.amountToLiquidate, expected.amountToLiquidate, 1, "amount to liquidate not equal");
+    }
 }
