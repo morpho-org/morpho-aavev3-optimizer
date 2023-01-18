@@ -228,7 +228,7 @@ abstract contract MorphoInternal is MorphoStorage {
         (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
             _assetLiquidityData(underlying, vars);
 
-        Types.Indexes256 memory indexes = _computeIndexes(underlying);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
         collateral = (
             _getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex).zeroFloorSub(
                 amountWithdrawn
@@ -246,7 +246,7 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(underlying, vars);
 
-        Types.Indexes256 memory indexes = _computeIndexes(underlying);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
         debtValue = (
             (_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes.borrow) + amountBorrowed) * underlyingPrice
         ).divUp(tokenUnit);
@@ -294,7 +294,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     function _updateInDS(
-        address poolToken,
+        address underlying,
         address user,
         LogarithmicBuckets.BucketList storage poolMarket,
         LogarithmicBuckets.BucketList storage p2pMarket,
@@ -307,7 +307,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
         if (onPool != formerOnPool) {
             if (address(_rewardsManager) != address(0)) {
-                _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
+                _rewardsManager.updateUserRewards(user, underlying, formerOnPool);
             }
 
             poolMarket.update(user, onPool, demoting);
@@ -369,18 +369,29 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     function _updateIndexes(address underlying) internal returns (Types.Indexes256 memory indexes) {
-        indexes = _computeIndexes(underlying);
+        bool cached;
+        (cached, indexes) = _computeIndexes(underlying);
 
-        Types.Market storage market = _market[underlying];
-        market.setIndexes(indexes);
+        if (!cached) {
+            Types.Market storage market = _market[underlying];
+            market.setIndexes(indexes);
+
+            emit Events.IndexesUpdated(
+                underlying,
+                indexes.supply.p2pIndex,
+                indexes.borrow.p2pIndex,
+                indexes.supply.poolIndex,
+                indexes.borrow.poolIndex
+                );
+        }
     }
 
-    function _computeIndexes(address underlying) internal view returns (Types.Indexes256 memory indexes) {
+    function _computeIndexes(address underlying) internal view returns (bool cached, Types.Indexes256 memory indexes) {
         Types.Market storage market = _market[underlying];
         Types.Indexes256 memory lastIndexes = market.getIndexes();
-        if (block.timestamp == market.lastUpdateTimestamp) {
-            return lastIndexes;
-        }
+
+        cached = block.timestamp == market.lastUpdateTimestamp;
+        if (cached) return (false, lastIndexes);
 
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
