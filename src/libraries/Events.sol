@@ -92,8 +92,6 @@ library Events {
 
     event MarketCreated(address indexed underlying, uint16 reserveFactor, uint16 p2pIndexCursor);
 
-    event MaxSortedUsersSet(uint256 maxSortedUsers);
-
     event DefaultMaxLoopsSet(uint64 supply, uint64 borrow, uint64 repay, uint64 withdraw);
 
     event PositionsManagerSet(address positionsManager);
