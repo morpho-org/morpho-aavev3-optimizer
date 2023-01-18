@@ -566,7 +566,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (idleSupply == 0) return 0;
 
         uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
-        market.idleSupply = market.idleSupply.zeroFloorSub(matchedIdle);
+        market.idleSupply = idleSupply.zeroFloorSub(matchedIdle);
 
         return amount - matchedIdle;
     }
@@ -585,7 +585,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (idleSupply == 0) return (amount, inP2P);
 
         uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
-        market.idleSupply -= matchedIdle;
+        market.idleSupply = idleSupply.zeroFloorSub(matchedIdle);
 
         return (amount - matchedIdle, inP2P + matchedIdle.rayDivDown(p2pBorrowIndex));
     }
