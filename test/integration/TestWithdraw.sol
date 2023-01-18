@@ -89,12 +89,11 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
-            // TODO: does not work
-            // vm.expectEmit(true, true, true, false, address(morpho));
-            // emit Events.PositionUpdated(true, address(promoter), market.underlying, 0, 0);
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.PositionUpdated(true, address(promoter), market.underlying, 0, 0);
 
-            // vm.expectEmit(true, false, false, true, address(morpho));
-            // emit Events.P2PAmountsUpdated(market.underlying, 0, 0);
+            vm.expectEmit(true, false, false, true, address(morpho));
+            emit Events.P2PAmountsUpdated(market.underlying, 0, 0);
 
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.Withdrawn(onBehalf, receiver, market.underlying, 0, 0, 0);
@@ -165,21 +164,23 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
     // TODO: add delta tests
 
-    function testShouldRevertWithdrawZero(address onBehalf) public {
+    function testShouldRevertWithdrawZero(address onBehalf, address receiver) public {
         _assumeOnBehalf(onBehalf);
+        _assumeReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user1.withdraw(markets[marketIndex].underlying, 0);
+            user1.withdraw(markets[marketIndex].underlying, 0, onBehalf, receiver);
         }
     }
 
-    function testShouldRevertWithdrawOnBehalfZero(uint256 amount) public {
+    function testShouldRevertWithdrawOnBehalfZero(uint256 amount, address receiver) public {
         _assumeAmount(amount);
+        _assumeReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.withdraw(markets[marketIndex].underlying, amount, address(0));
+            user1.withdraw(markets[marketIndex].underlying, amount, address(0), receiver);
         }
     }
 

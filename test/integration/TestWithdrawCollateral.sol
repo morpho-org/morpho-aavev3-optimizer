@@ -111,21 +111,23 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         }
     }
 
-    function testShouldRevertWithdrawCollateralZero(address onBehalf) public {
+    function testShouldRevertWithdrawCollateralZero(address onBehalf, address receiver) public {
         _assumeOnBehalf(onBehalf);
+        _assumeReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user1.withdrawCollateral(markets[marketIndex].underlying, 0);
+            user1.withdrawCollateral(markets[marketIndex].underlying, 0, onBehalf, receiver);
         }
     }
 
-    function testShouldRevertWithdrawCollateralOnBehalfZero(uint256 amount) public {
+    function testShouldRevertWithdrawCollateralOnBehalfZero(uint256 amount, address receiver) public {
         _assumeAmount(amount);
+        _assumeReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.withdrawCollateral(markets[marketIndex].underlying, 100, address(0));
+            user1.withdrawCollateral(markets[marketIndex].underlying, amount, address(0), receiver);
         }
     }
 

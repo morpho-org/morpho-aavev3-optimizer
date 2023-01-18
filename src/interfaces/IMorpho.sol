@@ -8,6 +8,12 @@ interface IMorphoGetters {
     function ADDRESSES_PROVIDER() external view returns (address);
     function DOMAIN_SEPARATOR() external view returns (bytes32);
 
+    function defaultMaxLoops() external view returns (Types.MaxLoops memory);
+    function positionsManager() external view returns (address);
+    function rewardsManager() external view returns (address);
+    function treasuryVault() external view returns (address);
+    function isClaimRewardsPaused() external view returns (bool);
+
     function market(address underlying) external view returns (Types.Market memory);
     function marketsCreated() external view returns (address[] memory);
 
@@ -17,15 +23,15 @@ interface IMorphoGetters {
     function scaledPoolBorrowBalance(address underlying, address user) external view returns (uint256);
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256);
 
+    function supplyBalance(address underlying, address user) external view returns (uint256);
+    function borrowBalance(address underlying, address user) external view returns (uint256);
+    function collateralBalance(address underlying, address user) external view returns (uint256);
+
+    function userCollaterals(address user) external view returns (address[] memory);
+    function userBorrows(address user) external view returns (address[] memory);
+
     function isManaging(address owner, address manager) external view returns (bool);
     function userNonce(address user) external view returns (uint256);
-
-    function defaultMaxLoops() external view returns (Types.MaxLoops memory);
-    function positionsManager() external view returns (address);
-    function rewardsManager() external view returns (address);
-    function treasuryVault() external view returns (address);
-
-    function isClaimRewardsPaused() external view returns (bool);
 
     function updatedIndexes(address underlying) external view returns (Types.Indexes256 memory);
     function liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)

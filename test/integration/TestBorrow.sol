@@ -6,6 +6,25 @@ import "test/helpers/IntegrationTest.sol";
 contract TestIntegrationBorrow is IntegrationTest {
     using WadRayMath for uint256;
 
+    function _assumeAmount(uint256 amount) internal pure {
+        vm.assume(amount > 0);
+    }
+
+    function _assumeOnBehalf(address onBehalf) internal view {
+        vm.assume(onBehalf != address(0) && onBehalf != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
+    }
+
+    function _assumeReceiver(address receiver) internal pure {
+        vm.assume(receiver != address(0));
+    }
+
+    function _prepareOnBehalf(address onBehalf) internal {
+        if (onBehalf != address(user1)) {
+            vm.prank(onBehalf);
+            morpho.approveManager(address(user1), true);
+        }
+    }
+
     // function testShouldBorrowPoolOnly(address managed, uint256 amount) public {
     //     vm.assume(managed != address(0));
 
@@ -45,33 +64,56 @@ contract TestIntegrationBorrow is IntegrationTest {
     //     }
     // }
 
-    function testShouldRevertBorrowZero() public {
+    function testShouldRevertBorrowZero(address onBehalf, address receiver) public {
+        _assumeOnBehalf(onBehalf);
+        _assumeReceiver(receiver);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user1.borrow(markets[marketIndex].underlying, 0);
+            user1.borrow(markets[marketIndex].underlying, 0, onBehalf, receiver);
         }
     }
 
-    function testShouldRevertBorrowOnBehalfZero() public {
+    function testShouldRevertBorrowOnBehalfZero(uint256 amount, address receiver) public {
+        _assumeAmount(amount);
+        _assumeReceiver(receiver);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.borrow(markets[marketIndex].underlying, 100, address(0));
+            user1.borrow(markets[marketIndex].underlying, amount, address(0), receiver);
         }
     }
 
-    function testShouldRevertBorrowToZero() public {
+    function testShouldRevertBorrowToZero(uint256 amount, address onBehalf) public {
+        _assumeAmount(amount);
+        _assumeOnBehalf(onBehalf);
+
+        _prepareOnBehalf(onBehalf);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.borrow(markets[marketIndex].underlying, 100, address(user1), address(0));
+            user1.borrow(markets[marketIndex].underlying, amount, onBehalf, address(0));
         }
     }
 
-    function testShouldRevertBorrowWhenMarketNotCreated() public {
+    function testShouldRevertBorrowWhenMarketNotCreated(uint256 amount, address onBehalf, address receiver) public {
+        _assumeAmount(amount);
+        _assumeOnBehalf(onBehalf);
+        _assumeReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user1.borrow(sAvax, 100);
+        user1.borrow(sAvax, amount, onBehalf, receiver);
     }
 
-    function testShouldRevertBorrowWhenBorrowPaused() public {
+    function testShouldRevertBorrowWhenBorrowPaused(uint256 amount, address onBehalf, address receiver) public {
+        _assumeAmount(amount);
+        _assumeOnBehalf(onBehalf);
+        _assumeReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
@@ -80,16 +122,19 @@ contract TestIntegrationBorrow is IntegrationTest {
             morpho.setIsBorrowPaused(market.underlying, true);
 
             vm.expectRevert(Errors.BorrowIsPaused.selector);
-            user1.borrow(market.underlying, 100);
+            user1.borrow(market.underlying, amount, onBehalf, receiver);
         }
     }
 
-    function testShouldRevertBorrowWhenNotManaging(address managed) public {
-        vm.assume(managed != address(0) && managed != address(user1));
+    function testShouldRevertBorrowWhenNotManaging(uint256 amount, address onBehalf, address receiver) public {
+        _assumeAmount(amount);
+        _assumeOnBehalf(onBehalf);
+        vm.assume(onBehalf != address(user1));
+        _assumeReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);
-            user1.borrow(markets[marketIndex].underlying, 100, managed);
+            user1.borrow(markets[marketIndex].underlying, amount, onBehalf, receiver);
         }
     }
 }
