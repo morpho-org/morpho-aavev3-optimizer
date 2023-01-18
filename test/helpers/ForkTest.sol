@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.17;
 
-import {IPool, IPoolAddressesProvider} from "../../src/interfaces/aave/IPool.sol";
+import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 
 import {Types} from "../../src/libraries/Types.sol";
 import {Events} from "../../src/libraries/Events.sol";
 import {Errors} from "../../src/libraries/Errors.sol";
-import {DataTypes} from "../../src/libraries/aave/DataTypes.sol";
+
 import {TestConfig, TestConfigLib} from "../helpers/TestConfigLib.sol";
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 

@@ -15,17 +15,19 @@ import {MarketLib} from "src/libraries/MarketLib.sol";
 import {MockPriceOracleSentinel} from "../mock/MockPriceOracleSentinel.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
-import {IPriceOracleSentinel} from "@aave/core-v3/contracts/interfaces/IPriceOracleSentinel.sol";
-import {IPool, IPoolAddressesProvider} from "src/interfaces/aave/IPool.sol";
+import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
+import {IPriceOracleSentinel} from "@aave-v3-core/interfaces/IPriceOracleSentinel.sol";
+import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 
-import {DataTypes} from "src/libraries/aave/DataTypes.sol";
-import {ReserveConfiguration} from "src/libraries/aave/ReserveConfiguration.sol";
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import "test/helpers/InternalTest.sol";
 
@@ -45,12 +47,13 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
 
     IPriceOracleGetter internal oracle;
     address internal poolConfigurator;
+    address internal poolOwner;
 
     function setUp() public virtual override {
         poolConfigurator = addressesProvider.getPoolConfigurator();
+        poolOwner = Ownable(address(addressesProvider)).owner();
 
         _defaultMaxLoops = Types.MaxLoops(10, 10, 10, 10);
-        _maxSortedUsers = 20;
 
         _createMarket(dai, 0, 3_333);
         _createMarket(wbtc, 0, 3_333);
@@ -163,7 +166,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         MockPriceOracleSentinel priceOracleSentinel = new MockPriceOracleSentinel(address(_ADDRESSES_PROVIDER));
         priceOracleSentinel.setBorrowAllowed(false);
 
-        vm.prank(_ADDRESSES_PROVIDER.owner());
+        vm.prank(poolOwner);
         _ADDRESSES_PROVIDER.setPriceOracleSentinel(address(priceOracleSentinel));
 
         vm.expectRevert(abi.encodeWithSelector(Errors.PriceOracleSentinelBorrowDisabled.selector));
@@ -172,7 +175,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
 
     function testValidateBorrowShouldFailIfDebtTooHigh(uint256 onPool) public {
         onPool = bound(onPool, MIN_AMOUNT, MAX_AMOUNT);
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = onPool.rayDiv(indexes.supply.poolIndex);
@@ -184,7 +187,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
     function testValidateBorrowInput(uint256 onPool, uint256 inP2P) public {
         onPool = bound(onPool, MIN_AMOUNT, MAX_AMOUNT);
         inP2P = bound(inP2P, MIN_AMOUNT, MAX_AMOUNT);
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = onPool.rayDiv(indexes.supply.poolIndex);
@@ -219,7 +222,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         MockPriceOracleSentinel priceOracleSentinel = new MockPriceOracleSentinel(address(_ADDRESSES_PROVIDER));
         priceOracleSentinel.setBorrowAllowed(false);
 
-        vm.prank(_ADDRESSES_PROVIDER.owner());
+        vm.prank(poolOwner);
         _ADDRESSES_PROVIDER.setPriceOracleSentinel(address(priceOracleSentinel));
 
         vm.expectRevert(abi.encodeWithSelector(Errors.PriceOracleSentinelBorrowPaused.selector));
@@ -250,12 +253,12 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
 
     function testValidateWithdrawCollateralInputShouldRevertIfHealthFactorTooLow(uint256 onPool) public {
         onPool = bound(onPool, MIN_AMOUNT, MAX_AMOUNT);
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = onPool.rayDiv(indexes.supply.poolIndex);
         _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(dai, address(this), onPool.rayDiv(indexes.borrow.poolIndex) / 2, 0);
+        _updateBorrowerInDS(dai, address(this), onPool.rayDiv(indexes.borrow.poolIndex) / 2, 0, true);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorizedWithdraw.selector));
         this.validateWithdrawCollateral(dai, onPool.rayDiv(indexes.supply.poolIndex) / 2, address(this));
@@ -263,8 +266,9 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
 
     function testValidateWithdrawCollateralInput(uint256 onPool) public {
         onPool = bound(onPool, MIN_AMOUNT, MAX_AMOUNT);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
         _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = onPool.rayDivUp(_computeIndexes(dai).supply.poolIndex);
+        _marketBalances[dai].collateral[address(this)] = onPool.rayDivUp(indexes.supply.poolIndex);
         this.validateWithdrawCollateralInput(dai, onPool, address(this), address(this));
     }
 
@@ -324,16 +328,18 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
     function testValidateLiquidateShouldRevertIfSentinelDisallows() public {
         uint256 amount = 1e18;
         (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
         _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 101 / 100), 0);
+        _updateBorrowerInDS(
+            dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 101 / 100), 0, true
+        );
 
         MockPriceOracleSentinel priceOracleSentinel = new MockPriceOracleSentinel(address(_ADDRESSES_PROVIDER));
         priceOracleSentinel.setLiquidationAllowed(false);
-        vm.prank(_ADDRESSES_PROVIDER.owner());
+        vm.prank(poolOwner);
         _ADDRESSES_PROVIDER.setPriceOracleSentinel(address(priceOracleSentinel));
 
         vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorizedLiquidate.selector));
@@ -342,12 +348,12 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
 
     function testValidateLiquidateShouldRevertIfBorrowerHealthy() public {
         uint256 amount = 1e18;
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
         _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulDown(50_00), 0);
+        _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulDown(50_00), 0, true);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorizedLiquidate.selector));
         this.validateLiquidate(dai, dai, address(this));
@@ -356,12 +362,14 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
     function testValidateLiquidateShouldReturnMaxCloseFactorIfBelowMinThreshold() public {
         uint256 amount = 1e18;
         (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
         _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 11 / 10), 0);
+        _updateBorrowerInDS(
+            dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 11 / 10), 0, true
+        );
 
         uint256 closeFactor = this.validateLiquidate(dai, dai, address(this));
         assertEq(closeFactor, Constants.MAX_CLOSE_FACTOR);
@@ -370,12 +378,14 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
     function testValidateLiquidateShouldReturnDefaultCloseFactorIfAboveMinThreshold() public {
         uint256 amount = 1e18;
         (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
         _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 101 / 100), 0);
+        _updateBorrowerInDS(
+            dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 101 / 100), 0, true
+        );
 
         uint256 closeFactor = this.validateLiquidate(dai, dai, address(this));
         assertEq(closeFactor, Constants.DEFAULT_CLOSE_FACTOR);
@@ -388,7 +398,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
 
         (uint256 newAmount, uint256 newOnPool) = _addToPool(amount, onPool, poolIndex);
         assertEq(newAmount, amount);
-        assertEq(newOnPool, onPool + amount.rayDiv(poolIndex));
+        assertEq(newOnPool, onPool + amount.rayDivDown(poolIndex));
     }
 
     function testSubFromPool(uint256 amount, uint256 onPool, uint256 poolIndex) public {
@@ -399,17 +409,17 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         (uint256 newAmount, uint256 newAmountLeft, uint256 newOnPool) = _subFromPool(amount, onPool, poolIndex);
         assertEq(newAmount, Math.min(onPool.rayMul(poolIndex), amount));
         assertEq(newAmountLeft, amount - newAmount);
-        assertEq(newOnPool, onPool - Math.min(onPool, newAmount.rayDiv(poolIndex)));
+        assertEq(newOnPool, onPool - Math.min(onPool, newAmount.rayDivUp(poolIndex)));
     }
 
     function testPromoteSuppliersRoutine(uint256 amount, uint256 maxLoops) public {
         amount = bound(amount, 0, 1 ether * 20);
         maxLoops = bound(maxLoops, 0, 20);
 
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         for (uint256 i; i < 10; i++) {
-            _updateSupplierInDS(dai, vm.addr(i + 1), uint256(1 ether).rayDiv(indexes.supply.poolIndex), 0);
+            _updateSupplierInDS(dai, vm.addr(i + 1), uint256(1 ether).rayDiv(indexes.supply.poolIndex), 0, true);
         }
 
         Types.PromoteVars memory vars = Types.PromoteVars({
@@ -421,7 +431,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         });
 
         (uint256 toProcess, uint256 amountLeft, uint256 maxLoopsLeft) =
-            _promoteRoutine(vars, _marketBalances[dai].poolSuppliers, _market[dai].deltas.supply);
+            _promoteRoutine(vars, _market[dai].deltas.supply);
 
         uint256 maxExpectedLoops = Math.min(maxLoops, 10);
         uint256 expectedLoops = amount > 1 ether * maxExpectedLoops ? maxExpectedLoops : amount.divUp(1 ether);
@@ -439,10 +449,10 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         amount = bound(amount, 0, 1 ether * 20);
         maxLoops = bound(maxLoops, 0, 20);
 
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         for (uint256 i; i < 10; i++) {
-            _updateBorrowerInDS(dai, vm.addr(i + 1), uint256(1 ether).rayDiv(indexes.borrow.poolIndex), 0);
+            _updateBorrowerInDS(dai, vm.addr(i + 1), uint256(1 ether).rayDiv(indexes.borrow.poolIndex), 0, true);
         }
 
         Types.PromoteVars memory vars = Types.PromoteVars({
@@ -454,7 +464,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         });
 
         (uint256 toProcess, uint256 amountLeft, uint256 maxLoopsLeft) =
-            _promoteRoutine(vars, _marketBalances[dai].poolBorrowers, _market[dai].deltas.borrow);
+            _promoteRoutine(vars, _market[dai].deltas.borrow);
 
         uint256 maxExpectedLoops = Math.min(maxLoops, 10);
         uint256 expectedLoops = amount > 1 ether * maxExpectedLoops ? maxExpectedLoops : amount.divUp(1 ether);
@@ -472,11 +482,11 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         amount = bound(amount, 0, 1 ether * 20);
         maxLoops = bound(maxLoops, 0, 20);
 
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         for (uint256 i; i < 10; i++) {
             uint256 amountPerSupplier = uint256(1 ether).rayDiv(indexes.supply.p2pIndex);
-            _updateSupplierInDS(dai, vm.addr(i + 1), 0, amountPerSupplier);
+            _updateSupplierInDS(dai, vm.addr(i + 1), 0, amountPerSupplier, true);
             _market[dai].deltas.supply.scaledTotalP2P += amountPerSupplier;
         }
 
@@ -503,11 +513,11 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         amount = bound(amount, 0, 1 ether * 20);
         maxLoops = bound(maxLoops, 0, 20);
 
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         for (uint256 i; i < 10; i++) {
             uint256 amountPerBorrower = uint256(1 ether).rayDiv(indexes.borrow.p2pIndex);
-            _updateBorrowerInDS(dai, vm.addr(i + 1), 0, amountPerBorrower);
+            _updateBorrowerInDS(dai, vm.addr(i + 1), 0, amountPerBorrower, true);
             _market[dai].deltas.borrow.scaledTotalP2P += amountPerBorrower;
         }
 
@@ -535,16 +545,16 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         delta = bound(delta, 0, 20 ether);
 
         Types.MarketSideDelta storage supplyDelta = _market[dai].deltas.supply;
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         supplyDelta.scaledDeltaPool = delta;
         (uint256 toProcess, uint256 amountLeft) = _matchDelta(dai, amount, indexes.supply.poolIndex, false);
 
-        uint256 expectedMatched = Math.min(delta.rayMul(indexes.supply.poolIndex), amount);
+        uint256 expectedMatched = Math.min(delta.rayMulUp(indexes.supply.poolIndex), amount);
 
         assertEq(toProcess, expectedMatched, "toProcess");
         assertEq(amountLeft, amount - expectedMatched, "amountLeft");
-        assertEq(supplyDelta.scaledDeltaPool, delta - expectedMatched.rayDiv(indexes.supply.poolIndex), "delta");
+        assertEq(supplyDelta.scaledDeltaPool, delta - expectedMatched.rayDivDown(indexes.supply.poolIndex), "delta");
     }
 
     function testMatchDeltaBorrow(uint256 amount, uint256 delta) public {
@@ -552,16 +562,16 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         delta = bound(delta, 0, 20 ether);
 
         Types.MarketSideDelta storage borrowDelta = _market[dai].deltas.borrow;
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         borrowDelta.scaledDeltaPool = delta;
         (uint256 toProcess, uint256 amountLeft) = _matchDelta(dai, amount, indexes.borrow.poolIndex, true);
 
-        uint256 expectedMatched = Math.min(delta.rayMul(indexes.borrow.poolIndex), amount);
+        uint256 expectedMatched = Math.min(delta.rayMulUp(indexes.borrow.poolIndex), amount);
 
         assertEq(toProcess, expectedMatched, "toProcess");
         assertEq(amountLeft, amount - expectedMatched, "amountLeft");
-        assertEq(borrowDelta.scaledDeltaPool, delta - expectedMatched.rayDiv(indexes.borrow.poolIndex), "delta");
+        assertEq(borrowDelta.scaledDeltaPool, delta - expectedMatched.rayDivDown(indexes.borrow.poolIndex), "delta");
     }
 
     function testUpdateDeltaP2PSupplyAmount(uint256 amount, uint256 totalP2P) public {
@@ -570,9 +580,9 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         Types.Deltas storage deltas = _market[dai].deltas;
         deltas.supply.scaledTotalP2P = totalP2P;
 
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
-        uint256 inP2P = _updateP2PDelta(dai, amount, indexes.supply.p2pIndex, 0, deltas.supply);
+        uint256 inP2P = _addP2PDelta(dai, amount, indexes.supply.p2pIndex, 0, deltas.supply);
 
         uint256 expectedInP2P = amount.rayDiv(indexes.supply.p2pIndex);
         uint256 expectedInTotalScaledP2P = totalP2P + expectedInP2P;
@@ -587,9 +597,9 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         Types.Deltas storage deltas = _market[dai].deltas;
         deltas.borrow.scaledTotalP2P = totalP2P;
 
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
-        uint256 inP2P = _updateP2PDelta(dai, amount, indexes.borrow.p2pIndex, 0, deltas.borrow);
+        uint256 inP2P = _addP2PDelta(dai, amount, indexes.borrow.p2pIndex, 0, deltas.borrow);
 
         uint256 expectedInP2P = amount.rayDiv(indexes.borrow.p2pIndex);
         uint256 expectedInTotalScaledP2P = totalP2P + expectedInP2P;
@@ -606,7 +616,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         uint256 totalScaledP2PBorrow
     ) public {
         amount = bound(amount, 0, MAX_AMOUNT);
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         totalScaledP2PSupply = bound(totalScaledP2PSupply, 0, MAX_AMOUNT);
         totalScaledP2PBorrow = bound(totalScaledP2PBorrow, 0, MAX_AMOUNT);
@@ -699,20 +709,20 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
         amount = bound(amount, 0, MAX_AMOUNT);
         idle = bound(idle, 0, MAX_AMOUNT);
         inP2P = bound(inP2P, 0, MAX_AMOUNT);
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
         uint256 p2pSupplyIndex = indexes.supply.p2pIndex;
 
         _market[dai].idleSupply = idle;
-        _withdrawIdle(_market[dai], amount, inP2P, p2pSupplyIndex);
+        _withdrawIdle(_market[dai], amount);
 
-        assertEq(_market[dai].idleSupply, idle - Math.min(Math.min(idle, amount), inP2P.rayMul(p2pSupplyIndex)));
+        assertEq(_market[dai].idleSupply, idle - Math.min(idle, amount));
     }
 
     function testBorrowIdle(uint256 amount, uint256 idle, uint256 inP2P) public {
         amount = bound(amount, 0, MAX_AMOUNT);
         idle = bound(idle, 0, MAX_AMOUNT);
         inP2P = bound(inP2P, 0, MAX_AMOUNT);
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
         uint256 p2pBorrowIndex = indexes.borrow.p2pIndex;
 
         _market[dai].idleSupply = idle;

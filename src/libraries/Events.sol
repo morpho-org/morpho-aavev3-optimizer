@@ -57,7 +57,11 @@ library Events {
     event ManagerApproval(address indexed owner, address indexed manager, bool isAllowed);
 
     event PositionUpdated(
-        bool borrow, address indexed user, address indexed underlying, uint256 balanceOnPool, uint256 balanceInP2P
+        bool indexed borrow,
+        address indexed user,
+        address indexed underlying,
+        uint256 balanceOnPool,
+        uint256 balanceInP2P
     );
 
     event RewardsClaimed(address indexed user, address indexed rewardToken, uint256 amountClaimed);
@@ -84,11 +88,9 @@ library Events {
 
     event P2PSupplyDeltaUpdated(address indexed underlying, uint256 p2pSupplyDelta);
 
-    event P2PDeltasIncreased(address indexed _poolToken, uint256 _amount);
+    event P2PDeltasIncreased(address indexed underlying, uint256 amount);
 
     event MarketCreated(address indexed underlying, uint16 reserveFactor, uint16 p2pIndexCursor);
-
-    event MaxSortedUsersSet(uint256 maxSortedUsers);
 
     event DefaultMaxLoopsSet(uint64 supply, uint64 borrow, uint64 repay, uint64 withdraw);
 
@@ -104,5 +106,11 @@ library Events {
 
     event IsDeprecatedSet(address indexed underlying, bool isDeprecated);
 
-    event EModeSet(uint8 categoryId);
+    event IndexesUpdated(
+        address indexed underlying,
+        uint256 p2pSupplyIndex,
+        uint256 p2pBorrowIndex,
+        uint256 poolSupplyIndex,
+        uint256 poolBorrowIndex
+    );
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.0;
 
-import {IPoolAddressesProvider} from "src/interfaces/aave/IPool.sol";
+import {IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPoolAddressesProvider.sol";
 
 contract MockPriceOracleSentinel {
     bool internal borrowAllowed;

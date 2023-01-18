@@ -2,9 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
-import {IPool, IPoolAddressesProvider} from "./interfaces/aave/IPool.sol";
-import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
-import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
+import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Errors} from "./libraries/Errors.sol";
@@ -13,12 +11,16 @@ import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
+import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2StepUpgradeable.sol";
+
+abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /// IMMUTABLES ///
 
     IPool internal immutable _POOL;
     IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER;
     bytes32 internal immutable _DOMAIN_SEPARATOR;
+    uint8 internal immutable _E_MODE_CATEGORY_ID;
 
     /// STORAGE ///
 
@@ -30,7 +32,6 @@ abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
     mapping(address => mapping(address => bool)) public _isManaging; // Whether a user is allowed to borrow or withdraw on behalf of another user. owner => manager => bool
     mapping(address => uint256) public _userNonce; // The nonce of a user. Used to prevent replay attacks.
 
-    uint256 internal _maxSortedUsers; // The max number of users to sort in the data structure.
     Types.MaxLoops internal _defaultMaxLoops;
 
     address internal _positionsManager;
@@ -40,7 +41,7 @@ abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
     bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
 
     /// @dev The contract is automatically marked as initialized when deployed to prevent highjacking the implementation contract.
-    constructor(address addressesProvider) {
+    constructor(address addressesProvider, uint8 eModeCategoryId) {
         _disableInitializers();
 
         _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
@@ -55,5 +56,7 @@ abstract contract MorphoStorage is Initializable, OwnableUpgradeable {
                 address(this)
             )
         );
+
+        _E_MODE_CATEGORY_ID = eModeCategoryId;
     }
 }

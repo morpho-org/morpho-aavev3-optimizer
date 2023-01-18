@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IPool} from "./interfaces/aave/IPool.sol";
+import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
-import {IPriceOracleGetter} from "@aave/core-v3/contracts/interfaces/IPriceOracleGetter.sol";
+import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
@@ -20,24 +20,21 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-import {ThreeHeapOrdering} from "@morpho-data-structures/ThreeHeapOrdering.sol";
-
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {DataTypes} from "./libraries/aave/DataTypes.sol";
-import {UserConfiguration} from "./libraries/aave/UserConfiguration.sol";
-import {ReserveConfiguration} from "./libraries/aave/ReserveConfiguration.sol";
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {UserConfiguration} from "@aave-v3-core/protocol/libraries/configuration/UserConfiguration.sol";
+import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
-
-import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 abstract contract MorphoInternal is MorphoStorage {
     using PoolLib for IPool;
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
-    using ThreeHeapOrdering for ThreeHeapOrdering.HeapArray;
+    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
     using UserConfiguration for DataTypes.UserConfigurationMap;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using SafeTransferLib for ERC20;
@@ -180,8 +177,7 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         Types.LiquidityVars memory vars;
 
-        vars.eMode = uint8(_POOL.getUserEMode(address(this)));
-        if (vars.eMode != 0) vars.eModeCategory = _POOL.getEModeCategoryData(vars.eMode);
+        if (_E_MODE_CATEGORY_ID != 0) vars.eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
         vars.morphoPoolConfig = _POOL.getUserConfiguration(address(this));
         vars.oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.user = user;
@@ -232,9 +228,11 @@ abstract contract MorphoInternal is MorphoStorage {
         (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
             _assetLiquidityData(underlying, vars);
 
-        Types.Indexes256 memory indexes = _computeIndexes(underlying);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
         collateral = (
-            _getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex) - amountWithdrawn
+            _getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex).zeroFloorSub(
+                amountWithdrawn
+            )
         ) * underlyingPrice / tokenUnit;
 
         borrowable = collateral.percentMulDown(ltv);
@@ -248,7 +246,7 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(underlying, vars);
 
-        Types.Indexes256 memory indexes = _computeIndexes(underlying);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
         debtValue = (
             (_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes.borrow) + amountBorrowed) * underlyingPrice
         ).divUp(tokenUnit);
@@ -266,7 +264,7 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
         (ltv, liquidationThreshold,, decimals,, eModeCat) = reserveData.configuration.getParams();
 
-        if (vars.eMode != 0 && vars.eMode == eModeCat) {
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == eModeCat) {
             uint256 eModeUnderlyingPrice;
             if (vars.eModeCategory.priceSource != address(0)) {
                 eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
@@ -298,43 +296,51 @@ abstract contract MorphoInternal is MorphoStorage {
     function _updateInDS(
         address poolToken,
         address user,
-        ThreeHeapOrdering.HeapArray storage marketOnPool,
-        ThreeHeapOrdering.HeapArray storage marketInP2P,
+        LogarithmicBuckets.BucketList storage poolMarket,
+        LogarithmicBuckets.BucketList storage p2pMarket,
         uint256 onPool,
-        uint256 inP2P
+        uint256 inP2P,
+        bool demoting
     ) internal {
-        uint256 formerOnPool = marketOnPool.getValueOf(user);
+        uint256 formerOnPool = poolMarket.getValueOf(user);
+        uint256 formerInP2P = p2pMarket.getValueOf(user);
 
         if (onPool != formerOnPool) {
             if (address(_rewardsManager) != address(0)) {
                 _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
 
-            marketOnPool.update(user, formerOnPool, onPool, _maxSortedUsers);
+            poolMarket.update(user, onPool, demoting);
         }
 
-        marketInP2P.update(user, marketInP2P.getValueOf(user), inP2P, _maxSortedUsers);
+        if (inP2P != formerInP2P) p2pMarket.update(user, inP2P, true);
     }
 
-    function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P) internal {
+    function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
+        internal
+    {
         _updateInDS(
             _market[underlying].aToken,
             user,
             _marketBalances[underlying].poolSuppliers,
             _marketBalances[underlying].p2pSuppliers,
             onPool,
-            inP2P
+            inP2P,
+            demoting
         );
     }
 
-    function _updateBorrowerInDS(address underlying, address user, uint256 onPool, uint256 inP2P) internal {
+    function _updateBorrowerInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
+        internal
+    {
         _updateInDS(
             _market[underlying].variableDebtToken,
             user,
             _marketBalances[underlying].poolBorrowers,
             _marketBalances[underlying].p2pBorrowers,
             onPool,
-            inP2P
+            inP2P,
+            demoting
         );
         if (onPool == 0 && inP2P == 0) _userBorrows[user].remove(underlying);
         else _userBorrows[user].add(underlying);
@@ -363,18 +369,28 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     function _updateIndexes(address underlying) internal returns (Types.Indexes256 memory indexes) {
-        indexes = _computeIndexes(underlying);
+        bool cached;
+        (cached, indexes) = _computeIndexes(underlying);
 
-        Types.Market storage market = _market[underlying];
-        market.setIndexes(indexes);
+        if (!cached) {
+            _market[underlying].setIndexes(indexes);
+
+            emit Events.IndexesUpdated(
+                underlying,
+                indexes.supply.p2pIndex,
+                indexes.borrow.p2pIndex,
+                indexes.supply.poolIndex,
+                indexes.borrow.poolIndex
+                );
+        }
     }
 
-    function _computeIndexes(address underlying) internal view returns (Types.Indexes256 memory indexes) {
+    function _computeIndexes(address underlying) internal view returns (bool cached, Types.Indexes256 memory indexes) {
         Types.Market storage market = _market[underlying];
         Types.Indexes256 memory lastIndexes = market.getIndexes();
-        if (block.timestamp == market.lastUpdateTimestamp) {
-            return lastIndexes;
-        }
+
+        cached = block.timestamp == market.lastUpdateTimestamp;
+        if (cached) return (true, lastIndexes);
 
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
@@ -410,7 +426,7 @@ abstract contract MorphoInternal is MorphoStorage {
         address underlyingCollateral,
         uint256 maxToLiquidate,
         address borrower,
-        Types.MarketSideIndexes256 memory collateralIndexes
+        uint256 poolSupplyIndex
     ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
         amountToLiquidate = maxToLiquidate;
         (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
@@ -429,7 +445,7 @@ abstract contract MorphoInternal is MorphoStorage {
         amountToSeize = ((amountToLiquidate * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
             .percentMul(liquidationBonus);
 
-        uint256 collateralBalance = _getUserSupplyBalanceFromIndexes(underlyingCollateral, borrower, collateralIndexes);
+        uint256 collateralBalance = _getUserCollateralBalanceFromIndex(underlyingCollateral, borrower, poolSupplyIndex);
 
         if (amountToSeize > collateralBalance) {
             amountToSeize = collateralBalance;
