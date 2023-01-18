@@ -83,7 +83,7 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
     function testComputeIndexes() public {
         address underlying = dai;
         Types.Indexes256 memory indexes1 = _market[underlying].getIndexes();
-        Types.Indexes256 memory indexes2 = _computeIndexes(underlying);
+        (, Types.Indexes256 memory indexes2) = _computeIndexes(underlying);
 
         assertEq(indexes1.supply.p2pIndex, indexes2.supply.p2pIndex);
         assertEq(indexes1.borrow.p2pIndex, indexes2.borrow.p2pIndex);
@@ -92,7 +92,7 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
 
         vm.warp(block.timestamp + 20);
 
-        Types.Indexes256 memory indexes3 = _computeIndexes(underlying);
+        (, Types.Indexes256 memory indexes3) = _computeIndexes(underlying);
 
         assertGt(indexes3.supply.p2pIndex, indexes2.supply.p2pIndex);
         assertGt(indexes3.borrow.p2pIndex, indexes2.borrow.p2pIndex);
@@ -292,7 +292,7 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
         DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
         Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), 0, oracle, eModeCategory, morphoPoolConfig);
 
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         uint256 debt = _debt(dai, vars, amountBorrowed);
 
@@ -514,7 +514,7 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
     function testCalculateAmountToSeize(uint256 maxToLiquidate, uint256 collateralAmount) public {
         maxToLiquidate = bound(maxToLiquidate, 0, 1_000_000 ether);
         collateralAmount = bound(collateralAmount, 0, 1_000_000 ether);
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
         TestSeizeVars1 memory vars;
 
         _marketBalances[dai].collateral[address(1)] = collateralAmount.rayDivUp(indexes.supply.poolIndex);

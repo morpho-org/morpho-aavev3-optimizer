@@ -88,7 +88,7 @@ library Events {
 
     event P2PSupplyDeltaUpdated(address indexed underlying, uint256 p2pSupplyDelta);
 
-    event P2PDeltasIncreased(address indexed poolToken, uint256 amount);
+    event P2PDeltasIncreased(address indexed underlying, uint256 amount);
 
     event MarketCreated(address indexed underlying, uint16 reserveFactor, uint16 p2pIndexCursor);
 
@@ -105,4 +105,12 @@ library Events {
     event IsP2PDisabledSet(address indexed underlying, bool isP2PDisabled);
 
     event IsDeprecatedSet(address indexed underlying, bool isDeprecated);
+
+    event IndexesUpdated(
+        address indexed underlying,
+        uint256 p2pSupplyIndex,
+        uint256 p2pBorrowIndex,
+        uint256 poolSupplyIndex,
+        uint256 poolBorrowIndex
+    );
 }

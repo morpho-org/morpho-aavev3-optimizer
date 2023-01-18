@@ -60,13 +60,13 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     }
 
     function supplyBalance(address underlying, address user) external view returns (uint256) {
-        Types.Indexes256 memory indexes = _computeIndexes(underlying);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
         return _marketBalances[underlying].scaledPoolSupplyBalance(user).rayMul(indexes.supply.poolIndex)
             + _marketBalances[underlying].scaledP2PSupplyBalance(user).rayMul(indexes.supply.p2pIndex);
     }
 
     function borrowBalance(address underlying, address user) external view returns (uint256) {
-        Types.Indexes256 memory indexes = _computeIndexes(underlying);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
         return _marketBalances[underlying].scaledPoolBorrowBalance(user).rayMul(indexes.borrow.poolIndex)
             + _marketBalances[underlying].scaledP2PBorrowBalance(user).rayMul(indexes.borrow.p2pIndex);
     }
@@ -113,8 +113,8 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _isClaimRewardsPaused;
     }
 
-    function updatedIndexes(address underlying) external view returns (Types.Indexes256 memory) {
-        return _computeIndexes(underlying);
+    function updatedIndexes(address underlying) external view returns (Types.Indexes256 memory indexes) {
+        (, indexes) = _computeIndexes(underlying);
     }
 
     function liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
