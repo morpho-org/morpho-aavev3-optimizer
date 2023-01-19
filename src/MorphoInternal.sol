@@ -73,7 +73,10 @@ abstract contract MorphoInternal is MorphoStorage {
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
-        market.lastUpdateTimestamp = uint32(block.timestamp);
+
+        emit Events.IndexesUpdated(
+            underlying, WadRayMath.RAY, WadRayMath.RAY, indexes.supply.poolIndex, indexes.borrow.poolIndex
+            );
 
         market.underlying = underlying;
         market.aToken = reserveData.aTokenAddress;
