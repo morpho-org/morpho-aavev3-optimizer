@@ -99,7 +99,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         ERC20(underlying).safeTransfer(receiver, amount);
 
-        emit Events.Borrowed(borrower, underlying, amount, vars.onPool, vars.inP2P);
+        emit Events.Borrowed(borrower, underlying, receiver, amount, vars.onPool, vars.inP2P);
 
         return amount;
     }

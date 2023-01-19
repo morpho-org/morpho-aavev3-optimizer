@@ -17,6 +17,7 @@ library Events {
 
     event Borrowed(
         address indexed borrower,
+        address indexed receiver,
         address indexed underlying,
         uint256 amount,
         uint256 balanceOnPool,
@@ -64,7 +65,9 @@ library Events {
         uint256 balanceInP2P
     );
 
-    event RewardsClaimed(address indexed user, address indexed rewardToken, uint256 amountClaimed);
+    event RewardsClaimed(
+        address indexed claimer, address indexed user, address indexed rewardToken, uint256 amountClaimed
+    );
 
     event IsSupplyPausedSet(address indexed underlying, bool isPaused);
 
@@ -94,7 +97,7 @@ library Events {
 
     event DefaultMaxLoopsSet(uint64 supply, uint64 borrow, uint64 repay, uint64 withdraw);
 
-    event PositionsManagerSet(address positionsManager);
+    event PositionsManagerSet(address indexed positionsManager);
 
     event RewardsManagerSet(address indexed rewardsManager);
 
