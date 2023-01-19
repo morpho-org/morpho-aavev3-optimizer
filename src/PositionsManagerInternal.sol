@@ -284,7 +284,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         if (amount == 0) {
             emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
-            vars;
+            return vars;
         }
 
         uint256 toRepayStep;
