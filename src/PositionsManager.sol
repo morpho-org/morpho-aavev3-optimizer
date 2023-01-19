@@ -193,6 +193,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         (amount, seized) =
             _calculateAmountToSeize(underlyingBorrowed, underlyingCollateral, amount, borrower, collateralSupplyIndex);
 
+        if (amount == 0) return (0, 0);
+
         ERC20(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
 
         Types.SupplyRepayVars memory repayVars = _executeRepay(underlyingBorrowed, amount, borrower, 0, borrowIndexes);

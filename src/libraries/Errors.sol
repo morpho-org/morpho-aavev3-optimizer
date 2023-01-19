@@ -3,7 +3,8 @@ pragma solidity ^0.8.17;
 
 library Errors {
     error MarketNotCreated();
-    error UserNotMemberOfMarket();
+    error MarketAlreadyCreated();
+    error MarketIsNotListedOnAave();
 
     error AddressIsZero();
     error AmountIsZero();
@@ -17,6 +18,7 @@ library Errors {
     error WithdrawCollateralIsPaused();
     error LiquidateCollateralIsPaused();
     error LiquidateBorrowIsPaused();
+    error ClaimRewardsPaused();
 
     error BorrowingNotEnabled();
     error InconsistentEMode();
@@ -28,10 +30,6 @@ library Errors {
     error UnauthorizedLiquidate();
 
     error ExceedsMaxBasisPoints();
-    error MarketIsNotListedOnAave();
-    error MarketAlreadyCreated();
-
-    error ClaimRewardsPaused();
 
     error InvalidValueS();
     error InvalidValueV();

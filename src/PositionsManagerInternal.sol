@@ -150,7 +150,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
         internal
         view
-        returns (uint256 closeFactor)
+        returns (uint256)
     {
         Types.Market storage borrowMarket = _market[underlyingBorrowed];
         Types.Market storage collateralMarket = _market[underlyingCollateral];
@@ -164,32 +164,28 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (borrowMarket.pauseStatuses.isLiquidateBorrowPaused) {
             revert Errors.LiquidateBorrowIsPaused();
         }
-        if (
-            !_userCollaterals[borrower].contains(underlyingCollateral)
-                || !_userBorrows[borrower].contains(underlyingBorrowed)
-        ) {
-            revert Errors.UserNotMemberOfMarket();
-        }
 
         if (borrowMarket.pauseStatuses.isDeprecated) {
             return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
-        } else {
-            uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
+        }
+
+        uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
+        if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+            revert Errors.UnauthorizedLiquidate();
+        }
+
+        if (healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD) {
             address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
 
-            if (
-                priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
-                    && healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD
-            ) {
-                revert Errors.UnauthorizedLiquidate();
-            } else if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+            if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
+            {
                 revert Errors.UnauthorizedLiquidate();
             }
 
-            closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
-                ? Constants.DEFAULT_CLOSE_FACTOR
-                : Constants.MAX_CLOSE_FACTOR;
+            return Constants.DEFAULT_CLOSE_FACTOR;
         }
+
+        return Constants.MAX_CLOSE_FACTOR;
     }
 
     function _executeSupply(
