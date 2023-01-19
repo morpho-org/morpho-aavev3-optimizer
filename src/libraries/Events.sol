@@ -7,12 +7,16 @@ library Events {
         address indexed onBehalf,
         address indexed underlying,
         uint256 amount,
-        uint256 balanceOnPool,
-        uint256 balanceInP2P
+        uint256 scaledOnPool,
+        uint256 scaledInP2P
     );
 
     event CollateralSupplied(
-        address indexed from, address indexed onBehalf, address indexed underlying, uint256 amount, uint256 balance
+        address indexed from,
+        address indexed onBehalf,
+        address indexed underlying,
+        uint256 amount,
+        uint256 scaledBalance
     );
 
     event Borrowed(
@@ -20,8 +24,8 @@ library Events {
         address indexed receiver,
         address indexed underlying,
         uint256 amount,
-        uint256 balanceOnPool,
-        uint256 balanceInP2P
+        uint256 scaledOnPool,
+        uint256 scaledInP2P
     );
 
     event Withdrawn(
@@ -29,12 +33,16 @@ library Events {
         address indexed receiver,
         address indexed underlying,
         uint256 amount,
-        uint256 balanceOnPool,
-        uint256 balanceInP2P
+        uint256 scaledOnPool,
+        uint256 scaledInP2P
     );
 
     event CollateralWithdrawn(
-        address indexed supplier, address indexed receiver, address indexed underlying, uint256 amount, uint256 balance
+        address indexed supplier,
+        address indexed receiver,
+        address indexed underlying,
+        uint256 amount,
+        uint256 scaledBalance
     );
 
     event Repaid(
@@ -42,8 +50,8 @@ library Events {
         address indexed onBehalf,
         address indexed underlying,
         uint256 amount,
-        uint256 balanceOnPool,
-        uint256 balanceInP2P
+        uint256 scaledOnPool,
+        uint256 scaledInP2P
     );
 
     event Liquidated(
@@ -58,11 +66,7 @@ library Events {
     event ManagerApproval(address indexed owner, address indexed manager, bool isAllowed);
 
     event PositionUpdated(
-        bool indexed borrow,
-        address indexed user,
-        address indexed underlying,
-        uint256 balanceOnPool,
-        uint256 balanceInP2P
+        bool indexed borrow, address indexed user, address indexed underlying, uint256 scaledOnPool, uint256 scaledInP2P
     );
 
     event RewardsClaimed(
