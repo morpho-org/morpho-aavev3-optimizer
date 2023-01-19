@@ -163,4 +163,9 @@ library Types {
         uint256 toSupply;
         uint256 toRepay;
     }
+
+    struct LiquidateVars {
+        uint256 closeFactor;
+        uint256 seized;
+    }
 }

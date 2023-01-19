@@ -189,16 +189,16 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         );
 
         uint256 seized;
-        uint256 collateralSupplyIndex = collateralIndexes.supply.poolIndex;
-        (amount, seized) =
-            _calculateAmountToSeize(underlyingBorrowed, underlyingCollateral, amount, borrower, collateralSupplyIndex);
+        (amount, seized) = _calculateAmountToSeize(
+            underlyingBorrowed, underlyingCollateral, amount, borrower, collateralIndexes.supply.poolIndex
+        );
 
         if (amount == 0) return (0, 0);
 
         ERC20(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
 
         Types.SupplyRepayVars memory repayVars = _executeRepay(underlyingBorrowed, amount, borrower, 0, borrowIndexes);
-        _executeWithdrawCollateral(underlyingCollateral, seized, borrower, collateralSupplyIndex);
+        _executeWithdrawCollateral(underlyingCollateral, seized, borrower, collateralIndexes.supply.poolIndex);
 
         _POOL.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, repayVars.toRepay);
         _POOL.supplyToPool(underlyingBorrowed, repayVars.toSupply);
