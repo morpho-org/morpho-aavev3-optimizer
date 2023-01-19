@@ -353,6 +353,30 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.toBorrow = _demoteRoutine(underlying, amount, maxLoops, indexes, _demoteBorrowers, deltas, true);
     }
 
+    function _executeSupplyCollateral(address underlying, uint256 amount, address user, uint256 poolSupplyIndex)
+        internal
+        returns (uint256 newBalance)
+    {
+        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+
+        newBalance = marketBalances.collateral[user] + amount.rayDivDown(poolSupplyIndex);
+        marketBalances.collateral[user] = newBalance;
+
+        _userCollaterals[user].add(underlying);
+    }
+
+    function _executeWithdrawCollateral(address underlying, uint256 amount, address user, uint256 poolSupplyIndex)
+        internal
+        returns (uint256 newBalance)
+    {
+        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+
+        newBalance = marketBalances.collateral[user].zeroFloorSub(amount.rayDivUp(poolSupplyIndex));
+        marketBalances.collateral[user] = newBalance;
+
+        if (newBalance == 0) _userCollaterals[user].remove(underlying);
+    }
+
     /// @notice Given variables from a market side, calculates the amount to supply/borrow and a new on pool amount.
     /// @param amount The amount to supply/borrow.
     /// @param onPool The current user's scaled on pool balance.

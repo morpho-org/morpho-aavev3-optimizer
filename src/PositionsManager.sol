@@ -10,7 +10,6 @@ import {PoolLib} from "./libraries/PoolLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {Permit2Lib} from "./libraries/Permit2Lib.sol";
@@ -29,7 +28,6 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     using Math for uint256;
-    using WadRayMath for uint256;
     using PercentageMath for uint256;
 
     /// CONSTRUCTOR ///
@@ -68,11 +66,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         ERC20(underlying).transferFrom2(from, address(this), amount);
 
-        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-
-        uint256 newBalance = marketBalances.collateral[onBehalf] + amount.rayDivDown(indexes.supply.poolIndex);
-        marketBalances.collateral[onBehalf] = newBalance;
-        _userCollaterals[onBehalf].add(underlying);
+        uint256 newBalance = _executeSupplyCollateral(underlying, amount, onBehalf, indexes.supply.poolIndex);
 
         _POOL.supplyToPool(underlying, amount);
 
@@ -135,20 +129,18 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Market storage market = _validateWithdrawCollateralInput(underlying, amount, supplier, receiver);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, indexes.supply.poolIndex), amount);
+        uint256 poolSupplyIndex = indexes.supply.poolIndex;
+        amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, poolSupplyIndex), amount);
 
         if (amount == 0) return 0;
 
         // The following check requires storage indexes to be up-to-date.
         _validateWithdrawCollateral(underlying, amount, supplier);
 
-        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-
-        uint256 newBalance = marketBalances.collateral[supplier].zeroFloorSub(amount.rayDivUp(indexes.supply.poolIndex));
-        marketBalances.collateral[supplier] = newBalance;
-        if (newBalance == 0) _userCollaterals[supplier].remove(underlying);
+        uint256 newBalance = _executeWithdrawCollateral(underlying, amount, supplier, poolSupplyIndex);
 
         _POOL.withdrawFromPool(underlying, market.aToken, amount);
+
         ERC20(underlying).safeTransfer(receiver, amount);
 
         emit Events.CollateralWithdrawn(supplier, receiver, underlying, amount, newBalance);
