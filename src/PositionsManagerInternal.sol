@@ -217,9 +217,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         );
         vars.toRepay += promoted;
 
-        vars.inP2P = _addP2PDelta(
-            vars.toRepay, indexes.supply.p2pIndex, marketBalances.scaledP2PSupplyBalance(user), deltas.supply
-        );
+        vars.inP2P =
+            _addToP2P(vars.toRepay, indexes.supply.p2pIndex, marketBalances.scaledP2PSupplyBalance(user), deltas.supply);
 
         (vars.toSupply, vars.onPool) =
             _addToPool(amount, marketBalances.scaledPoolSupplyBalance(user), indexes.supply.poolIndex);
@@ -259,7 +258,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         );
         vars.toWithdraw += promoted;
 
-        vars.inP2P = _addP2PDelta(vars.toWithdraw, indexes.borrow.p2pIndex, vars.inP2P, deltas.borrow);
+        vars.inP2P = _addToP2P(vars.toWithdraw, indexes.borrow.p2pIndex, vars.inP2P, deltas.borrow);
         (vars.toBorrow, vars.onPool) = _addToPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
         _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
@@ -494,7 +493,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     /// @param inP2P The amount in p2p.
     /// @param marketSideDelta The market side delta to update.
     /// @return The new amount in p2p.
-    function _addP2PDelta(
+    function _addToP2P(
         uint256 toProcess,
         uint256 p2pIndex,
         uint256 inP2P,
