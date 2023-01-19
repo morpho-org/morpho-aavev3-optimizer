@@ -32,7 +32,7 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
     function setUp() public virtual override {
         super.setUp();
 
-        _defaultMaxLoops = Types.MaxLoops(10, 10, 10, 10);
+        _defaultMaxLoops = Types.MaxLoops(10, 10);
 
         createTestMarket(dai, 0, 3_333);
         createTestMarket(wbtc, 0, 3_333);

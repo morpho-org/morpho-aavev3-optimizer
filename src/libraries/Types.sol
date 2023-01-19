@@ -74,8 +74,6 @@ library Types {
     }
 
     struct MaxLoops {
-        uint64 supply;
-        uint64 borrow;
         uint64 repay;
         uint64 withdraw;
     }
