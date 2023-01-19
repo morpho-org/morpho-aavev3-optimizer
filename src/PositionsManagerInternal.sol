@@ -216,7 +216,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             deltas.borrow
         );
         vars.toRepay += promoted;
-        deltas.borrow.scaledTotalP2P += promoted;
 
         vars.inP2P = _addP2PDelta(
             underlying,
@@ -261,7 +260,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             deltas.supply
         );
         vars.toWithdraw += promoted;
-        deltas.supply.scaledTotalP2P += promoted;
 
         vars.inP2P = _addP2PDelta(underlying, vars.toWithdraw, indexes.borrow.p2pIndex, vars.inP2P, deltas.borrow);
 
