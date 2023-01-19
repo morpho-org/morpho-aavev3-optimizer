@@ -65,9 +65,19 @@ library Events {
 
     event ManagerApproval(address indexed owner, address indexed manager, bool isAllowed);
 
-    event PositionUpdated(
-        bool indexed borrow, address indexed user, address indexed underlying, uint256 scaledOnPool, uint256 scaledInP2P
+    event SupplyPositionUpdated(
+        address indexed user, address indexed underlying, uint256 scaledOnPool, uint256 scaledInP2P
     );
+
+    event BorrowPositionUpdated(
+        address indexed user, address indexed underlying, uint256 scaledOnPool, uint256 scaledInP2P
+    );
+
+    event P2PSupplyDeltaUpdated(address indexed underlying, uint256 supplyDelta);
+
+    event P2PBorrowDeltaUpdated(address indexed underlying, uint256 borrowDelta);
+
+    event P2PTotalsUpdated(address indexed underlying, uint256 scaledTotalSupplyP2P, uint256 scaledTotalBorrowP2P);
 
     event RewardsClaimed(
         address indexed claimer, address indexed user, address indexed rewardToken, uint256 amountClaimed
@@ -88,12 +98,6 @@ library Events {
     event IsLiquidateCollateralPausedSet(address indexed underlying, bool isPaused);
 
     event IsLiquidateBorrowPausedSet(address indexed underlying, bool isPaused);
-
-    event P2PBorrowDeltaUpdated(address indexed underlying, uint256 borrowDelta);
-
-    event P2PAmountsUpdated(address indexed underlying, uint256 p2pSupplyAmount, uint256 p2pBorrowAmount);
-
-    event P2PSupplyDeltaUpdated(address indexed underlying, uint256 p2pSupplyDelta);
 
     event P2PDeltasIncreased(address indexed underlying, uint256 amount);
 

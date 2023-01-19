@@ -451,7 +451,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         demotedDelta.scaledTotalP2P = demotedDelta.scaledTotalP2P.zeroFloorSub(demoted.rayDiv(demotedIndexes.p2pIndex));
         counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P.zeroFloorSub(amount.rayDiv(counterIndexes.p2pIndex));
 
-        emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
+        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
 
         return amount;
     }
@@ -505,7 +505,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         Types.Deltas storage deltas = _market[underlying].deltas;
 
-        emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
+        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
 
         return inP2P + toProcessP2P;
     }
@@ -537,7 +537,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         deltas.borrow.scaledTotalP2P =
             deltas.borrow.scaledTotalP2P.zeroFloorSub(feeToRepay.rayDivDown(indexes.borrow.p2pIndex));
 
-        emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
+        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
 
         return amount - feeToRepay;
     }

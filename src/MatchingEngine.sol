@@ -124,7 +124,9 @@ abstract contract MatchingEngine is MorphoInternal {
                 vars.step(poolBuckets.getValueOf(firstUser), p2pBuckets.getValueOf(firstUser), vars.indexes, remaining);
 
             vars.updateDS(vars.underlying, firstUser, onPool, inP2P, vars.demoting);
-            emit Events.PositionUpdated(vars.borrow, firstUser, vars.underlying, onPool, inP2P);
+
+            if (vars.borrow) emit Events.BorrowPositionUpdated(firstUser, vars.underlying, onPool, inP2P);
+            else emit Events.SupplyPositionUpdated(firstUser, vars.underlying, onPool, inP2P);
         }
 
         // Safe unchecked because vars.amount >= remaining.
