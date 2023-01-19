@@ -48,7 +48,7 @@ library Events {
     event Liquidated(
         address indexed liquidator,
         address indexed borrower,
-        address underlyingBorrowed,
+        address indexed underlyingBorrowed,
         uint256 amountLiquidated,
         address underlyingCollateral,
         uint256 amountSeized
