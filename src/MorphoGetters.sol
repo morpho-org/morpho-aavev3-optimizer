@@ -61,20 +61,18 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
 
     function supplyBalance(address underlying, address user) external view returns (uint256) {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
-        return _marketBalances[underlying].scaledPoolSupplyBalance(user).rayMul(indexes.supply.poolIndex)
-            + _marketBalances[underlying].scaledP2PSupplyBalance(user).rayMul(indexes.supply.p2pIndex);
+
+        return _getUserSupplyBalanceFromIndexes(underlying, user, indexes.supply);
     }
 
     function borrowBalance(address underlying, address user) external view returns (uint256) {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
-        return _marketBalances[underlying].scaledPoolBorrowBalance(user).rayMul(indexes.borrow.poolIndex)
-            + _marketBalances[underlying].scaledP2PBorrowBalance(user).rayMul(indexes.borrow.p2pIndex);
+
+        return _getUserSupplyBalanceFromIndexes(underlying, user, indexes.borrow);
     }
 
     function collateralBalance(address underlying, address user) external view returns (uint256) {
-        return _marketBalances[underlying].scaledCollateralBalance(user).rayMul(
-            _POOL.getReserveNormalizedIncome(underlying)
-        );
+        return _getUserCollateralBalanceFromIndex(underlying, user, _POOL.getReserveNormalizedIncome(underlying));
     }
 
     function userCollaterals(address user) external view returns (address[] memory) {
