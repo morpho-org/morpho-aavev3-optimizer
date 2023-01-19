@@ -10,6 +10,7 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
+import {IGovernanceManager} from "./interfaces/IGovernanceManager.sol";
 
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
@@ -17,6 +18,7 @@ import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configurati
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
+import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
@@ -27,25 +29,35 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     using MarketLib for Types.Market;
     using SafeTransferLib for ERC20;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using DelegateCall for address;
 
     using Math for uint256;
     using WadRayMath for uint256;
 
     /// SETTERS ///
 
-    function initialize(address newPositionsManager, Types.MaxLoops memory newDefaultMaxLoops) external initializer {
+    function initialize(
+        address newPositionsManager,
+        address newGovernanceManager,
+        Types.MaxLoops memory newDefaultMaxLoops
+    ) external initializer {
         __Ownable_init_unchained();
 
         _positionsManager = newPositionsManager;
+        _governanceManager = newGovernanceManager;
         _defaultMaxLoops = newDefaultMaxLoops;
     }
 
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external onlyOwner {
-        _createMarket(underlying, reserveFactor, p2pIndexCursor);
+        _governanceManager.functionDelegateCall(
+            abi.encodeWithSelector(IGovernanceManager.createMarket.selector, underlying, reserveFactor, p2pIndexCursor)
+        );
     }
 
     function increaseP2PDeltas(address underlying, uint256 amount) external onlyOwner isMarketCreated(underlying) {
-        _increaseP2PDeltas(underlying, amount);
+        _governanceManager.functionDelegateCall(
+            abi.encodeWithSelector(IGovernanceManager.increaseP2PDeltas.selector, underlying, amount)
+        );
     }
 
     function setDefaultMaxLoops(Types.MaxLoops calldata defaultMaxLoops) external onlyOwner {

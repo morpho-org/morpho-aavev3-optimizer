@@ -35,6 +35,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     Types.MaxLoops internal _defaultMaxLoops;
 
     address internal _positionsManager;
+    address internal _governanceManager;
     IRewardsManager internal _rewardsManager;
 
     address internal _treasuryVault;

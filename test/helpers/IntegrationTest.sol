@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {IPositionsManager} from "../../src/interfaces/IPositionsManager.sol";
+import {IGovernanceManager} from "../../src/interfaces/IGovernanceManager.sol";
 import {IMorpho} from "../../src/interfaces/IMorpho.sol";
 
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
@@ -10,6 +11,7 @@ import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.s
 import {TestUser} from "../helpers/TestUser.sol";
 
 import {PositionsManager} from "../../src/PositionsManager.sol";
+import {GovernanceManager} from "../../src/GovernanceManager.sol";
 import {Morpho} from "../../src/Morpho.sol";
 
 import "./ForkTest.sol";
@@ -21,6 +23,7 @@ contract IntegrationTest is ForkTest {
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
+    IGovernanceManager internal governanceManager;
 
     ProxyAdmin internal proxyAdmin;
 
@@ -67,13 +70,18 @@ contract IntegrationTest is ForkTest {
 
     function _deploy() internal {
         positionsManager = new PositionsManager(address(addressesProvider), 0);
+        governanceManager = new GovernanceManager(address(addressesProvider), 0);
         morphoImpl = new Morpho(address(addressesProvider), 0);
 
         proxyAdmin = new ProxyAdmin();
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImpl)), address(proxyAdmin), "");
         morpho = Morpho(payable(address(morphoProxy)));
 
-        morpho.initialize(address(positionsManager), Types.MaxLoops({supply: 10, borrow: 10, repay: 10, withdraw: 10}));
+        morpho.initialize(
+            address(positionsManager),
+            address(governanceManager),
+            Types.MaxLoops({supply: 10, borrow: 10, repay: 10, withdraw: 10})
+        );
     }
 
     function _initUser(string memory name) internal returns (TestUser user) {
