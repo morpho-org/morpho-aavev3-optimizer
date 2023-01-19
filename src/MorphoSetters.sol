@@ -62,7 +62,6 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     function setRewardsManager(address rewardsManager) external onlyOwner {
-        if (rewardsManager == address(0)) revert Errors.AddressIsZero();
         _rewardsManager = IRewardsManager(rewardsManager);
         emit Events.RewardsManagerSet(rewardsManager);
     }
