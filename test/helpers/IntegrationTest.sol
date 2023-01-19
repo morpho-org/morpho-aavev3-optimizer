@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import {IPositionsManager} from "../../src/interfaces/IPositionsManager.sol";
 import {IMorpho} from "../../src/interfaces/IMorpho.sol";
 
-import {ReserveConfiguration} from "../../src/libraries/aave/ReserveConfiguration.sol";
+import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {TestUser} from "../helpers/TestUser.sol";
@@ -66,8 +66,8 @@ contract IntegrationTest is ForkTest {
     }
 
     function _deploy() internal {
-        positionsManager = new PositionsManager(address(addressesProvider));
-        morphoImpl = new Morpho(address(addressesProvider));
+        positionsManager = new PositionsManager(address(addressesProvider), 0);
+        morphoImpl = new Morpho(address(addressesProvider), 0);
 
         proxyAdmin = new ProxyAdmin();
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImpl)), address(proxyAdmin), "");
