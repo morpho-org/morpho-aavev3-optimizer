@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import {IMorpho} from "./interfaces/IMorpho.sol";
 import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
+import {IGovernanceManager} from "./interfaces/IGovernanceManager.sol";
 import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewardsController.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -146,19 +147,10 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         external
         returns (address[] memory rewardTokens, uint256[] memory claimedAmounts)
     {
-        if (_isClaimRewardsPaused) revert Errors.ClaimRewardsPaused();
-
-        (rewardTokens, claimedAmounts) = _rewardsManager.claimRewards(assets, onBehalf);
-        IRewardsController(_rewardsManager.getRewardsController()).claimAllRewardsToSelf(assets);
-
-        for (uint256 i; i < rewardTokens.length; ++i) {
-            uint256 claimedAmount = claimedAmounts[i];
-
-            if (claimedAmount > 0) {
-                ERC20(rewardTokens[i]).safeTransfer(onBehalf, claimedAmount);
-                emit Events.RewardsClaimed(onBehalf, rewardTokens[i], claimedAmount);
-            }
-        }
+        bytes memory returnData = _governanceManager.functionDelegateCall(
+            abi.encodeWithSelector(IGovernanceManager.claimRewards.selector, assets, onBehalf)
+        );
+        return (abi.decode(returnData, (address[], uint256[])));
     }
 
     /// INTERNAL ///
