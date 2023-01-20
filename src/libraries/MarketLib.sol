@@ -2,10 +2,12 @@
 pragma solidity ^0.8.17;
 
 import {Types} from "./Types.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 library MarketLib {
     using SafeCast for uint256;
+    using WadRayMath for uint256;
 
     function isCreated(Types.Market storage market) internal view returns (bool) {
         return market.aToken != address(0);
@@ -32,6 +34,14 @@ library MarketLib {
     function getIndexes(Types.Market storage market) internal view returns (Types.Indexes256 memory indexes) {
         indexes.supply = getSupplyIndexes(market);
         indexes.borrow = getBorrowIndexes(market);
+    }
+
+    function getProportionIdle(Types.Market storage market) internal view returns (uint256) {
+        uint256 idleSupply = market.idleSupply;
+        if (idleSupply == 0) return 0;
+
+        uint256 totalP2PSupplied = market.deltas.supply.scaledTotalP2P.rayMul(market.indexes.supply.p2pIndex);
+        return idleSupply.rayDivUp(totalP2PSupplied);
     }
 
     function setIndexes(Types.Market storage market, Types.Indexes256 memory indexes) internal {
