@@ -6,7 +6,7 @@ import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IPoolToken} from "./interfaces/aave/IPoolToken.sol";
 import {IScaledBalanceToken} from "@aave-v3-core/interfaces/IScaledBalanceToken.sol";
-import {IRewardsDistributor} from "@aave-v3-periphery/rewards/interfaces/IRewardsDistributor.sol";
+import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewardsController.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Types} from "./libraries/Types.sol";
@@ -41,7 +41,7 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     /// IMMUTABLES ///
 
-    IRewardsDistributor internal immutable _REWARDS_DISTRIBUTOR; // The rewards controller is supposed not to change depending on the asset.
+    IRewardsController internal immutable _REWARDS_CONTROLLER; // The rewards controller is supposed not to change depending on the asset.
     IMorpho internal immutable _MORPHO; // The address of the main Morpho contract.
     IPool internal immutable _POOL; // The address of the Aave pool.
 
@@ -90,7 +90,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         if (_rewardsController == address(0) || _morpho == address(0) || _pool == address(0)) revert AddressIsZero();
         _disableInitializers();
 
-        _REWARDS_DISTRIBUTOR = IRewardsDistributor(_rewardsController);
+        _REWARDS_CONTROLLER = IRewardsController(_rewardsController);
         _MORPHO = IMorpho(_morpho);
         _POOL = IPool(_pool);
     }
@@ -107,7 +107,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         onlyMorpho
         returns (address[] memory rewardsList, uint256[] memory claimedAmounts)
     {
-        rewardsList = _REWARDS_DISTRIBUTOR.getRewardsList();
+        rewardsList = _REWARDS_CONTROLLER.getRewardsList();
         claimedAmounts = new uint256[](rewardsList.length);
 
         _updateDataMultiple(user, _getUserAssetBalances(assets, user));
@@ -145,8 +145,8 @@ contract RewardsManager is IRewardsManager, Initializable {
         return address(_MORPHO);
     }
 
-    function REWARDS_DISTRIBUTOR() external view returns (address) {
-        return address(_REWARDS_DISTRIBUTOR);
+    function REWARDS_CONTROLLER() external view returns (address) {
+        return address(_REWARDS_CONTROLLER);
     }
 
     /// @notice Returns user's accrued rewards for the specified assets and reward token
@@ -176,7 +176,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         returns (address[] memory rewardsList, uint256[] memory unclaimedAmounts)
     {
         UserAssetBalance[] memory userAssetBalances = _getUserAssetBalances(assets, user);
-        rewardsList = _REWARDS_DISTRIBUTOR.getRewardsList();
+        rewardsList = _REWARDS_CONTROLLER.getRewardsList();
         uint256 rewardsListLength = rewardsList.length;
         unclaimedAmounts = new uint256[](rewardsListLength);
 
@@ -275,13 +275,13 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @param asset The address of the reference asset of the distribution.
     /// @param userBalance The current user asset balance.
     function _updateData(address user, address asset, uint256 userBalance) internal {
-        address[] memory availableRewards = _REWARDS_DISTRIBUTOR.getRewardsByAsset(asset);
+        address[] memory availableRewards = _REWARDS_CONTROLLER.getRewardsByAsset(asset);
         if (availableRewards.length == 0) return;
 
         uint256 totalSupply = IScaledBalanceToken(asset).scaledTotalSupply();
 
         unchecked {
-            uint256 assetUnit = 10 ** _REWARDS_DISTRIBUTOR.getAssetDecimals(asset);
+            uint256 assetUnit = 10 ** _REWARDS_CONTROLLER.getAssetDecimals(asset);
 
             for (uint128 i; i < availableRewards.length; ++i) {
                 address reward = availableRewards[i];
@@ -345,7 +345,7 @@ contract RewardsManager is IRewardsManager, Initializable {
 
         uint256 assetUnit;
         unchecked {
-            assetUnit = 10 ** _REWARDS_DISTRIBUTOR.getAssetDecimals(_userAssetBalance.asset);
+            assetUnit = 10 ** _REWARDS_CONTROLLER.getAssetDecimals(_userAssetBalance.asset);
         }
 
         (, uint256 nextIndex) =
@@ -392,7 +392,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         }
 
         (uint256 rewardIndex, uint256 emissionPerSecond, uint256 lastUpdateTimestamp, uint256 distributionEnd) =
-            _REWARDS_DISTRIBUTOR.getRewardsData(asset, reward);
+            _REWARDS_CONTROLLER.getRewardsData(asset, reward);
 
         if (
             emissionPerSecond == 0 || totalSupply == 0 || lastUpdateTimestamp == currentTimestamp
