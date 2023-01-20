@@ -484,13 +484,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return (matchedDelta, amount - matchedDelta);
     }
 
-    /// @notice Updates the delta and p2p amounts for a repay or withdraw after a promotion.
+    /// @notice Updates the delta and peer-to-peer amounts for a repay or withdraw after a promotion.
     /// @param underlying The underlying address.
     /// @param toProcess The amount to repay/withdraw.
-    /// @param p2pIndex The current p2p index.
-    /// @param inP2P The amount in p2p.
+    /// @param p2pIndex The current peer-to-peer index.
+    /// @param inP2P The amount in peer-to-peer.
     /// @param marketSideDelta The market side delta to update.
-    /// @return The new amount in p2p.
+    /// @return The new amount in peer-to-peer.
     function _addP2PDelta(
         address underlying,
         uint256 toProcess,
@@ -577,12 +577,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return amount - matchedIdle;
     }
 
-    /// @notice Borrows idle supply and returns an updated p2p balance.
+    /// @notice Borrows idle supply and returns an updated peer-to-peer balance.
     /// @param market The market storage.
     /// @param amount The amount to borrow.
-    /// @param inP2P The user's amount in p2p.
-    /// @param p2pBorrowIndex The current p2p borrow index.
-    /// @return The amount left to process, and the updated p2p amount of the user.
+    /// @param inP2P The user's amount in peer-to-peer.
+    /// @param p2pBorrowIndex The current peer-to-peer borrow index.
+    /// @return The amount left to process, and the updated peer-to-peer amount of the user.
     function _borrowIdle(Types.Market storage market, uint256 amount, uint256 inP2P, uint256 p2pBorrowIndex)
         internal
         returns (uint256, uint256)
