@@ -2,12 +2,59 @@
 pragma solidity ^0.8.17;
 
 import {Types} from "./Types.sol";
+import {Events} from "./Events.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 library DeltasLib {
     using Math for uint256;
     using WadRayMath for uint256;
+
+    /// @notice Given variables from a market side, demotes users and calculates the amount to supply/borrow from demote.
+    ///         Updates the market side delta accordingly.
+    /// @param underlying The underlying address.
+    /// @param amount The amount to supply/borrow.
+    /// @param maxLoops The maximum number of loops to run.
+    /// @param indexes The current indexes.
+    /// @param demoteRoutine The demote function.
+    /// @param deltas The market side deltas to update.
+    /// @param borrowSide Whether the market side is borrow.
+    /// @return toProcess The amount to supply/borrow from demote.
+    function demoteSide(
+        Types.Deltas storage deltas,
+        address underlying,
+        uint256 amount,
+        uint256 maxLoops,
+        Types.Indexes256 memory indexes,
+        function(address, uint256, uint256) returns (uint256) demoteRoutine,
+        bool borrowSide
+    ) internal returns (uint256) {
+        if (amount == 0) return 0;
+
+        uint256 demoted = demoteRoutine(underlying, amount, maxLoops);
+
+        Types.MarketSideIndexes256 memory demotedIndexes = borrowSide ? indexes.borrow : indexes.supply;
+        Types.MarketSideIndexes256 memory counterIndexes = borrowSide ? indexes.supply : indexes.borrow;
+        Types.MarketSideDelta storage demotedDelta = borrowSide ? deltas.borrow : deltas.supply;
+        Types.MarketSideDelta storage counterDelta = borrowSide ? deltas.supply : deltas.borrow;
+
+        // Increase the peer-to-peer supply delta.
+        if (demoted < amount) {
+            uint256 newScaledDeltaPool =
+                demotedDelta.scaledDeltaPool + (amount - demoted).rayDiv(demotedIndexes.poolIndex);
+
+            demotedDelta.scaledDeltaPool = newScaledDeltaPool;
+
+            if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, newScaledDeltaPool);
+            else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledDeltaPool);
+        }
+
+        // zeroFloorSub as the last decimal might flip.
+        demotedDelta.scaledTotalP2P = demotedDelta.scaledTotalP2P.zeroFloorSub(demoted.rayDiv(demotedIndexes.p2pIndex));
+        counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P.zeroFloorSub(amount.rayDiv(counterIndexes.p2pIndex));
+
+        return amount;
+    }
 
     /// @notice Calculates & deducts the reserve fee to repay from the given amount, updating the total peer-to-peer amount.
     /// @param amount The amount to repay/withdraw.

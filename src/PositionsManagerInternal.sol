@@ -309,7 +309,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         );
         vars.toRepay += toRepayStep;
 
-        vars.toSupply = _demoteRoutine(underlying, amount, maxLoops, indexes, _demoteSuppliers, deltas, false);
+        vars.toSupply = deltas.demoteSide(underlying, amount, maxLoops, indexes, _demoteSuppliers, false);
         vars.toSupply = _handleSupplyCap(underlying, vars.toSupply);
 
         emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
@@ -356,7 +356,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         );
         vars.toWithdraw += toWithdrawStep;
 
-        vars.toBorrow = _demoteRoutine(underlying, amount, maxLoops, indexes, _demoteBorrowers, deltas, true);
+        vars.toBorrow = deltas.demoteSide(underlying, amount, maxLoops, indexes, _demoteBorrowers, true);
 
         emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
     }
@@ -414,52 +414,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         promotedDelta.scaledTotalP2P += promoted.rayDiv(vars.poolIndex);
 
         return (promoted, vars.amount - promoted, vars.maxLoops - loopsDone);
-    }
-
-    /// @notice Given variables from a market side, demotes users and calculates the amount to supply/borrow from demote.
-    ///         Updates the market side delta accordingly.
-    /// @param underlying The underlying address.
-    /// @param amount The amount to supply/borrow.
-    /// @param maxLoops The maximum number of loops to run.
-    /// @param indexes The current indexes.
-    /// @param demote The demote function.
-    /// @param deltas The market side deltas to update.
-    /// @param borrow Whether the market side is borrow.
-    /// @return toProcess The amount to supply/borrow from demote.
-    function _demoteRoutine(
-        address underlying,
-        uint256 amount,
-        uint256 maxLoops,
-        Types.Indexes256 memory indexes,
-        function(address, uint256, uint256) returns (uint256) demote,
-        Types.Deltas storage deltas,
-        bool borrow
-    ) internal returns (uint256) {
-        if (amount == 0) return 0;
-
-        uint256 demoted = demote(underlying, amount, maxLoops);
-
-        Types.MarketSideIndexes256 memory demotedIndexes = borrow ? indexes.borrow : indexes.supply;
-        Types.MarketSideIndexes256 memory counterIndexes = borrow ? indexes.supply : indexes.borrow;
-        Types.MarketSideDelta storage demotedDelta = borrow ? deltas.borrow : deltas.supply;
-        Types.MarketSideDelta storage counterDelta = borrow ? deltas.supply : deltas.borrow;
-
-        // Increase the peer-to-peer supply delta.
-        if (demoted < amount) {
-            uint256 newScaledDeltaPool =
-                demotedDelta.scaledDeltaPool + (amount - demoted).rayDiv(demotedIndexes.poolIndex);
-
-            demotedDelta.scaledDeltaPool = newScaledDeltaPool;
-
-            if (borrow) emit Events.P2PBorrowDeltaUpdated(underlying, newScaledDeltaPool);
-            else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledDeltaPool);
-        }
-
-        // Math.min as the last decimal might flip.
-        demotedDelta.scaledTotalP2P = demotedDelta.scaledTotalP2P.zeroFloorSub(demoted.rayDiv(demotedIndexes.p2pIndex));
-        counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P.zeroFloorSub(amount.rayDiv(counterIndexes.p2pIndex));
-
-        return amount;
     }
 
     /// @notice Adds to idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
