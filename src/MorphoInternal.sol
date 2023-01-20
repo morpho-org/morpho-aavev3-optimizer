@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
-import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
+import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
@@ -199,7 +199,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
         if (_E_MODE_CATEGORY_ID != 0) vars.eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
         vars.morphoPoolConfig = _POOL.getUserConfiguration(address(this));
-        vars.oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        vars.oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.user = user;
 
         (liquidityData.collateral, liquidityData.borrowable, liquidityData.maxDebt) =
@@ -309,24 +309,24 @@ abstract contract MorphoInternal is MorphoStorage {
     function _updateInDS(
         address poolToken,
         address user,
-        LogarithmicBuckets.BucketList storage poolMarket,
-        LogarithmicBuckets.BucketList storage p2pMarket,
+        LogarithmicBuckets.BucketList storage poolBuckets,
+        LogarithmicBuckets.BucketList storage p2pBuckets,
         uint256 onPool,
         uint256 inP2P,
         bool demoting
     ) internal {
-        uint256 formerOnPool = poolMarket.getValueOf(user);
-        uint256 formerInP2P = p2pMarket.getValueOf(user);
+        uint256 formerOnPool = poolBuckets.getValueOf(user);
+        uint256 formerInP2P = p2pBuckets.getValueOf(user);
 
         if (onPool != formerOnPool) {
             if (address(_rewardsManager) != address(0)) {
                 _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
 
-            poolMarket.update(user, onPool, demoting);
+            poolBuckets.update(user, onPool, demoting);
         }
 
-        if (inP2P != formerInP2P) p2pMarket.update(user, inP2P, true);
+        if (inP2P != formerInP2P) p2pBuckets.update(user, inP2P, true);
     }
 
     function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
@@ -408,7 +408,7 @@ abstract contract MorphoInternal is MorphoStorage {
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
         (indexes.supply.p2pIndex, indexes.borrow.p2pIndex) = InterestRatesLib.computeP2PIndexes(
-            Types.RatesParams({
+            Types.IndexesParams({
                 lastSupplyIndexes: lastIndexes.supply,
                 lastBorrowIndexes: lastIndexes.borrow,
                 poolSupplyIndex: indexes.supply.poolIndex,
@@ -448,7 +448,7 @@ abstract contract MorphoInternal is MorphoStorage {
             borrowTokenUnit = 10 ** borrowTokenUnit;
         }
 
-        IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         uint256 borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
         uint256 collateralPrice = oracle.getAssetPrice(underlyingCollateral);
 
