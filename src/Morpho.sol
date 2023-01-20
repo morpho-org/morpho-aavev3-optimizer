@@ -168,7 +168,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         returns (uint256 supplied)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeWithSelector(IPositionsManager.supplyLogic.selector, underlying, amount, from, onBehalf, maxLoops)
+            abi.encodeCall(IPositionsManager.supplyLogic, (underlying, amount, from, onBehalf, maxLoops))
         );
         return (abi.decode(returnData, (uint256)));
     }
@@ -178,7 +178,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         returns (uint256 supplied)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeWithSelector(IPositionsManager.supplyCollateralLogic.selector, underlying, amount, from, onBehalf)
+            abi.encodeCall(IPositionsManager.supplyCollateralLogic, (underlying, amount, from, onBehalf))
         );
 
         return (abi.decode(returnData, (uint256)));
@@ -189,9 +189,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         returns (uint256 borrowed)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeWithSelector(
-                IPositionsManager.borrowLogic.selector, underlying, amount, onBehalf, receiver, maxLoops
-            )
+            abi.encodeCall(IPositionsManager.borrowLogic, (underlying, amount, onBehalf, receiver, maxLoops))
         );
 
         return (abi.decode(returnData, (uint256)));
@@ -202,7 +200,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         returns (uint256 repaid)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeWithSelector(IPositionsManager.repayLogic.selector, underlying, amount, from, onBehalf)
+            abi.encodeCall(IPositionsManager.repayLogic, (underlying, amount, from, onBehalf))
         );
 
         return (abi.decode(returnData, (uint256)));
@@ -213,7 +211,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         returns (uint256 withdrawn)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeWithSelector(IPositionsManager.withdrawLogic.selector, underlying, amount, onBehalf, receiver)
+            abi.encodeCall(IPositionsManager.withdrawLogic, (underlying, amount, onBehalf, receiver))
         );
 
         return (abi.decode(returnData, (uint256)));
@@ -224,9 +222,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         returns (uint256 withdrawn)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeWithSelector(
-                IPositionsManager.withdrawCollateralLogic.selector, underlying, amount, onBehalf, receiver
-            )
+            abi.encodeCall(IPositionsManager.withdrawCollateralLogic, (underlying, amount, onBehalf, receiver))
         );
 
         return (abi.decode(returnData, (uint256)));
@@ -240,13 +236,9 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         address liquidator
     ) internal returns (uint256 repaid, uint256 seized) {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeWithSelector(
-                IPositionsManager.liquidateLogic.selector,
-                underlyingBorrowed,
-                underlyingCollateral,
-                amount,
-                borrower,
-                liquidator
+            abi.encodeCall(
+                IPositionsManager.liquidateLogic,
+                (underlyingBorrowed, underlyingCollateral, amount, borrower, liquidator)
             )
         );
 
