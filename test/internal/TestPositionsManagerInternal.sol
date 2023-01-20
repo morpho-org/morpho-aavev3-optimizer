@@ -31,7 +31,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import "test/helpers/InternalTest.sol";
 
-contract TestPositionsManager is InternalTest, PositionsManagerInternal {
+contract TestPositionsManagerInternal is InternalTest, PositionsManagerInternal {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
     using WadRayMath for uint256;
@@ -582,7 +582,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
-        uint256 inP2P = _addP2PDelta(dai, amount, indexes.supply.p2pIndex, 0, deltas.supply);
+        uint256 inP2P = _addToP2P(amount, 0, indexes.supply.p2pIndex, deltas.supply);
 
         uint256 expectedInP2P = amount.rayDiv(indexes.supply.p2pIndex);
         uint256 expectedInTotalScaledP2P = totalP2P + expectedInP2P;
@@ -599,7 +599,7 @@ contract TestPositionsManager is InternalTest, PositionsManagerInternal {
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
-        uint256 inP2P = _addP2PDelta(dai, amount, indexes.borrow.p2pIndex, 0, deltas.borrow);
+        uint256 inP2P = _addToP2P(amount, 0, indexes.borrow.p2pIndex, deltas.borrow);
 
         uint256 expectedInP2P = amount.rayDiv(indexes.borrow.p2pIndex);
         uint256 expectedInTotalScaledP2P = totalP2P + expectedInP2P;
