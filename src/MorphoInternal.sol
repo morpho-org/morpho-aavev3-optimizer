@@ -423,7 +423,7 @@ abstract contract MorphoInternal is MorphoStorage {
                 reserveFactor: market.reserveFactor,
                 p2pIndexCursor: market.p2pIndexCursor,
                 deltas: market.deltas,
-                proportionIdle: _proportionIdle(underlying)
+                proportionIdle: market.getProportionIdle()
             })
         );
     }
@@ -470,16 +470,5 @@ abstract contract MorphoInternal is MorphoStorage {
                 (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
             ).percentDiv(liquidationBonus);
         }
-    }
-
-    /// @dev Returns a ray.
-    function _proportionIdle(address underlying) internal view returns (uint256) {
-        Types.Market storage market = _market[underlying];
-        uint256 idleSupply = market.idleSupply;
-        if (idleSupply == 0) {
-            return 0;
-        }
-        uint256 totalP2PSupplied = market.deltas.supply.scaledTotalP2P.rayMul(market.indexes.supply.p2pIndex);
-        return idleSupply.rayDivUp(totalP2PSupplied);
     }
 }

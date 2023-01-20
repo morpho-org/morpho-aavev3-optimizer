@@ -116,5 +116,7 @@ library Events {
         uint256 poolBorrowIndex
     );
 
+    event IdleSupplyUpdated(address indexed underlying, uint256 idleSupply);
+
     event ReserveFeeClaimed(address indexed underlying, uint256 claimed);
 }
