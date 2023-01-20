@@ -15,7 +15,7 @@ import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable
 
 /// @title RewardsManager.
 /// @author Morpho Labs.
-/// @custom:contact security@MORPHO.xyz
+/// @custom:contact security@morpho.xyz
 /// @notice Contract managing Aave's protocol rewards.
 contract RewardsManager is Initializable {
     using SafeCast for uint256;
