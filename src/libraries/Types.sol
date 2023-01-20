@@ -143,7 +143,7 @@ library Types {
     struct PromoteVars {
         address underlying;
         uint256 amount;
-        uint256 poolIndex;
+        uint256 p2pIndex;
         uint256 maxLoops;
         function(address, uint256, uint256) returns (uint256, uint256) promote;
     }
