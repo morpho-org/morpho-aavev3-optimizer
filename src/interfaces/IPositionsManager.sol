@@ -2,11 +2,11 @@
 pragma solidity >=0.5.0;
 
 interface IPositionsManager {
-    function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)
+    function supplyLogic(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
         external
         returns (uint256 supplied);
 
-    function supplyCollateralLogic(address underlying, uint256 amount, address from, address onBehalf)
+    function supplyCollateralLogic(address underlying, uint256 amount, address onBehalf)
         external
         returns (uint256 supplied);
 
@@ -14,9 +14,7 @@ interface IPositionsManager {
         external
         returns (uint256 borrowed);
 
-    function repayLogic(address underlying, uint256 amount, address repayer, address onBehalf)
-        external
-        returns (uint256 repaid);
+    function repayLogic(address underlying, uint256 amount, address onBehalf) external returns (uint256 repaid);
 
     function withdrawLogic(address underlying, uint256 amount, address supplier, address receiver)
         external
@@ -25,11 +23,7 @@ interface IPositionsManager {
         external
         returns (uint256 withdrawn);
 
-    function liquidateLogic(
-        address underlyingBorrowed,
-        address underlyingCollateral,
-        uint256 amount,
-        address borrower,
-        address liquidator
-    ) external returns (uint256 liquidated, uint256 seized);
+    function liquidateLogic(address underlyingBorrowed, address underlyingCollateral, uint256 amount, address borrower)
+        external
+        returns (uint256 liquidated, uint256 seized);
 }

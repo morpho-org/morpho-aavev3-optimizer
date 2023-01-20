@@ -33,7 +33,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         external
         returns (uint256 supplied)
     {
-        return _supply(underlying, amount, msg.sender, onBehalf, maxLoops);
+        return _supply(underlying, amount, onBehalf, maxLoops);
     }
 
     function supplyWithPermit(
@@ -45,14 +45,14 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         Types.Signature calldata signature
     ) external returns (uint256 supplied) {
         ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
-        return _supply(underlying, amount, msg.sender, onBehalf, maxLoops);
+        return _supply(underlying, amount, onBehalf, maxLoops);
     }
 
     function supplyCollateral(address underlying, uint256 amount, address onBehalf)
         external
         returns (uint256 supplied)
     {
-        return _supplyCollateral(underlying, amount, msg.sender, onBehalf);
+        return _supplyCollateral(underlying, amount, onBehalf);
     }
 
     function supplyCollateralWithPermit(
@@ -63,7 +63,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         Types.Signature calldata signature
     ) external returns (uint256 supplied) {
         ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
-        return _supplyCollateral(underlying, amount, msg.sender, onBehalf);
+        return _supplyCollateral(underlying, amount, onBehalf);
     }
 
     function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
@@ -74,7 +74,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     }
 
     function repay(address underlying, uint256 amount, address onBehalf) external returns (uint256 repaid) {
-        return _repay(underlying, amount, msg.sender, onBehalf);
+        return _repay(underlying, amount, onBehalf);
     }
 
     function repayWithPermit(
@@ -85,7 +85,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         Types.Signature calldata signature
     ) external returns (uint256 repaid) {
         ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
-        return _repay(underlying, amount, msg.sender, onBehalf);
+        return _repay(underlying, amount, onBehalf);
     }
 
     function withdraw(address underlying, uint256 amount, address onBehalf, address receiver)
@@ -106,7 +106,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         external
         returns (uint256 repaid, uint256 seized)
     {
-        return _liquidate(underlyingBorrowed, underlyingCollateral, amount, user, msg.sender);
+        return _liquidate(underlyingBorrowed, underlyingCollateral, amount, user);
     }
 
     function approveManager(address manager, bool isAllowed) external {
@@ -163,22 +163,26 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     /// INTERNAL ///
 
-    function _supply(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)
+    function _supply(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
         internal
         returns (uint256 supplied)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeWithSelector(IPositionsManager.supplyLogic.selector, underlying, amount, from, onBehalf, maxLoops)
+            abi.encodeWithSelector(
+                IPositionsManager.supplyLogic.selector, underlying, amount, msg.sender, onBehalf, maxLoops
+            )
         );
         return (abi.decode(returnData, (uint256)));
     }
 
-    function _supplyCollateral(address underlying, uint256 amount, address from, address onBehalf)
+    function _supplyCollateral(address underlying, uint256 amount, address onBehalf)
         internal
         returns (uint256 supplied)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeWithSelector(IPositionsManager.supplyCollateralLogic.selector, underlying, amount, from, onBehalf)
+            abi.encodeWithSelector(
+                IPositionsManager.supplyCollateralLogic.selector, underlying, amount, msg.sender, onBehalf
+            )
         );
 
         return (abi.decode(returnData, (uint256)));
@@ -197,12 +201,9 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
-    function _repay(address underlying, uint256 amount, address from, address onBehalf)
-        internal
-        returns (uint256 repaid)
-    {
+    function _repay(address underlying, uint256 amount, address onBehalf) internal returns (uint256 repaid) {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeWithSelector(IPositionsManager.repayLogic.selector, underlying, amount, from, onBehalf)
+            abi.encodeWithSelector(IPositionsManager.repayLogic.selector, underlying, amount, msg.sender, onBehalf)
         );
 
         return (abi.decode(returnData, (uint256)));
@@ -232,13 +233,10 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
-    function _liquidate(
-        address underlyingBorrowed,
-        address underlyingCollateral,
-        uint256 amount,
-        address borrower,
-        address liquidator
-    ) internal returns (uint256 repaid, uint256 seized) {
+    function _liquidate(address underlyingBorrowed, address underlyingCollateral, uint256 amount, address borrower)
+        internal
+        returns (uint256 repaid, uint256 seized)
+    {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeWithSelector(
                 IPositionsManager.liquidateLogic.selector,
@@ -246,7 +244,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
                 underlyingCollateral,
                 amount,
                 borrower,
-                liquidator
+                msg.sender
             )
         );
 
