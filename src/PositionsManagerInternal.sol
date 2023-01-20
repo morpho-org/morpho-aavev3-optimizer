@@ -93,13 +93,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         uint256 eMode = _POOL.getUserEMode(address(this));
         if (eMode != 0 && eMode != config.getEModeCategory()) revert Errors.InconsistentEMode();
-
-        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
-        // In response, Morpho mirrors this behavior.
-        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
-        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
-            revert Errors.PriceOracleSentinelBorrowDisabled();
-        }
     }
 
     function _validateBorrow(address underlying, uint256 amount, address borrower) internal view {
@@ -114,13 +107,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     {
         market = _validateManagerInput(underlying, amount, supplier, receiver);
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
-
-        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
-        // For safety concerns and as a withdraw on Morpho can trigger a borrow on pool, Morpho prevents withdrawals in such circumstances.
-        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
-        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
-            revert Errors.PriceOracleSentinelBorrowPaused();
-        }
     }
 
     function _validateWithdrawCollateralInput(address underlying, uint256 amount, address supplier, address receiver)
