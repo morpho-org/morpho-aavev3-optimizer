@@ -98,6 +98,8 @@ library Events {
 
     event RewardsManagerSet(address indexed rewardsManager);
 
+    event TreasuryVaultSet(address indexed treasuryVault);
+
     event ReserveFactorSet(address indexed underlying, uint16 reserveFactor);
 
     event P2PIndexCursorSet(address indexed underlying, uint16 p2pIndexCursor);
