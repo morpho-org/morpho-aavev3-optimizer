@@ -433,9 +433,6 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256)
     {
-        // If the user is not borrowing any asset, return an infinite health factor.
-        if (_userBorrows[user].length() == 0) return type(uint256).max;
-
         Types.LiquidityData memory liquidityData = _liquidityData(underlying, user, withdrawnAmount, 0);
 
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
