@@ -88,6 +88,26 @@ abstract contract MorphoInternal is MorphoStorage {
         emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
     }
 
+    function _claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) internal {
+        address treasuryVault = _treasuryVault;
+        if (treasuryVault == address(0)) revert Errors.AddressIsZero();
+
+        for (uint256 i; i < underlyings.length; ++i) {
+            address underlying = underlyings[i];
+
+            if (!_market[underlying].isCreated()) continue;
+
+            uint256 underlyingBalance = ERC20(underlying).balanceOf(address(this));
+
+            if (underlyingBalance == 0) continue;
+
+            uint256 claimed = Math.min(amounts[i], underlyingBalance);
+
+            ERC20(underlying).safeTransfer(treasuryVault, claimed);
+            emit Events.ReserveFeeClaimed(underlying, claimed);
+        }
+    }
+
     function _increaseP2PDeltas(address underlying, uint256 amount) internal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
