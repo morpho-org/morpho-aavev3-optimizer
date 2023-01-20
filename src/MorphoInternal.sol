@@ -415,7 +415,7 @@ abstract contract MorphoInternal is MorphoStorage {
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
         (indexes.supply.p2pIndex, indexes.borrow.p2pIndex) = InterestRatesLib.computeP2PIndexes(
-            Types.RatesParams({
+            Types.IndexesParams({
                 lastSupplyIndexes: lastIndexes.supply,
                 lastBorrowIndexes: lastIndexes.borrow,
                 poolSupplyIndex: indexes.supply.poolIndex,

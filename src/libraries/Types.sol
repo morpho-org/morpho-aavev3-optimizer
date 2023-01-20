@@ -89,7 +89,7 @@ library Types {
         uint256 debt; // The debt value (in base currency, 8 decimals).
     }
 
-    struct RatesParams {
+    struct IndexesParams {
         MarketSideIndexes256 lastSupplyIndexes;
         MarketSideIndexes256 lastBorrowIndexes;
         uint256 poolSupplyIndex; // The current pool supply index.
