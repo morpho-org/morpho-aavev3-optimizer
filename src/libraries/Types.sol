@@ -10,8 +10,8 @@ library Types {
     /// NESTED STRUCTS ///
 
     struct MarketSideDelta {
-        uint256 scaledDeltaPool; // in pool unit
-        uint256 scaledTotalP2P; // in p2p unit
+        uint256 scaledDeltaPool; // In pool unit.
+        uint256 scaledTotalP2P; // In peer-to-peer unit.
     }
 
     struct Deltas {
@@ -66,16 +66,14 @@ library Types {
 
     // Contains storage-only dynamic arrays and mappings.
     struct MarketBalances {
-        LogarithmicBuckets.BucketList p2pSuppliers; // in scaled unit.
-        LogarithmicBuckets.BucketList poolSuppliers; // in scaled unit.
-        LogarithmicBuckets.BucketList p2pBorrowers; // in scaled unit.
-        LogarithmicBuckets.BucketList poolBorrowers; // in scaled unit.
-        mapping(address => uint256) collateral; // in scaled unit.
+        LogarithmicBuckets.BucketList p2pSuppliers; // In peer-to-peer unit.
+        LogarithmicBuckets.BucketList poolSuppliers; // In pool unit.
+        LogarithmicBuckets.BucketList p2pBorrowers; // In peer-to-peer unit.
+        LogarithmicBuckets.BucketList poolBorrowers; // In pool unit.
+        mapping(address => uint256) collateral; // In pool unit.
     }
 
     struct MaxLoops {
-        uint64 supply;
-        uint64 borrow;
         uint64 repay;
         uint64 withdraw;
     }

@@ -44,15 +44,17 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         _createMarket(underlying, reserveFactor, p2pIndexCursor);
     }
 
+    function claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) external onlyOwner {
+        _claimToTreasury(underlyings, amounts);
+    }
+
     function increaseP2PDeltas(address underlying, uint256 amount) external onlyOwner isMarketCreated(underlying) {
         _increaseP2PDeltas(underlying, amount);
     }
 
     function setDefaultMaxLoops(Types.MaxLoops calldata defaultMaxLoops) external onlyOwner {
         _defaultMaxLoops = defaultMaxLoops;
-        emit Events.DefaultMaxLoopsSet(
-            defaultMaxLoops.supply, defaultMaxLoops.borrow, defaultMaxLoops.repay, defaultMaxLoops.withdraw
-            );
+        emit Events.DefaultMaxLoopsSet(defaultMaxLoops.repay, defaultMaxLoops.withdraw);
     }
 
     function setPositionsManager(address positionsManager) external onlyOwner {
@@ -64,6 +66,11 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     function setRewardsManager(address rewardsManager) external onlyOwner {
         _rewardsManager = IRewardsManager(rewardsManager);
         emit Events.RewardsManagerSet(rewardsManager);
+    }
+
+    function setTreasuryVault(address treasuryVault) external onlyOwner {
+        _treasuryVault = treasuryVault;
+        emit Events.TreasuryVaultSet(treasuryVault);
     }
 
     function setReserveFactor(address underlying, uint16 newReserveFactor)
