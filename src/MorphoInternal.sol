@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
-import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
+import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
@@ -74,10 +74,6 @@ abstract contract MorphoInternal is MorphoStorage {
 
         market.setIndexes(indexes);
 
-        emit Events.IndexesUpdated(
-            underlying, WadRayMath.RAY, WadRayMath.RAY, indexes.supply.poolIndex, indexes.borrow.poolIndex
-            );
-
         market.underlying = underlying;
         market.aToken = reserveData.aTokenAddress;
         market.variableDebtToken = reserveData.variableDebtTokenAddress;
@@ -88,7 +84,29 @@ abstract contract MorphoInternal is MorphoStorage {
 
         ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
 
-        emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
+        emit Events.MarketCreated(
+            underlying, reserveFactor, p2pIndexCursor, indexes.supply.poolIndex, indexes.borrow.poolIndex
+            );
+    }
+
+    function _claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) internal {
+        address treasuryVault = _treasuryVault;
+        if (treasuryVault == address(0)) revert Errors.AddressIsZero();
+
+        for (uint256 i; i < underlyings.length; ++i) {
+            address underlying = underlyings[i];
+
+            if (!_market[underlying].isCreated()) continue;
+
+            uint256 underlyingBalance = ERC20(underlying).balanceOf(address(this));
+
+            if (underlyingBalance == 0) continue;
+
+            uint256 claimed = Math.min(amounts[i], underlyingBalance);
+
+            ERC20(underlying).safeTransfer(treasuryVault, claimed);
+            emit Events.ReserveFeeClaimed(underlying, claimed);
+        }
     }
 
     function _increaseP2PDeltas(address underlying, uint256 amount) internal {
@@ -182,7 +200,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
         if (_E_MODE_CATEGORY_ID != 0) vars.eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
         vars.morphoPoolConfig = _POOL.getUserConfiguration(address(this));
-        vars.oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        vars.oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.user = user;
 
         (liquidityData.collateral, liquidityData.borrowable, liquidityData.maxDebt) =
@@ -267,6 +285,10 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
         (ltv, liquidationThreshold,, decimals,, eModeCat) = reserveData.configuration.getParams();
 
+        unchecked {
+            tokenUnit = 10 ** decimals;
+        }
+
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == eModeCat) {
             uint256 eModeUnderlyingPrice;
             if (vars.eModeCategory.priceSource != address(0)) {
@@ -280,43 +302,32 @@ abstract contract MorphoInternal is MorphoStorage {
             underlyingPrice = vars.oracle.getAssetPrice(underlying);
         }
 
-        // LTV should be zero if Morpho has not enabled this asset as collateral
-        if (!vars.morphoPoolConfig.isUsingAsCollateral(reserveData.id)) {
-            ltv = 0;
-        }
-
         // If a LTV has been reduced to 0 on Aave v3, the other assets of the collateral are frozen.
         // In response, Morpho disables the asset as collateral and sets its liquidation threshold to 0.
-        if (ltv == 0) {
-            liquidationThreshold = 0;
-        }
-
-        unchecked {
-            tokenUnit = 10 ** decimals;
-        }
+        if (ltv == 0) liquidationThreshold = 0;
     }
 
     function _updateInDS(
         address poolToken,
         address user,
-        LogarithmicBuckets.BucketList storage poolMarket,
-        LogarithmicBuckets.BucketList storage p2pMarket,
+        LogarithmicBuckets.BucketList storage poolBuckets,
+        LogarithmicBuckets.BucketList storage p2pBuckets,
         uint256 onPool,
         uint256 inP2P,
         bool demoting
     ) internal {
-        uint256 formerOnPool = poolMarket.getValueOf(user);
-        uint256 formerInP2P = p2pMarket.getValueOf(user);
+        uint256 formerOnPool = poolBuckets.getValueOf(user);
+        uint256 formerInP2P = p2pBuckets.getValueOf(user);
 
         if (onPool != formerOnPool) {
             if (address(_rewardsManager) != address(0)) {
                 _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
 
-            poolMarket.update(user, onPool, demoting);
+            poolBuckets.update(user, onPool, demoting);
         }
 
-        if (inP2P != formerInP2P) p2pMarket.update(user, inP2P, true);
+        if (inP2P != formerInP2P) p2pBuckets.update(user, inP2P, true);
     }
 
     function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
@@ -398,7 +409,7 @@ abstract contract MorphoInternal is MorphoStorage {
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
         (indexes.supply.p2pIndex, indexes.borrow.p2pIndex) = InterestRatesLib.computeP2PIndexes(
-            Types.RatesParams({
+            Types.IndexesParams({
                 lastSupplyIndexes: lastIndexes.supply,
                 lastBorrowIndexes: lastIndexes.borrow,
                 poolSupplyIndex: indexes.supply.poolIndex,
@@ -416,9 +427,6 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256)
     {
-        // If the user is not borrowing any asset, return an infinite health factor.
-        if (_userBorrows[user].length() == 0) return type(uint256).max;
-
         Types.LiquidityData memory liquidityData = _liquidityData(underlying, user, withdrawnAmount, 0);
 
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
@@ -441,7 +449,7 @@ abstract contract MorphoInternal is MorphoStorage {
             borrowTokenUnit = 10 ** borrowTokenUnit;
         }
 
-        IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         uint256 borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
         uint256 collateralPrice = oracle.getAssetPrice(underlyingCollateral);
 

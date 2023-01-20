@@ -101,13 +101,21 @@ library Events {
 
     event P2PDeltasIncreased(address indexed underlying, uint256 amount);
 
-    event MarketCreated(address indexed underlying, uint16 reserveFactor, uint16 p2pIndexCursor);
+    event MarketCreated(
+        address indexed underlying,
+        uint16 reserveFactor,
+        uint16 p2pIndexCursor,
+        uint256 poolSupplyIndex,
+        uint256 poolBorrowIndex
+    );
 
-    event DefaultMaxLoopsSet(uint64 supply, uint64 borrow, uint64 repay, uint64 withdraw);
+    event DefaultMaxLoopsSet(uint64 repay, uint64 withdraw);
 
     event PositionsManagerSet(address indexed positionsManager);
 
     event RewardsManagerSet(address indexed rewardsManager);
+
+    event TreasuryVaultSet(address indexed treasuryVault);
 
     event ReserveFactorSet(address indexed underlying, uint16 reserveFactor);
 
@@ -124,4 +132,6 @@ library Events {
         uint256 poolSupplyIndex,
         uint256 poolBorrowIndex
     );
+
+    event ReserveFeeClaimed(address indexed underlying, uint256 claimed);
 }

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {Types} from "./Types.sol";
+import {Events} from "./Events.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 library MarketLib {
