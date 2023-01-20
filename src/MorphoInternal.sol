@@ -284,6 +284,10 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
         (ltv, liquidationThreshold,, decimals,, eModeCat) = reserveData.configuration.getParams();
 
+        unchecked {
+            tokenUnit = 10 ** decimals;
+        }
+
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == eModeCat) {
             uint256 eModeUnderlyingPrice;
             if (vars.eModeCategory.priceSource != address(0)) {
@@ -299,13 +303,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
         // If a LTV has been reduced to 0 on Aave v3, the other assets of the collateral are frozen.
         // In response, Morpho disables the asset as collateral and sets its liquidation threshold to 0.
-        if (ltv == 0) {
-            liquidationThreshold = 0;
-        }
-
-        unchecked {
-            tokenUnit = 10 ** decimals;
-        }
+        if (ltv == 0) liquidationThreshold = 0;
     }
 
     function _updateInDS(
@@ -428,9 +426,6 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256)
     {
-        // If the user is not borrowing any asset, return an infinite health factor.
-        if (_userBorrows[user].length() == 0) return type(uint256).max;
-
         Types.LiquidityData memory liquidityData = _liquidityData(underlying, user, withdrawnAmount, 0);
 
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;

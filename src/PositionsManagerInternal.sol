@@ -62,7 +62,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _validatePermission(onBehalf, msg.sender);
     }
 
-    function _validateSupplyInput(address underlying, uint256 amount, address user)
+    function _validateSupply(address underlying, uint256 amount, address user)
         internal
         view
         returns (Types.Market storage market)
@@ -71,7 +71,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
     }
 
-    function _validateSupplyCollateralInput(address underlying, uint256 amount, address user)
+    function _validateSupplyCollateral(address underlying, uint256 amount, address user)
         internal
         view
         returns (Types.Market storage market)
@@ -80,7 +80,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.pauseStatuses.isSupplyCollateralPaused) revert Errors.SupplyCollateralIsPaused();
     }
 
-    function _validateBorrowInput(address underlying, uint256 amount, address borrower, address receiver)
+    function _validateBorrow(address underlying, uint256 amount, address borrower, address receiver)
         internal
         view
         returns (Types.Market storage market)
@@ -90,40 +90,26 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
-
-        uint256 eMode = _POOL.getUserEMode(address(this));
-        if (eMode != 0 && eMode != config.getEModeCategory()) revert Errors.InconsistentEMode();
-
-        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
-        // In response, Morpho mirrors this behavior.
-        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
-        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
-            revert Errors.PriceOracleSentinelBorrowDisabled();
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
+            revert Errors.InconsistentEMode();
         }
     }
 
-    function _validateBorrow(address underlying, uint256 amount, address borrower) internal view {
+    function _authorizeBorrow(address underlying, uint256 amount, address borrower) internal view {
         Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
         if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
     }
 
-    function _validateWithdrawInput(address underlying, uint256 amount, address supplier, address receiver)
+    function _validateWithdraw(address underlying, uint256 amount, address supplier, address receiver)
         internal
         view
         returns (Types.Market storage market)
     {
         market = _validateManagerInput(underlying, amount, supplier, receiver);
         if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
-
-        // Aave can enable an oracle sentinel in specific circumstances which can prevent users to borrow.
-        // For safety concerns and as a withdraw on Morpho can trigger a borrow on pool, Morpho prevents withdrawals in such circumstances.
-        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
-        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
-            revert Errors.PriceOracleSentinelBorrowPaused();
-        }
     }
 
-    function _validateWithdrawCollateralInput(address underlying, uint256 amount, address supplier, address receiver)
+    function _validateWithdrawCollateral(address underlying, uint256 amount, address supplier, address receiver)
         internal
         view
         returns (Types.Market storage market)
@@ -132,13 +118,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
     }
 
-    function _validateWithdrawCollateral(address underlying, uint256 amount, address supplier) internal view {
+    function _authorizeWithdrawCollateral(address underlying, uint256 amount, address supplier) internal view {
         if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
             revert Errors.UnauthorizedWithdraw();
         }
     }
 
-    function _validateRepayInput(address underlying, uint256 amount, address user)
+    function _validateRepay(address underlying, uint256 amount, address user)
         internal
         view
         returns (Types.Market storage market)
@@ -147,7 +133,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
     }
 
-    function _validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
+    function _authorizeLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
         internal
         view
         returns (uint256 closeFactor)
@@ -451,7 +437,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledDeltaPool);
         }
 
-        // Math.min as the last decimal might flip.
+        // zeroFloorSub the last decimal might flip.
         demotedDelta.scaledTotalP2P = demotedDelta.scaledTotalP2P.zeroFloorSub(demoted.rayDiv(demotedIndexes.p2pIndex));
         counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P.zeroFloorSub(amount.rayDiv(counterIndexes.p2pIndex));
 
@@ -486,12 +472,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return (matchedDelta, amount - matchedDelta);
     }
 
-    /// @notice Updates the delta and p2p amounts for a repay or withdraw after a promotion.
+    /// @notice Updates the delta and peer-to-peer amounts for a repay or withdraw after a promotion.
     /// @param toProcess The amount to repay/withdraw.
-    /// @param inP2P The amount in p2p.
-    /// @param p2pIndex The current p2p index.
+    /// @param p2pIndex The current peer-to-peer index.
+    /// @param inP2P The amount in peer-to-peer.
     /// @param marketSideDelta The market side delta to update.
-    /// @return The new amount in p2p.
+    /// @return The new amount in peer-to-peer.
     function _addToP2P(
         uint256 toProcess,
         uint256 inP2P,
@@ -571,12 +557,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return amount - matchedIdle;
     }
 
-    /// @notice Borrows idle supply and returns an updated p2p balance.
+    /// @notice Borrows idle supply and returns an updated peer-to-peer balance.
     /// @param market The market storage.
     /// @param amount The amount to borrow.
-    /// @param inP2P The user's amount in p2p.
-    /// @param p2pBorrowIndex The current p2p borrow index.
-    /// @return The amount left to process, and the updated p2p amount of the user.
+    /// @param inP2P The user's amount in peer-to-peer.
+    /// @param p2pBorrowIndex The current peer-to-peer borrow index.
+    /// @return The amount left to process, and the updated peer-to-peer amount of the user.
     function _borrowIdle(Types.Market storage market, uint256 amount, uint256 inP2P, uint256 p2pBorrowIndex)
         internal
         returns (uint256, uint256)
