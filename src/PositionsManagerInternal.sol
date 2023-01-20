@@ -241,7 +241,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
         vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
-        (amount, vars.inP2P) = _borrowIdle(market, amount, vars.inP2P, indexes.borrow.p2pIndex);
+        (amount, vars.inP2P) = _borrowIdle(market, underlying, amount, vars.inP2P, indexes.borrow.p2pIndex);
         (vars.toWithdraw, amount) = _matchDelta(underlying, amount, indexes.supply.poolIndex, false);
 
         uint256 promoted;
@@ -327,7 +327,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         vars.inP2P = marketBalances.scaledP2PSupplyBalance(user).zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
-        amount = _withdrawIdle(market, amount);
+        amount = _withdrawIdle(market, underlying, amount);
 
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
 
@@ -549,7 +549,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 totalSupply = ERC20(market.aToken).totalSupply();
         if (totalSupply + amount > supplyCap) {
             toSupply = supplyCap - totalSupply;
-            market.idleSupply += amount - toSupply;
+            uint256 newIdleSupply = market.idleSupply + amount - toSupply;
+            market.idleSupply = newIdleSupply;
+
+            emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
         } else {
             toSupply = amount;
         }
@@ -557,35 +560,49 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
     /// @notice Withdraws idle supply.
     /// @param market The market storage.
+    /// @param underlying The underlying address.
     /// @param amount The amount to withdraw.
     /// @return The amount left to process.
-    function _withdrawIdle(Types.Market storage market, uint256 amount) internal returns (uint256) {
+    function _withdrawIdle(Types.Market storage market, address underlying, uint256 amount)
+        internal
+        returns (uint256)
+    {
         if (amount == 0) return 0;
 
         uint256 idleSupply = market.idleSupply;
         if (idleSupply == 0) return amount;
 
         uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
-        market.idleSupply = idleSupply.zeroFloorSub(matchedIdle);
+        uint256 newIdleSupply = idleSupply.zeroFloorSub(matchedIdle);
+        market.idleSupply = newIdleSupply;
+
+        emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
 
         return amount - matchedIdle;
     }
 
     /// @notice Borrows idle supply and returns an updated p2p balance.
     /// @param market The market storage.
+    /// @param underlying The underlying address.
     /// @param amount The amount to borrow.
     /// @param inP2P The user's amount in p2p.
     /// @param p2pBorrowIndex The current p2p borrow index.
     /// @return The amount left to process, and the updated p2p amount of the user.
-    function _borrowIdle(Types.Market storage market, uint256 amount, uint256 inP2P, uint256 p2pBorrowIndex)
-        internal
-        returns (uint256, uint256)
-    {
+    function _borrowIdle(
+        Types.Market storage market,
+        address underlying,
+        uint256 amount,
+        uint256 inP2P,
+        uint256 p2pBorrowIndex
+    ) internal returns (uint256, uint256) {
         uint256 idleSupply = market.idleSupply;
         if (idleSupply == 0) return (amount, inP2P);
 
         uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
-        market.idleSupply = idleSupply.zeroFloorSub(matchedIdle);
+        uint256 newIdleSupply = idleSupply.zeroFloorSub(matchedIdle);
+        market.idleSupply = newIdleSupply;
+
+        emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
 
         return (amount - matchedIdle, inP2P + matchedIdle.rayDivDown(p2pBorrowIndex));
     }

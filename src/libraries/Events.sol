@@ -113,4 +113,6 @@ library Events {
         uint256 poolSupplyIndex,
         uint256 poolBorrowIndex
     );
+
+    event IdleSupplyUpdated(address indexed underlying, uint256 idleSupply);
 }
