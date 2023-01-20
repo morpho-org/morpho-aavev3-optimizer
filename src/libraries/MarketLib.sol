@@ -63,17 +63,18 @@ library MarketLib {
     }
 
     /// @dev Adds to idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
-    /// @param market The market storage
+    /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to repay. (by supplying on pool)
-    /// @param pool The pool contract.
+    /// @param configuration The reserve configuration for the market.
     /// @return toSupply The new amount to supply.
-    function handleSupplyCap(Types.Market storage market, address underlying, uint256 amount, IPool pool)
-        internal
-        returns (uint256 toSupply)
-    {
-        DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(underlying);
-        uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
+    function handleSupplyCap(
+        Types.Market storage market,
+        address underlying,
+        uint256 amount,
+        DataTypes.ReserveConfigurationMap memory configuration
+    ) internal returns (uint256 toSupply) {
+        uint256 supplyCap = configuration.getSupplyCap() * (10 ** configuration.getDecimals());
         if (supplyCap == 0) return amount;
 
         uint256 totalSupply = ERC20(market.aToken).totalSupply();
@@ -86,26 +87,6 @@ library MarketLib {
         } else {
             toSupply = amount;
         }
-    }
-
-    /// @dev Withdraws idle supply.
-    /// @param market The market storage.
-    /// @param underlying The underlying address.
-    /// @param amount The amount to withdraw.
-    /// @return The amount left to process.
-    function withdrawIdle(Types.Market storage market, address underlying, uint256 amount) internal returns (uint256) {
-        if (amount == 0) return 0;
-
-        uint256 idleSupply = market.idleSupply;
-        if (idleSupply == 0) return amount;
-
-        uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
-        uint256 newIdleSupply = idleSupply.zeroFloorSub(matchedIdle);
-        market.idleSupply = newIdleSupply;
-
-        emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
-
-        return amount - matchedIdle;
     }
 
     /// @dev Borrows idle supply and returns an updated p2p balance.
@@ -132,5 +113,25 @@ library MarketLib {
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
 
         return (amount - matchedIdle, inP2P + matchedIdle.rayDivDown(p2pBorrowIndex));
+    }
+
+    /// @dev Withdraws idle supply.
+    /// @param market The market storage.
+    /// @param underlying The underlying address.
+    /// @param amount The amount to withdraw.
+    /// @return The amount left to process.
+    function withdrawIdle(Types.Market storage market, address underlying, uint256 amount) internal returns (uint256) {
+        if (amount == 0) return 0;
+
+        uint256 idleSupply = market.idleSupply;
+        if (idleSupply == 0) return amount;
+
+        uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
+        uint256 newIdleSupply = idleSupply.zeroFloorSub(matchedIdle);
+        market.idleSupply = newIdleSupply;
+
+        emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
+
+        return amount - matchedIdle;
     }
 }
