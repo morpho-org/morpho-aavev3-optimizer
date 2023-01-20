@@ -80,7 +80,7 @@ library Events {
     event P2PTotalsUpdated(address indexed underlying, uint256 scaledTotalSupplyP2P, uint256 scaledTotalBorrowP2P);
 
     event RewardsClaimed(
-        address indexed claimer, address indexed user, address indexed rewardToken, uint256 amountClaimed
+        address indexed claimer, address indexed onBehalf, address indexed rewardToken, uint256 amountClaimed
     );
 
     event IsSupplyPausedSet(address indexed underlying, bool isPaused);
