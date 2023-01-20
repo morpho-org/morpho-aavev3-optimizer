@@ -92,11 +92,13 @@ library Events {
 
     event MarketCreated(address indexed underlying, uint16 reserveFactor, uint16 p2pIndexCursor);
 
-    event DefaultMaxLoopsSet(uint64 supply, uint64 borrow, uint64 repay, uint64 withdraw);
+    event DefaultMaxLoopsSet(uint64 repay, uint64 withdraw);
 
     event PositionsManagerSet(address positionsManager);
 
     event RewardsManagerSet(address indexed rewardsManager);
+
+    event TreasuryVaultSet(address indexed treasuryVault);
 
     event ReserveFactorSet(address indexed underlying, uint16 reserveFactor);
 

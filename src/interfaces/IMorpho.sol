@@ -40,23 +40,27 @@ interface IMorphoSetters {
 
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external;
     function increaseP2PDeltas(address underlying, uint256 amount) external;
+    function claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) external;
 
-    function setDefaultMaxLoops(Types.MaxLoops memory defaultMaxLoops) external;
     function setPositionsManager(address positionsManager) external;
-    function setIsBorrowPaused(address underlying, bool isPaused) external;
-    function setIsDeprecated(address underlying, bool isDeprecated) external;
-    function setIsLiquidateBorrowPaused(address underlying, bool isPaused) external;
-    function setIsLiquidateCollateralPaused(address underlying, bool isPaused) external;
+    function setRewardsManager(address rewardsManager) external;
+    function setTreasuryVault(address treasuryVault) external;
+    function setDefaultMaxLoops(Types.MaxLoops memory defaultMaxLoops) external;
+    function setP2PIndexCursor(address underlying, uint16 p2pIndexCursor) external;
+    function setReserveFactor(address underlying, uint16 newReserveFactor) external;
+
     function setIsP2PDisabled(address underlying, bool isP2PDisabled) external;
     function setIsPaused(address underlying, bool isPaused) external;
     function setIsPausedForAllMarkets(bool isPaused) external;
-    function setIsRepayPaused(address underlying, bool isPaused) external;
     function setIsSupplyPaused(address underlying, bool isPaused) external;
     function setIsSupplyCollateralPaused(address underlying, bool isPaused) external;
+    function setIsBorrowPaused(address underlying, bool isPaused) external;
+    function setIsRepayPaused(address underlying, bool isPaused) external;
     function setIsWithdrawPaused(address underlying, bool isPaused) external;
     function setIsWithdrawCollateralPaused(address underlying, bool isPaused) external;
-    function setP2PIndexCursor(address underlying, uint16 p2pIndexCursor) external;
-    function setReserveFactor(address underlying, uint16 newReserveFactor) external;
+    function setIsLiquidateBorrowPaused(address underlying, bool isPaused) external;
+    function setIsLiquidateCollateralPaused(address underlying, bool isPaused) external;
+    function setIsDeprecated(address underlying, bool isDeprecated) external;
 }
 
 interface IMorpho is IMorphoGetters, IMorphoSetters {

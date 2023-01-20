@@ -23,8 +23,6 @@ library Errors {
 
     error BorrowingNotEnabled();
     error InconsistentEMode();
-    error PriceOracleSentinelBorrowDisabled();
-    error PriceOracleSentinelBorrowPaused();
     error UnauthorizedBorrow();
 
     error UnauthorizedWithdraw();

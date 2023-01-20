@@ -42,7 +42,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256)
     {
-        Types.Market storage market = _validateSupplyInput(underlying, amount, onBehalf);
+        Types.Market storage market = _validateSupply(underlying, amount, onBehalf);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
@@ -62,7 +62,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256)
     {
-        _validateSupplyCollateralInput(underlying, amount, onBehalf);
+        _validateSupplyCollateral(underlying, amount, onBehalf);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
@@ -85,12 +85,12 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256)
     {
-        Types.Market storage market = _validateBorrowInput(underlying, amount, borrower, receiver);
+        Types.Market storage market = _validateBorrow(underlying, amount, borrower, receiver);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
         // The following check requires storage indexes to be up-to-date.
-        _validateBorrow(underlying, amount, borrower);
+        _authorizeBorrow(underlying, amount, borrower);
 
         Types.BorrowWithdrawVars memory vars = _executeBorrow(underlying, amount, borrower, maxLoops, indexes);
 
@@ -108,7 +108,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256)
     {
-        Types.Market storage market = _validateWithdrawInput(underlying, amount, supplier, receiver);
+        Types.Market storage market = _validateWithdraw(underlying, amount, supplier, receiver);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.supply), amount);
@@ -132,7 +132,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256)
     {
-        Types.Market storage market = _validateWithdrawCollateralInput(underlying, amount, supplier, receiver);
+        Types.Market storage market = _validateWithdrawCollateral(underlying, amount, supplier, receiver);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, indexes.supply.poolIndex), amount);
@@ -140,7 +140,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         if (amount == 0) return 0;
 
         // The following check requires storage indexes to be up-to-date.
-        _validateWithdrawCollateral(underlying, amount, supplier);
+        _authorizeWithdrawCollateral(underlying, amount, supplier);
 
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
 
@@ -160,7 +160,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256 repaid)
     {
-        Types.Market storage market = _validateRepayInput(underlying, amount, onBehalf);
+        Types.Market storage market = _validateRepay(underlying, amount, onBehalf);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes.borrow), amount);
@@ -191,7 +191,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory borrowIndexes = _updateIndexes(underlyingBorrowed);
         Types.Indexes256 memory collateralIndexes = _updateIndexes(underlyingCollateral);
 
-        vars.closeFactor = _validateLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
+        vars.closeFactor = _authorizeLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
 
         vars.amountToLiquidate = Math.min(
             amount,
