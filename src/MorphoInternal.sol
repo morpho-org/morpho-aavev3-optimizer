@@ -262,7 +262,11 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 decimals;
         uint256 eModeCat;
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
-        (ltv, liquidationThreshold,, decimals,, eModeCat) = reserveData.configuration.getParams();
+        DataTypes.ReserveConfigurationMap memory configuration = reserveData.configuration;
+        ltv = configuration.getLtv();
+        liquidationThreshold = configuration.getLiquidationThreshold();
+        decimals = configuration.getDecimals();
+        eModeCat = configuration.getEModeCategory();
 
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == eModeCat) {
             uint256 eModeUnderlyingPrice;
@@ -429,9 +433,10 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 poolSupplyIndex
     ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
         amountToLiquidate = maxToLiquidate;
-        (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
-            _POOL.getConfiguration(underlyingCollateral).getParams();
-        (,,, uint256 borrowTokenUnit,,) = _POOL.getConfiguration(underlyingBorrowed).getParams();
+        DataTypes.ReserveConfigurationMap memory underlyingConfig = _POOL.getConfiguration(underlyingCollateral);
+        uint256 liquidationBonus = underlyingConfig.getLiquidationBonus();
+        uint256 collateralTokenUnit = underlyingConfig.getDecimals();
+        uint256 borrowTokenUnit = _POOL.getConfiguration(underlyingBorrowed).getDecimals();
 
         unchecked {
             collateralTokenUnit = 10 ** collateralTokenUnit;
