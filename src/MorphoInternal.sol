@@ -316,24 +316,24 @@ abstract contract MorphoInternal is MorphoStorage {
     function _updateInDS(
         address poolToken,
         address user,
-        LogarithmicBuckets.BucketList storage poolMarket,
-        LogarithmicBuckets.BucketList storage p2pMarket,
+        LogarithmicBuckets.BucketList storage poolBuckets,
+        LogarithmicBuckets.BucketList storage p2pBuckets,
         uint256 onPool,
         uint256 inP2P,
         bool demoting
     ) internal {
-        uint256 formerOnPool = poolMarket.getValueOf(user);
-        uint256 formerInP2P = p2pMarket.getValueOf(user);
+        uint256 formerOnPool = poolBuckets.getValueOf(user);
+        uint256 formerInP2P = p2pBuckets.getValueOf(user);
 
         if (onPool != formerOnPool) {
             if (address(_rewardsManager) != address(0)) {
                 _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
 
-            poolMarket.update(user, onPool, demoting);
+            poolBuckets.update(user, onPool, demoting);
         }
 
-        if (inP2P != formerInP2P) p2pMarket.update(user, inP2P, true);
+        if (inP2P != formerInP2P) p2pBuckets.update(user, inP2P, true);
     }
 
     function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
