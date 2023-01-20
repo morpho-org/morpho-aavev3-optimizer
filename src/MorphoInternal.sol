@@ -297,11 +297,6 @@ abstract contract MorphoInternal is MorphoStorage {
             underlyingPrice = vars.oracle.getAssetPrice(underlying);
         }
 
-        // LTV should be zero if Morpho has not enabled this asset as collateral
-        if (!vars.morphoPoolConfig.isUsingAsCollateral(reserveData.id)) {
-            ltv = 0;
-        }
-
         // If a LTV has been reduced to 0 on Aave v3, the other assets of the collateral are frozen.
         // In response, Morpho disables the asset as collateral and sets its liquidation threshold to 0.
         if (ltv == 0) {
