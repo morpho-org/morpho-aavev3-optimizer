@@ -194,7 +194,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
-                poolIndex: indexes.borrow.poolIndex,
+                p2pIndex: indexes.borrow.p2pIndex,
                 maxLoops: maxLoops,
                 promote: _promoteBorrowers
             }),
@@ -234,7 +234,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
-                poolIndex: indexes.supply.poolIndex,
+                p2pIndex: indexes.supply.p2pIndex,
                 maxLoops: maxLoops,
                 promote: _promoteSuppliers
             }),
@@ -283,7 +283,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
-                poolIndex: indexes.borrow.poolIndex,
+                p2pIndex: indexes.borrow.p2pIndex,
                 maxLoops: maxLoops,
                 promote: _promoteBorrowers
             }),
@@ -330,7 +330,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             Types.PromoteVars({
                 underlying: underlying,
                 amount: amount,
-                poolIndex: indexes.supply.poolIndex,
+                p2pIndex: indexes.supply.p2pIndex,
                 maxLoops: maxLoops,
                 promote: _promoteSuppliers
             }),
@@ -393,7 +393,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         (uint256 promoted, uint256 loopsDone) = vars.promote(vars.underlying, vars.amount, vars.maxLoops); // In underlying.
 
-        promotedDelta.scaledTotalP2P += promoted.rayDiv(vars.poolIndex);
+        promotedDelta.scaledTotalP2P += promoted.rayDiv(vars.p2pIndex);
 
         return (promoted, vars.amount - promoted, vars.maxLoops - loopsDone);
     }
