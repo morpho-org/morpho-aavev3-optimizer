@@ -20,10 +20,11 @@ library Errors {
     error LiquidateBorrowIsPaused();
     error ClaimRewardsPaused();
 
+    error MarketIsDeprecated();
+    error BorrowNotPaused();
+
     error BorrowingNotEnabled();
     error InconsistentEMode();
-    error PriceOracleSentinelBorrowDisabled();
-    error PriceOracleSentinelBorrowPaused();
     error UnauthorizedBorrow();
 
     error UnauthorizedWithdraw();

@@ -44,15 +44,17 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         _createMarket(underlying, reserveFactor, p2pIndexCursor);
     }
 
+    function claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) external onlyOwner {
+        _claimToTreasury(underlyings, amounts);
+    }
+
     function increaseP2PDeltas(address underlying, uint256 amount) external onlyOwner isMarketCreated(underlying) {
         _increaseP2PDeltas(underlying, amount);
     }
 
     function setDefaultMaxLoops(Types.MaxLoops calldata defaultMaxLoops) external onlyOwner {
         _defaultMaxLoops = defaultMaxLoops;
-        emit Events.DefaultMaxLoopsSet(
-            defaultMaxLoops.supply, defaultMaxLoops.borrow, defaultMaxLoops.repay, defaultMaxLoops.withdraw
-            );
+        emit Events.DefaultMaxLoopsSet(defaultMaxLoops.repay, defaultMaxLoops.withdraw);
     }
 
     function setPositionsManager(address positionsManager) external onlyOwner {
@@ -62,9 +64,13 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     function setRewardsManager(address rewardsManager) external onlyOwner {
-        if (rewardsManager == address(0)) revert Errors.AddressIsZero();
         _rewardsManager = IRewardsManager(rewardsManager);
         emit Events.RewardsManagerSet(rewardsManager);
+    }
+
+    function setTreasuryVault(address treasuryVault) external onlyOwner {
+        _treasuryVault = treasuryVault;
+        emit Events.TreasuryVaultSet(treasuryVault);
     }
 
     function setReserveFactor(address underlying, uint16 newReserveFactor)
@@ -106,7 +112,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     function setIsBorrowPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
-        _market[underlying].pauseStatuses.isBorrowPaused = isPaused;
+        Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
+        if (!isPaused && pauseStatuses.isDeprecated) revert Errors.MarketIsDeprecated();
+        pauseStatuses.isBorrowPaused = isPaused;
         emit Events.IsBorrowPausedSet(underlying, isPaused);
     }
 
@@ -164,7 +172,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     function setIsDeprecated(address underlying, bool isDeprecated) external onlyOwner isMarketCreated(underlying) {
-        _market[underlying].pauseStatuses.isDeprecated = isDeprecated;
+        Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
+        if (!pauseStatuses.isBorrowPaused) revert Errors.BorrowNotPaused();
+        pauseStatuses.isDeprecated = isDeprecated;
         emit Events.IsDeprecatedSet(underlying, isDeprecated);
     }
 }
