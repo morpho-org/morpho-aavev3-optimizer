@@ -89,7 +89,8 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     function _claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) internal {
-        if (_treasuryVault == address(0)) revert Errors.AddressIsZero();
+        address treasuryVault = _treasuryVault;
+        if (treasuryVault == address(0)) revert Errors.AddressIsZero();
 
         for (uint256 i; i < underlyings.length; ++i) {
             address underlying = underlyings[i];
@@ -102,7 +103,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
             uint256 claimed = Math.min(amounts[i], underlyingBalance);
 
-            ERC20(underlying).safeTransfer(_treasuryVault, claimed);
+            ERC20(underlying).safeTransfer(treasuryVault, claimed);
             emit Events.ReserveFeeClaimed(underlying, claimed);
         }
     }
