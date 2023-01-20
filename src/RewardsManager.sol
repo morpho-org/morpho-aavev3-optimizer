@@ -6,7 +6,6 @@ import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IPoolToken} from "./interfaces/aave/IPoolToken.sol";
 import {IScaledBalanceToken} from "@aave-v3-core/interfaces/IScaledBalanceToken.sol";
-import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewardsController.sol";
 import {IRewardsDistributor} from "@aave-v3-periphery/rewards/interfaces/IRewardsDistributor.sol";
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
