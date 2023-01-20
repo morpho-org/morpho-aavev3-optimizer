@@ -430,9 +430,9 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 poolSupplyIndex
     ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
         amountToLiquidate = maxToLiquidate;
-        DataTypes.ReserveConfigurationMap memory underlyingConfig = _POOL.getConfiguration(underlyingCollateral);
-        uint256 liquidationBonus = underlyingConfig.getLiquidationBonus();
-        uint256 collateralTokenUnit = underlyingConfig.getDecimals();
+        DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(underlyingCollateral);
+        uint256 liquidationBonus = collateralConfig.getLiquidationBonus();
+        uint256 collateralTokenUnit = collateralConfig.getDecimals();
         uint256 borrowTokenUnit = _POOL.getConfiguration(underlyingBorrowed).getDecimals();
 
         unchecked {
