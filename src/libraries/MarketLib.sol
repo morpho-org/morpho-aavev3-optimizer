@@ -77,15 +77,15 @@ library MarketLib {
         if (supplyCap == 0) return amount;
 
         uint256 totalSupply = ERC20(market.aToken).totalSupply();
-        if (totalSupply + amount > supplyCap) {
-            toSupply = supplyCap - totalSupply;
-            uint256 newIdleSupply = market.idleSupply + amount - toSupply;
-            market.idleSupply = newIdleSupply;
+        if (totalSupply + amount <= supplyCap) return amount;
 
-            emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
-        } else {
-            toSupply = amount;
-        }
+        toSupply = supplyCap - totalSupply;
+        uint256 newIdleSupply = market.idleSupply + amount - toSupply;
+        market.idleSupply = newIdleSupply;
+
+        emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
+
+        return toSupply;
     }
 
     /// @dev Withdraws idle supply.
