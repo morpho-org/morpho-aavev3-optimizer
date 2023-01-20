@@ -277,7 +277,7 @@ abstract contract MorphoInternal is MorphoStorage {
             underlyingPrice = vars.oracle.getAssetPrice(underlying);
         }
 
-        // LTV should be zero if Morpho has not enabled this asset as collateral
+        // LTV should be zero if Morpho has not enabled this asset as collateral.
         if (!vars.morphoPoolConfig.isUsingAsCollateral(reserveData.id)) {
             ltv = 0;
         }

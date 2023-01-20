@@ -447,7 +447,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledDeltaPool);
         }
 
-        // Math.min as the last decimal might flip.
+        // zeroFloorSub the last decimal might flip.
         demotedDelta.scaledTotalP2P = demotedDelta.scaledTotalP2P.zeroFloorSub(demoted.rayDiv(demotedIndexes.p2pIndex));
         counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P.zeroFloorSub(amount.rayDiv(counterIndexes.p2pIndex));
 
