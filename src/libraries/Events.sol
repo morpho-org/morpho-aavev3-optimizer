@@ -115,4 +115,6 @@ library Events {
     );
 
     event IdleSupplyUpdated(address indexed underlying, uint256 idleSupply);
+
+    event ReserveFeeClaimed(address indexed underlying, uint256 claimed);
 }

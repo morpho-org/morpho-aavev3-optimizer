@@ -44,6 +44,10 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         _createMarket(underlying, reserveFactor, p2pIndexCursor);
     }
 
+    function claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) external onlyOwner {
+        _claimToTreasury(underlyings, amounts);
+    }
+
     function increaseP2PDeltas(address underlying, uint256 amount) external onlyOwner isMarketCreated(underlying) {
         _increaseP2PDeltas(underlying, amount);
     }
