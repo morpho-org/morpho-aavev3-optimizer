@@ -279,10 +279,9 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         underlyingPrice = vars.oracle.getAssetPrice(underlying);
 
-        uint256 decimals;
         uint256 eModeCat;
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
-        (ltv, liquidationThreshold,, decimals,, eModeCat) = reserveData.configuration.getParams();
+        (ltv, liquidationThreshold,, tokenUnit,, eModeCat) = reserveData.configuration.getParams();
 
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == eModeCat) {
             uint256 eModeUnderlyingPrice;
@@ -309,7 +308,7 @@ abstract contract MorphoInternal is MorphoStorage {
         }
 
         unchecked {
-            tokenUnit = 10 ** decimals;
+            tokenUnit = 10 ** tokenUnit;
         }
     }
 
