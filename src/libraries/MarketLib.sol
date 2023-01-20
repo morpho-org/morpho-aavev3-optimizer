@@ -1,13 +1,23 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
+
 import {Types} from "./Types.sol";
+import {Events} from "./Events.sol";
+import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
+
+import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 library MarketLib {
+    using Math for uint256;
     using SafeCast for uint256;
     using WadRayMath for uint256;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     function isCreated(Types.Market storage market) internal view returns (bool) {
         return market.aToken != address(0);
@@ -50,5 +60,77 @@ library MarketLib {
         market.indexes.supply.p2pIndex = indexes.supply.p2pIndex.toUint128();
         market.indexes.borrow.p2pIndex = indexes.borrow.p2pIndex.toUint128();
         market.lastUpdateTimestamp = uint32(block.timestamp);
+    }
+
+    /// @dev Adds to idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
+    /// @param market The market storage
+    /// @param underlying The underlying address.
+    /// @param amount The amount to repay. (by supplying on pool)
+    /// @param pool The pool contract.
+    /// @return toSupply The new amount to supply.
+    function handleSupplyCap(Types.Market storage market, address underlying, uint256 amount, IPool pool)
+        internal
+        returns (uint256 toSupply)
+    {
+        DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(underlying);
+        uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
+        if (supplyCap == 0) return amount;
+
+        uint256 totalSupply = ERC20(market.aToken).totalSupply();
+        if (totalSupply + amount > supplyCap) {
+            toSupply = supplyCap - totalSupply;
+            uint256 newIdleSupply = market.idleSupply + amount - toSupply;
+            market.idleSupply = newIdleSupply;
+
+            emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
+        } else {
+            toSupply = amount;
+        }
+    }
+
+    /// @dev Withdraws idle supply.
+    /// @param market The market storage.
+    /// @param underlying The underlying address.
+    /// @param amount The amount to withdraw.
+    /// @return The amount left to process.
+    function withdrawIdle(Types.Market storage market, address underlying, uint256 amount) internal returns (uint256) {
+        if (amount == 0) return 0;
+
+        uint256 idleSupply = market.idleSupply;
+        if (idleSupply == 0) return amount;
+
+        uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
+        uint256 newIdleSupply = idleSupply.zeroFloorSub(matchedIdle);
+        market.idleSupply = newIdleSupply;
+
+        emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
+
+        return amount - matchedIdle;
+    }
+
+    /// @dev Borrows idle supply and returns an updated p2p balance.
+    /// @param market The market storage.
+    /// @param underlying The underlying address.
+    /// @param amount The amount to borrow.
+    /// @param inP2P The user's amount in p2p.
+    /// @param p2pBorrowIndex The current p2p borrow index.
+    /// @return The amount left to process, and the updated p2p amount of the user.
+    function borrowIdle(
+        Types.Market storage market,
+        address underlying,
+        uint256 amount,
+        uint256 inP2P,
+        uint256 p2pBorrowIndex
+    ) internal returns (uint256, uint256) {
+        uint256 idleSupply = market.idleSupply;
+        if (idleSupply == 0) return (amount, inP2P);
+
+        uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
+        uint256 newIdleSupply = idleSupply.zeroFloorSub(matchedIdle);
+        market.idleSupply = newIdleSupply;
+
+        emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
+
+        return (amount - matchedIdle, inP2P + matchedIdle.rayDivDown(p2pBorrowIndex));
     }
 }
