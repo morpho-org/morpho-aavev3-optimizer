@@ -68,6 +68,11 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         emit Events.RewardsManagerSet(rewardsManager);
     }
 
+    function setTreasuryVault(address treasuryVault) external onlyOwner {
+        _treasuryVault = treasuryVault;
+        emit Events.TreasuryVaultSet(treasuryVault);
+    }
+
     function setReserveFactor(address underlying, uint16 newReserveFactor)
         external
         onlyOwner
