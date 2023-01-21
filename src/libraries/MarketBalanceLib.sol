@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {Types} from "./Types.sol";
+
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 library MarketBalanceLib {

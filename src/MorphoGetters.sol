@@ -6,6 +6,7 @@ import {IMorphoGetters} from "./interfaces/IMorpho.sol";
 import {Types} from "./libraries/Types.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
+
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";

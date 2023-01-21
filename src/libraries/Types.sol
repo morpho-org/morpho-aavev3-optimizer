@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 library Types {
