@@ -32,7 +32,6 @@ interface IMorphoGetters {
         external
         view
         returns (Types.LiquidityData memory);
-    function healthFactor(address user) external view returns (uint256);
 }
 
 interface IMorphoSetters {
