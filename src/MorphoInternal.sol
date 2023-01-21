@@ -361,25 +361,16 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     function _setPauseStatus(address underlying, bool isPaused) internal {
-        Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
+        Types.Market storage market = _market[underlying];
 
-        pauseStatuses.isSupplyPaused = isPaused;
-        pauseStatuses.isSupplyCollateralPaused = isPaused;
-        pauseStatuses.isBorrowPaused = isPaused;
-        pauseStatuses.isWithdrawPaused = isPaused;
-        pauseStatuses.isWithdrawCollateralPaused = isPaused;
-        pauseStatuses.isRepayPaused = isPaused;
-        pauseStatuses.isLiquidateCollateralPaused = isPaused;
-        pauseStatuses.isLiquidateBorrowPaused = isPaused;
-
-        emit Events.IsSupplyPausedSet(underlying, isPaused);
-        emit Events.IsSupplyCollateralPausedSet(underlying, isPaused);
-        emit Events.IsBorrowPausedSet(underlying, isPaused);
-        emit Events.IsWithdrawPausedSet(underlying, isPaused);
-        emit Events.IsWithdrawCollateralPausedSet(underlying, isPaused);
-        emit Events.IsRepayPausedSet(underlying, isPaused);
-        emit Events.IsLiquidateCollateralPausedSet(underlying, isPaused);
-        emit Events.IsLiquidateBorrowPausedSet(underlying, isPaused);
+        market.setIsSupplyPaused(underlying, isPaused);
+        market.setIsSupplyCollateralPaused(underlying, isPaused);
+        market.setIsBorrowPaused(underlying, isPaused);
+        market.setIsRepayPaused(underlying, isPaused);
+        market.setIsWithdrawPaused(underlying, isPaused);
+        market.setIsWithdrawCollateralPaused(underlying, isPaused);
+        market.setIsLiquidateCollateralPaused(underlying, isPaused);
+        market.setIsLiquidateBorrowPaused(underlying, isPaused);
     }
 
     function _updateIndexes(address underlying) internal returns (Types.Indexes256 memory indexes) {

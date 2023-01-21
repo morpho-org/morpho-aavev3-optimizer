@@ -23,6 +23,106 @@ library MarketLib {
         return market.aToken != address(0);
     }
 
+    function isSupplyPaused(Types.Market storage market) internal view returns (bool) {
+        return market.pauseStatuses.isSupplyPaused;
+    }
+
+    function isSupplyCollateralPaused(Types.Market storage market) internal view returns (bool) {
+        return market.pauseStatuses.isSupplyCollateralPaused;
+    }
+
+    function isBorrowPaused(Types.Market storage market) internal view returns (bool) {
+        return market.pauseStatuses.isBorrowPaused;
+    }
+
+    function isRepayPaused(Types.Market storage market) internal view returns (bool) {
+        return market.pauseStatuses.isRepayPaused;
+    }
+
+    function isWithdrawPaused(Types.Market storage market) internal view returns (bool) {
+        return market.pauseStatuses.isWithdrawPaused;
+    }
+
+    function isWithdrawCollateralPaused(Types.Market storage market) internal view returns (bool) {
+        return market.pauseStatuses.isWithdrawCollateralPaused;
+    }
+
+    function isLiquidateCollateralPaused(Types.Market storage market) internal view returns (bool) {
+        return market.pauseStatuses.isLiquidateCollateralPaused;
+    }
+
+    function isLiquidateBorrowPaused(Types.Market storage market) internal view returns (bool) {
+        return market.pauseStatuses.isLiquidateBorrowPaused;
+    }
+
+    function isDeprecated(Types.Market storage market) internal view returns (bool) {
+        return market.pauseStatuses.isDeprecated;
+    }
+
+    function isP2PDisabled(Types.Market storage market) internal view returns (bool) {
+        return market.pauseStatuses.isP2PDisabled;
+    }
+
+    function setIsSupplyPaused(Types.Market storage market, address underlying, bool isPaused) internal {
+        market.pauseStatuses.isSupplyPaused = isPaused;
+
+        emit Events.IsSupplyPausedSet(underlying, isPaused);
+    }
+
+    function setIsSupplyCollateralPaused(Types.Market storage market, address underlying, bool isPaused) internal {
+        market.pauseStatuses.isSupplyCollateralPaused = isPaused;
+
+        emit Events.IsSupplyCollateralPausedSet(underlying, isPaused);
+    }
+
+    function setIsBorrowPaused(Types.Market storage market, address underlying, bool isPaused) internal {
+        market.pauseStatuses.isBorrowPaused = isPaused;
+
+        emit Events.IsBorrowPausedSet(underlying, isPaused);
+    }
+
+    function setIsRepayPaused(Types.Market storage market, address underlying, bool isPaused) internal {
+        market.pauseStatuses.isRepayPaused = isPaused;
+
+        emit Events.IsRepayPausedSet(underlying, isPaused);
+    }
+
+    function setIsWithdrawPaused(Types.Market storage market, address underlying, bool isPaused) internal {
+        market.pauseStatuses.isWithdrawPaused = isPaused;
+
+        emit Events.IsWithdrawPausedSet(underlying, isPaused);
+    }
+
+    function setIsWithdrawCollateralPaused(Types.Market storage market, address underlying, bool isPaused) internal {
+        market.pauseStatuses.isWithdrawCollateralPaused = isPaused;
+
+        emit Events.IsWithdrawCollateralPausedSet(underlying, isPaused);
+    }
+
+    function setIsLiquidateCollateralPaused(Types.Market storage market, address underlying, bool isPaused) internal {
+        market.pauseStatuses.isLiquidateCollateralPaused = isPaused;
+
+        emit Events.IsLiquidateCollateralPausedSet(underlying, isPaused);
+    }
+
+    function setIsLiquidateBorrowPaused(Types.Market storage market, address underlying, bool isPaused) internal {
+        market.pauseStatuses.isLiquidateBorrowPaused = isPaused;
+
+        emit Events.IsLiquidateBorrowPausedSet(underlying, isPaused);
+    }
+
+    function setIsDeprecated(Types.Market storage market, address underlying, bool isDeprecated) internal {
+        market.pauseStatuses.isDeprecated = isDeprecated;
+
+        emit Events.IsDeprecatedSet(underlying, isDeprecated);
+    }
+
+    function setIsP2PDisabled(Types.Market storage market, address underlying, bool isP2PDisabled) internal {
+        market.pauseStatuses.isP2PDisabled = isP2PDisabled;
+
+        emit Events.IsP2PDisabledSet(underlying, isP2PDisabled);
+    }
+
     function getSupplyIndexes(Types.Market storage market)
         internal
         view

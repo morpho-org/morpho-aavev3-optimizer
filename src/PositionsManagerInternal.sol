@@ -71,7 +71,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         returns (Types.Market storage market)
     {
         market = _validateInput(underlying, amount, user);
-        if (market.pauseStatuses.isSupplyPaused) revert Errors.SupplyIsPaused();
+        if (market.isSupplyPaused()) revert Errors.SupplyIsPaused();
     }
 
     function _validateSupplyCollateral(address underlying, uint256 amount, address user)
@@ -80,7 +80,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         returns (Types.Market storage market)
     {
         market = _validateInput(underlying, amount, user);
-        if (market.pauseStatuses.isSupplyCollateralPaused) revert Errors.SupplyCollateralIsPaused();
+        if (market.isSupplyCollateralPaused()) revert Errors.SupplyCollateralIsPaused();
     }
 
     function _validateBorrow(address underlying, uint256 amount, address borrower, address receiver)
@@ -89,7 +89,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         returns (Types.Market storage market)
     {
         market = _validateManagerInput(underlying, amount, borrower, receiver);
-        if (market.pauseStatuses.isBorrowPaused) revert Errors.BorrowIsPaused();
+        if (market.isBorrowPaused()) revert Errors.BorrowIsPaused();
 
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
@@ -109,7 +109,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         returns (Types.Market storage market)
     {
         market = _validateManagerInput(underlying, amount, supplier, receiver);
-        if (market.pauseStatuses.isWithdrawPaused) revert Errors.WithdrawIsPaused();
+        if (market.isWithdrawPaused()) revert Errors.WithdrawIsPaused();
     }
 
     function _validateWithdrawCollateral(address underlying, uint256 amount, address supplier, address receiver)
@@ -118,7 +118,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         returns (Types.Market storage market)
     {
         market = _validateManagerInput(underlying, amount, supplier, receiver);
-        if (market.pauseStatuses.isWithdrawCollateralPaused) revert Errors.WithdrawCollateralIsPaused();
+        if (market.isWithdrawCollateralPaused()) revert Errors.WithdrawCollateralIsPaused();
     }
 
     function _authorizeWithdrawCollateral(address underlying, uint256 amount, address supplier) internal view {
@@ -133,7 +133,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         returns (Types.Market storage market)
     {
         market = _validateInput(underlying, amount, user);
-        if (market.pauseStatuses.isRepayPaused) revert Errors.RepayIsPaused();
+        if (market.isRepayPaused()) revert Errors.RepayIsPaused();
     }
 
     function _authorizeLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
@@ -144,15 +144,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Market storage borrowMarket = _market[underlyingBorrowed];
         Types.Market storage collateralMarket = _market[underlyingCollateral];
 
-        if (!collateralMarket.isCreated() || !borrowMarket.isCreated()) {
-            revert Errors.MarketNotCreated();
-        }
-        if (collateralMarket.pauseStatuses.isLiquidateCollateralPaused) {
-            revert Errors.LiquidateCollateralIsPaused();
-        }
-        if (borrowMarket.pauseStatuses.isLiquidateBorrowPaused) {
-            revert Errors.LiquidateBorrowIsPaused();
-        }
+        if (!collateralMarket.isCreated() || !borrowMarket.isCreated()) revert Errors.MarketNotCreated();
+        if (collateralMarket.isLiquidateCollateralPaused()) revert Errors.LiquidateCollateralIsPaused();
+        if (borrowMarket.isLiquidateBorrowPaused()) revert Errors.LiquidateBorrowIsPaused();
+
         if (
             !_userCollaterals[borrower].contains(underlyingCollateral)
                 || !_userBorrows[borrower].contains(underlyingBorrowed)
@@ -160,7 +155,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             revert Errors.UserNotMemberOfMarket();
         }
 
-        if (borrowMarket.pauseStatuses.isDeprecated) {
+        if (borrowMarket.isDeprecated()) {
             return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
         } else {
             uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
@@ -351,7 +346,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxLoops,
         function(address, uint256, uint256) returns (uint256, uint256) promote
     ) internal returns (uint256, uint256, uint256) {
-        if (amount == 0 || _market[underlying].pauseStatuses.isP2PDisabled) {
+        if (amount == 0 || _market[underlying].isP2PDisabled()) {
             return (0, amount, maxLoops);
         }
 
