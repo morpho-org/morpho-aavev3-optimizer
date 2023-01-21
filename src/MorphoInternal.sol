@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
-import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
+import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
@@ -199,7 +199,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
         if (_E_MODE_CATEGORY_ID != 0) vars.eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
         vars.morphoPoolConfig = _POOL.getUserConfiguration(address(this));
-        vars.oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        vars.oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.user = user;
 
         (liquidityData.collateral, liquidityData.borrowable, liquidityData.maxDebt) =
@@ -279,11 +279,17 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         underlyingPrice = vars.oracle.getAssetPrice(underlying);
 
-        uint256 eModeCat;
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
-        (ltv, liquidationThreshold,, tokenUnit,, eModeCat) = reserveData.configuration.getParams();
+        DataTypes.ReserveConfigurationMap memory configuration = reserveData.configuration;
+        ltv = configuration.getLtv();
+        liquidationThreshold = configuration.getLiquidationThreshold();
+        tokenUnit = configuration.getDecimals();
 
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == eModeCat) {
+        unchecked {
+            tokenUnit = 10 ** tokenUnit;
+        }
+
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == configuration.getEModeCategory()) {
             uint256 eModeUnderlyingPrice;
             if (vars.eModeCategory.priceSource != address(0)) {
                 eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
@@ -296,43 +302,32 @@ abstract contract MorphoInternal is MorphoStorage {
             underlyingPrice = vars.oracle.getAssetPrice(underlying);
         }
 
-        // LTV should be zero if Morpho has not enabled this asset as collateral
-        if (!vars.morphoPoolConfig.isUsingAsCollateral(reserveData.id)) {
-            ltv = 0;
-        }
-
         // If a LTV has been reduced to 0 on Aave v3, the other assets of the collateral are frozen.
         // In response, Morpho disables the asset as collateral and sets its liquidation threshold to 0.
-        if (ltv == 0) {
-            liquidationThreshold = 0;
-        }
-
-        unchecked {
-            tokenUnit = 10 ** tokenUnit;
-        }
+        if (ltv == 0) liquidationThreshold = 0;
     }
 
     function _updateInDS(
         address poolToken,
         address user,
-        LogarithmicBuckets.BucketList storage poolMarket,
-        LogarithmicBuckets.BucketList storage p2pMarket,
+        LogarithmicBuckets.BucketList storage poolBuckets,
+        LogarithmicBuckets.BucketList storage p2pBuckets,
         uint256 onPool,
         uint256 inP2P,
         bool demoting
     ) internal {
-        uint256 formerOnPool = poolMarket.getValueOf(user);
-        uint256 formerInP2P = p2pMarket.getValueOf(user);
+        uint256 formerOnPool = poolBuckets.getValueOf(user);
+        uint256 formerInP2P = p2pBuckets.getValueOf(user);
 
         if (onPool != formerOnPool) {
             if (address(_rewardsManager) != address(0)) {
                 _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
 
-            poolMarket.update(user, onPool, demoting);
+            poolBuckets.update(user, onPool, demoting);
         }
 
-        if (inP2P != formerInP2P) p2pMarket.update(user, inP2P, true);
+        if (inP2P != formerInP2P) p2pBuckets.update(user, inP2P, true);
     }
 
     function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
@@ -414,7 +409,7 @@ abstract contract MorphoInternal is MorphoStorage {
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
         (indexes.supply.p2pIndex, indexes.borrow.p2pIndex) = InterestRatesLib.computeP2PIndexes(
-            Types.RatesParams({
+            Types.IndexesParams({
                 lastSupplyIndexes: lastIndexes.supply,
                 lastBorrowIndexes: lastIndexes.borrow,
                 poolSupplyIndex: indexes.supply.poolIndex,
@@ -422,7 +417,7 @@ abstract contract MorphoInternal is MorphoStorage {
                 reserveFactor: market.reserveFactor,
                 p2pIndexCursor: market.p2pIndexCursor,
                 deltas: market.deltas,
-                proportionIdle: _proportionIdle(underlying)
+                proportionIdle: market.getProportionIdle()
             })
         );
     }
@@ -432,9 +427,6 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256)
     {
-        // If the user is not borrowing any asset, return an infinite health factor.
-        if (_userBorrows[user].length() == 0) return type(uint256).max;
-
         Types.LiquidityData memory liquidityData = _liquidityData(underlying, user, withdrawnAmount, 0);
 
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
@@ -448,16 +440,17 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 poolSupplyIndex
     ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
         amountToLiquidate = maxToLiquidate;
-        (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
-            _POOL.getConfiguration(underlyingCollateral).getParams();
-        (,,, uint256 borrowTokenUnit,,) = _POOL.getConfiguration(underlyingBorrowed).getParams();
+        DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(underlyingCollateral);
+        uint256 liquidationBonus = collateralConfig.getLiquidationBonus();
+        uint256 collateralTokenUnit = collateralConfig.getDecimals();
+        uint256 borrowTokenUnit = _POOL.getConfiguration(underlyingBorrowed).getDecimals();
 
         unchecked {
             collateralTokenUnit = 10 ** collateralTokenUnit;
             borrowTokenUnit = 10 ** borrowTokenUnit;
         }
 
-        IPriceOracleGetter oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         uint256 borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
         uint256 collateralPrice = oracle.getAssetPrice(underlyingCollateral);
 
@@ -472,16 +465,5 @@ abstract contract MorphoInternal is MorphoStorage {
                 (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
             ).percentDiv(liquidationBonus);
         }
-    }
-
-    /// @dev Returns a ray.
-    function _proportionIdle(address underlying) internal view returns (uint256) {
-        Types.Market storage market = _market[underlying];
-        uint256 idleSupply = market.idleSupply;
-        if (idleSupply == 0) {
-            return 0;
-        }
-        uint256 totalP2PSupplied = market.deltas.supply.scaledTotalP2P.rayMul(market.indexes.supply.p2pIndex);
-        return idleSupply.rayDivUp(totalP2PSupplied);
     }
 }

@@ -73,7 +73,7 @@ contract IntegrationTest is ForkTest {
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImpl)), address(proxyAdmin), "");
         morpho = Morpho(payable(address(morphoProxy)));
 
-        morpho.initialize(address(positionsManager), Types.MaxLoops({supply: 10, borrow: 10, repay: 10, withdraw: 10}));
+        morpho.initialize(address(positionsManager), Types.MaxLoops({repay: 10, withdraw: 10}));
     }
 
     function _initUser(string memory name) internal returns (TestUser user) {

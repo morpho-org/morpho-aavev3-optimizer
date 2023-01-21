@@ -10,7 +10,7 @@ library InterestRatesLib {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
-    function computeP2PIndexes(Types.RatesParams memory params)
+    function computeP2PIndexes(Types.IndexesParams memory params)
         external
         pure
         returns (uint256 newP2PSupplyIndex, uint256 newP2PBorrowIndex)
