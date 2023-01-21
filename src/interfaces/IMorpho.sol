@@ -17,7 +17,7 @@ interface IMorphoGetters {
     function scaledPoolBorrowBalance(address underlying, address user) external view returns (uint256);
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256);
 
-    function isManaging(address owner, address manager) external view returns (bool);
+    function isManaging(address delegator, address manager) external view returns (bool);
     function userNonce(address user) external view returns (uint256);
 
     function defaultMaxLoops() external view returns (Types.MaxLoops memory);
@@ -107,7 +107,7 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
 
     function approveManager(address manager, bool isAllowed) external;
     function approveManagerWithSig(
-        address owner,
+        address delegator,
         address manager,
         bool isAllowed,
         uint256 nonce,

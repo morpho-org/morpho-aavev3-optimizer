@@ -81,8 +81,8 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _userBorrows[user].values();
     }
 
-    function isManaging(address owner, address manager) external view returns (bool) {
-        return _isManaging[owner][manager];
+    function isManaging(address delegator, address manager) external view returns (bool) {
+        return _isManaging[delegator][manager];
     }
 
     function userNonce(address user) external view returns (uint256) {

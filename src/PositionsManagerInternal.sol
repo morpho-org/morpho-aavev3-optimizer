@@ -33,8 +33,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    function _validatePermission(address owner, address manager) internal view {
-        if (!(owner == manager || _isManaging[owner][manager])) revert Errors.PermissionDenied();
+    function _validatePermission(address delegator, address manager) internal view {
+        if (!(delegator == manager || _isManaging[delegator][manager])) revert Errors.PermissionDenied();
     }
 
     function _validateInput(address underlying, uint256 amount, address user)
