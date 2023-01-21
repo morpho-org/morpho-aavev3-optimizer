@@ -5,9 +5,7 @@ import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {Types} from "./libraries/Types.sol";
-import {Errors} from "./libraries/Errors.sol";
 import {Constants} from "./libraries/Constants.sol";
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
