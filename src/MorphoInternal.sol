@@ -280,16 +280,17 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         underlyingPrice = vars.oracle.getAssetPrice(underlying);
 
-        uint256 decimals;
-        uint256 eModeCat;
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
-        (ltv, liquidationThreshold,, decimals,, eModeCat) = reserveData.configuration.getParams();
+        DataTypes.ReserveConfigurationMap memory configuration = reserveData.configuration;
+        ltv = configuration.getLtv();
+        liquidationThreshold = configuration.getLiquidationThreshold();
+        uint256 decimals = configuration.getDecimals();
 
         unchecked {
             tokenUnit = 10 ** decimals;
         }
 
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == eModeCat) {
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == configuration.getEModeCategory()) {
             uint256 eModeUnderlyingPrice;
             if (vars.eModeCategory.priceSource != address(0)) {
                 eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
@@ -417,7 +418,7 @@ abstract contract MorphoInternal is MorphoStorage {
                 reserveFactor: market.reserveFactor,
                 p2pIndexCursor: market.p2pIndexCursor,
                 deltas: market.deltas,
-                proportionIdle: _proportionIdle(underlying)
+                proportionIdle: market.getProportionIdle()
             })
         );
     }
@@ -440,9 +441,10 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 poolSupplyIndex
     ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
         amountToLiquidate = maxToLiquidate;
-        (,, uint256 liquidationBonus, uint256 collateralTokenUnit,,) =
-            _POOL.getConfiguration(underlyingCollateral).getParams();
-        (,,, uint256 borrowTokenUnit,,) = _POOL.getConfiguration(underlyingBorrowed).getParams();
+        DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(underlyingCollateral);
+        uint256 liquidationBonus = collateralConfig.getLiquidationBonus();
+        uint256 collateralTokenUnit = collateralConfig.getDecimals();
+        uint256 borrowTokenUnit = _POOL.getConfiguration(underlyingBorrowed).getDecimals();
 
         unchecked {
             collateralTokenUnit = 10 ** collateralTokenUnit;
@@ -464,16 +466,5 @@ abstract contract MorphoInternal is MorphoStorage {
                 (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
             ).percentDiv(liquidationBonus);
         }
-    }
-
-    /// @dev Returns a ray.
-    function _proportionIdle(address underlying) internal view returns (uint256) {
-        Types.Market storage market = _market[underlying];
-        uint256 idleSupply = market.idleSupply;
-        if (idleSupply == 0) {
-            return 0;
-        }
-        uint256 totalP2PSupplied = market.deltas.supply.scaledTotalP2P.rayMul(market.indexes.supply.p2pIndex);
-        return idleSupply.rayDivUp(totalP2PSupplied);
     }
 }
