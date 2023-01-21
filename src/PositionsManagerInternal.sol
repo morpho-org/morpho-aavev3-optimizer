@@ -208,8 +208,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (Types.BorrowWithdrawVars memory vars) {
-        Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+        Types.Market storage market = _market[underlying];
         Types.Deltas storage deltas = market.deltas;
 
         (amount, vars.inP2P) =
@@ -235,8 +235,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
-        Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+        Types.Market storage market = _market[underlying];
         Types.Deltas storage deltas = market.deltas;
 
         (vars.toRepay, amount, vars.onPool) =
@@ -261,7 +261,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         deltas.supply.increase(underlying, vars.toSupply - demoted, indexes.supply, false);
         deltas.decreaseP2P(underlying, demoted, vars.toSupply, indexes, false);
 
-        vars.toSupply = market.handleSupplyCap(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
+        vars.toSupply = market.supplyIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
     }
 
     function _executeWithdraw(
@@ -271,8 +271,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (Types.BorrowWithdrawVars memory vars) {
-        Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+        Types.Market storage market = _market[underlying];
         Types.Deltas storage deltas = market.deltas;
 
         (vars.toWithdraw, amount, vars.onPool) =

@@ -168,7 +168,7 @@ library MarketLib {
     /// @param amount The amount to repay. (by supplying on pool)
     /// @param configuration The reserve configuration for the market.
     /// @return toSupply The new amount to supply.
-    function handleSupplyCap(
+    function supplyIdle(
         Types.Market storage market,
         address underlying,
         uint256 amount,
