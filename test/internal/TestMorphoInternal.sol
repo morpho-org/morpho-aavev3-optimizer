@@ -5,7 +5,7 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
+import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
@@ -27,7 +27,7 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    IPriceOracleGetter internal oracle;
+    IAaveOracle internal oracle;
 
     function setUp() public virtual override {
         super.setUp();
@@ -52,7 +52,7 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
         _POOL.supplyToPool(usdt, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
 
-        oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
     }
 
     function createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {

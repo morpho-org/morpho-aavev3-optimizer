@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
 import {IPriceOracleSentinel} from "@aave-v3-core/interfaces/IPriceOracleSentinel.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -340,7 +339,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @notice Given variables from a market side, promotes users and calculates the amount to repay/withdraw from promote,
-    ///         the amount left to process, and the number of loops left. Updates the market side delta accordingly.
+    ///         the amount left to process, and the number of loops left.
+    /// @param underlying The underlying address.
+    /// @param amount The amount to supply/borrow.
+    /// @param maxLoops The maximum number of loops to run.
+    /// @param promote The promote function.
     /// @return The amount to repay/withdraw from promote, the amount left to process, and the number of loops left.
     function _promoteRoutine(
         address underlying,
