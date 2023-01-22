@@ -3,33 +3,18 @@ pragma solidity ^0.8.17;
 
 import {IMorphoSetters} from "./interfaces/IMorpho.sol";
 import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
-import {IPoolAddressesProvider, IPool} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
-import {PoolLib} from "./libraries/PoolLib.sol";
 
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
-import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
-
-import {Math} from "@morpho-utils/math/Math.sol";
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
-
-import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
-    using PoolLib for IPool;
     using MarketLib for Types.Market;
-    using SafeTransferLib for ERC20;
-    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-
-    using Math for uint256;
-    using WadRayMath for uint256;
 
     /// SETTERS ///
 
@@ -38,6 +23,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
         _positionsManager = newPositionsManager;
         _defaultMaxLoops = newDefaultMaxLoops;
+
+        emit Events.DefaultMaxLoopsSet(newDefaultMaxLoops.repay, newDefaultMaxLoops.withdraw);
+        emit Events.PositionsManagerSet(newPositionsManager);
     }
 
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external onlyOwner {

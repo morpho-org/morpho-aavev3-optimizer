@@ -18,6 +18,7 @@ import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configurati
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
+
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -37,8 +38,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    function _validatePermission(address owner, address manager) internal view {
-        if (!(owner == manager || _isManaging[owner][manager])) revert Errors.PermissionDenied();
+    function _validatePermission(address delegator, address manager) internal view {
+        if (!(delegator == manager || _isManaging[delegator][manager])) revert Errors.PermissionDenied();
     }
 
     function _validateInput(address underlying, uint256 amount, address user)
@@ -183,18 +184,27 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
+        Types.Deltas storage deltas = _market[underlying].deltas;
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         vars.onPool = marketBalances.scaledPoolSupplyBalance(user);
         vars.inP2P = marketBalances.scaledP2PSupplyBalance(user);
 
-        Types.Deltas storage deltas = _market[underlying].deltas;
+        /// Peer-to-peer supply ///
+
+        // Decrease the peer-to-peer borrow delta.
         (vars.toRepay, amount) = deltas.borrow.decrease(underlying, amount, indexes.borrow.poolIndex, true);
 
+        // Promote pool borrowers.
         uint256 promoted;
         (promoted, amount,) = _promoteRoutine(underlying, amount, maxLoops, _promoteBorrowers);
         vars.toRepay += promoted;
 
-        vars.inP2P = deltas.increaseP2P(underlying, vars.toRepay, vars.inP2P, indexes.supply.p2pIndex);
+        // Update the peer-to-peer totals.
+        vars.inP2P = deltas.increaseP2P(underlying, promoted, vars.toRepay, indexes, true);
+
+        /// Pool supply ///
+
+        // Supply on pool.
         (vars.toSupply, vars.onPool) = _addToPool(amount, vars.onPool, indexes.supply.poolIndex);
 
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
@@ -207,20 +217,30 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (Types.BorrowWithdrawVars memory vars) {
+        Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
         vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
-        Types.Market storage market = _market[underlying];
+        /// Peer-to-peer borrow ///
+
+        // Decrease the peer-to-peer idle supply.
         (amount, vars.inP2P) = market.borrowIdle(underlying, amount, vars.inP2P, indexes.borrow.p2pIndex);
 
+        // Decrease the peer-to-peer supply delta.
         (vars.toWithdraw, amount) = market.deltas.supply.decrease(underlying, amount, indexes.supply.poolIndex, false);
 
+        // Promote pool suppliers.
         uint256 promoted;
         (promoted, amount,) = _promoteRoutine(underlying, amount, maxLoops, _promoteSuppliers);
         vars.toWithdraw += promoted;
 
-        vars.inP2P = market.deltas.increaseP2P(underlying, vars.toWithdraw, vars.inP2P, indexes.borrow.p2pIndex);
+        // Update the peer-to-peer totals.
+        vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toWithdraw, indexes, false);
+
+        /// Pool borrow ///
+
+        // Borrow on pool.
         (vars.toBorrow, vars.onPool) = _addToPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
         _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
@@ -237,8 +257,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
         vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
 
+        /// Pool repay ///
+
+        // Repay borrow on pool.
         (vars.toRepay, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
+        // Repay borrow peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
 
         _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
@@ -247,19 +271,32 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         Types.Market storage market = _market[underlying];
 
+        // Decrease the peer-to-peer borrow delta.
         uint256 toRepayStep;
         (toRepayStep, amount) = market.deltas.borrow.decrease(underlying, amount, indexes.borrow.poolIndex, true);
         vars.toRepay += toRepayStep;
 
+        // Repay the fee.
         amount = market.deltas.repayFee(amount, indexes);
 
+        /// Transfer repay ///
+
+        // Promote pool borrowers.
         (toRepayStep, vars.toSupply, maxLoops) = _promoteRoutine(underlying, amount, maxLoops, _promoteBorrowers);
         vars.toRepay += toRepayStep;
 
+        /// Breaking repay ///
+
+        // Demote peer-to-peer suppliers.
         uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxLoops);
+
+        // Increase the peer-to-peer supply delta.
         market.deltas.supply.increase(underlying, vars.toSupply - demoted, indexes.supply, false);
+
+        // Update the peer-to-peer totals.
         market.deltas.decreaseP2P(underlying, demoted, vars.toSupply, indexes, false);
 
+        // Handle the supply cap.
         vars.toSupply = market.supplyIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
     }
 
@@ -274,26 +311,43 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.onPool = marketBalances.scaledPoolSupplyBalance(user);
         vars.inP2P = marketBalances.scaledP2PSupplyBalance(user);
 
+        /// Pool withdraw ///
+
+        // Withdraw supply on pool.
         (vars.toWithdraw, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.supply.poolIndex);
 
-        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
-
         Types.Market storage market = _market[underlying];
+
+        // Withdraw idle supply.
         amount = market.withdrawIdle(underlying, amount);
+
+        // Withdraw supply peer-to-peer.
+        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
 
         if (amount == 0) return vars;
 
+        // Decrease the peer-to-peer supply delta.
         uint256 toWithdrawStep;
         (toWithdrawStep, amount) = market.deltas.supply.decrease(underlying, amount, indexes.supply.poolIndex, false);
         vars.toWithdraw += toWithdrawStep;
 
+        /// Transfer withdraw ///
+
+        // Promote pool suppliers.
         (toWithdrawStep, vars.toBorrow, maxLoops) = _promoteRoutine(underlying, amount, maxLoops, _promoteSuppliers);
         vars.toWithdraw += toWithdrawStep;
 
+        /// Breaking withdraw ///
+
+        // Demote peer-to-peer borrowers.
         uint256 demoted = _demoteBorrowers(underlying, vars.toBorrow, maxLoops);
+
+        // Increase the peer-to-peer borrow delta.
         market.deltas.borrow.increase(underlying, vars.toBorrow - demoted, indexes.borrow, true);
+
+        // Update the peer-to-peer totals.
         market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow, indexes, true);
     }
 

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.17;
 
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
-import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -73,7 +72,6 @@ abstract contract MorphoInternal is MorphoStorage {
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
-        market.lastUpdateTimestamp = uint32(block.timestamp);
 
         market.underlying = underlying;
         market.aToken = reserveData.aTokenAddress;
@@ -85,7 +83,9 @@ abstract contract MorphoInternal is MorphoStorage {
 
         ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
 
-        emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
+        emit Events.MarketCreated(
+            underlying, reserveFactor, p2pIndexCursor, indexes.supply.poolIndex, indexes.borrow.poolIndex
+            );
     }
 
     function _claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) internal {
@@ -147,9 +147,9 @@ abstract contract MorphoInternal is MorphoStorage {
         return keccak256(abi.encodePacked(Constants.EIP712_MSG_PREFIX, _DOMAIN_SEPARATOR, structHash));
     }
 
-    function _approveManager(address owner, address manager, bool isAllowed) internal {
-        _isManaging[owner][manager] = isAllowed;
-        emit Events.ManagerApproval(owner, manager, isAllowed);
+    function _approveManager(address delegator, address manager, bool isAllowed) internal {
+        _isManaging[delegator][manager] = isAllowed;
+        emit Events.ManagerApproval(delegator, manager, isAllowed);
     }
 
     function _getUserBalanceFromIndexes(
@@ -283,10 +283,10 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.ReserveConfigurationMap memory configuration = reserveData.configuration;
         ltv = configuration.getLtv();
         liquidationThreshold = configuration.getLiquidationThreshold();
-        uint256 decimals = configuration.getDecimals();
+        tokenUnit = configuration.getDecimals();
 
         unchecked {
-            tokenUnit = 10 ** decimals;
+            tokenUnit = 10 ** tokenUnit;
         }
 
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == configuration.getEModeCategory()) {
