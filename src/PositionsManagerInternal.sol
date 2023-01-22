@@ -111,6 +111,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
     }
 
+    /// @dev Validates a repay action.
+    function _validateRepay(address underlying, uint256 amount, address user)
+        internal
+        view
+        returns (Types.Market storage market)
+    {
+        market = _validateInput(underlying, amount, user);
+        if (market.isRepayPaused()) revert Errors.RepayIsPaused();
+    }
+
     /// @dev Validates a withdraw action.
     function _validateWithdraw(address underlying, uint256 amount, address supplier, address receiver)
         internal
@@ -136,16 +146,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
             revert Errors.UnauthorizedWithdraw();
         }
-    }
-
-    /// @dev Validates a repay action.
-    function _validateRepay(address underlying, uint256 amount, address user)
-        internal
-        view
-        returns (Types.Market storage market)
-    {
-        market = _validateInput(underlying, amount, user);
-        if (market.isRepayPaused()) revert Errors.RepayIsPaused();
     }
 
     /// @dev Authorizes a liquidate action.

@@ -118,6 +118,34 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         return amount;
     }
 
+    /// @notice Implements the repay logic.
+    /// @param underlying The address of the underlying asset to borrow.
+    /// @param amount The amount of `underlying` to repay.
+    /// @param onBehalf The address whose position will be repaid.
+    /// @return The amount repaid.
+    function repayLogic(address underlying, uint256 amount, address repayer, address onBehalf)
+        external
+        returns (uint256)
+    {
+        Types.Market storage market = _validateRepay(underlying, amount, onBehalf);
+
+        Types.Indexes256 memory indexes = _updateIndexes(underlying);
+        amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes.borrow), amount);
+
+        if (amount == 0) return 0;
+
+        ERC20(underlying).transferFrom2(repayer, address(this), amount);
+
+        Types.SupplyRepayVars memory vars = _executeRepay(underlying, amount, onBehalf, _defaultMaxLoops.repay, indexes);
+
+        _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
+        _POOL.supplyToPool(underlying, vars.toSupply);
+
+        emit Events.Repaid(repayer, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
+
+        return amount;
+    }
+
     /// @notice Implements the withdraw logic.
     /// @param underlying The address of the underlying asset to withdraw.
     /// @param amount The amount of `underlying` to withdraw.
@@ -176,34 +204,6 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         ERC20(underlying).safeTransfer(receiver, amount);
 
         emit Events.CollateralWithdrawn(supplier, receiver, underlying, amount, collateralBalance);
-
-        return amount;
-    }
-
-    /// @notice Implements the repay logic.
-    /// @param underlying The address of the underlying asset to borrow.
-    /// @param amount The amount of `underlying` to repay.
-    /// @param onBehalf The address whose position will be repaid.
-    /// @return The amount repaid.
-    function repayLogic(address underlying, uint256 amount, address repayer, address onBehalf)
-        external
-        returns (uint256)
-    {
-        Types.Market storage market = _validateRepay(underlying, amount, onBehalf);
-
-        Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes.borrow), amount);
-
-        if (amount == 0) return 0;
-
-        ERC20(underlying).transferFrom2(repayer, address(this), amount);
-
-        Types.SupplyRepayVars memory vars = _executeRepay(underlying, amount, onBehalf, _defaultMaxLoops.repay, indexes);
-
-        _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
-        _POOL.supplyToPool(underlying, vars.toSupply);
-
-        emit Events.Repaid(repayer, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
 
         return amount;
     }
