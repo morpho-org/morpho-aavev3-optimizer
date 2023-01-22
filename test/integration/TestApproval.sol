@@ -14,7 +14,7 @@ contract TestApproval is IntegrationTest {
     uint256 internal constant OWNER_PK = 0xA11CE;
     uint256 internal constant MANAGER_PK = 0xB0B;
 
-    address internal immutable OWNER = vm.addr(OWNER_PK);
+    address internal immutable DELEGATOR = vm.addr(OWNER_PK);
     address internal immutable MANAGER = vm.addr(MANAGER_PK);
 
     SigUtils internal sigUtils;
@@ -25,22 +25,22 @@ contract TestApproval is IntegrationTest {
         sigUtils = new SigUtils(morpho.DOMAIN_SEPARATOR());
     }
 
-    function testApproveManager(address owner, address manager, bool isAllowed) public {
-        vm.assume(owner != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
+    function testApproveManager(address delegator, address manager, bool isAllowed) public {
+        vm.assume(delegator != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
 
-        vm.prank(owner);
+        vm.prank(delegator);
         morpho.approveManager(manager, isAllowed);
-        assertEq(morpho.isManaging(owner, manager), isAllowed);
+        assertEq(morpho.isManaging(delegator, manager), isAllowed);
     }
 
     function testApproveManagerWithSig(uint128 deadline) public {
         vm.assume(deadline > block.timestamp);
 
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
-            owner: OWNER,
+            delegator: DELEGATOR,
             manager: MANAGER,
             isAllowed: true,
-            nonce: morpho.userNonce(OWNER),
+            nonce: morpho.userNonce(DELEGATOR),
             deadline: block.timestamp + deadline
         });
 
@@ -50,7 +50,7 @@ contract TestApproval is IntegrationTest {
         (sig.v, sig.r, sig.s) = vm.sign(OWNER_PK, digest);
 
         morpho.approveManagerWithSig(
-            authorization.owner,
+            authorization.delegator,
             authorization.manager,
             authorization.isAllowed,
             authorization.nonce,
@@ -58,18 +58,18 @@ contract TestApproval is IntegrationTest {
             sig
         );
 
-        assertEq(morpho.isManaging(OWNER, MANAGER), true);
-        assertEq(morpho.userNonce(OWNER), 1);
+        assertEq(morpho.isManaging(DELEGATOR, MANAGER), true);
+        assertEq(morpho.userNonce(DELEGATOR), 1);
     }
 
     function testRevertExpiredApproveManagerWithSig(uint128 deadline) public {
         vm.assume(deadline <= block.timestamp);
 
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
-            owner: OWNER,
+            delegator: DELEGATOR,
             manager: MANAGER,
             isAllowed: true,
-            nonce: morpho.userNonce(OWNER),
+            nonce: morpho.userNonce(DELEGATOR),
             deadline: deadline
         });
 
@@ -79,7 +79,7 @@ contract TestApproval is IntegrationTest {
 
         vm.expectRevert(abi.encodeWithSelector(Errors.SignatureExpired.selector));
         morpho.approveManagerWithSig(
-            authorization.owner,
+            authorization.delegator,
             authorization.manager,
             authorization.isAllowed,
             authorization.nonce,
@@ -90,20 +90,20 @@ contract TestApproval is IntegrationTest {
 
     function testRevertInvalidSignatoryApproveManagerWithSig() public {
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
-            owner: OWNER,
+            delegator: DELEGATOR,
             manager: MANAGER,
             isAllowed: true,
-            nonce: morpho.userNonce(OWNER),
+            nonce: morpho.userNonce(DELEGATOR),
             deadline: block.timestamp + 1 days
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);
         Types.Signature memory sig;
-        (sig.v, sig.r, sig.s) = vm.sign(MANAGER_PK, digest); // manager signs owner's approval.
+        (sig.v, sig.r, sig.s) = vm.sign(MANAGER_PK, digest); // manager signs delegator's approval.
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidSignatory.selector));
         morpho.approveManagerWithSig(
-            authorization.owner,
+            authorization.delegator,
             authorization.manager,
             authorization.isAllowed,
             authorization.nonce,
@@ -113,10 +113,10 @@ contract TestApproval is IntegrationTest {
     }
 
     function testRevertInvalidNonceApproveManagerWithSig(uint256 nonce) public {
-        vm.assume(nonce != morpho.userNonce(OWNER));
+        vm.assume(nonce != morpho.userNonce(DELEGATOR));
 
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
-            owner: OWNER,
+            delegator: DELEGATOR,
             manager: MANAGER,
             isAllowed: true,
             nonce: nonce,
@@ -129,7 +129,7 @@ contract TestApproval is IntegrationTest {
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidNonce.selector));
         morpho.approveManagerWithSig(
-            authorization.owner,
+            authorization.delegator,
             authorization.manager,
             authorization.isAllowed,
             authorization.nonce,
@@ -140,10 +140,10 @@ contract TestApproval is IntegrationTest {
 
     function testRevertSignatureReplayApproveManagerWithSig() public {
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
-            owner: OWNER,
+            delegator: DELEGATOR,
             manager: MANAGER,
             isAllowed: true,
-            nonce: morpho.userNonce(OWNER),
+            nonce: morpho.userNonce(DELEGATOR),
             deadline: block.timestamp + 1 days
         });
 
@@ -152,7 +152,7 @@ contract TestApproval is IntegrationTest {
         (sig.v, sig.r, sig.s) = vm.sign(OWNER_PK, digest);
 
         morpho.approveManagerWithSig(
-            authorization.owner,
+            authorization.delegator,
             authorization.manager,
             authorization.isAllowed,
             authorization.nonce,
@@ -162,7 +162,7 @@ contract TestApproval is IntegrationTest {
 
         vm.expectRevert(abi.encodeWithSelector(Errors.InvalidNonce.selector));
         morpho.approveManagerWithSig(
-            authorization.owner,
+            authorization.delegator,
             authorization.manager,
             authorization.isAllowed,
             authorization.nonce,

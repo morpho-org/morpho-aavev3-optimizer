@@ -35,7 +35,7 @@ library DeltasLib {
         promotedDelta.scaledTotalP2P = promotedDelta.scaledTotalP2P + promotedP2P;
         counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P + amount.rayDiv(counterIndexes.p2pIndex);
 
-        emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
+        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
 
         return promotedP2P;
     }
@@ -64,7 +64,7 @@ library DeltasLib {
         demotedDelta.scaledTotalP2P = demotedDelta.scaledTotalP2P.zeroFloorSub(demoted.rayDiv(demotedIndexes.p2pIndex));
         counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P.zeroFloorSub(amount.rayDiv(counterIndexes.p2pIndex));
 
-        emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
+        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
     }
 
     /// @notice Calculates & deducts the reserve fee to repay from the given amount, updating the total peer-to-peer amount.

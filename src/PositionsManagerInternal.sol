@@ -18,6 +18,7 @@ import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configurati
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
+
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -37,8 +38,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    function _validatePermission(address owner, address manager) internal view {
-        if (!(owner == manager || _isManaging[owner][manager])) revert Errors.PermissionDenied();
+    function _validatePermission(address delegator, address manager) internal view {
+        if (!(delegator == manager || _isManaging[delegator][manager])) revert Errors.PermissionDenied();
     }
 
     function _validateInput(address underlying, uint256 amount, address user)
