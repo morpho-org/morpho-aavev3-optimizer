@@ -60,7 +60,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         emit Events.Supplied(from, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
 
-        return vars.toSupply + vars.toRepay;
+        return amount;
     }
 
     /// @notice Implements the supply collateral logic.
