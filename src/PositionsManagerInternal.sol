@@ -38,10 +38,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
+    /// @dev Validates the manager's permission.
     function _validatePermission(address delegator, address manager) internal view {
         if (!(delegator == manager || _isManaging[delegator][manager])) revert Errors.PermissionDenied();
     }
 
+    /// @dev Validates the input.
     function _validateInput(address underlying, uint256 amount, address user)
         internal
         view
@@ -54,6 +56,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (!market.isCreated()) revert Errors.MarketNotCreated();
     }
 
+    /// @dev Validates the manager's permission and the input.
     function _validateManagerInput(address underlying, uint256 amount, address onBehalf, address receiver)
         internal
         view
@@ -66,6 +69,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _validatePermission(onBehalf, msg.sender);
     }
 
+    /// @dev Validates a supply action.
     function _validateSupply(address underlying, uint256 amount, address user)
         internal
         view
@@ -75,6 +79,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.isSupplyPaused()) revert Errors.SupplyIsPaused();
     }
 
+    /// @dev Validates a supply collateral action.
     function _validateSupplyCollateral(address underlying, uint256 amount, address user)
         internal
         view
@@ -84,6 +89,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.isSupplyCollateralPaused()) revert Errors.SupplyCollateralIsPaused();
     }
 
+    /// @dev Validates a borrow action.
     function _validateBorrow(address underlying, uint256 amount, address borrower, address receiver)
         internal
         view
@@ -99,11 +105,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
     }
 
+    /// @dev Authorizes a borrow action.
     function _authorizeBorrow(address underlying, uint256 amount, address borrower) internal view {
         Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
         if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
     }
 
+    /// @dev Validates a withdraw action.
     function _validateWithdraw(address underlying, uint256 amount, address supplier, address receiver)
         internal
         view
@@ -113,6 +121,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.isWithdrawPaused()) revert Errors.WithdrawIsPaused();
     }
 
+    /// @dev Validates a withdraw collateral action.
     function _validateWithdrawCollateral(address underlying, uint256 amount, address supplier, address receiver)
         internal
         view
@@ -122,12 +131,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.isWithdrawCollateralPaused()) revert Errors.WithdrawCollateralIsPaused();
     }
 
+    /// @dev Authorizes a withdraw collateral action.
     function _authorizeWithdrawCollateral(address underlying, uint256 amount, address supplier) internal view {
         if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
             revert Errors.UnauthorizedWithdraw();
         }
     }
 
+    /// @dev Validates a repay action.
     function _validateRepay(address underlying, uint256 amount, address user)
         internal
         view
@@ -137,6 +148,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.isRepayPaused()) revert Errors.RepayIsPaused();
     }
 
+    /// @dev Authorizes a liquidate action.
     function _authorizeLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
         internal
         view
@@ -171,6 +183,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return Constants.MAX_CLOSE_FACTOR;
     }
 
+    /// @dev Executes a supply action.
     function _executeSupply(
         address underlying,
         uint256 amount,
@@ -204,6 +217,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
     }
 
+    /// @dev Executes a borrow action.
     function _executeBorrow(
         address underlying,
         uint256 amount,
@@ -240,6 +254,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
     }
 
+    /// @dev Executes a repay action.
     function _executeRepay(
         address underlying,
         uint256 amount,
@@ -294,6 +309,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.toSupply = market.supplyIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
     }
 
+    /// @dev Executes a withdraw action.
     function _executeWithdraw(
         address underlying,
         uint256 amount,
@@ -345,6 +361,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow, indexes, true);
     }
 
+    /// @dev Executes a supply action.
     function _executeSupplyCollateral(address underlying, uint256 amount, address user, uint256 poolSupplyIndex)
         internal
         returns (uint256 newBalance)
@@ -357,6 +374,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _userCollaterals[user].add(underlying);
     }
 
+    /// @dev Executes a withdraw collateral action.
     function _executeWithdrawCollateral(address underlying, uint256 amount, address user, uint256 poolSupplyIndex)
         internal
         returns (uint256 newBalance)

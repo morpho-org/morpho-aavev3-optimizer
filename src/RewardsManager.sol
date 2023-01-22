@@ -13,8 +13,8 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
 
-/// @title RewardsManager.
-/// @author Morpho Labs.
+/// @title RewardsManager
+/// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
 /// @notice Contract managing Aave's protocol rewards.
 contract RewardsManager is IRewardsManager, Initializable {

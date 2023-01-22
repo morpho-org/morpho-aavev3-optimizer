@@ -36,6 +36,13 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
     /// EXTERNAL ///
 
+    /// @notice Implements the supply logic.
+    /// @param underlying The address of the underlying asset to supply.
+    /// @param amount The amount of `underlying` to supply.
+    /// @param from The address to transfer the underlying from.
+    /// @param onBehalf The address that will receive the supply position.
+    /// @param maxLoops The maximum number of loops to execute the matching process.
+    /// @return The amount supplied.
     function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)
         external
         returns (uint256)
@@ -56,6 +63,12 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         return vars.toSupply + vars.toRepay;
     }
 
+    /// @notice Implements the supply collateral logic.
+    /// @param underlying The address of the underlying asset to supply.
+    /// @param amount The amount of `underlying` to supply.
+    /// @param from The address to transfer the underlying from.
+    /// @param onBehalf The address that will receive the collateral position.
+    /// @return The collateral amount supplied.
     function supplyCollateralLogic(address underlying, uint256 amount, address from, address onBehalf)
         external
         returns (uint256)
@@ -75,6 +88,13 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         return amount;
     }
 
+    /// @notice Implements the borrow logic.
+    /// @param underlying The address of the underlying asset to borrow.
+    /// @param amount The amount of `underlying` to borrow.
+    /// @param borrower The address that will receive the debt position.
+    /// @param receiver The address that will receive the borrowed funds.
+    /// @param maxLoops The maximum number of loops to execute the matching process.
+    /// @return The amount borrowed.
     function borrowLogic(address underlying, uint256 amount, address borrower, address receiver, uint256 maxLoops)
         external
         returns (uint256)
@@ -98,6 +118,12 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         return amount;
     }
 
+    /// @notice Implements the withdraw logic.
+    /// @param underlying The address of the underlying asset to withdraw.
+    /// @param amount The amount of `underlying` to withdraw.
+    /// @param supplier The address whose position will be withdrawn.
+    /// @param receiver The address that will receive the withdrawn funds.
+    /// @return The amount withdrawn.
     function withdrawLogic(address underlying, uint256 amount, address supplier, address receiver)
         external
         returns (uint256)
@@ -122,6 +148,12 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         return amount;
     }
 
+    /// @notice Implements the withdraw collateral logic.
+    /// @param underlying The address of the underlying asset to withdraw.
+    /// @param amount The amount of `underlying` to withdraw.
+    /// @param supplier The address whose position will be withdrawn.
+    /// @param receiver The address that will receive the withdrawn funds.
+    /// @return The collateral amount withdrawn.
     function withdrawCollateralLogic(address underlying, uint256 amount, address supplier, address receiver)
         external
         returns (uint256)
@@ -148,6 +180,11 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         return amount;
     }
 
+    /// @notice Implements the repay logic.
+    /// @param underlying The address of the underlying asset to borrow.
+    /// @param amount The amount of `underlying` to repay.
+    /// @param onBehalf The address whose position will be repaid.
+    /// @return The amount repaid.
     function repayLogic(address underlying, uint256 amount, address repayer, address onBehalf)
         external
         returns (uint256)
@@ -171,6 +208,13 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         return amount;
     }
 
+    /// @notice Implements the liquidation logic.
+    /// @param underlyingBorrowed The address of the underlying borrowed to repay.
+    /// @param underlyingCollateral The address of the underlying collateral to seize.
+    /// @param amount The amount of `underlyingBorrowed` to repay.
+    /// @param borrower The address of the borrower to liquidate.
+    /// @param liquidator The address that will liquidate the borrower.
+    /// @return The `underlyingBorrowed` amount repaid and the `underlyingCollateral` amount seized.
     function liquidateLogic(
         address underlyingBorrowed,
         address underlyingCollateral,
