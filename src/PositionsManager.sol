@@ -10,7 +10,6 @@ import {PoolLib} from "./libraries/PoolLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {Permit2Lib} from "./libraries/Permit2Lib.sol";
@@ -29,7 +28,6 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     using Math for uint256;
-    using WadRayMath for uint256;
     using PercentageMath for uint256;
 
     /// CONSTRUCTOR ///
@@ -68,15 +66,11 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         ERC20(underlying).transferFrom2(from, address(this), amount);
 
-        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-
-        uint256 newBalance = marketBalances.collateral[onBehalf] + amount.rayDivDown(indexes.supply.poolIndex);
-        marketBalances.collateral[onBehalf] = newBalance;
-        _userCollaterals[onBehalf].add(underlying);
+        uint256 collateralBalance = _executeSupplyCollateral(underlying, amount, onBehalf, indexes.supply.poolIndex);
 
         _POOL.supplyToPool(underlying, amount);
 
-        emit Events.CollateralSupplied(from, onBehalf, underlying, amount, newBalance);
+        emit Events.CollateralSupplied(from, onBehalf, underlying, amount, collateralBalance);
 
         return amount;
     }
@@ -135,30 +129,28 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Market storage market = _validateWithdrawCollateral(underlying, amount, supplier, receiver);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, indexes.supply.poolIndex), amount);
+        uint256 poolSupplyIndex = indexes.supply.poolIndex;
+        amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, poolSupplyIndex), amount);
 
         if (amount == 0) return 0;
 
         // The following check requires storage indexes to be up-to-date.
         _authorizeWithdrawCollateral(underlying, amount, supplier);
 
-        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-
-        uint256 newBalance = marketBalances.collateral[supplier].zeroFloorSub(amount.rayDivUp(indexes.supply.poolIndex));
-        marketBalances.collateral[supplier] = newBalance;
-        if (newBalance == 0) _userCollaterals[supplier].remove(underlying);
+        uint256 collateralBalance = _executeWithdrawCollateral(underlying, amount, supplier, poolSupplyIndex);
 
         _POOL.withdrawFromPool(underlying, market.aToken, amount);
+
         ERC20(underlying).safeTransfer(receiver, amount);
 
-        emit Events.CollateralWithdrawn(supplier, receiver, underlying, amount, newBalance);
+        emit Events.CollateralWithdrawn(supplier, receiver, underlying, amount, collateralBalance);
 
         return amount;
     }
 
     function repayLogic(address underlying, uint256 amount, address repayer, address onBehalf)
         external
-        returns (uint256 repaid)
+        returns (uint256)
     {
         Types.Market storage market = _validateRepay(underlying, amount, onBehalf);
 
@@ -174,9 +166,9 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
         _POOL.supplyToPool(underlying, vars.toSupply);
 
-        repaid = vars.toRepay + vars.toSupply;
+        emit Events.Repaid(repayer, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
 
-        emit Events.Repaid(repayer, onBehalf, underlying, repaid, vars.onPool, vars.inP2P);
+        return amount;
     }
 
     function liquidateLogic(
@@ -185,46 +177,45 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         uint256 amount,
         address borrower,
         address liquidator
-    ) external returns (uint256 liquidated, uint256 seized) {
+    ) external returns (uint256, uint256) {
         Types.LiquidateVars memory vars;
-
         Types.Indexes256 memory borrowIndexes = _updateIndexes(underlyingBorrowed);
         Types.Indexes256 memory collateralIndexes = _updateIndexes(underlyingCollateral);
 
         vars.closeFactor = _authorizeLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
 
-        vars.amountToLiquidate = Math.min(
-            amount,
+        amount = Math.min(
             _getUserBorrowBalanceFromIndexes(underlyingBorrowed, borrower, borrowIndexes.borrow).percentMul(
                 vars.closeFactor
-            ) // Max liquidatable debt.
+            ), // Max liquidatable debt.
+            amount
         );
 
-        (vars.amountToLiquidate, vars.amountToSeize) = _calculateAmountToSeize(
-            underlyingBorrowed,
-            underlyingCollateral,
-            vars.amountToLiquidate,
-            borrower,
-            collateralIndexes.supply.poolIndex
+        (amount, vars.seized) = _calculateAmountToSeize(
+            underlyingBorrowed, underlyingCollateral, amount, borrower, collateralIndexes.supply.poolIndex
         );
 
-        ERC20(underlyingBorrowed).transferFrom2(liquidator, address(this), vars.amountToLiquidate);
+        if (amount == 0) return (0, 0);
 
-        Types.SupplyRepayVars memory repayVars =
-            _executeRepay(underlyingBorrowed, vars.amountToLiquidate, borrower, 0, borrowIndexes);
-        Types.BorrowWithdrawVars memory withdrawVars =
-            _executeWithdraw(underlyingCollateral, vars.amountToSeize, borrower, 0, collateralIndexes);
+        ERC20(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
+
+        Types.SupplyRepayVars memory repayVars = _executeRepay(underlyingBorrowed, amount, borrower, 0, borrowIndexes);
+
+        emit Events.Repaid(liquidator, borrower, underlyingBorrowed, amount, repayVars.onPool, repayVars.inP2P);
+
+        vars.collateralBalance =
+            _executeWithdrawCollateral(underlyingCollateral, vars.seized, borrower, collateralIndexes.supply.poolIndex);
+
+        emit Events.CollateralWithdrawn(borrower, liquidator, underlyingCollateral, vars.seized, vars.collateralBalance);
 
         _POOL.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, repayVars.toRepay);
         _POOL.supplyToPool(underlyingBorrowed, repayVars.toSupply);
-        _POOL.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, withdrawVars.toWithdraw);
-        _POOL.borrowFromPool(underlyingCollateral, withdrawVars.toBorrow);
+        _POOL.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.seized);
 
-        ERC20(underlyingCollateral).safeTransfer(liquidator, vars.amountToSeize);
+        ERC20(underlyingCollateral).safeTransfer(liquidator, vars.seized);
 
-        emit Events.Liquidated(
-            liquidator, borrower, underlyingBorrowed, vars.amountToLiquidate, underlyingCollateral, vars.amountToSeize
-            );
-        return (vars.amountToLiquidate, vars.amountToSeize);
+        emit Events.Liquidated(liquidator, borrower, underlyingBorrowed, amount, underlyingCollateral, vars.seized);
+
+        return (amount, vars.seized);
     }
 }

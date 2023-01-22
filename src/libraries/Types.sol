@@ -165,7 +165,7 @@ library Types {
 
     struct LiquidateVars {
         uint256 closeFactor;
-        uint256 amountToLiquidate;
-        uint256 amountToSeize;
+        uint256 seized;
+        uint256 collateralBalance;
     }
 }

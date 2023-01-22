@@ -140,41 +140,35 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _authorizeLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
         internal
         view
-        returns (uint256 closeFactor)
+        returns (uint256)
     {
         Types.Market storage borrowMarket = _market[underlyingBorrowed];
         Types.Market storage collateralMarket = _market[underlyingCollateral];
 
         if (!collateralMarket.isCreated() || !borrowMarket.isCreated()) revert Errors.MarketNotCreated();
+
         if (collateralMarket.isLiquidateCollateralPaused()) revert Errors.LiquidateCollateralIsPaused();
         if (borrowMarket.isLiquidateBorrowPaused()) revert Errors.LiquidateBorrowIsPaused();
 
-        if (
-            !_userCollaterals[borrower].contains(underlyingCollateral)
-                || !_userBorrows[borrower].contains(underlyingBorrowed)
-        ) {
-            revert Errors.UserNotMemberOfMarket();
+        if (borrowMarket.isDeprecated()) return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
+
+        uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
+        if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+            revert Errors.UnauthorizedLiquidate();
         }
 
-        if (borrowMarket.isDeprecated()) {
-            return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
-        } else {
-            uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
+        if (healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD) {
             address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
 
-            if (
-                priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed()
-                    && healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD
-            ) {
-                revert Errors.UnauthorizedLiquidate();
-            } else if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+            if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
+            {
                 revert Errors.UnauthorizedLiquidate();
             }
 
-            closeFactor = healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD
-                ? Constants.DEFAULT_CLOSE_FACTOR
-                : Constants.MAX_CLOSE_FACTOR;
+            return Constants.DEFAULT_CLOSE_FACTOR;
         }
+
+        return Constants.MAX_CLOSE_FACTOR;
     }
 
     function _executeSupply(
@@ -349,6 +343,30 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Update the peer-to-peer totals.
         market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow, indexes, true);
+    }
+
+    function _executeSupplyCollateral(address underlying, uint256 amount, address user, uint256 poolSupplyIndex)
+        internal
+        returns (uint256 newBalance)
+    {
+        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+
+        newBalance = marketBalances.collateral[user] + amount.rayDivDown(poolSupplyIndex);
+        marketBalances.collateral[user] = newBalance;
+
+        _userCollaterals[user].add(underlying);
+    }
+
+    function _executeWithdrawCollateral(address underlying, uint256 amount, address user, uint256 poolSupplyIndex)
+        internal
+        returns (uint256 newBalance)
+    {
+        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+
+        newBalance = marketBalances.collateral[user].zeroFloorSub(amount.rayDivUp(poolSupplyIndex));
+        marketBalances.collateral[user] = newBalance;
+
+        if (newBalance == 0) _userCollaterals[user].remove(underlying);
     }
 
     /// @notice Given variables from a market side, calculates the amount to supply/borrow and a new on pool amount.
