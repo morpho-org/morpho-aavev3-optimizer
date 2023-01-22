@@ -2,7 +2,6 @@
 pragma solidity ^0.8.17;
 
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
-import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -147,9 +146,9 @@ abstract contract MorphoInternal is MorphoStorage {
         return keccak256(abi.encodePacked(Constants.EIP712_MSG_PREFIX, _DOMAIN_SEPARATOR, structHash));
     }
 
-    function _approveManager(address owner, address manager, bool isAllowed) internal {
-        _isManaging[owner][manager] = isAllowed;
-        emit Events.ManagerApproval(owner, manager, isAllowed);
+    function _approveManager(address delegator, address manager, bool isAllowed) internal {
+        _isManaging[delegator][manager] = isAllowed;
+        emit Events.ManagerApproval(delegator, manager, isAllowed);
     }
 
     function _getUserBalanceFromIndexes(

@@ -114,7 +114,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     }
 
     function approveManagerWithSig(
-        address owner,
+        address delegator,
         address manager,
         bool isAllowed,
         uint256 nonce,
@@ -125,12 +125,13 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         // v ∈ {27, 28} (source: https://ethereum.github.io/yellowpaper/paper.pdf #308)
         if (signature.v != 27 && signature.v != 28) revert Errors.InvalidValueV();
 
-        bytes32 structHash =
-            keccak256(abi.encode(Constants.EIP712_AUTHORIZATION_TYPEHASH, owner, manager, isAllowed, nonce, deadline));
+        bytes32 structHash = keccak256(
+            abi.encode(Constants.EIP712_AUTHORIZATION_TYPEHASH, delegator, manager, isAllowed, nonce, deadline)
+        );
         bytes32 digest = _hashEIP712TypedData(structHash);
         address signatory = ecrecover(digest, signature.v, signature.r, signature.s);
 
-        if (signatory == address(0) || owner != signatory) revert Errors.InvalidSignatory();
+        if (signatory == address(0) || delegator != signatory) revert Errors.InvalidSignatory();
         if (block.timestamp >= deadline) revert Errors.SignatureExpired();
 
         uint256 usedNonce = _userNonce[signatory]++;

@@ -5,9 +5,11 @@ import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {Types} from "./Types.sol";
 import {Events} from "./Events.sol";
+
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
