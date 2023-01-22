@@ -2,7 +2,6 @@
 pragma solidity ^0.8.17;
 
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
-import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -73,7 +72,6 @@ abstract contract MorphoInternal is MorphoStorage {
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
-        market.lastUpdateTimestamp = uint32(block.timestamp);
 
         market.underlying = underlying;
         market.aToken = reserveData.aTokenAddress;
@@ -85,7 +83,9 @@ abstract contract MorphoInternal is MorphoStorage {
 
         ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
 
-        emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
+        emit Events.MarketCreated(
+            underlying, reserveFactor, p2pIndexCursor, indexes.supply.poolIndex, indexes.borrow.poolIndex
+            );
     }
 
     function _claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) internal {
@@ -147,9 +147,9 @@ abstract contract MorphoInternal is MorphoStorage {
         return keccak256(abi.encodePacked(Constants.EIP712_MSG_PREFIX, _DOMAIN_SEPARATOR, structHash));
     }
 
-    function _approveManager(address owner, address manager, bool isAllowed) internal {
-        _isManaging[owner][manager] = isAllowed;
-        emit Events.ManagerApproval(owner, manager, isAllowed);
+    function _approveManager(address delegator, address manager, bool isAllowed) internal {
+        _isManaging[delegator][manager] = isAllowed;
+        emit Events.ManagerApproval(delegator, manager, isAllowed);
     }
 
     function _getUserBalanceFromIndexes(
@@ -283,10 +283,10 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.ReserveConfigurationMap memory configuration = reserveData.configuration;
         ltv = configuration.getLtv();
         liquidationThreshold = configuration.getLiquidationThreshold();
-        uint256 decimals = configuration.getDecimals();
+        tokenUnit = configuration.getDecimals();
 
         unchecked {
-            tokenUnit = 10 ** decimals;
+            tokenUnit = 10 ** tokenUnit;
         }
 
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == configuration.getEModeCategory()) {
@@ -361,25 +361,16 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     function _setPauseStatus(address underlying, bool isPaused) internal {
-        Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
+        Types.Market storage market = _market[underlying];
 
-        pauseStatuses.isSupplyPaused = isPaused;
-        pauseStatuses.isSupplyCollateralPaused = isPaused;
-        pauseStatuses.isBorrowPaused = isPaused;
-        pauseStatuses.isWithdrawPaused = isPaused;
-        pauseStatuses.isWithdrawCollateralPaused = isPaused;
-        pauseStatuses.isRepayPaused = isPaused;
-        pauseStatuses.isLiquidateCollateralPaused = isPaused;
-        pauseStatuses.isLiquidateBorrowPaused = isPaused;
-
-        emit Events.IsSupplyPausedSet(underlying, isPaused);
-        emit Events.IsSupplyCollateralPausedSet(underlying, isPaused);
-        emit Events.IsBorrowPausedSet(underlying, isPaused);
-        emit Events.IsWithdrawPausedSet(underlying, isPaused);
-        emit Events.IsWithdrawCollateralPausedSet(underlying, isPaused);
-        emit Events.IsRepayPausedSet(underlying, isPaused);
-        emit Events.IsLiquidateCollateralPausedSet(underlying, isPaused);
-        emit Events.IsLiquidateBorrowPausedSet(underlying, isPaused);
+        market.setIsSupplyPaused(underlying, isPaused);
+        market.setIsSupplyCollateralPaused(underlying, isPaused);
+        market.setIsBorrowPaused(underlying, isPaused);
+        market.setIsRepayPaused(underlying, isPaused);
+        market.setIsWithdrawPaused(underlying, isPaused);
+        market.setIsWithdrawCollateralPaused(underlying, isPaused);
+        market.setIsLiquidateCollateralPaused(underlying, isPaused);
+        market.setIsLiquidateBorrowPaused(underlying, isPaused);
     }
 
     function _updateIndexes(address underlying) internal returns (Types.Indexes256 memory indexes) {
@@ -417,7 +408,7 @@ abstract contract MorphoInternal is MorphoStorage {
                 reserveFactor: market.reserveFactor,
                 p2pIndexCursor: market.p2pIndexCursor,
                 deltas: market.deltas,
-                proportionIdle: _proportionIdle(underlying)
+                proportionIdle: market.getProportionIdle()
             })
         );
     }
@@ -465,16 +456,5 @@ abstract contract MorphoInternal is MorphoStorage {
                 (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
             ).percentDiv(liquidationBonus);
         }
-    }
-
-    /// @dev Returns a ray.
-    function _proportionIdle(address underlying) internal view returns (uint256) {
-        Types.Market storage market = _market[underlying];
-        uint256 idleSupply = market.idleSupply;
-        if (idleSupply == 0) {
-            return 0;
-        }
-        uint256 totalP2PSupplied = market.deltas.supply.scaledTotalP2P.rayMul(market.indexes.supply.p2pIndex);
-        return idleSupply.rayDivUp(totalP2PSupplied);
     }
 }

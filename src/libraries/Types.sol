@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 library Types {
@@ -143,7 +144,7 @@ library Types {
     struct PromoteVars {
         address underlying;
         uint256 amount;
-        uint256 poolIndex;
+        uint256 p2pIndex;
         uint256 maxLoops;
         function(address, uint256, uint256) returns (uint256, uint256) promote;
     }

@@ -5,14 +5,13 @@ import {IMorphoGetters} from "./interfaces/IMorpho.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
+
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
-    using WadRayMath for uint256;
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -83,8 +82,8 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _userBorrows[user].values();
     }
 
-    function isManaging(address owner, address manager) external view returns (bool) {
-        return _isManaging[owner][manager];
+    function isManaging(address delegator, address manager) external view returns (bool) {
+        return _isManaging[delegator][manager];
     }
 
     function userNonce(address user) external view returns (uint256) {
@@ -121,9 +120,5 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         returns (Types.LiquidityData memory)
     {
         return _liquidityData(underlying, user, amountWithdrawn, amountBorrowed);
-    }
-
-    function healthFactor(address user) external view returns (uint256) {
-        return _getUserHealthFactor(address(0), user, 0);
     }
 }
