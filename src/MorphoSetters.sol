@@ -16,7 +16,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     using MarketLib for Types.Market;
 
-    /// SETTERS ///
+    /// INITIALIZER ///
 
     function initialize(address newPositionsManager, Types.MaxLoops memory newDefaultMaxLoops) external initializer {
         __Ownable_init_unchained();
@@ -27,6 +27,8 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         emit Events.DefaultMaxLoopsSet(newDefaultMaxLoops.repay, newDefaultMaxLoops.withdraw);
         emit Events.PositionsManagerSet(newPositionsManager);
     }
+
+    /// GOVERNANCE UTILS ///
 
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external onlyOwner {
         _createMarket(underlying, reserveFactor, p2pIndexCursor);
@@ -39,6 +41,8 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     function increaseP2PDeltas(address underlying, uint256 amount) external onlyOwner isMarketCreated(underlying) {
         _increaseP2PDeltas(underlying, amount);
     }
+
+    /// SETTERS ///
 
     function setDefaultMaxLoops(Types.MaxLoops calldata defaultMaxLoops) external onlyOwner {
         _defaultMaxLoops = defaultMaxLoops;
