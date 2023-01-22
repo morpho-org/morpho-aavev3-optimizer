@@ -7,6 +7,10 @@ import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
+/// @title Type
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library gathering all Types used in Morpho.
 library Types {
     /// NESTED STRUCTS ///
 

@@ -7,6 +7,10 @@ import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
+/// @title InterestRatesLib
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library helping to compute the new peer-to-peer indexes.
 library InterestRatesLib {
     using WadRayMath for uint256;
     using PercentageMath for uint256;

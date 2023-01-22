@@ -15,6 +15,10 @@ import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configurati
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
+/// @title MarketLib
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library used to ease market reads and writes.
 library MarketLib {
     using Math for uint256;
     using SafeCast for uint256;

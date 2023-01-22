@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+/// @title Errors
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library gathering errors used in Morpho.
 library Errors {
     error MarketNotCreated();
     error MarketAlreadyCreated();
