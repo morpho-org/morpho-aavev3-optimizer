@@ -282,10 +282,10 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.ReserveConfigurationMap memory configuration = reserveData.configuration;
         ltv = configuration.getLtv();
         liquidationThreshold = configuration.getLiquidationThreshold();
-        uint256 decimals = configuration.getDecimals();
+        tokenUnit = configuration.getDecimals();
 
         unchecked {
-            tokenUnit = 10 ** decimals;
+            tokenUnit = 10 ** tokenUnit;
         }
 
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == configuration.getEModeCategory()) {

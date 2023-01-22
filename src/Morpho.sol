@@ -132,8 +132,12 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         address signatory = ecrecover(digest, signature.v, signature.r, signature.s);
 
         if (signatory == address(0) || delegator != signatory) revert Errors.InvalidSignatory();
-        if (nonce != _userNonce[signatory]++) revert Errors.InvalidNonce();
         if (block.timestamp >= deadline) revert Errors.SignatureExpired();
+
+        uint256 usedNonce = _userNonce[signatory]++;
+        if (nonce != usedNonce) revert Errors.InvalidNonce();
+
+        emit Events.UserNonceIncremented(manager, signatory, usedNonce);
 
         _approveManager(signatory, manager, isAllowed);
     }
