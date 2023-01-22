@@ -193,7 +193,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Peer-to-peer supply ///
 
-        // Match the peer-to-peer borrow delta.
+        // Decrease the peer-to-peer borrow delta.
         (vars.toRepay, amount) = deltas.borrow.decrease(underlying, amount, indexes.borrow.poolIndex, true);
 
         // Promote pool borrowers.
@@ -227,11 +227,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Peer-to-peer borrow ///
 
-        // Match the peer-to-peer idle supply.
+        // Decrease the peer-to-peer idle supply.
         (amount, vars.inP2P) =
             market.borrowIdle(underlying, amount, marketBalances.scaledP2PBorrowBalance(user), indexes.borrow.p2pIndex);
 
-        // Match the peer-to-peer supply delta.
+        // Decrease the peer-to-peer supply delta.
         (vars.toWithdraw, amount) = deltas.supply.decrease(underlying, amount, indexes.supply.poolIndex, false);
 
         // Promote pool suppliers.
@@ -275,7 +275,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         if (amount == 0) return vars;
 
-        // Reduce the peer-to-peer borrow delta.
+        // Decrease the peer-to-peer borrow delta.
         uint256 toRepayStep;
         (toRepayStep, amount) = deltas.borrow.decrease(underlying, amount, indexes.borrow.poolIndex, true);
         vars.toRepay += toRepayStep;
@@ -331,7 +331,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         if (amount == 0) return vars;
 
-        // Reduce the peer-to-peer supply delta.
+        // Decrease the peer-to-peer supply delta.
         uint256 toWithdrawStep;
         (toWithdrawStep, amount) = deltas.supply.decrease(underlying, amount, indexes.supply.poolIndex, false);
         vars.toWithdraw += toWithdrawStep;
