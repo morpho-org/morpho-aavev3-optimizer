@@ -7,12 +7,15 @@ import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
+import {MarketLib} from "./libraries/MarketLib.sol";
 
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
+    using MarketLib for Types.Market;
+
     /// SETTERS ///
 
     function initialize(address newPositionsManager, Types.MaxLoops memory newDefaultMaxLoops) external initializer {
@@ -83,8 +86,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     function setIsSupplyPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
-        _market[underlying].pauseStatuses.isSupplyPaused = isPaused;
-        emit Events.IsSupplyPausedSet(underlying, isPaused);
+        _market[underlying].setIsSupplyPaused(underlying, isPaused);
     }
 
     function setIsSupplyCollateralPaused(address underlying, bool isPaused)
@@ -92,25 +94,22 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         onlyOwner
         isMarketCreated(underlying)
     {
-        _market[underlying].pauseStatuses.isSupplyCollateralPaused = isPaused;
-        emit Events.IsSupplyCollateralPausedSet(underlying, isPaused);
+        _market[underlying].setIsSupplyCollateralPaused(underlying, isPaused);
     }
 
     function setIsBorrowPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
-        Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
-        if (!isPaused && pauseStatuses.isDeprecated) revert Errors.MarketIsDeprecated();
-        pauseStatuses.isBorrowPaused = isPaused;
-        emit Events.IsBorrowPausedSet(underlying, isPaused);
+        Types.Market storage market = _market[underlying];
+        if (!isPaused && market.isDeprecated()) revert Errors.MarketIsDeprecated();
+
+        market.setIsBorrowPaused(underlying, isPaused);
     }
 
     function setIsRepayPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
-        _market[underlying].pauseStatuses.isRepayPaused = isPaused;
-        emit Events.IsRepayPausedSet(underlying, isPaused);
+        _market[underlying].setIsRepayPaused(underlying, isPaused);
     }
 
     function setIsWithdrawPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
-        _market[underlying].pauseStatuses.isWithdrawPaused = isPaused;
-        emit Events.IsWithdrawPausedSet(underlying, isPaused);
+        _market[underlying].setIsWithdrawPaused(underlying, isPaused);
     }
 
     function setIsWithdrawCollateralPaused(address underlying, bool isPaused)
@@ -118,8 +117,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         onlyOwner
         isMarketCreated(underlying)
     {
-        _market[underlying].pauseStatuses.isWithdrawCollateralPaused = isPaused;
-        emit Events.IsWithdrawCollateralPausedSet(underlying, isPaused);
+        _market[underlying].setIsWithdrawCollateralPaused(underlying, isPaused);
     }
 
     function setIsLiquidateCollateralPaused(address underlying, bool isPaused)
@@ -127,8 +125,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         onlyOwner
         isMarketCreated(underlying)
     {
-        _market[underlying].pauseStatuses.isLiquidateCollateralPaused = isPaused;
-        emit Events.IsLiquidateCollateralPausedSet(underlying, isPaused);
+        _market[underlying].setIsLiquidateCollateralPaused(underlying, isPaused);
     }
 
     function setIsLiquidateBorrowPaused(address underlying, bool isPaused)
@@ -136,8 +133,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         onlyOwner
         isMarketCreated(underlying)
     {
-        _market[underlying].pauseStatuses.isLiquidateBorrowPaused = isPaused;
-        emit Events.IsLiquidateBorrowPausedSet(underlying, isPaused);
+        _market[underlying].setIsLiquidateBorrowPaused(underlying, isPaused);
     }
 
     function setIsPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
@@ -152,14 +148,13 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     function setIsP2PDisabled(address underlying, bool isP2PDisabled) external onlyOwner isMarketCreated(underlying) {
-        _market[underlying].pauseStatuses.isP2PDisabled = isP2PDisabled;
-        emit Events.IsP2PDisabledSet(underlying, isP2PDisabled);
+        _market[underlying].setIsP2PDisabled(underlying, isP2PDisabled);
     }
 
     function setIsDeprecated(address underlying, bool isDeprecated) external onlyOwner isMarketCreated(underlying) {
-        Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
-        if (!pauseStatuses.isBorrowPaused) revert Errors.BorrowNotPaused();
-        pauseStatuses.isDeprecated = isDeprecated;
-        emit Events.IsDeprecatedSet(underlying, isDeprecated);
+        Types.Market storage market = _market[underlying];
+        if (!market.isBorrowPaused()) revert Errors.BorrowNotPaused();
+
+        market.setIsDeprecated(underlying, isDeprecated);
     }
 }
