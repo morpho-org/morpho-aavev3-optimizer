@@ -1,0 +1,64 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+pragma solidity ^0.8.17;
+
+import {Types} from "./Types.sol";
+import {Events} from "./Events.sol";
+import {Math} from "@morpho-utils/math/Math.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
+
+library MarketSideDeltaLib {
+    using Math for uint256;
+    using WadRayMath for uint256;
+
+    /// @notice Given variables from a market side, updates the market side delta according to the demoted amount.
+    /// @param delta The market deltas to update.
+    /// @param underlying The underlying address.
+    /// @param amount The amount to supply/borrow (in underlying).
+    /// @param indexes The current indexes.
+    /// @param borrowSide Whether the market side is borrow.
+    function increase(
+        Types.MarketSideDelta storage delta,
+        address underlying,
+        uint256 amount,
+        Types.MarketSideIndexes256 memory indexes,
+        bool borrowSide
+    ) internal {
+        if (amount == 0) return;
+
+        uint256 newScaledDeltaPool = delta.scaledDeltaPool + amount.rayDiv(indexes.poolIndex);
+
+        delta.scaledDeltaPool = newScaledDeltaPool;
+
+        if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, newScaledDeltaPool);
+        else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledDeltaPool);
+    }
+
+    /// @notice Given variables from a market side, matches the delta and calculates the amount to supply/borrow from delta.
+    ///         Updates the market side delta accordingly.
+    /// @param delta The market deltas to update.
+    /// @param underlying The underlying address.
+    /// @param amount The amount to supply/borrow (in underlying).
+    /// @param poolIndex The current pool index.
+    /// @param borrowSide Whether the market side is borrow.
+    /// @return The amount to repay/withdraw and the amount left to process.
+    function decrease(
+        Types.MarketSideDelta storage delta,
+        address underlying,
+        uint256 amount,
+        uint256 poolIndex,
+        bool borrowSide
+    ) internal returns (uint256, uint256) {
+        uint256 scaledDeltaPool = delta.scaledDeltaPool;
+        if (scaledDeltaPool == 0) return (0, amount);
+
+        uint256 decreased = Math.min(scaledDeltaPool.rayMulUp(poolIndex), amount); // In underlying.
+        uint256 newScaledDeltaPool = scaledDeltaPool.zeroFloorSub(decreased.rayDivDown(poolIndex));
+
+        delta.scaledDeltaPool = newScaledDeltaPool;
+
+        if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, newScaledDeltaPool);
+        else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledDeltaPool);
+
+        return (decreased, amount - decreased);
+    }
+}
