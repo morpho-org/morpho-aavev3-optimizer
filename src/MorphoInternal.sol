@@ -72,7 +72,6 @@ abstract contract MorphoInternal is MorphoStorage {
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
-        market.lastUpdateTimestamp = uint32(block.timestamp);
 
         market.underlying = underlying;
         market.aToken = reserveData.aTokenAddress;
@@ -84,7 +83,9 @@ abstract contract MorphoInternal is MorphoStorage {
 
         ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
 
-        emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
+        emit Events.MarketCreated(
+            underlying, reserveFactor, p2pIndexCursor, indexes.supply.poolIndex, indexes.borrow.poolIndex
+            );
     }
 
     function _claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) internal {

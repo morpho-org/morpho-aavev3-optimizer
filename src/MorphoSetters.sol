@@ -20,6 +20,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
         _positionsManager = newPositionsManager;
         _defaultMaxLoops = newDefaultMaxLoops;
+
+        emit Events.DefaultMaxLoopsSet(newDefaultMaxLoops.repay, newDefaultMaxLoops.withdraw);
+        emit Events.PositionsManagerSet(newPositionsManager);
     }
 
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external onlyOwner {

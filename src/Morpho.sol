@@ -161,7 +161,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
             if (claimedAmount > 0) {
                 ERC20(rewardTokens[i]).safeTransfer(onBehalf, claimedAmount);
-                emit Events.RewardsClaimed(onBehalf, rewardTokens[i], claimedAmount);
+                emit Events.RewardsClaimed(msg.sender, onBehalf, rewardTokens[i], claimedAmount);
             }
         }
     }

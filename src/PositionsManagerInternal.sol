@@ -210,7 +210,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
 
-        emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
+        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
     }
 
     function _executeBorrow(
@@ -248,7 +248,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
 
-        emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
+        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
     }
 
     function _executeRepay(
@@ -270,7 +270,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
 
         if (amount == 0) {
-            emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
+            emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
             return vars;
         }
 
@@ -295,7 +295,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.toSupply = _demoteRoutine(underlying, amount, maxLoops, indexes, _demoteSuppliers, deltas, false);
         vars.toSupply = market.handleSupplyCap(underlying, vars.toSupply, _POOL);
 
-        emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
+        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
     }
 
     function _executeWithdraw(
@@ -319,7 +319,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
 
         if (amount == 0) {
-            emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
+            emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
             return vars;
         }
 
@@ -341,7 +341,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         vars.toBorrow = _demoteRoutine(underlying, amount, maxLoops, indexes, _demoteBorrowers, deltas, true);
 
-        emit Events.P2PAmountsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
+        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
     }
 
     /// @notice Given variables from a market side, calculates the amount to supply/borrow and a new on pool amount.
@@ -441,6 +441,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // zeroFloorSub the last decimal might flip.
         demotedDelta.scaledTotalP2P = demotedDelta.scaledTotalP2P.zeroFloorSub(demoted.rayDiv(demotedIndexes.p2pIndex));
         counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P.zeroFloorSub(amount.rayDiv(counterIndexes.p2pIndex));
+
+        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
 
         return amount;
     }
