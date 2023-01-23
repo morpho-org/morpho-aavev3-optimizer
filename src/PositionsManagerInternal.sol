@@ -380,10 +380,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address from,
         address onBehalf,
         uint256 poolSupplyIndex
-    ) internal returns (uint256 newBalance) {
+    ) internal {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
 
-        newBalance = marketBalances.collateral[onBehalf] + amount.rayDivDown(poolSupplyIndex);
+        uint256 newBalance = marketBalances.collateral[onBehalf] + amount.rayDivDown(poolSupplyIndex);
         marketBalances.collateral[onBehalf] = newBalance;
 
         _userCollaterals[onBehalf].add(underlying);
@@ -398,10 +398,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address supplier,
         address receiver,
         uint256 poolSupplyIndex
-    ) internal returns (uint256 newBalance) {
+    ) internal {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
 
-        newBalance = marketBalances.collateral[supplier].zeroFloorSub(amount.rayDivUp(poolSupplyIndex));
+        uint256 newBalance = marketBalances.collateral[supplier].zeroFloorSub(amount.rayDivUp(poolSupplyIndex));
         marketBalances.collateral[supplier] = newBalance;
 
         if (newBalance == 0) _userCollaterals[supplier].remove(underlying);
