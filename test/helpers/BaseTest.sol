@@ -16,6 +16,8 @@ import {console} from "@forge-std/console.sol";
 import {Test} from "@forge-std/Test.sol";
 
 contract BaseTest is Test {
+    uint256 internal constant DEFAULT_MAX_LOOPS = 10;
+
     /// @dev Rolls & warps the given number of blocks forward the blockchain.
     function _forward(uint256 blocks) internal {
         vm.roll(block.number + blocks);

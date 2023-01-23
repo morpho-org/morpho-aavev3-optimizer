@@ -20,8 +20,8 @@ contract IntegrationTest is ForkTest {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
-    uint256 internal constant MIN_USD_AMOUNT = 0.001e8; // AaveV3 base currency is USD, 8 decimals on all L2s.
-    uint256 internal constant MAX_USD_AMOUNT = 100_000_000e8; // AaveV3 base currency is USD, 8 decimals on all L2s.
+    uint256 internal constant MIN_USD_AMOUNT = 0.0001e8; // AaveV3 base currency is USD, 8 decimals on all L2s.
+    uint256 internal constant MAX_USD_AMOUNT = 500_000_000e8; // AaveV3 base currency is USD, 8 decimals on all L2s.
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
@@ -58,8 +58,6 @@ contract IntegrationTest is ForkTest {
     TestMarket[] internal borrowableMarkets;
 
     function setUp() public virtual override {
-        super.setUp();
-
         _deploy();
 
         _initMarket(weth, 0, 33_33); // Needs to be first, so that markets[0] == weth.
@@ -76,6 +74,8 @@ contract IntegrationTest is ForkTest {
         user1 = _initUser();
         user2 = _initUser();
         promoter = _initUser();
+
+        super.setUp();
     }
 
     function _label() internal override {
@@ -172,21 +172,15 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Bounds the input between 0 and the maximum borrowable quantity, without exceeding the market's liquidity nor its borrow cap.
-    function _boundBorrow(TestMarket memory collateralMarket, TestMarket memory borrowedMarket, uint256 collateral)
-        internal
-        view
-        returns (uint256)
-    {
+    function _boundBorrow(TestMarket memory market, uint256 amount) internal view returns (uint256) {
         return bound(
-            collateral,
-            0,
+            amount,
+            (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price,
             Math.min(
-                ERC20(borrowedMarket.underlying).balanceOf(borrowedMarket.aToken),
+                (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price,
                 Math.min(
-                    _borrowable(collateralMarket, borrowedMarket, collateral),
-                    borrowedMarket.borrowCap > 0
-                        ? borrowedMarket.borrowCap - ERC20(borrowedMarket.debtToken).totalSupply()
-                        : type(uint256).max
+                    ERC20(market.underlying).balanceOf(market.aToken),
+                    market.borrowCap > 0 ? market.borrowCap - ERC20(market.debtToken).totalSupply() : type(uint256).max
                 )
             )
         );
@@ -214,6 +208,26 @@ contract IntegrationTest is ForkTest {
             (amount * borrowedMarket.price * 10 ** collateralMarket.decimals).percentDiv(collateralMarket.ltv - 1)
                 / (collateralMarket.price * 10 ** borrowedMarket.decimals)
         );
+    }
+
+    /// @dev Borrows from `user` on behalf of `onBehalf`, without collateral.
+    function _borrowNoCollateral(
+        address user,
+        TestMarket memory market,
+        uint256 amount,
+        address onBehalf,
+        address receiver,
+        uint256 maxLoops
+    ) internal returns (uint256 borrowed) {
+        oracle.setAssetPrice(market.underlying, 0);
+
+        vm.prank(user);
+        borrowed = morpho.borrow(market.underlying, amount, onBehalf, receiver, maxLoops);
+
+        _resetPreviousIndex(market); // Enable borrow/repay in same block.
+        _deposit(weth, _minCollateral(markets[0], market, borrowed), address(morpho)); // Make Morpho solvent with WETH because no supply cap.
+
+        oracle.setAssetPrice(market.underlying, market.price);
     }
 
     /// @dev Promotes the incoming (or already provided) supply, without collateral.

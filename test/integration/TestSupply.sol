@@ -161,7 +161,7 @@ contract TestIntegrationSupply is IntegrationTest {
         }
     }
 
-    // TODO: add delta tests
+    // TODO: add borrow delta match test
 
     function testShouldRevertSupplyZero(address onBehalf) public {
         onBehalf = _boundOnBehalf(onBehalf);
@@ -224,9 +224,11 @@ contract TestIntegrationSupply is IntegrationTest {
         }
     }
 
-    function testShouldSupplyWhenSupplyCollateralPaused(uint256 amount, address onBehalf) public {
+    function testShouldSupplyWhenEverythingElsePaused(uint256 amount, address onBehalf) public {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
+
+        morpho.setIsPausedForAllMarkets(true);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
@@ -235,7 +237,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
             amount = _boundSupply(market, amount);
 
-            morpho.setIsSupplyCollateralPaused(market.underlying, true);
+            morpho.setIsSupplyPaused(market.underlying, false);
 
             user1.approve(market.underlying, amount);
             user1.supply(market.underlying, amount, onBehalf);

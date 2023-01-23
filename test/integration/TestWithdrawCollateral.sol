@@ -195,7 +195,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         }
     }
 
-    function testShouldWithdrawCollateralWhenWithdrawPaused(uint256 amount, address onBehalf, address receiver)
+    function testShouldWithdrawCollateralWhenEverythingElsePaused(uint256 amount, address onBehalf, address receiver)
         public
     {
         amount = _boundAmount(amount);
@@ -214,7 +214,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             user1.approve(market.underlying, amount);
             user1.supplyCollateral(market.underlying, amount);
 
-            morpho.setIsWithdrawPaused(market.underlying, true);
+            morpho.setIsPausedForAllMarkets(true);
+            morpho.setIsWithdrawCollateralPaused(market.underlying, false);
 
             user1.withdrawCollateral(market.underlying, amount, onBehalf);
         }

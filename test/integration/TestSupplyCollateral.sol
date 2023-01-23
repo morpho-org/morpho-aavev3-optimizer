@@ -125,9 +125,11 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         }
     }
 
-    function testShouldSupplyCollateralWhenSupplyPaused(uint256 amount, address onBehalf) public {
+    function testShouldSupplyCollateralWhenEverythingElsePaused(uint256 amount, address onBehalf) public {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
+
+        morpho.setIsPausedForAllMarkets(true);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
@@ -136,7 +138,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
             amount = _boundSupply(market, amount);
 
-            morpho.setIsSupplyPaused(market.underlying, true);
+            morpho.setIsSupplyCollateralPaused(market.underlying, false);
 
             user1.approve(market.underlying, amount);
             user1.supplyCollateral(market.underlying, amount, onBehalf);

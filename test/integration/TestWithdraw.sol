@@ -157,6 +157,8 @@ contract TestIntegrationWithdraw is IntegrationTest {
         }
     }
 
+    // TODO: add delta withdraw test
+
     function testShouldNotWithdrawWhenNoSupply(uint256 amount, address onBehalf, address receiver) public {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
@@ -300,9 +302,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         }
     }
 
-    function testShouldWithdrawWhenWithdrawCollateralPaused(uint256 amount, address onBehalf, address receiver)
-        public
-    {
+    function testShouldWithdrawWhenEverythingElsePaused(uint256 amount, address onBehalf, address receiver) public {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
@@ -319,7 +319,8 @@ contract TestIntegrationWithdraw is IntegrationTest {
             user1.approve(market.underlying, amount);
             user1.supply(market.underlying, amount);
 
-            morpho.setIsWithdrawCollateralPaused(market.underlying, true);
+            morpho.setIsPausedForAllMarkets(true);
+            morpho.setIsWithdrawPaused(market.underlying, false);
 
             user1.withdraw(market.underlying, amount);
         }

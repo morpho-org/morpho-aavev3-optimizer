@@ -46,14 +46,15 @@ contract ForkTest is BaseTest {
     constructor() {
         _initConfig();
         _loadConfig();
-        _label();
 
         _mockOracle();
 
         _setBalances(address(this), type(uint256).max);
     }
 
-    function setUp() public virtual {}
+    function setUp() public virtual {
+        _label();
+    }
 
     function _network() internal view returns (string memory) {
         try vm.envString("NETWORK") returns (string memory configNetwork) {
