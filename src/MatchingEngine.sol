@@ -15,7 +15,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 /// @title MatchingEngine
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
-/// @notice Abstract contract allowing to promote or demote users to/from peer-to-peer.
+/// @notice Abstract contract with functions to promote or demote users to/from peer to peer.
 abstract contract MatchingEngine is MorphoInternal {
     using MarketLib for Types.Market;
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
@@ -159,7 +159,7 @@ abstract contract MatchingEngine is MorphoInternal {
         }
     }
 
-    /// @dev Promotes a give amount in peer-to-peer.
+    /// @dev Promotes a given amount in peer-to-peer.
     /// @param poolBalance The scaled balance of the user on the pool.
     /// @param p2pBalance The scaled balance of the user on peer-to-peer.
     /// @param indexes The indexes of the market.
@@ -177,7 +177,7 @@ abstract contract MatchingEngine is MorphoInternal {
         newP2PBalance = p2pBalance + toProcess.rayDiv(indexes.p2pIndex);
     }
 
-    /// @dev Demotes a give amount in peer-to-peer.
+    /// @dev Demotes a given amount in peer-to-peer.
     /// @param poolBalance The scaled balance of the user on the pool.
     /// @param p2pBalance The scaled balance of the user on peer-to-peer.
     /// @param indexes The indexes of the market.
