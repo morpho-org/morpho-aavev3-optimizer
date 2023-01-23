@@ -257,7 +257,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         _updateBorrowerInDS(underlying, borrower, vars.onPool, vars.inP2P, false);
 
-        emit Events.Borrowed(borrower, receiver, underlying, amount, vars.onPool, vars.inP2P);
+        emit Events.Borrowed(msg.sender, borrower, receiver, underlying, amount, vars.onPool, vars.inP2P);
     }
 
     /// @dev Executes a repay action.
@@ -284,7 +284,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateBorrowerInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
 
         if (amount == 0) {
-            emit Events.Repaid(msg.sender, repayer, onBehalf, underlying, 0, vars.onPool, vars.inP2P);
+            emit Events.Repaid(repayer, onBehalf, underlying, 0, vars.onPool, vars.inP2P);
             return vars;
         }
 
@@ -318,7 +318,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Handle the supply cap.
         vars.toSupply = market.supplyIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
 
-        emit Events.Repaid(msg.sender, repayer, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
+        emit Events.Repaid(repayer, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
     }
 
     /// @dev Executes a withdraw action.

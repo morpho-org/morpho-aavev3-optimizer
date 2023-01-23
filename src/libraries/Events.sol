@@ -24,6 +24,7 @@ library Events {
     );
 
     event Borrowed(
+        address caller,
         address indexed borrower,
         address indexed receiver,
         address indexed underlying,
@@ -52,7 +53,6 @@ library Events {
     );
 
     event Repaid(
-        address caller,
         address indexed repayer,
         address indexed onBehalf,
         address indexed underlying,
