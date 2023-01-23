@@ -187,14 +187,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _executeSupply(
         address underlying,
         uint256 amount,
-        address user,
+        address from,
+        address onBehalf,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
         Types.Deltas storage deltas = _market[underlying].deltas;
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        vars.onPool = marketBalances.scaledPoolSupplyBalance(user);
-        vars.inP2P = marketBalances.scaledP2PSupplyBalance(user);
+        vars.onPool = marketBalances.scaledPoolSupplyBalance(onBehalf);
+        vars.inP2P = marketBalances.scaledP2PSupplyBalance(onBehalf);
 
         /// Peer-to-peer supply ///
 
@@ -214,21 +215,24 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Supply on pool.
         (vars.toSupply, vars.onPool) = _addToPool(amount, vars.onPool, indexes.supply.poolIndex);
 
-        _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
+        _updateSupplierInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
+
+        emit Events.Supplied(from, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
     }
 
     /// @dev Executes a borrow action.
     function _executeBorrow(
         address underlying,
         uint256 amount,
-        address user,
+        address borrower,
+        address receiver,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (Types.BorrowWithdrawVars memory vars) {
         Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
-        vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
+        vars.onPool = marketBalances.scaledPoolBorrowBalance(borrower);
+        vars.inP2P = marketBalances.scaledP2PBorrowBalance(borrower);
 
         /// Peer-to-peer borrow ///
 
@@ -251,20 +255,23 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Borrow on pool.
         (vars.toBorrow, vars.onPool) = _addToPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
-        _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
+        _updateBorrowerInDS(underlying, borrower, vars.onPool, vars.inP2P, false);
+
+        emit Events.Borrowed(borrower, underlying, receiver, amount, vars.onPool, vars.inP2P);
     }
 
     /// @dev Executes a repay action.
     function _executeRepay(
         address underlying,
         uint256 amount,
-        address user,
+        address repayer,
+        address onBehalf,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        vars.onPool = marketBalances.scaledPoolBorrowBalance(user);
-        vars.inP2P = marketBalances.scaledP2PBorrowBalance(user);
+        vars.onPool = marketBalances.scaledPoolBorrowBalance(onBehalf);
+        vars.inP2P = marketBalances.scaledP2PBorrowBalance(onBehalf);
 
         /// Pool repay ///
 
@@ -274,7 +281,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Repay borrow peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
 
-        _updateBorrowerInDS(underlying, user, vars.onPool, vars.inP2P, false);
+        _updateBorrowerInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
 
         if (amount == 0) return vars;
 
@@ -307,19 +314,22 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Handle the supply cap.
         vars.toSupply = market.supplyIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
+
+        emit Events.Repaid(repayer, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
     }
 
     /// @dev Executes a withdraw action.
     function _executeWithdraw(
         address underlying,
         uint256 amount,
-        address user,
+        address supplier,
+        address receiver,
         uint256 maxLoops,
         Types.Indexes256 memory indexes
     ) internal returns (Types.BorrowWithdrawVars memory vars) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        vars.onPool = marketBalances.scaledPoolSupplyBalance(user);
-        vars.inP2P = marketBalances.scaledP2PSupplyBalance(user);
+        vars.onPool = marketBalances.scaledPoolSupplyBalance(supplier);
+        vars.inP2P = marketBalances.scaledP2PSupplyBalance(supplier);
 
         /// Pool withdraw ///
 
@@ -334,7 +344,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Withdraw supply peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
-        _updateSupplierInDS(underlying, user, vars.onPool, vars.inP2P, false);
+        _updateSupplierInDS(underlying, supplier, vars.onPool, vars.inP2P, false);
 
         if (amount == 0) return vars;
 
@@ -359,32 +369,44 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Update the peer-to-peer totals.
         market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow, indexes, true);
+
+        emit Events.Withdrawn(supplier, receiver, underlying, amount, vars.onPool, vars.inP2P);
     }
 
     /// @dev Executes a supply action.
-    function _executeSupplyCollateral(address underlying, uint256 amount, address user, uint256 poolSupplyIndex)
-        internal
-        returns (uint256 newBalance)
-    {
+    function _executeSupplyCollateral(
+        address underlying,
+        uint256 amount,
+        address from,
+        address onBehalf,
+        uint256 poolSupplyIndex
+    ) internal {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
 
-        newBalance = marketBalances.collateral[user] + amount.rayDivDown(poolSupplyIndex);
-        marketBalances.collateral[user] = newBalance;
+        uint256 newBalance = marketBalances.collateral[onBehalf] + amount.rayDivDown(poolSupplyIndex);
+        marketBalances.collateral[onBehalf] = newBalance;
 
-        _userCollaterals[user].add(underlying);
+        _userCollaterals[onBehalf].add(underlying);
+
+        emit Events.CollateralSupplied(from, onBehalf, underlying, amount, newBalance);
     }
 
     /// @dev Executes a withdraw collateral action.
-    function _executeWithdrawCollateral(address underlying, uint256 amount, address user, uint256 poolSupplyIndex)
-        internal
-        returns (uint256 newBalance)
-    {
+    function _executeWithdrawCollateral(
+        address underlying,
+        uint256 amount,
+        address supplier,
+        address receiver,
+        uint256 poolSupplyIndex
+    ) internal {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
 
-        newBalance = marketBalances.collateral[user].zeroFloorSub(amount.rayDivUp(poolSupplyIndex));
-        marketBalances.collateral[user] = newBalance;
+        uint256 newBalance = marketBalances.collateral[supplier].zeroFloorSub(amount.rayDivUp(poolSupplyIndex));
+        marketBalances.collateral[supplier] = newBalance;
 
-        if (newBalance == 0) _userCollaterals[user].remove(underlying);
+        if (newBalance == 0) _userCollaterals[supplier].remove(underlying);
+
+        emit Events.CollateralWithdrawn(supplier, receiver, underlying, amount, newBalance);
     }
 
     /// @notice Given variables from a market side, calculates the amount to supply/borrow and a new on pool amount.
