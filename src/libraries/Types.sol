@@ -1,17 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
+import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
+/// @title Type
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library exposing all Types used in Morpho.
 library Types {
     /// NESTED STRUCTS ///
 
     struct MarketSideDelta {
-        uint256 scaledDeltaPool; // in pool unit
-        uint256 scaledTotalP2P; // in p2p unit
+        uint256 scaledDeltaPool; // In pool unit.
+        uint256 scaledTotalP2P; // In peer-to-peer unit.
     }
 
     struct Deltas {
@@ -66,16 +71,14 @@ library Types {
 
     // Contains storage-only dynamic arrays and mappings.
     struct MarketBalances {
-        LogarithmicBuckets.BucketList p2pSuppliers; // in scaled unit.
-        LogarithmicBuckets.BucketList poolSuppliers; // in scaled unit.
-        LogarithmicBuckets.BucketList p2pBorrowers; // in scaled unit.
-        LogarithmicBuckets.BucketList poolBorrowers; // in scaled unit.
-        mapping(address => uint256) collateral; // in scaled unit.
+        LogarithmicBuckets.BucketList p2pSuppliers; // In peer-to-peer unit.
+        LogarithmicBuckets.BucketList poolSuppliers; // In pool unit.
+        LogarithmicBuckets.BucketList p2pBorrowers; // In peer-to-peer unit.
+        LogarithmicBuckets.BucketList poolBorrowers; // In pool unit.
+        mapping(address => uint256) collateral; // In pool unit.
     }
 
     struct MaxLoops {
-        uint64 supply;
-        uint64 borrow;
         uint64 repay;
         uint64 withdraw;
     }
@@ -89,7 +92,7 @@ library Types {
         uint256 debt; // The debt value (in base currency, 8 decimals).
     }
 
-    struct RatesParams {
+    struct IndexesParams {
         MarketSideIndexes256 lastSupplyIndexes;
         MarketSideIndexes256 lastBorrowIndexes;
         uint256 poolSupplyIndex; // The current pool supply index.
@@ -97,7 +100,7 @@ library Types {
         uint256 reserveFactor; // The reserve factor percentage (10 000 = 100%).
         uint256 p2pIndexCursor; // The peer-to-peer index cursor (10 000 = 100%).
         Deltas deltas; // The deltas and peer-to-peer amounts.
-        uint256 proportionIdle; // In ray.
+        uint256 proportionIdle; // in ray.
     }
 
     struct GrowthFactors {
@@ -137,7 +140,7 @@ library Types {
 
     struct LiquidityVars {
         address user;
-        IPriceOracleGetter oracle;
+        IAaveOracle oracle;
         DataTypes.EModeCategory eModeCategory;
         DataTypes.UserConfigurationMap morphoPoolConfig;
     }
@@ -145,7 +148,7 @@ library Types {
     struct PromoteVars {
         address underlying;
         uint256 amount;
-        uint256 poolIndex;
+        uint256 p2pIndex;
         uint256 maxLoops;
         function(address, uint256, uint256) returns (uint256, uint256) promote;
     }
@@ -166,7 +169,6 @@ library Types {
 
     struct LiquidateVars {
         uint256 closeFactor;
-        uint256 amountToLiquidate;
-        uint256 amountToSeize;
+        uint256 seized;
     }
 }

@@ -31,17 +31,11 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
             uint256 supplied = user1.supplyCollateral(market.underlying, amount, onBehalf);
 
-            Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
-            uint256 collateral =
-                morpho.scaledCollateralBalance(market.underlying, onBehalf).rayMul(indexes.supply.poolIndex); // TODO: rayMulDown?
+            uint256 collateral = morpho.collateralBalance(market.underlying, onBehalf);
 
             assertEq(supplied, amount, "supplied != amount");
-            assertLe(collateral, amount, "collateral > amount"); // TODO: assertEq?
+            assertLe(collateral, amount, "collateral > amount");
             assertApproxEqAbs(collateral, amount, 1, "collateral != amount");
-
-            assertEq(
-                morpho.collateralBalance(market.underlying, onBehalf), collateral, "collateralBalance != collateral"
-            );
         }
     }
 
@@ -59,7 +53,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
             user1.approve(market.underlying, amount);
 
-            vm.expectEmit(true, false, false, false, address(morpho));
+            vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
 
             user1.supplyCollateral(market.underlying, amount, onBehalf);

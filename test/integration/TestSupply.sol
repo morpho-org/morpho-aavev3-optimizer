@@ -76,10 +76,10 @@ contract TestIntegrationSupply is IntegrationTest {
             user1.approve(market.underlying, amount);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.PositionUpdated(true, address(promoter), market.underlying, 0, 0);
+            emit Events.BorrowPositionUpdated(address(promoter), market.underlying, 0, 0);
 
-            vm.expectEmit(true, false, false, false, address(morpho));
-            emit Events.P2PAmountsUpdated(market.underlying, 0, 0);
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.P2PTotalsUpdated(market.underlying, 0, 0);
 
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.Supplied(address(user1), onBehalf, market.underlying, 0, 0, 0);
@@ -87,9 +87,9 @@ contract TestIntegrationSupply is IntegrationTest {
             uint256 supplied = user1.supply(market.underlying, amount, onBehalf);
 
             Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
-            uint256 p2pSupply =
-                morpho.scaledP2PSupplyBalance(market.underlying, onBehalf).rayMul(indexes.supply.p2pIndex);
+            uint256 scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             uint256 scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
+            uint256 p2pSupply = scaledP2PSupply.rayMul(indexes.supply.p2pIndex);
 
             assertEq(scaledPoolSupply, 0, "poolSupply != 0");
             assertEq(supplied, amount, "supplied != amount");
@@ -106,9 +106,13 @@ contract TestIntegrationSupply is IntegrationTest {
 
             Types.Market memory morphoMarket = morpho.market(market.underlying);
             assertEq(morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
-            assertEq(morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
+            assertEq(
+                morphoMarket.deltas.supply.scaledTotalP2P, scaledP2PSupply, "scaledTotalSupplyP2P != scaledP2PSupply"
+            );
             assertEq(morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
-            assertEq(morphoMarket.deltas.borrow.scaledTotalP2P, 0, "scaledTotalBorrowP2P != 0");
+            assertEq(
+                morphoMarket.deltas.borrow.scaledTotalP2P, scaledP2PSupply, "scaledTotalBorrowP2P != scaledP2PSupply"
+            );
             assertEq(morphoMarket.idleSupply, 0, "idleSupply != 0");
         }
     }
@@ -127,7 +131,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
             user1.approve(market.underlying, amount);
 
-            vm.expectEmit(true, false, false, false, address(morpho));
+            vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
 
             user1.supply(market.underlying, amount, onBehalf); // 100% pool.

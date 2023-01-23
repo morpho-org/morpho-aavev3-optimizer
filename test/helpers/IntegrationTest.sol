@@ -98,10 +98,11 @@ contract IntegrationTest is ForkTest {
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImpl)), address(proxyAdmin), "");
         morpho = Morpho(payable(address(morphoProxy)));
 
-        morpho.initialize(address(positionsManager), Types.MaxLoops({supply: 10, borrow: 10, repay: 10, withdraw: 10}));
+        morpho.initialize(address(positionsManager), Types.MaxLoops({repay: 10, withdraw: 10}));
 
-        // Supply dust on WETH to make UserConfigurationMap.isUsingAsCollateralOne() always return true.
-        _deposit(weth, 1e9, address(morpho));
+        // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() always return true.
+        _deposit(weth, 1e12, address(morpho));
+        _deposit(dai, 1e12, address(morpho));
     }
 
     function _initUser() internal returns (TestUser user) {
@@ -219,7 +220,7 @@ contract IntegrationTest is ForkTest {
     function _promoteSupply(TestMarket memory market, uint256 amount) internal returns (uint256 borrowed) {
         borrowed = bound(
             amount,
-            (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price,
+            0,
             Math.min(
                 ERC20(market.underlying).balanceOf(market.aToken),
                 market.borrowCap > 0 ? market.borrowCap - ERC20(market.debtToken).totalSupply() : type(uint256).max
@@ -228,10 +229,9 @@ contract IntegrationTest is ForkTest {
 
         oracle.setAssetPrice(market.underlying, 0);
 
-        // Reverts if the market is not borrowable.
         try promoter.borrow(market.underlying, borrowed) {
-            _resetPreviousIndex(market);
-            _deposit(weth, _minCollateral(markets[0], market, borrowed), address(morpho));
+            _resetPreviousIndex(market); // Enable borrow/repay in same block.
+            _deposit(weth, _minCollateral(markets[0], market, borrowed), address(morpho)); // Make Morpho solvent with WETH because no supply cap.
         } catch {
             borrowed = 0;
         }

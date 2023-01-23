@@ -5,7 +5,7 @@ import "../../src/libraries/Constants.sol";
 
 contract SigUtils {
     struct Authorization {
-        address owner;
+        address delegator;
         address manager;
         bool isAllowed;
         uint256 nonce;
@@ -22,7 +22,7 @@ contract SigUtils {
         return keccak256(
             abi.encode(
                 Constants.EIP712_AUTHORIZATION_TYPEHASH,
-                authorization.owner,
+                authorization.delegator,
                 authorization.manager,
                 authorization.isAllowed,
                 authorization.nonce,

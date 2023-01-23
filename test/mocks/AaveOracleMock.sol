@@ -19,7 +19,7 @@ contract AaveOracleMock is IAaveOracle {
         BASE_CURRENCY_UNIT = oracle.BASE_CURRENCY_UNIT();
         ADDRESSES_PROVIDER = oracle.ADDRESSES_PROVIDER();
 
-        for (uint256 i = 0; i < assets.length; i++) {
+        for (uint256 i; i < assets.length; ++i) {
             address asset = assets[i];
 
             _prices[asset] = oracle.getAssetPrice(asset);

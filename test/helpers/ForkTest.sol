@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {IAToken} from "../../src/interfaces/aave/IAToken.sol";
-import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
-import {IScaledBalanceToken} from "@aave-v3-core/interfaces/IScaledBalanceToken.sol";
-import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
+import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 
+import {Types} from "../../src/libraries/Types.sol";
+import {Events} from "../../src/libraries/Events.sol";
+import {Errors} from "../../src/libraries/Errors.sol";
 import {TestConfig, TestConfigLib} from "../helpers/TestConfigLib.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 

@@ -1,26 +1,35 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
+/// @title Events
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library exposing events used in Morpho.
 library Events {
     event Supplied(
         address indexed from,
         address indexed onBehalf,
         address indexed underlying,
         uint256 amount,
-        uint256 balanceOnPool,
-        uint256 balanceInP2P
+        uint256 scaledOnPool,
+        uint256 scaledInP2P
     );
 
     event CollateralSupplied(
-        address indexed from, address indexed onBehalf, address indexed underlying, uint256 amount, uint256 balance
+        address indexed from,
+        address indexed onBehalf,
+        address indexed underlying,
+        uint256 amount,
+        uint256 scaledBalance
     );
 
     event Borrowed(
         address indexed borrower,
+        address indexed receiver,
         address indexed underlying,
         uint256 amount,
-        uint256 balanceOnPool,
-        uint256 balanceInP2P
+        uint256 scaledOnPool,
+        uint256 scaledInP2P
     );
 
     event Withdrawn(
@@ -28,12 +37,16 @@ library Events {
         address indexed receiver,
         address indexed underlying,
         uint256 amount,
-        uint256 balanceOnPool,
-        uint256 balanceInP2P
+        uint256 scaledOnPool,
+        uint256 scaledInP2P
     );
 
     event CollateralWithdrawn(
-        address indexed supplier, address indexed receiver, address indexed underlying, uint256 amount, uint256 balance
+        address indexed supplier,
+        address indexed receiver,
+        address indexed underlying,
+        uint256 amount,
+        uint256 scaledBalance
     );
 
     event Repaid(
@@ -41,30 +54,38 @@ library Events {
         address indexed onBehalf,
         address indexed underlying,
         uint256 amount,
-        uint256 balanceOnPool,
-        uint256 balanceInP2P
+        uint256 scaledOnPool,
+        uint256 scaledInP2P
     );
 
     event Liquidated(
         address indexed liquidator,
         address indexed borrower,
-        address underlyingBorrowed,
+        address indexed underlyingBorrowed,
         uint256 amountLiquidated,
         address underlyingCollateral,
         uint256 amountSeized
     );
 
-    event ManagerApproval(address indexed owner, address indexed manager, bool isAllowed);
+    event ManagerApproval(address indexed delegator, address indexed manager, bool isAllowed);
 
-    event PositionUpdated(
-        bool indexed borrow,
-        address indexed user,
-        address indexed underlying,
-        uint256 balanceOnPool,
-        uint256 balanceInP2P
+    event SupplyPositionUpdated(
+        address indexed user, address indexed underlying, uint256 scaledOnPool, uint256 scaledInP2P
     );
 
-    event RewardsClaimed(address indexed user, address indexed rewardToken, uint256 amountClaimed);
+    event BorrowPositionUpdated(
+        address indexed user, address indexed underlying, uint256 scaledOnPool, uint256 scaledInP2P
+    );
+
+    event P2PSupplyDeltaUpdated(address indexed underlying, uint256 supplyDelta);
+
+    event P2PBorrowDeltaUpdated(address indexed underlying, uint256 borrowDelta);
+
+    event P2PTotalsUpdated(address indexed underlying, uint256 scaledTotalSupplyP2P, uint256 scaledTotalBorrowP2P);
+
+    event RewardsClaimed(
+        address indexed claimer, address indexed onBehalf, address indexed rewardToken, uint256 amountClaimed
+    );
 
     event IsSupplyPausedSet(address indexed underlying, bool isPaused);
 
@@ -82,21 +103,23 @@ library Events {
 
     event IsLiquidateBorrowPausedSet(address indexed underlying, bool isPaused);
 
-    event P2PBorrowDeltaUpdated(address indexed underlying, uint256 borrowDelta);
-
-    event P2PAmountsUpdated(address indexed underlying, uint256 p2pSupplyAmount, uint256 p2pBorrowAmount);
-
-    event P2PSupplyDeltaUpdated(address indexed underlying, uint256 p2pSupplyDelta);
-
     event P2PDeltasIncreased(address indexed underlying, uint256 amount);
 
-    event MarketCreated(address indexed underlying, uint16 reserveFactor, uint16 p2pIndexCursor);
+    event MarketCreated(
+        address indexed underlying,
+        uint16 reserveFactor,
+        uint16 p2pIndexCursor,
+        uint256 poolSupplyIndex,
+        uint256 poolBorrowIndex
+    );
 
-    event DefaultMaxLoopsSet(uint64 supply, uint64 borrow, uint64 repay, uint64 withdraw);
+    event DefaultMaxLoopsSet(uint64 repay, uint64 withdraw);
 
-    event PositionsManagerSet(address positionsManager);
+    event PositionsManagerSet(address indexed positionsManager);
 
     event RewardsManagerSet(address indexed rewardsManager);
+
+    event TreasuryVaultSet(address indexed treasuryVault);
 
     event ReserveFactorSet(address indexed underlying, uint16 reserveFactor);
 
@@ -113,4 +136,10 @@ library Events {
         uint256 poolSupplyIndex,
         uint256 poolBorrowIndex
     );
+
+    event IdleSupplyUpdated(address indexed underlying, uint256 idleSupply);
+
+    event ReserveFeeClaimed(address indexed underlying, uint256 claimed);
+
+    event UserNonceIncremented(address indexed manager, address indexed signatory, uint256 usedNonce);
 }

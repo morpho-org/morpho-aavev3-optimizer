@@ -2,15 +2,20 @@
 pragma solidity ^0.8.0;
 
 import {Types} from "./Types.sol";
+
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
+/// @title InterestRatesLib
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library helping to compute the new peer-to-peer indexes.
 library InterestRatesLib {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
-    function computeP2PIndexes(Types.RatesParams memory params)
+    function computeP2PIndexes(Types.IndexesParams memory params)
         external
         pure
         returns (uint256 newP2PSupplyIndex, uint256 newP2PBorrowIndex)
@@ -100,7 +105,7 @@ library InterestRatesLib {
         uint256 proportionDelta = Math.min(
             p2pDelta.rayMul(lastIndexes.poolIndex).rayDivUp(p2pAmount.rayMul(lastIndexes.p2pIndex)),
             WadRayMath.RAY - proportionIdle // To avoid proportionDelta + proportionIdle > 1 with rounding errors.
-        ); // In ray.
+        ); // in ray.
 
         // Equivalent to:
         // lastP2PIndex * (

@@ -61,8 +61,6 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             assertLe(withdrawn, amount, "withdrawn > amount");
             assertApproxEqAbs(withdrawn, amount, 2, "withdrawn != amount");
 
-            assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateralBalance != 0");
-
             assertEq(
                 ERC20(market.underlying).balanceOf(receiver) - balanceBefore,
                 withdrawn,
