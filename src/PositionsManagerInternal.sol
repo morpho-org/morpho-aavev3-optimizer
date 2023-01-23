@@ -106,8 +106,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Authorizes a borrow action.
-    function _authorizeBorrow(address underlying, uint256 amount, address borrower) internal view {
-        Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
+    function _authorizeBorrow(address borrower) internal view {
+        Types.LiquidityData memory values = _liquidityData(borrower);
         if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
     }
 
@@ -142,8 +142,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Authorizes a withdraw collateral action.
-    function _authorizeWithdrawCollateral(address underlying, uint256 amount, address supplier) internal view {
-        if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+    function _authorizeWithdrawCollateral(address supplier) internal view {
+        if (_getUserHealthFactor(supplier) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
             revert Errors.UnauthorizedWithdraw();
         }
     }
@@ -164,7 +164,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         if (borrowMarket.isDeprecated()) return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
 
-        uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
+        uint256 healthFactor = _getUserHealthFactor(borrower);
         if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
             revert Errors.UnauthorizedLiquidate();
         }

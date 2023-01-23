@@ -142,16 +142,9 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     }
 
     /// @notice Returns the hypthetical liquidity data of `user`.
-    /// @param underlying The address of the underlying asset to borrow.
     /// @param user The address of the user to get liquidity data for.
-    /// @param amountWithdrawn The hypothetical amount to withdraw on the `underlying` market.
-    /// @param amountBorrowed The hypothetical amount to borrow on the `underlying` market.
     /// @return The hypothetical liquidaty data of `user`.
-    function liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
-        external
-        view
-        returns (Types.LiquidityData memory)
-    {
-        return _liquidityData(underlying, user, amountWithdrawn, amountBorrowed);
+    function liquidityData(address user) external view returns (Types.LiquidityData memory) {
+        return _liquidityData(user);
     }
 }
