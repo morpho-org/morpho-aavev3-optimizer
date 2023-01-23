@@ -284,7 +284,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateBorrowerInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
 
         if (amount == 0) {
-            emit Events.Repaid(repayer, onBehalf, underlying, 0, vars.onPool, vars.inP2P);
+            emit Events.Repaid(msg.sender, repayer, onBehalf, underlying, 0, vars.onPool, vars.inP2P);
             return vars;
         }
 
@@ -318,7 +318,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Handle the supply cap.
         vars.toSupply = market.supplyIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
 
-        emit Events.Repaid(repayer, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
+        emit Events.Repaid(msg.sender, repayer, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
     }
 
     /// @dev Executes a withdraw action.
@@ -350,7 +350,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateSupplierInDS(underlying, supplier, vars.onPool, vars.inP2P, false);
 
         if (amount == 0) {
-            emit Events.Withdrawn(supplier, receiver, underlying, 0, vars.onPool, vars.inP2P);
+            emit Events.Withdrawn(msg.sender, supplier, receiver, underlying, 0, vars.onPool, vars.inP2P);
             return vars;
         }
 
@@ -376,7 +376,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Update the peer-to-peer totals.
         market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow, indexes, true);
 
-        emit Events.Withdrawn(supplier, receiver, underlying, amount, vars.onPool, vars.inP2P);
+        emit Events.Withdrawn(msg.sender, supplier, receiver, underlying, amount, vars.onPool, vars.inP2P);
     }
 
     /// @dev Executes a supply action.
@@ -412,7 +412,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         if (newBalance == 0) _userCollaterals[supplier].remove(underlying);
 
-        emit Events.CollateralWithdrawn(supplier, receiver, underlying, amount, newBalance);
+        emit Events.CollateralWithdrawn(msg.sender, supplier, receiver, underlying, amount, newBalance);
     }
 
     /// @notice Given variables from a market side, calculates the amount to supply/borrow and a new on pool amount.
