@@ -283,7 +283,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         _updateBorrowerInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
 
-        if (amount == 0) return vars;
+        if (amount == 0) {
+            emit Events.Repaid(repayer, onBehalf, underlying, 0, vars.onPool, vars.inP2P);
+            return vars;
+        }
 
         Types.Market storage market = _market[underlying];
 
@@ -346,7 +349,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         _updateSupplierInDS(underlying, supplier, vars.onPool, vars.inP2P, false);
 
-        if (amount == 0) return vars;
+        if (amount == 0) {
+            emit Events.Withdrawn(supplier, receiver, underlying, 0, vars.onPool, vars.inP2P);
+            return vars;
+        }
 
         // Decrease the peer-to-peer supply delta.
         uint256 toWithdrawStep;
