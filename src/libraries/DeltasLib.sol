@@ -30,6 +30,8 @@ library DeltasLib {
         Types.Indexes256 memory indexes,
         bool borrowSide
     ) internal returns (uint256) {
+        if (amount == 0 && promoted == 0) return 0;
+
         Types.MarketSideDelta storage promotedDelta = borrowSide ? deltas.borrow : deltas.supply;
         Types.MarketSideDelta storage counterDelta = borrowSide ? deltas.supply : deltas.borrow;
         Types.MarketSideIndexes256 memory promotedIndexes = borrowSide ? indexes.borrow : indexes.supply;
@@ -59,6 +61,8 @@ library DeltasLib {
         Types.Indexes256 memory indexes,
         bool borrowSide
     ) internal {
+        if (amount == 0 && demoted == 0) return;
+
         Types.MarketSideDelta storage demotedDelta = borrowSide ? deltas.borrow : deltas.supply;
         Types.MarketSideDelta storage counterDelta = borrowSide ? deltas.supply : deltas.borrow;
         Types.MarketSideIndexes256 memory demotedIndexes = borrowSide ? indexes.borrow : indexes.supply;

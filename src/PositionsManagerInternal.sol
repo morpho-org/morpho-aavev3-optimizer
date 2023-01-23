@@ -257,7 +257,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         _updateBorrowerInDS(underlying, borrower, vars.onPool, vars.inP2P, false);
 
-        emit Events.Borrowed(borrower, underlying, receiver, amount, vars.onPool, vars.inP2P);
+        emit Events.Borrowed(borrower, receiver, underlying, amount, vars.onPool, vars.inP2P);
     }
 
     /// @dev Executes a repay action.
