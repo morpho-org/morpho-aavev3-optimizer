@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 /// @title Events
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
-/// @notice Library gathering events used in Morpho.
+/// @notice Library exposing events used in Morpho.
 library Events {
     event Supplied(
         address indexed from,

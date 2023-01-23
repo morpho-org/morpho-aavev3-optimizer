@@ -16,7 +16,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 /// @title MorphoSetters
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
-/// @notice Abstract contract gathering all setters and governance-related functions.
+/// @notice Abstract contract exposing all setters and governance-related functions.
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     using MarketLib for Types.Market;
 
@@ -37,7 +37,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
     /// GOVERNANCE UTILS ///
 
-    /// @notice Creates a new market for the `underlying` token with a given `reserveFactor` (In bps) and a given `p2pIndexCursor` (In bps).
+    /// @notice Creates a new market for the `underlying` token with a given `reserveFactor` (in bps) and a given `p2pIndexCursor` (in bps).
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external onlyOwner {
         _createMarket(underlying, reserveFactor, p2pIndexCursor);
     }
@@ -79,7 +79,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         emit Events.TreasuryVaultSet(treasuryVault);
     }
 
-    /// @notice Sets the `underlying`'s reserve factor to newReserveFactor (In bps).
+    /// @notice Sets the `underlying`'s reserve factor to newReserveFactor (in bps).
     function setReserveFactor(address underlying, uint16 newReserveFactor)
         external
         onlyOwner
@@ -92,7 +92,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         emit Events.ReserveFactorSet(underlying, newReserveFactor);
     }
 
-    /// @notice Sets the `underlying`'s peer-to-peer index cursor to `p2pIndexCursor` (In bps).
+    /// @notice Sets the `underlying`'s peer-to-peer index cursor to `p2pIndexCursor` (in bps).
     function setP2PIndexCursor(address underlying, uint16 p2pIndexCursor)
         external
         onlyOwner

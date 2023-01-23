@@ -21,7 +21,7 @@ import {MorphoSetters} from "./MorphoSetters.sol";
 /// @title Morpho
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
-/// @notice The main Morpho contract gathering all user entry points.
+/// @notice The main Morpho contract exposing all user entry points.
 contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     using Permit2Lib for ERC20;
     using DelegateCall for address;
@@ -34,11 +34,11 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// EXTERNAL ///
 
     /// @notice Supplies `amount` of `underlying` on behalf of `onBehalf`.
-    /// @dev The supplied amount cannot be used as collateral but is eligible for the peer-to-peer matching.
+    ///         The supplied amount cannot be used as collateral but is eligible for the peer-to-peer matching.
     /// @param underlying The address of the underlying asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the supply position.
-    /// @param maxLoops The maximum number of loops to execute the matching process.
+    /// @param maxLoops The maximum number of loops allowed during matching process.
     /// @return The amount supplied.
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
         external
@@ -48,11 +48,11 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     }
 
     /// @notice Supplies `amount` of `underlying` of `onBehalf` using permit2 for a better UX.
-    /// @dev The supplied amount cannot be used as collateral but is eligible for the peer-to-peer matching.
+    ///         The supplied amount cannot be used as collateral but is eligible for the peer-to-peer matching.
     /// @param underlying The address of the `underlying` asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the supply position.
-    /// @param maxLoops The maximum number of loops to execute the matching process.
+    /// @param maxLoops The maximum number of loops allowed during matching process.
     /// @param deadline The deadline for the permit2 signature.
     /// @param signature The permit2 signature.
     /// @return The amount supplied.
@@ -102,7 +102,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to borrow.
     /// @param onBehalf The address that will receive the debt position.
     /// @param receiver The address that will receive the borrowed funds.
-    /// @param maxLoops The maximum number of loops to execute the matching process.
+    /// @param maxLoops The maximum number of loops allowed during matching process.
     /// @return The amount borrowed.
     function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
         external

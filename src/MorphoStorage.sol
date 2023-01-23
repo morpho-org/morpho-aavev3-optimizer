@@ -21,7 +21,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
 
     IPool internal immutable _POOL; // The address of the pool.
     IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER; // The address of the pool addresses provider.
-    bytes32 internal immutable _DOMAIN_SEPARATOR; // The domain separator of the manager approval.
+    bytes32 internal immutable _DOMAIN_SEPARATOR; // The domain separator as part of the EIP712.
     uint8 internal immutable _E_MODE_CATEGORY_ID; // The e-mode category of the deployed Morpho.
 
     /// STORAGE ///

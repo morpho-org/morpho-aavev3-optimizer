@@ -10,7 +10,7 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 /// @title Type
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
-/// @notice Library gathering all Types used in Morpho.
+/// @notice Library exposing all Types used in Morpho.
 library Types {
     /// NESTED STRUCTS ///
 
@@ -100,7 +100,7 @@ library Types {
         uint256 reserveFactor; // The reserve factor percentage (10 000 = 100%).
         uint256 p2pIndexCursor; // The peer-to-peer index cursor (10 000 = 100%).
         Deltas deltas; // The deltas and peer-to-peer amounts.
-        uint256 proportionIdle; // In ray.
+        uint256 proportionIdle; // in ray.
     }
 
     struct GrowthFactors {

@@ -31,7 +31,7 @@ import {MorphoStorage} from "./MorphoStorage.sol";
 /// @title MorphoInternal
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
-/// @notice Abstract contract gathering `Morpho`'s internal functions.
+/// @notice Abstract contract exposing `Morpho`'s internal functions.
 abstract contract MorphoInternal is MorphoStorage {
     using PoolLib for IPool;
     using MarketLib for Types.Market;
@@ -57,7 +57,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
     /// INTERNAL ///
 
-    /// @dev Creates a new market for the `underlying` token with a given `reserveFactor` (In bps) and a given `p2pIndexCursor` (In bps).
+    /// @dev Creates a new market for the `underlying` token with a given `reserveFactor` (in bps) and a given `p2pIndexCursor` (in bps).
     function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         if (underlying == address(0)) revert Errors.AddressIsZero();
         if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR || reserveFactor > PercentageMath.PERCENTAGE_FACTOR) {
@@ -166,8 +166,8 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @dev Returns the total balance of `user` on the `underlying` market given `indexes`.
     /// @param scaledPoolBalance The scaled balance of the user on the pool.
     /// @param scaledP2PBalance The scaled balance of the user in peer-to-peer.
-    /// @param indexes The market side indexes of the market.
-    /// @return The total balance of `user` on the `underlying` market (In underlying decimals).
+    /// @param indexes pool & peer-to-peer borrow.
+    /// @return The total balance of `user` on the `underlying` market (in underlying).
     function _getUserBalanceFromIndexes(
         uint256 scaledPoolBalance,
         uint256 scaledP2PBalance,
@@ -179,8 +179,8 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @dev Returns the total supply balance of `user` on the `underlying` market given `indexes`.
     /// @param underlying The address of the underlying asset.
     /// @param user The address of the user.
-    /// @param indexes The market side indexes.
-    /// @return The total supply balance of `user` on the `underlying` market (In underlying decimals).
+    /// @param indexes pool & peer-to-peer borrow.
+    /// @return The total supply balance of `user` on the `underlying` market (in underlying).
     function _getUserSupplyBalanceFromIndexes(
         address underlying,
         address user,
@@ -195,8 +195,8 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @dev Returns the total borrow balance of `user` on the `underlying` market given `indexes`.
     /// @param underlying The address of the underlying asset.
     /// @param user The address of the user.
-    /// @param indexes The market side indexes.
-    /// @return The total borrow balance of `user` on the `underlying` market (In underlying decimals).
+    /// @param indexes pool & peer-to-peer borrow.
+    /// @return The total borrow balance of `user` on the `underlying` market (in underlying).
     function _getUserBorrowBalanceFromIndexes(
         address underlying,
         address user,
@@ -208,7 +208,7 @@ abstract contract MorphoInternal is MorphoStorage {
         );
     }
 
-    /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (In underlying decimals).
+    /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
     function _getUserCollateralBalanceFromIndex(address underlying, address user, uint256 poolSupplyIndex)
         internal
         view
@@ -217,7 +217,7 @@ abstract contract MorphoInternal is MorphoStorage {
         return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
     }
 
-    /// @notice Returns the hypthetical liquidity data of `user`.
+    /// @notice Returns the hypothetical liquidity data of `user`.
     /// @param user The address of the user to get liquidity data for.
     /// @return liquidityData The hypothetical liquidaty data of `user`.
     function _liquidityData(address user) internal view returns (Types.LiquidityData memory liquidityData) {
@@ -305,7 +305,7 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @dev Returns the liquidity data for a given set of inputs.
     /// @param underlying The address of the underlying asset.
     /// @param vars The liquidity variables.
-    /// @return underlyingPrice The price of the underlying asset (In base currency).
+    /// @return underlyingPrice The price of the underlying asset (in base currency).
     /// @return ltv The loan to value of the underlying asset.
     /// @return liquidationThreshold The liquidation threshold of the underlying asset.
     /// @return tokenUnit The token unit of the underlying asset.
