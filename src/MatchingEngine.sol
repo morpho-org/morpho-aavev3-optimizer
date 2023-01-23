@@ -15,7 +15,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 /// @title MatchingEngine
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
-/// @notice Abstract contract with functions to promote or demote users to/from peer to peer.
+/// @notice Abstract contract with functions to promote or demote users to/from peer-to-peer.
 abstract contract MatchingEngine is MorphoInternal {
     using MarketLib for Types.Market;
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
@@ -26,7 +26,7 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @dev Demotes suppliers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to promote suppliers.
     /// @param amount The amount of `underlying` to promote.
-    /// @param maxLoops The maximum number of loops possible for the matching process.
+    /// @param maxLoops The maximum number of loops allowed during the matching process.
     function _promoteSuppliers(address underlying, uint256 amount, uint256 maxLoops)
         internal
         returns (uint256 promoted, uint256 loopsDone)
@@ -51,7 +51,7 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @dev Promotes borrowers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to promote borrowers.
     /// @param amount The amount of `underlying` to promote.
-    /// @param maxLoops The maximum number of loops possible for the matching process.
+    /// @param maxLoops The maximum number of loops allowed during the matching process.
     function _promoteBorrowers(address underlying, uint256 amount, uint256 maxLoops)
         internal
         returns (uint256 promoted, uint256 loopsDone)
@@ -76,7 +76,7 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @dev Demotes suppliers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to demote suppliers.
     /// @param amount The amount of `underlying` to demote.
-    /// @param maxLoops The maximum number of loops possible for the matching process.
+    /// @param maxLoops The maximum number of loops allowed during the matching process.
     function _demoteSuppliers(address underlying, uint256 amount, uint256 maxLoops)
         internal
         returns (uint256 demoted)
@@ -101,7 +101,7 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @dev Demotes borrowers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to demote borrowers.
     /// @param amount The amount of `underlying` to demote.
-    /// @param maxLoops The maximum number of loops possible for the matching process.
+    /// @param maxLoops The maximum number of loops allowed during the matching process.
     function _demoteBorrowers(address underlying, uint256 amount, uint256 maxLoops)
         internal
         returns (uint256 demoted)
@@ -161,7 +161,7 @@ abstract contract MatchingEngine is MorphoInternal {
 
     /// @dev Promotes a given amount in peer-to-peer.
     /// @param poolBalance The scaled balance of the user on the pool.
-    /// @param p2pBalance The scaled balance of the user on peer-to-peer.
+    /// @param p2pBalance The scaled balance of the user in peer-to-peer.
     /// @param indexes The indexes of the market.
     /// @param remaining The remaining amount to promote.
     function _promote(
@@ -179,7 +179,7 @@ abstract contract MatchingEngine is MorphoInternal {
 
     /// @dev Demotes a given amount in peer-to-peer.
     /// @param poolBalance The scaled balance of the user on the pool.
-    /// @param p2pBalance The scaled balance of the user on peer-to-peer.
+    /// @param p2pBalance The scaled balance of the user in peer-to-peer.
     /// @param indexes The indexes of the market.
     /// @param remaining The remaining amount to demote.
     function _demote(

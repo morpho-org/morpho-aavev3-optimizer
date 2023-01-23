@@ -41,7 +41,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param amount The amount of `underlying` to supply.
     /// @param from The address to transfer the underlying from.
     /// @param onBehalf The address that will receive the supply position.
-    /// @param maxLoops The maximum number of loops to execute the matching process.
+    /// @param maxLoops The maximum number of loops allowed during matching process.
     /// @return The amount supplied.
     function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)
         external
@@ -93,7 +93,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param amount The amount of `underlying` to borrow.
     /// @param borrower The address that will receive the debt position.
     /// @param receiver The address that will receive the borrowed funds.
-    /// @param maxLoops The maximum number of loops to execute the matching process.
+    /// @param maxLoops The maximum number of loops allowed during matching process.
     /// @return The amount borrowed.
     function borrowLogic(address underlying, uint256 amount, address borrower, address receiver, uint256 maxLoops)
         external

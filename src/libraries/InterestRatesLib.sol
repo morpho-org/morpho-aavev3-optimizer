@@ -105,7 +105,7 @@ library InterestRatesLib {
         uint256 proportionDelta = Math.min(
             p2pDelta.rayMul(lastIndexes.poolIndex).rayDivUp(p2pAmount.rayMul(lastIndexes.p2pIndex)),
             WadRayMath.RAY - proportionIdle // To avoid proportionDelta + proportionIdle > 1 with rounding errors.
-        ); // In ray.
+        ); // in ray.
 
         // Equivalent to:
         // lastP2PIndex * (

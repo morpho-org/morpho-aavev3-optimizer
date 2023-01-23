@@ -14,7 +14,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 /// @title MorphoGetters
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
-/// @notice Abstract contract gathering all accessible getters.
+/// @notice Abstract contract exposing all accessible getters.
 abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
@@ -47,46 +47,46 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _marketsCreated;
     }
 
-    /// @notice Returns the scaled pool supply balance of `user` on the `underlying` market (In ray).
+    /// @notice Returns the scaled pool supply balance of `user` on the `underlying` market (in ray).
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledPoolSupplyBalance(user);
     }
 
-    /// @notice Returns the scaled peer-to-peer supply balance of `user` on the `underlying` market (In ray).
+    /// @notice Returns the scaled peer-to-peer supply balance of `user` on the `underlying` market (in ray).
     function scaledP2PSupplyBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledP2PSupplyBalance(user);
     }
 
-    /// @notice Returns the scaled pool borrow balance of `user` on the `underlying` market (In ray).
+    /// @notice Returns the scaled pool borrow balance of `user` on the `underlying` market (in ray).
     function scaledPoolBorrowBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledPoolBorrowBalance(user);
     }
 
-    /// @notice Returns the scaled peer-to-peer borrow balance of `user` on the `underlying` market (In ray).
+    /// @notice Returns the scaled peer-to-peer borrow balance of `user` on the `underlying` market (in ray).
     function scaledP2PBorrowBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledP2PBorrowBalance(user);
     }
 
-    /// @notice Returns the scaled pool supply collateral balance of `user` on the `underlying` market (In ray).
+    /// @notice Returns the scaled pool supply collateral balance of `user` on the `underlying` market (in ray).
     function scaledCollateralBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledCollateralBalance(user);
     }
 
-    /// @notice Returns the total supply balance of `user` on the `underlying` market (In `underlying` decimals).
+    /// @notice Returns the total supply balance of `user` on the `underlying` market (in `underlying`).
     function supplyBalance(address underlying, address user) external view returns (uint256) {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
 
         return _getUserSupplyBalanceFromIndexes(underlying, user, indexes.supply);
     }
 
-    /// @notice Returns the total borrow balance of `user` on the `underlying` market (In `underlying` decimals).
+    /// @notice Returns the total borrow balance of `user` on the `underlying` market (in `underlying`).
     function borrowBalance(address underlying, address user) external view returns (uint256) {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
 
         return _getUserSupplyBalanceFromIndexes(underlying, user, indexes.borrow);
     }
 
-    /// @notice Returns the supply collateral balance of `user` on the `underlying` market (In `underlying` decimals).
+    /// @notice Returns the supply collateral balance of `user` on the `underlying` market (in `underlying`).
     function collateralBalance(address underlying, address user) external view returns (uint256) {
         return _getUserCollateralBalanceFromIndex(underlying, user, _POOL.getReserveNormalizedIncome(underlying));
     }
@@ -141,7 +141,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         (, indexes) = _computeIndexes(underlying);
     }
 
-    /// @notice Returns the hypthetical liquidity data of `user`.
+    /// @notice Returns the hypothetical liquidity data of `user`.
     /// @param underlying The address of the underlying asset to borrow.
     /// @param user The address of the user to get liquidity data for.
     /// @param amountWithdrawn The hypothetical amount to withdraw on the `underlying` market.
