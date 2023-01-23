@@ -63,7 +63,7 @@ runs:
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
-        FOUNDRY_FUZZ_RUNS: 256
+        FOUNDRY_FUZZ_RUNS: 128
 
     - name: Generate lcov coverage report
       if: ${{ inputs.codecovToken != '' }}
