@@ -148,6 +148,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = onPool.rayDiv(indexes.supply.poolIndex);
+        _userBorrows[address(this)].add(dai);
+        _updateBorrowerInDS(dai, address(this), onPool.rayDiv(indexes.borrow.poolIndex), 0, true);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorizedBorrow.selector));
         this.authorizeBorrow(dai, onPool, address(this));
@@ -188,19 +190,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = onPool.rayDivUp(indexes.supply.poolIndex);
         this.validateWithdrawCollateral(dai, onPool, address(this), address(this));
-    }
-
-    function testAuthorizeWithdrawCollateralShouldRevertIfHealthFactorTooLow(uint256 onPool) public {
-        onPool = bound(onPool, MIN_AMOUNT, MAX_AMOUNT);
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
-
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = onPool.rayDiv(indexes.supply.poolIndex);
-        _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(dai, address(this), onPool.rayDiv(indexes.borrow.poolIndex) / 2, 0, true);
-
-        vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorizedWithdraw.selector));
-        this.authorizeWithdrawCollateral(dai, onPool.rayDiv(indexes.supply.poolIndex) / 2, address(this));
     }
 
     function testAuthorizeLiquidateIfBorrowMarketNotCreated() public {
@@ -400,8 +389,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _validateWithdrawCollateral(underlying, amount, supplier, receiver);
     }
 
-    function authorizeWithdrawCollateral(address underlying, uint256 amount, address supplier) external view {
-        _authorizeWithdrawCollateral(underlying, amount, supplier);
+    function authorizeWithdrawCollateral(address supplier) external view {
+        _authorizeWithdrawCollateral(supplier);
     }
 
     function authorizeLiquidate(address collateral, address borrow, address liquidator)

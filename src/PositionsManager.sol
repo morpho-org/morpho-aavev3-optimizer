@@ -100,11 +100,11 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        // The following check requires indexes to be up-to-date.
-        _authorizeBorrow(underlying, amount, borrower, indexes);
-
         Types.BorrowWithdrawVars memory vars =
             _executeBorrow(underlying, amount, borrower, receiver, maxIterations, indexes);
+
+        // The following check requires accounting to have been performed.
+        _authorizeBorrow(underlying, amount, borrower, indexes);
 
         _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
         _POOL.borrowFromPool(underlying, vars.toBorrow);
@@ -187,10 +187,10 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         if (amount == 0) return 0;
 
-        // The following check requires storage indexes to be up-to-date.
-        _authorizeWithdrawCollateral(underlying, amount, supplier);
-
         _executeWithdrawCollateral(underlying, amount, supplier, receiver, poolSupplyIndex);
+
+        // The following check requires accounting to have been performed.
+        _authorizeWithdrawCollateral(supplier);
 
         _POOL.withdrawFromPool(underlying, market.aToken, amount);
 
