@@ -208,7 +208,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.toRepay += promoted;
 
         // Update the peer-to-peer totals.
-        vars.inP2P = deltas.increaseP2P(underlying, promoted, vars.toRepay, indexes, true);
+        vars.inP2P += deltas.increaseP2P(underlying, promoted, vars.toRepay, indexes, true);
 
         /// Pool supply ///
 
