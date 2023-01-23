@@ -18,6 +18,10 @@ import {MorphoStorage} from "./MorphoStorage.sol";
 import {MorphoGetters} from "./MorphoGetters.sol";
 import {MorphoSetters} from "./MorphoSetters.sol";
 
+/// @title Morpho
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice The main Morpho contract exposing all user entry points.
 contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     using Permit2Lib for ERC20;
     using DelegateCall for address;
@@ -29,13 +33,29 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     /// EXTERNAL ///
 
+    /// @notice Supplies `amount` of `underlying` on behalf of `onBehalf`.
+    ///         The supplied amount cannot be used as collateral but is eligible for the peer-to-peer matching.
+    /// @param underlying The address of the underlying asset to supply.
+    /// @param amount The amount of `underlying` to supply.
+    /// @param onBehalf The address that will receive the supply position.
+    /// @param maxLoops The maximum number of loops allowed during matching process.
+    /// @return The amount supplied.
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
         external
-        returns (uint256 supplied)
+        returns (uint256)
     {
         return _supply(underlying, amount, msg.sender, onBehalf, maxLoops);
     }
 
+    /// @notice Supplies `amount` of `underlying` of `onBehalf` using permit2 for a better UX.
+    ///         The supplied amount cannot be used as collateral but is eligible for the peer-to-peer matching.
+    /// @param underlying The address of the `underlying` asset to supply.
+    /// @param amount The amount of `underlying` to supply.
+    /// @param onBehalf The address that will receive the supply position.
+    /// @param maxLoops The maximum number of loops allowed during matching process.
+    /// @param deadline The deadline for the permit2 signature.
+    /// @param signature The permit2 signature.
+    /// @return The amount supplied.
     function supplyWithPermit(
         address underlying,
         uint256 amount,
@@ -43,76 +63,134 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 maxLoops,
         uint256 deadline,
         Types.Signature calldata signature
-    ) external returns (uint256 supplied) {
+    ) external returns (uint256) {
         ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         return _supply(underlying, amount, msg.sender, onBehalf, maxLoops);
     }
 
-    function supplyCollateral(address underlying, uint256 amount, address onBehalf)
-        external
-        returns (uint256 supplied)
-    {
+    /// @notice Supplies `amount` of `underlying` collateral to the pool on behalf of `onBehalf`.
+    /// @dev The supplied amount cannot be matched peer-to-peer but can be used as collateral.
+    /// @param underlying The address of the underlying asset to supply.
+    /// @param amount The amount of `underlying` to supply.
+    /// @param onBehalf The address that will receive the collateral position.
+    /// @return The collateral amount supplied.
+    function supplyCollateral(address underlying, uint256 amount, address onBehalf) external returns (uint256) {
         return _supplyCollateral(underlying, amount, msg.sender, onBehalf);
     }
 
+    /// @notice Supplies `amount` of `underlying` collateral to the pool on behalf of `onBehalf` using permit2 for a better UX.
+    /// @dev The supplied amount cannot be matched peer-to-peer but can be used as collateral.
+    /// @param underlying The address of the underlying asset to supply.
+    /// @param amount The amount of `underlying` to supply.
+    /// @param onBehalf The address that will receive the collateral position.
+    /// @param deadline The deadline for the permit2 signature.
+    /// @param signature The permit2 signature.
+    /// @return The collateral amount supplied.
     function supplyCollateralWithPermit(
         address underlying,
         uint256 amount,
         address onBehalf,
         uint256 deadline,
         Types.Signature calldata signature
-    ) external returns (uint256 supplied) {
+    ) external returns (uint256) {
         ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         return _supplyCollateral(underlying, amount, msg.sender, onBehalf);
     }
 
+    /// @notice Borrows `amount` of `underlying` on behalf of `onBehalf`.
+    /// @param underlying The address of the underlying asset to borrow.
+    /// @param amount The amount of `underlying` to borrow.
+    /// @param onBehalf The address that will receive the debt position.
+    /// @param receiver The address that will receive the borrowed funds.
+    /// @param maxLoops The maximum number of loops allowed during matching process.
+    /// @return The amount borrowed.
     function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
         external
-        returns (uint256 borrowed)
+        returns (uint256)
     {
         return _borrow(underlying, amount, onBehalf, receiver, maxLoops);
     }
 
-    function repay(address underlying, uint256 amount, address onBehalf) external returns (uint256 repaid) {
+    /// @notice Borrows `amount` of `underlying` on behalf of `onBehalf`.
+    /// @param underlying The address of the underlying asset to borrow.
+    /// @param amount The amount of `underlying` to repay.
+    /// @param onBehalf The address whose position will be repaid.
+    /// @return The amount repaid.
+    function repay(address underlying, uint256 amount, address onBehalf) external returns (uint256) {
         return _repay(underlying, amount, msg.sender, onBehalf);
     }
 
+    /// @notice Borrows `amount` of `underlying` on behalf of `onBehalf` using permit2 for a better UX.
+    /// @param underlying The address of the underlying asset to borrow.
+    /// @param amount The amount of `underlying` to repay.
+    /// @param onBehalf The address whose position will be repaid.
+    /// @param deadline The deadline for the permit2 signature.
+    /// @param signature The permit2 signature.
+    /// @return The amount repaid.
     function repayWithPermit(
         address underlying,
         uint256 amount,
         address onBehalf,
         uint256 deadline,
         Types.Signature calldata signature
-    ) external returns (uint256 repaid) {
+    ) external returns (uint256) {
         ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         return _repay(underlying, amount, msg.sender, onBehalf);
     }
 
+    /// @notice Withdraws `amount` of `underlying` on behalf of `onBehalf`.
+    /// @param underlying The address of the underlying asset to withdraw.
+    /// @param amount The amount of `underlying` to withdraw.
+    /// @param onBehalf The address whose position will be withdrawn.
+    /// @param receiver The address that will receive the withdrawn funds.
+    /// @return The amount withdrawn.
     function withdraw(address underlying, uint256 amount, address onBehalf, address receiver)
         external
-        returns (uint256 withdrawn)
+        returns (uint256)
     {
         return _withdraw(underlying, amount, onBehalf, receiver);
     }
 
+    /// @notice Withdraws `amount` of `underlying` collateral on behalf of `onBehalf`.
+    /// @param underlying The address of the underlying asset to withdraw.
+    /// @param amount The amount of `underlying` to withdraw.
+    /// @param onBehalf The address whose position will be withdrawn.
+    /// @param receiver The address that will receive the withdrawn funds.
+    /// @return The collateral amount withdrawn.
     function withdrawCollateral(address underlying, uint256 amount, address onBehalf, address receiver)
         external
-        returns (uint256 withdrawn)
+        returns (uint256)
     {
         return _withdrawCollateral(underlying, amount, onBehalf, receiver);
     }
 
+    /// @notice Liquidates `user`.
+    /// @param underlyingBorrowed The address of the underlying borrowed to repay.
+    /// @param underlyingCollateral The address of the underlying collateral to seize.
+    /// @param user The address of the user to liquidate.
+    /// @param amount The amount of `underlyingBorrowed` to repay.
+    /// @return The `underlyingBorrowed` amount repaid and the `underlyingCollateral` amount seized.
     function liquidate(address underlyingBorrowed, address underlyingCollateral, address user, uint256 amount)
         external
-        returns (uint256 repaid, uint256 seized)
+        returns (uint256, uint256)
     {
         return _liquidate(underlyingBorrowed, underlyingCollateral, amount, user, msg.sender);
     }
 
+    /// @notice Approves a `manager` to manage the position of `msg.sender`.
+    /// @param manager The address of the manager.
+    /// @param isAllowed Whether `manager` is allowed to manage `msg.sender`'s position or not.
     function approveManager(address manager, bool isAllowed) external {
         _approveManager(msg.sender, manager, isAllowed);
     }
 
+    /// @notice Approves a `manager` to manage the position of `msg.sender` using EIP712 signature for a better UX.
+    /// @param delegator The address of the delegator.
+    /// @param manager The address of the manager.
+    /// @param isAllowed Whether `manager` is allowed to manage `msg.sender`'s position or not.
+    /// @param nonce The nonce of the signed message.
+    /// @param deadline The deadline of the signed message.
+    /// @param signature The signature of the message.
     function approveManagerWithSig(
         address delegator,
         address manager,

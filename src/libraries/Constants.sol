@@ -4,6 +4,10 @@ pragma solidity ^0.8.17;
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
+/// @title Constants
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library exposing constants used in Morpho.
 library Constants {
     uint8 internal constant NO_REFERRAL_CODE = 0;
     uint8 internal constant VARIABLE_INTEREST_MODE = 2;

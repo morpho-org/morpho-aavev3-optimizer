@@ -5,6 +5,10 @@ import {Types} from "./Types.sol";
 
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
+/// @title MarketBalanceLib
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library used to ease market balance reads.
 library MarketBalanceLib {
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
 

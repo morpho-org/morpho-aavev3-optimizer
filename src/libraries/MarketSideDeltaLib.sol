@@ -6,6 +6,10 @@ import {Events} from "./Events.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
+/// @title MarketSideDeltaLib
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library used to ease increase or decrease deltas.
 library MarketSideDeltaLib {
     using Math for uint256;
     using WadRayMath for uint256;

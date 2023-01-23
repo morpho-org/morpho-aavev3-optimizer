@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
+/// @title Events
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library exposing events used in Morpho.
 library Events {
     event Supplied(
         address indexed from,
