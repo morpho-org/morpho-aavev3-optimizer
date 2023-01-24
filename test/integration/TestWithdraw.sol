@@ -40,16 +40,16 @@ contract TestIntegrationWithdraw is IntegrationTest {
             TestMarket memory market = markets[marketIndex];
 
             uint256 supplied = _boundSupply(market, amount);
-            uint256 promoted = _promoteSupply(market, supplied.percentMul(50_00)); // 50% peer-to-peer.
+            uint256 promoted = _promoteSupply(market, supplied.percentMul(50_00)); // <= 50% peer-to-peer because market is not guaranteed to be borrowable.
             amount = supplied - promoted;
 
             user1.approve(market.underlying, supplied);
-            user1.supply(market.underlying, supplied, onBehalf); // <= 50% peer-to-peer because market is not guaranteed to be borrowable.
+            user1.supply(market.underlying, supplied, onBehalf);
 
             uint256 balanceBeforeWithdraw = ERC20(market.underlying).balanceOf(receiver);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.Withdrawn(onBehalf, receiver, market.underlying, 0, 0, 0);
+            emit Events.Withdrawn(address(user1), onBehalf, receiver, market.underlying, 0, 0, 0);
 
             uint256 withdrawn = user1.withdraw(market.underlying, amount, onBehalf, receiver);
 
@@ -93,7 +93,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             amount = _boundSupply(market, amount);
             amount = bound(amount, 0, ERC20(market.underlying).balanceOf(market.aToken)); // Because >= 50% will get borrowed from the pool.
-            uint256 borrowed = _promoteSupply(market, amount.percentMul(50_00)); // <= 50% peer-to-peer because market is not guaranteed to be borrowable.
+            uint256 promoted = _promoteSupply(market, amount.percentMul(50_00)); // <= 50% peer-to-peer because market is not guaranteed to be borrowable.
             input = bound(input, amount + 1, type(uint256).max);
 
             user1.approve(market.underlying, amount);
@@ -101,7 +101,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
-            if (borrowed > 0) {
+            if (promoted > 0) {
                 vm.expectEmit(true, true, true, false, address(morpho));
                 emit Events.BorrowPositionUpdated(address(promoter), market.underlying, 0, 0);
 
@@ -110,7 +110,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
             }
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.Withdrawn(onBehalf, receiver, market.underlying, 0, 0, 0);
+            emit Events.Withdrawn(address(user1), onBehalf, receiver, market.underlying, 0, 0, 0);
 
             uint256 withdrawn = user1.withdraw(market.underlying, input, onBehalf, receiver);
 

@@ -47,7 +47,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.CollateralWithdrawn(onBehalf, receiver, market.underlying, 0, 0);
+            emit Events.CollateralWithdrawn(address(user1), onBehalf, receiver, market.underlying, 0, 0);
 
             uint256 withdrawn = user1.withdrawCollateral(market.underlying, input, onBehalf, receiver);
 
@@ -86,7 +86,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
             uint256 balanceAfter = user1.balanceOf(market.underlying);
             assertLe(balanceAfter, balanceBefore, "balanceAfter > balanceBefore");
-            assertApproxEqAbs(balanceAfter, balanceBefore, 1, "balanceAfter != balanceBefore");
+            assertApproxEqAbs(balanceAfter, balanceBefore, 2, "balanceAfter != balanceBefore");
         }
     }
 

@@ -60,14 +60,15 @@ contract IntegrationTest is ForkTest {
     function setUp() public virtual override {
         _deploy();
 
-        _initMarket(weth, 0, 33_33); // Needs to be first, so that markets[0] == weth.
-        _initMarket(dai, 0, 33_33);
-        _initMarket(usdc, 0, 33_33);
-        _initMarket(usdt, 0, 33_33);
-        _initMarket(aave, 0, 33_33);
-        _initMarket(link, 0, 33_33);
-        _initMarket(wavax, 0, 33_33);
-        _initMarket(wbtc, 0, 33_33);
+        // Order should not be changed.
+        _createMarket(weth, 0, 33_33);
+        _createMarket(dai, 0, 33_33);
+        _createMarket(usdc, 0, 33_33);
+        _createMarket(usdt, 0, 33_33);
+        _createMarket(wbtc, 0, 33_33);
+        _createMarket(aave, 0, 33_33);
+        _createMarket(link, 0, 33_33);
+        _createMarket(wavax, 0, 33_33);
 
         _forward(1); // All markets are outdated in Morpho's storage.
 
@@ -118,10 +119,12 @@ contract IntegrationTest is ForkTest {
         forkId = vm.createSelectFork(endpoint, blockNumber);
     }
 
-    function _initMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
-        DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
+    function _initMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor)
+        internal
+        returns (TestMarket memory market, DataTypes.ReserveData memory reserve)
+    {
+        reserve = pool.getReserveData(underlying);
 
-        TestMarket memory market;
         market.aToken = reserve.aTokenAddress;
         market.debtToken = reserve.variableDebtTokenAddress;
         market.underlying = underlying;
@@ -134,15 +137,20 @@ contract IntegrationTest is ForkTest {
         market.supplyCap = reserve.configuration.getSupplyCap() * 10 ** market.decimals;
         market.borrowCap = reserve.configuration.getBorrowCap() * 10 ** market.decimals;
 
+        vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
+        vm.label(reserve.variableDebtTokenAddress, string.concat("d", market.symbol));
+    }
+
+    function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
+        (TestMarket memory market, DataTypes.ReserveData memory reserve) =
+            _initMarket(underlying, reserveFactor, p2pIndexCursor);
+
         markets.push(market);
         if (
             market.ltv > 0 && reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
                 && !reserve.configuration.getBorrowableInIsolation() && market.borrowCap > 0
                 && market.borrowCap > ERC20(market.debtToken).totalSupply()
         ) borrowableMarkets.push(market);
-
-        vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
-        vm.label(reserve.variableDebtTokenAddress, string.concat("d", market.symbol));
 
         morpho.createMarket(underlying, reserveFactor, p2pIndexCursor);
     }
@@ -245,7 +253,7 @@ contract IntegrationTest is ForkTest {
 
         try promoter.borrow(market.underlying, borrowed) {
             _resetPreviousIndex(market); // Enable borrow/repay in same block.
-            _deposit(weth, _minCollateral(markets[0], market, borrowed), address(morpho)); // Make Morpho solvent with WETH because no supply cap.
+            _deposit(dai, _minCollateral(markets[1], market, borrowed), address(morpho)); // Make Morpho solvent with DAI, having the largest supply cap.
         } catch {
             borrowed = 0;
         }

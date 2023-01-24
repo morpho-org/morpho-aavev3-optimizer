@@ -43,7 +43,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.Borrowed(onBehalf, receiver, market.underlying, 0, 0, 0);
+            emit Events.Borrowed(address(user1), onBehalf, receiver, market.underlying, 0, 0, 0);
 
             uint256 borrowed =
                 _borrowNoCollateral(address(user1), market, amount, onBehalf, receiver, DEFAULT_MAX_LOOPS);
@@ -100,7 +100,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             emit Events.P2PTotalsUpdated(market.underlying, 0, 0);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.Borrowed(onBehalf, receiver, market.underlying, 0, 0, 0);
+            emit Events.Borrowed(address(user1), onBehalf, receiver, market.underlying, 0, 0, 0);
 
             uint256 borrowed =
                 _borrowNoCollateral(address(user1), market, amount, onBehalf, receiver, DEFAULT_MAX_LOOPS);
