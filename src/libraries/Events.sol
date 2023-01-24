@@ -25,7 +25,7 @@ library Events {
 
     event Borrowed(
         address caller,
-        address indexed borrower,
+        address indexed onBehalf,
         address indexed receiver,
         address indexed underlying,
         uint256 amount,
@@ -35,7 +35,7 @@ library Events {
 
     event Withdrawn(
         address caller,
-        address indexed supplier,
+        address indexed onBehalf,
         address indexed receiver,
         address indexed underlying,
         uint256 amount,
@@ -45,7 +45,7 @@ library Events {
 
     event CollateralWithdrawn(
         address caller,
-        address indexed supplier,
+        address indexed onBehalf,
         address indexed receiver,
         address indexed underlying,
         uint256 amount,
