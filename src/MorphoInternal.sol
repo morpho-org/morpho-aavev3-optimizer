@@ -343,6 +343,8 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.ReserveConfigurationMap memory configuration = reserveData.configuration;
         tokenUnit = 10 ** configuration.getDecimals();
 
+        // If this instance of Morpho isn't in eMode, then vars.eModeCategory is not initalized.
+        // Thus in this case `vars.eModeCategory.priceSource` == `address(0)`.
         if (vars.eModeCategory.priceSource != address(0)) {
             underlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
         } else {
