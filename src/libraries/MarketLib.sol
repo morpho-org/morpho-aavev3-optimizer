@@ -117,16 +117,16 @@ library MarketLib {
         emit Events.IsLiquidateBorrowPausedSet(underlying, isPaused);
     }
 
-    function setIsDeprecated(Types.Market storage market, address underlying, bool isDeprecated) internal {
-        market.pauseStatuses.isDeprecated = isDeprecated;
+    function setIsDeprecated(Types.Market storage market, address underlying, bool deprecated) internal {
+        market.pauseStatuses.isDeprecated = deprecated;
 
-        emit Events.IsDeprecatedSet(underlying, isDeprecated);
+        emit Events.IsDeprecatedSet(underlying, deprecated);
     }
 
-    function setIsP2PDisabled(Types.Market storage market, address underlying, bool isP2PDisabled) internal {
-        market.pauseStatuses.isP2PDisabled = isP2PDisabled;
+    function setIsP2PDisabled(Types.Market storage market, address underlying, bool p2pDisabled) internal {
+        market.pauseStatuses.isP2PDisabled = p2pDisabled;
 
-        emit Events.IsP2PDisabledSet(underlying, isP2PDisabled);
+        emit Events.IsP2PDisabledSet(underlying, p2pDisabled);
     }
 
     function getSupplyIndexes(Types.Market storage market)
