@@ -15,47 +15,159 @@ contract TestIntegrationRepay is IntegrationTest {
         return address(uint160(bound(uint256(uint160(onBehalf)), 1, type(uint160).max)));
     }
 
-    function testShouldRepayPoolOnly(uint256 amount, address onBehalf) public {
+    struct RepayTest {
+        uint256 borrowed;
+        uint256 promoted;
+        uint256 repaid;
+        uint256 scaledP2PBorrow;
+        uint256 scaledPoolBorrow;
+        TestMarket market;
+        Types.Indexes256 indexes;
+        Types.Market morphoMarket;
+    }
+
+    function testShouldRepayPoolOnly(uint256 amount, address onBehalf) public returns (RepayTest memory test) {
         onBehalf = _boundOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
             _revert();
 
-            TestMarket memory market = borrowableMarkets[marketIndex];
+            test.market = borrowableMarkets[marketIndex];
 
-            uint256 borrowed = _boundBorrow(market, _boundSupply(market, amount)); // Don't go over the supply cap.
+            test.borrowed = _boundBorrow(test.market, _boundSupply(test.market, amount)); // Don't go over the supply cap.
 
-            uint256 promoted = borrowed.percentMul(50_00);
-            promoter.approve(market.underlying, promoted);
-            promoter.supply(market.underlying, promoted); // 50% peer-to-peer.
-            amount = borrowed - promoted;
+            test.promoted = test.borrowed.percentMul(50_00);
+            promoter.approve(test.market.underlying, test.promoted);
+            promoter.supply(test.market.underlying, test.promoted); // 50% peer-to-peer.
+            amount = test.borrowed - test.promoted;
 
-            _borrowNoCollateral(address(user1), market, borrowed, address(user1), address(user1), DEFAULT_MAX_LOOPS);
+            _borrowNoCollateral(onBehalf, test.market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_LOOPS);
+            _resetPreviousIndex(test.market); // Enable borrow/repay in same block.
 
-            uint256 balanceBefore = user1.balanceOf(market.underlying);
-            uint256 morphoBalanceBefore = ERC20(market.debtToken).balanceOf(address(morpho));
+            uint256 balanceBefore = user1.balanceOf(test.market.underlying);
+
+            user1.approve(test.market.underlying, amount);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.Repaid(address(user1), onBehalf, market.underlying, 0, 0, 0);
+            emit Events.Repaid(address(user1), onBehalf, test.market.underlying, 0, 0, 0);
 
-            uint256 repaid = user1.repay(market.underlying, amount, onBehalf);
+            test.repaid = user1.repay(test.market.underlying, amount, onBehalf);
 
-            Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
-            uint256 p2pBorrow =
-                morpho.scaledP2PBorrowBalance(market.underlying, onBehalf).rayMul(indexes.borrow.p2pIndex);
-            uint256 poolBorrow =
-                morpho.scaledPoolBorrowBalance(market.underlying, onBehalf).rayMul(indexes.borrow.poolIndex);
+            test.indexes = morpho.updatedIndexes(test.market.underlying);
+            test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(test.market.underlying, onBehalf);
+            test.scaledPoolBorrow = morpho.scaledPoolBorrowBalance(test.market.underlying, onBehalf);
+            uint256 p2pBorrow = test.scaledP2PBorrow.rayMul(test.indexes.borrow.p2pIndex);
+            uint256 poolBorrow = test.scaledPoolBorrow.rayMul(test.indexes.borrow.poolIndex);
 
+            // Assert balances on Morpho.
             assertGe(poolBorrow, 0, "poolBorrow == 0");
-            assertLe(poolBorrow, borrowed - repaid, "poolBorrow > borrowed - repaid");
-            assertLe(repaid, amount, "repaid > amount");
-            assertApproxEqAbs(repaid, amount, 1, "repaid != amount");
-            assertLe(p2pBorrow, promoted, "p2pBorrow > promoted");
-            assertApproxEqAbs(p2pBorrow, promoted, 2, "p2pBorrow != promoted");
+            assertLe(poolBorrow, test.borrowed - test.repaid, "poolBorrow > borrowed - repaid");
+            assertApproxLeAbs(test.repaid, amount, 1, "repaid != amount");
+            assertApproxLeAbs(p2pBorrow, test.promoted, 2, "p2pBorrow != promoted");
 
-            assertApproxEqAbs(
-                balanceBefore - user1.balanceOf(market.underlying), amount, 1, "balanceBefore - balanceAfter != amount"
+            // Assert Morpho getters.
+            assertApproxLeAbs(
+                morpho.borrowBalance(test.market.underlying, onBehalf),
+                test.borrowed - test.repaid,
+                1,
+                "borrowBalance != borrowed - repaid"
             );
+
+            // Assert Morpho's position on pool.
+            assertApproxEqAbs(ERC20(test.market.aToken).balanceOf(address(morpho)), 0, 1, "morphoSupply != 0");
+            assertApproxEqAbs(ERC20(test.market.debtToken).balanceOf(address(morpho)), 0, 1, "morphoBorrow != 0");
+
+            // Assert user's underlying balance.
+            assertApproxEqAbs(
+                balanceBefore - user1.balanceOf(test.market.underlying),
+                amount,
+                1,
+                "balanceBefore - balanceAfter != amount"
+            );
+
+            // Assert Morpho's market state.
+            test.morphoMarket = morpho.market(test.market.underlying);
+            assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
+            assertEq(
+                test.morphoMarket.deltas.supply.scaledTotalP2P,
+                test.scaledP2PBorrow,
+                "scaledTotalBorrowP2P != scaledP2PBorrow"
+            );
+            assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
+            assertEq(
+                test.morphoMarket.deltas.borrow.scaledTotalP2P,
+                test.scaledP2PBorrow,
+                "scaledTotalBorrowP2P != scaledP2PBorrow"
+            );
+            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
+        }
+    }
+
+    function testShouldRepayAllBorrow(uint256 amount, address onBehalf) public returns (RepayTest memory test) {
+        onBehalf = _boundOnBehalf(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
+            _revert();
+
+            test.market = borrowableMarkets[marketIndex];
+
+            test.borrowed = _boundBorrow(test.market, _boundSupply(test.market, amount)); // Don't go over the supply cap.
+
+            test.promoted = test.borrowed.percentMul(50_00);
+            promoter.approve(test.market.underlying, test.promoted);
+            promoter.supply(test.market.underlying, test.promoted); // 50% peer-to-peer.
+            amount = bound(amount, test.borrowed + 1, type(uint256).max);
+
+            _borrowNoCollateral(onBehalf, test.market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_LOOPS);
+            _resetPreviousIndex(test.market); // Enable borrow/repay in same block.
+
+            uint256 balanceBefore = user1.balanceOf(test.market.underlying);
+
+            user1.approve(test.market.underlying, amount);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.SupplyPositionUpdated(address(promoter), test.market.underlying, 0, 0);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.P2PTotalsUpdated(test.market.underlying, 0, 0);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.Repaid(address(user1), onBehalf, test.market.underlying, 0, 0, 0);
+
+            test.repaid = user1.repay(test.market.underlying, amount, onBehalf);
+
+            test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(test.market.underlying, onBehalf);
+            test.scaledPoolBorrow = morpho.scaledPoolBorrowBalance(test.market.underlying, onBehalf);
+
+            // Assert balances on Morpho.
+            assertEq(test.scaledP2PBorrow, 0, "scaledP2PBorrow != 0");
+            assertEq(test.scaledPoolBorrow, 0, "scaledPoolBorrow != 0");
+            assertApproxGeAbs(test.repaid, test.borrowed, 1, "repaid != amount");
+
+            // Assert Morpho getters.
+            assertEq(morpho.borrowBalance(test.market.underlying, onBehalf), 0, "borrowBalance != 0");
+
+            // Assert Morpho's position on pool.
+            assertApproxGeAbs(
+                ERC20(test.market.aToken).balanceOf(address(morpho)), test.promoted, 1, "morphoSupply != 0"
+            );
+            assertApproxEqAbs(ERC20(test.market.debtToken).balanceOf(address(morpho)), 0, 1, "morphoBorrow != 0");
+
+            // Assert user's underlying balance.
+            assertApproxEqAbs(
+                balanceBefore,
+                user1.balanceOf(test.market.underlying) + test.repaid,
+                1,
+                "balanceBefore != balanceAfter + repaid"
+            );
+
+            // Assert Morpho's market state.
+            test.morphoMarket = morpho.market(test.market.underlying);
+            assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
+            assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalBorrowP2P != 0");
+            assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
+            assertEq(test.morphoMarket.deltas.borrow.scaledTotalP2P, 0, "scaledTotalBorrowP2P != 0");
+            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
         }
     }
 

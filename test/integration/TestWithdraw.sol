@@ -142,7 +142,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             test.supplied = _boundSupply(test.market, amount);
             test.supplied = bound(test.supplied, 0, ERC20(test.market.underlying).balanceOf(test.market.aToken)); // Because >= 50% will get borrowed from the pool.
-            uint256 promoted = _promoteSupply(test.market, test.supplied.percentMul(50_00)); // <= 50% peer-to-peer because market is not guaranteed to be borrowable.
+            test.promoted = _promoteSupply(test.market, test.supplied.percentMul(50_00)); // <= 50% peer-to-peer because market is not guaranteed to be borrowable.
             amount = bound(amount, test.supplied + 1, type(uint256).max);
 
             user1.approve(test.market.underlying, test.supplied);
@@ -150,7 +150,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             uint256 balanceBefore = ERC20(test.market.underlying).balanceOf(receiver);
 
-            if (promoted > 0) {
+            if (test.promoted > 0) {
                 vm.expectEmit(true, true, true, false, address(morpho));
                 emit Events.BorrowPositionUpdated(address(promoter), test.market.underlying, 0, 0);
 
@@ -178,15 +178,15 @@ contract TestIntegrationWithdraw is IntegrationTest {
             assertEq(morpho.collateralBalance(test.market.underlying, onBehalf), 0, "collateral != 0");
 
             // Assert Morpho's position on pool.
-            assertApproxGeAbs(ERC20(test.market.aToken).balanceOf(address(morpho)), 0, 2, "morphoSupply != 0");
-            assertEq(ERC20(test.market.debtToken).balanceOf(address(morpho)), promoted, "morphoBorrow != promoted");
+            assertApproxEqAbs(ERC20(test.market.aToken).balanceOf(address(morpho)), 0, 2, "morphoSupply != 0");
+            assertEq(ERC20(test.market.debtToken).balanceOf(address(morpho)), test.promoted, "morphoBorrow != promoted");
 
             // Assert receiver's underlying balance.
             assertApproxLeAbs(
                 ERC20(test.market.underlying).balanceOf(receiver),
                 balanceBefore + test.withdrawn,
                 2,
-                "balanceAfter != expectedBalance"
+                "balanceAfter != balanceBefore + withdrawn"
             );
 
             // Assert Morpho's market state.
