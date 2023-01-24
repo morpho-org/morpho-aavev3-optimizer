@@ -8,6 +8,10 @@ import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.so
 import {Constants} from "./Constants.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 
+/// @title PoolLib
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library used to ease pool interactions.
 library PoolLib {
     function supplyToPool(IPool pool, address underlying, uint256 amount) internal {
         if (amount == 0) return;

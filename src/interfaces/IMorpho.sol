@@ -17,7 +17,7 @@ interface IMorphoGetters {
     function scaledPoolBorrowBalance(address underlying, address user) external view returns (uint256);
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256);
 
-    function isManaging(address owner, address manager) external view returns (bool);
+    function isManaging(address delegator, address manager) external view returns (bool);
     function userNonce(address user) external view returns (uint256);
 
     function defaultMaxLoops() external view returns (Types.MaxLoops memory);
@@ -32,7 +32,6 @@ interface IMorphoGetters {
         external
         view
         returns (Types.LiquidityData memory);
-    function healthFactor(address user) external view returns (uint256);
 }
 
 interface IMorphoSetters {
@@ -40,23 +39,27 @@ interface IMorphoSetters {
 
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external;
     function increaseP2PDeltas(address underlying, uint256 amount) external;
+    function claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) external;
 
-    function setDefaultMaxLoops(Types.MaxLoops memory defaultMaxLoops) external;
     function setPositionsManager(address positionsManager) external;
-    function setIsBorrowPaused(address underlying, bool isPaused) external;
-    function setIsDeprecated(address underlying, bool isDeprecated) external;
-    function setIsLiquidateBorrowPaused(address underlying, bool isPaused) external;
-    function setIsLiquidateCollateralPaused(address underlying, bool isPaused) external;
+    function setRewardsManager(address rewardsManager) external;
+    function setTreasuryVault(address treasuryVault) external;
+    function setDefaultMaxLoops(Types.MaxLoops memory defaultMaxLoops) external;
+    function setP2PIndexCursor(address underlying, uint16 p2pIndexCursor) external;
+    function setReserveFactor(address underlying, uint16 newReserveFactor) external;
+
     function setIsP2PDisabled(address underlying, bool isP2PDisabled) external;
     function setIsPaused(address underlying, bool isPaused) external;
     function setIsPausedForAllMarkets(bool isPaused) external;
-    function setIsRepayPaused(address underlying, bool isPaused) external;
     function setIsSupplyPaused(address underlying, bool isPaused) external;
     function setIsSupplyCollateralPaused(address underlying, bool isPaused) external;
+    function setIsBorrowPaused(address underlying, bool isPaused) external;
+    function setIsRepayPaused(address underlying, bool isPaused) external;
     function setIsWithdrawPaused(address underlying, bool isPaused) external;
     function setIsWithdrawCollateralPaused(address underlying, bool isPaused) external;
-    function setP2PIndexCursor(address underlying, uint16 p2pIndexCursor) external;
-    function setReserveFactor(address underlying, uint16 newReserveFactor) external;
+    function setIsLiquidateBorrowPaused(address underlying, bool isPaused) external;
+    function setIsLiquidateCollateralPaused(address underlying, bool isPaused) external;
+    function setIsDeprecated(address underlying, bool isDeprecated) external;
 }
 
 interface IMorpho is IMorphoGetters, IMorphoSetters {
@@ -104,7 +107,7 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
 
     function approveManager(address manager, bool isAllowed) external;
     function approveManagerWithSig(
-        address owner,
+        address delegator,
         address manager,
         bool isAllowed,
         uint256 nonce,

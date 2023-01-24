@@ -10,7 +10,6 @@ import {PoolLib} from "./libraries/PoolLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {Permit2Lib} from "./libraries/Permit2Lib.sol";
@@ -29,7 +28,6 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     using Math for uint256;
-    using WadRayMath for uint256;
     using PercentageMath for uint256;
 
     /// CONSTRUCTOR ///
@@ -38,129 +36,92 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
     /// EXTERNAL ///
 
+    /// @notice Implements the supply logic.
+    /// @param underlying The address of the underlying asset to supply.
+    /// @param amount The amount of `underlying` to supply.
+    /// @param from The address to transfer the underlying from.
+    /// @param onBehalf The address that will receive the supply position.
+    /// @param maxLoops The maximum number of loops allowed during matching process.
+    /// @return The amount supplied.
     function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)
         external
         returns (uint256)
     {
-        Types.Market storage market = _validateSupplyInput(underlying, amount, onBehalf);
+        Types.Market storage market = _validateSupply(underlying, amount, onBehalf);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
         ERC20(underlying).transferFrom2(from, address(this), amount);
 
-        Types.SupplyRepayVars memory vars = _executeSupply(underlying, amount, onBehalf, maxLoops, indexes);
+        Types.SupplyRepayVars memory vars = _executeSupply(underlying, amount, from, onBehalf, maxLoops, indexes);
 
         _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
         _POOL.supplyToPool(underlying, vars.toSupply);
 
-        emit Events.Supplied(from, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
-
-        return vars.toSupply + vars.toRepay;
+        return amount;
     }
 
+    /// @notice Implements the supply collateral logic.
+    /// @param underlying The address of the underlying asset to supply.
+    /// @param amount The amount of `underlying` to supply.
+    /// @param from The address to transfer the underlying from.
+    /// @param onBehalf The address that will receive the collateral position.
+    /// @return The collateral amount supplied.
     function supplyCollateralLogic(address underlying, uint256 amount, address from, address onBehalf)
         external
         returns (uint256)
     {
-        _validateSupplyCollateralInput(underlying, amount, onBehalf);
+        _validateSupplyCollateral(underlying, amount, onBehalf);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
         ERC20(underlying).transferFrom2(from, address(this), amount);
 
-        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-
-        uint256 newBalance = marketBalances.collateral[onBehalf] + amount.rayDivDown(indexes.supply.poolIndex);
-        marketBalances.collateral[onBehalf] = newBalance;
-        _userCollaterals[onBehalf].add(underlying);
+        _executeSupplyCollateral(underlying, amount, from, onBehalf, indexes.supply.poolIndex);
 
         _POOL.supplyToPool(underlying, amount);
-
-        emit Events.CollateralSupplied(from, onBehalf, underlying, amount, newBalance);
 
         return amount;
     }
 
+    /// @notice Implements the borrow logic.
+    /// @param underlying The address of the underlying asset to borrow.
+    /// @param amount The amount of `underlying` to borrow.
+    /// @param borrower The address that will receive the debt position.
+    /// @param receiver The address that will receive the borrowed funds.
+    /// @param maxLoops The maximum number of loops allowed during matching process.
+    /// @return The amount borrowed.
     function borrowLogic(address underlying, uint256 amount, address borrower, address receiver, uint256 maxLoops)
         external
         returns (uint256)
     {
-        Types.Market storage market = _validateBorrowInput(underlying, amount, borrower, receiver);
+        Types.Market storage market = _validateBorrow(underlying, amount, borrower, receiver);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
         // The following check requires storage indexes to be up-to-date.
-        _validateBorrow(underlying, amount, borrower);
+        _authorizeBorrow(underlying, amount, borrower);
 
-        Types.BorrowWithdrawVars memory vars = _executeBorrow(underlying, amount, borrower, maxLoops, indexes);
+        Types.BorrowWithdrawVars memory vars = _executeBorrow(underlying, amount, borrower, receiver, maxLoops, indexes);
 
         _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
         _POOL.borrowFromPool(underlying, vars.toBorrow);
 
         ERC20(underlying).safeTransfer(receiver, amount);
 
-        emit Events.Borrowed(borrower, underlying, amount, vars.onPool, vars.inP2P);
-
         return amount;
     }
 
-    function withdrawLogic(address underlying, uint256 amount, address supplier, address receiver)
-        external
-        returns (uint256)
-    {
-        Types.Market storage market = _validateWithdrawInput(underlying, amount, supplier, receiver);
-
-        Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.supply), amount);
-
-        if (amount == 0) return 0;
-
-        Types.BorrowWithdrawVars memory vars =
-            _executeWithdraw(underlying, amount, supplier, _defaultMaxLoops.withdraw, indexes);
-
-        _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
-        _POOL.borrowFromPool(underlying, vars.toBorrow);
-
-        ERC20(underlying).safeTransfer(receiver, amount);
-
-        emit Events.Withdrawn(supplier, receiver, underlying, amount, vars.onPool, vars.inP2P);
-
-        return amount;
-    }
-
-    function withdrawCollateralLogic(address underlying, uint256 amount, address supplier, address receiver)
-        external
-        returns (uint256)
-    {
-        Types.Market storage market = _validateWithdrawCollateralInput(underlying, amount, supplier, receiver);
-
-        Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, indexes.supply.poolIndex), amount);
-
-        if (amount == 0) return 0;
-
-        // The following check requires storage indexes to be up-to-date.
-        _validateWithdrawCollateral(underlying, amount, supplier);
-
-        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-
-        uint256 newBalance = marketBalances.collateral[supplier].zeroFloorSub(amount.rayDivUp(indexes.supply.poolIndex));
-        marketBalances.collateral[supplier] = newBalance;
-        if (newBalance == 0) _userCollaterals[supplier].remove(underlying);
-
-        _POOL.withdrawFromPool(underlying, market.aToken, amount);
-        ERC20(underlying).safeTransfer(receiver, amount);
-
-        emit Events.CollateralWithdrawn(supplier, receiver, underlying, amount, newBalance);
-
-        return amount;
-    }
-
+    /// @notice Implements the repay logic.
+    /// @param underlying The address of the underlying asset to borrow.
+    /// @param amount The amount of `underlying` to repay.
+    /// @param onBehalf The address whose position will be repaid.
+    /// @return The amount repaid.
     function repayLogic(address underlying, uint256 amount, address repayer, address onBehalf)
         external
-        returns (uint256 repaid)
+        returns (uint256)
     {
-        Types.Market storage market = _validateRepayInput(underlying, amount, onBehalf);
+        Types.Market storage market = _validateRepay(underlying, amount, onBehalf);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes.borrow), amount);
@@ -169,62 +130,121 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         ERC20(underlying).transferFrom2(repayer, address(this), amount);
 
-        Types.SupplyRepayVars memory vars = _executeRepay(underlying, amount, onBehalf, _defaultMaxLoops.repay, indexes);
+        Types.SupplyRepayVars memory vars =
+            _executeRepay(underlying, amount, repayer, onBehalf, _defaultMaxLoops.repay, indexes);
 
         _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
         _POOL.supplyToPool(underlying, vars.toSupply);
 
-        repaid = vars.toRepay + vars.toSupply;
-
-        emit Events.Repaid(repayer, onBehalf, underlying, repaid, vars.onPool, vars.inP2P);
+        return amount;
     }
 
+    /// @notice Implements the withdraw logic.
+    /// @param underlying The address of the underlying asset to withdraw.
+    /// @param amount The amount of `underlying` to withdraw.
+    /// @param supplier The address whose position will be withdrawn.
+    /// @param receiver The address that will receive the withdrawn funds.
+    /// @return The amount withdrawn.
+    function withdrawLogic(address underlying, uint256 amount, address supplier, address receiver)
+        external
+        returns (uint256)
+    {
+        Types.Market storage market = _validateWithdraw(underlying, amount, supplier, receiver);
+
+        Types.Indexes256 memory indexes = _updateIndexes(underlying);
+        amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.supply), amount);
+
+        if (amount == 0) return 0;
+
+        Types.BorrowWithdrawVars memory vars =
+            _executeWithdraw(underlying, amount, supplier, receiver, _defaultMaxLoops.withdraw, indexes);
+
+        _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
+        _POOL.borrowFromPool(underlying, vars.toBorrow);
+
+        ERC20(underlying).safeTransfer(receiver, amount);
+
+        return amount;
+    }
+
+    /// @notice Implements the withdraw collateral logic.
+    /// @param underlying The address of the underlying asset to withdraw.
+    /// @param amount The amount of `underlying` to withdraw.
+    /// @param supplier The address whose position will be withdrawn.
+    /// @param receiver The address that will receive the withdrawn funds.
+    /// @return The collateral amount withdrawn.
+    function withdrawCollateralLogic(address underlying, uint256 amount, address supplier, address receiver)
+        external
+        returns (uint256)
+    {
+        Types.Market storage market = _validateWithdrawCollateral(underlying, amount, supplier, receiver);
+
+        Types.Indexes256 memory indexes = _updateIndexes(underlying);
+        uint256 poolSupplyIndex = indexes.supply.poolIndex;
+        amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, poolSupplyIndex), amount);
+
+        if (amount == 0) return 0;
+
+        // The following check requires storage indexes to be up-to-date.
+        _authorizeWithdrawCollateral(underlying, amount, supplier);
+        _executeWithdrawCollateral(underlying, amount, supplier, receiver, poolSupplyIndex);
+
+        _POOL.withdrawFromPool(underlying, market.aToken, amount);
+
+        ERC20(underlying).safeTransfer(receiver, amount);
+
+        return amount;
+    }
+
+    /// @notice Implements the liquidation logic.
+    /// @param underlyingBorrowed The address of the underlying borrowed to repay.
+    /// @param underlyingCollateral The address of the underlying collateral to seize.
+    /// @param amount The amount of `underlyingBorrowed` to repay.
+    /// @param borrower The address of the borrower to liquidate.
+    /// @param liquidator The address that will liquidate the borrower.
+    /// @return The `underlyingBorrowed` amount repaid and the `underlyingCollateral` amount seized.
     function liquidateLogic(
         address underlyingBorrowed,
         address underlyingCollateral,
         uint256 amount,
         address borrower,
         address liquidator
-    ) external returns (uint256 liquidated, uint256 seized) {
+    ) external returns (uint256, uint256) {
         Types.LiquidateVars memory vars;
-
         Types.Indexes256 memory borrowIndexes = _updateIndexes(underlyingBorrowed);
         Types.Indexes256 memory collateralIndexes = _updateIndexes(underlyingCollateral);
 
-        vars.closeFactor = _validateLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
+        vars.closeFactor = _authorizeLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
 
-        vars.amountToLiquidate = Math.min(
-            amount,
+        amount = Math.min(
             _getUserBorrowBalanceFromIndexes(underlyingBorrowed, borrower, borrowIndexes.borrow).percentMul(
                 vars.closeFactor
-            ) // Max liquidatable debt.
+            ), // Max liquidatable debt.
+            amount
         );
 
-        (vars.amountToLiquidate, vars.amountToSeize) = _calculateAmountToSeize(
-            underlyingBorrowed,
-            underlyingCollateral,
-            vars.amountToLiquidate,
-            borrower,
-            collateralIndexes.supply.poolIndex
+        (amount, vars.seized) = _calculateAmountToSeize(
+            underlyingBorrowed, underlyingCollateral, amount, borrower, collateralIndexes.supply.poolIndex
         );
 
-        ERC20(underlyingBorrowed).transferFrom2(liquidator, address(this), vars.amountToLiquidate);
+        if (amount == 0) return (0, 0);
+
+        ERC20(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
 
         Types.SupplyRepayVars memory repayVars =
-            _executeRepay(underlyingBorrowed, vars.amountToLiquidate, borrower, 0, borrowIndexes);
-        Types.BorrowWithdrawVars memory withdrawVars =
-            _executeWithdraw(underlyingCollateral, vars.amountToSeize, borrower, 0, collateralIndexes);
+            _executeRepay(underlyingBorrowed, amount, liquidator, borrower, 0, borrowIndexes);
+        _executeWithdrawCollateral(
+            underlyingCollateral, vars.seized, borrower, liquidator, collateralIndexes.supply.poolIndex
+        );
 
         _POOL.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, repayVars.toRepay);
         _POOL.supplyToPool(underlyingBorrowed, repayVars.toSupply);
-        _POOL.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, withdrawVars.toWithdraw);
-        _POOL.borrowFromPool(underlyingCollateral, withdrawVars.toBorrow);
+        _POOL.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.seized);
 
-        ERC20(underlyingCollateral).safeTransfer(liquidator, vars.amountToSeize);
+        ERC20(underlyingCollateral).safeTransfer(liquidator, vars.seized);
 
-        emit Events.Liquidated(
-            liquidator, borrower, underlyingBorrowed, vars.amountToLiquidate, underlyingCollateral, vars.amountToSeize
-            );
-        return (vars.amountToLiquidate, vars.amountToSeize);
+        emit Events.Liquidated(liquidator, borrower, underlyingBorrowed, amount, underlyingCollateral, vars.seized);
+
+        return (amount, vars.seized);
     }
 }

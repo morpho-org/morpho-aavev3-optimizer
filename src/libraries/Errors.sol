@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+/// @title Errors
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Library exposing errors used in Morpho.
 library Errors {
     error MarketNotCreated();
-    error UserNotMemberOfMarket();
+    error MarketAlreadyCreated();
+    error MarketIsNotListedOnAave();
 
     error AddressIsZero();
     error AmountIsZero();
@@ -17,24 +22,19 @@ library Errors {
     error WithdrawCollateralIsPaused();
     error LiquidateCollateralIsPaused();
     error LiquidateBorrowIsPaused();
+    error ClaimRewardsPaused();
 
     error MarketIsDeprecated();
     error BorrowNotPaused();
 
     error BorrowingNotEnabled();
     error InconsistentEMode();
-    error PriceOracleSentinelBorrowDisabled();
-    error PriceOracleSentinelBorrowPaused();
     error UnauthorizedBorrow();
 
     error UnauthorizedWithdraw();
     error UnauthorizedLiquidate();
 
     error ExceedsMaxBasisPoints();
-    error MarketIsNotListedOnAave();
-    error MarketAlreadyCreated();
-
-    error ClaimRewardsPaused();
 
     error InvalidValueS();
     error InvalidValueV();

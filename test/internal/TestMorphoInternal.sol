@@ -5,7 +5,7 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
+import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
@@ -27,12 +27,12 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    IPriceOracleGetter internal oracle;
+    IAaveOracle internal oracle;
 
     function setUp() public virtual override {
         super.setUp();
 
-        _defaultMaxLoops = Types.MaxLoops(10, 10, 10, 10);
+        _defaultMaxLoops = Types.MaxLoops(10, 10);
 
         createTestMarket(dai, 0, 3_333);
         createTestMarket(wbtc, 0, 3_333);
@@ -52,7 +52,7 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
         _POOL.supplyToPool(usdt, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
 
-        oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
     }
 
     function createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
@@ -217,24 +217,12 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
     }
 
     function testAssetLiquidityData() public {
-        _POOL.setUserUseReserveAsCollateral(dai, false);
-
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
         DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
         (uint256 poolLtv, uint256 poolLt,, uint256 poolDecimals,,) = _POOL.getConfiguration(dai).getParams();
         Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory, morphoPoolConfig);
+
         (uint256 price, uint256 ltv, uint256 lt, uint256 units) = _assetLiquidityData(dai, vars);
-
-        assertEq(price, oracle.getAssetPrice(dai), "price not equal to oracle price 1");
-        assertEq(ltv, 0, "ltv not equal to 0");
-        assertEq(lt, 0, "lt not equal to 0");
-        assertEq(units, 10 ** poolDecimals, "units not equal to pool decimals 1");
-
-        _POOL.setUserUseReserveAsCollateral(dai, true);
-        morphoPoolConfig = _POOL.getUserConfiguration(address(this));
-        vars.morphoPoolConfig = morphoPoolConfig;
-
-        (price, ltv, lt, units) = _assetLiquidityData(dai, vars);
 
         assertGt(price, 0, "price not gt 0");
         assertGt(ltv, 0, "ltv not gt 0");
