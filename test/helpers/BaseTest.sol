@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {Types} from "../../src/libraries/Types.sol";
-import {Events} from "../../src/libraries/Events.sol";
-import {Errors} from "../../src/libraries/Errors.sol";
+import {Types} from "src/libraries/Types.sol";
+import {Events} from "src/libraries/Events.sol";
+import {Errors} from "src/libraries/Errors.sol";
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";

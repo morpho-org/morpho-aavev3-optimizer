@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
-import {IMorpho} from "../../src/interfaces/IMorpho.sol";
+import {IMorpho} from "src/interfaces/IMorpho.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 

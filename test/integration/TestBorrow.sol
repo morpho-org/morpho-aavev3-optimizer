@@ -63,7 +63,11 @@ contract TestIntegrationBorrow is IntegrationTest {
             // uint256 morphoBalance = ERC20(market.debtToken).balanceOf(address(morpho));
             // assertApproxEqAbs(morphoBalance, borrowed, 1, "morphoBalance != borrowed");
 
-            assertEq(ERC20(market.underlying).balanceOf(receiver) - balanceBefore, amount, "balanceDiff != amount");
+            assertEq(
+                ERC20(market.underlying).balanceOf(receiver) - balanceBefore,
+                amount,
+                "balanceAfter - balanceBefore != amount"
+            );
 
             Types.Market memory morphoMarket = morpho.market(market.underlying);
             assertEq(morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
@@ -121,7 +125,11 @@ contract TestIntegrationBorrow is IntegrationTest {
             assertApproxEqAbs(morphoBalanceAfter, morphoBalanceBefore, 2, "morphoBalanceAfter != morphoBalanceBefore");
             assertGe(morphoBalanceAfter, morphoBalanceBefore, "morphoBalanceAfter < morphoBalanceBefore");
 
-            assertEq(ERC20(market.underlying).balanceOf(receiver) - balanceBefore, amount, "balanceDiff != amount");
+            assertEq(
+                ERC20(market.underlying).balanceOf(receiver) - balanceBefore,
+                amount,
+                "balanceAfter - balanceBefore != amount"
+            );
 
             Types.Market memory morphoMarket = morpho.market(market.underlying);
             assertEq(morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");

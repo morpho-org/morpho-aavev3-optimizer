@@ -14,28 +14,48 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         return address(uint160(bound(uint256(uint160(onBehalf)), 1, type(uint160).max)));
     }
 
-    function testShouldSupplyCollateral(uint256 amount, address onBehalf) public {
+    struct SupplyTest {
+        uint256 supplied;
+        uint256 scaledP2PSupply;
+        uint256 scaledPoolSupply;
+        uint256 scaledCollateral;
+        TestMarket market;
+        Types.Indexes256 indexes;
+        Types.Market morphoMarket;
+    }
+
+    function testShouldSupplyCollateral(uint256 amount, address onBehalf) public returns (SupplyTest memory test) {
         onBehalf = _boundOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
-            TestMarket memory market = markets[marketIndex];
+            test.market = markets[marketIndex];
 
-            amount = _boundSupply(market, amount);
+            amount = _boundSupply(test.market, amount);
 
-            user1.approve(market.underlying, amount);
+            user1.approve(test.market.underlying, amount);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.CollateralSupplied(address(user1), onBehalf, market.underlying, 0, 0);
+            emit Events.CollateralSupplied(address(user1), onBehalf, test.market.underlying, 0, 0);
 
-            uint256 supplied = user1.supplyCollateral(market.underlying, amount, onBehalf);
+            uint256 supplied = user1.supplyCollateral(test.market.underlying, amount, onBehalf);
 
-            uint256 collateral = morpho.collateralBalance(market.underlying, onBehalf);
+            test.indexes = morpho.updatedIndexes(test.market.underlying);
+            test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(test.market.underlying, onBehalf);
+            test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(test.market.underlying, onBehalf);
+            test.scaledCollateral = morpho.scaledCollateralBalance(test.market.underlying, onBehalf);
+            uint256 collateral = test.scaledCollateral.rayMul(test.indexes.supply.poolIndex);
 
-            assertEq(supplied, amount, "supplied != amount");
+            assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
+            assertEq(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
+            assertEq(test.supplied, amount, "supplied != amount");
             assertLe(collateral, amount, "collateral > amount");
             assertApproxEqAbs(collateral, amount, 1, "collateral != amount");
+
+            assertEq(
+                morpho.collateralBalance(test.market.underlying, onBehalf), collateral, "totalSupply != collateral"
+            );
         }
     }
 

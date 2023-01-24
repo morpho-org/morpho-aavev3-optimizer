@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {IPositionsManager} from "../../src/interfaces/IPositionsManager.sol";
-import {IMorpho} from "../../src/interfaces/IMorpho.sol";
+import {IPositionsManager} from "src/interfaces/IPositionsManager.sol";
+import {IMorpho} from "src/interfaces/IMorpho.sol";
 
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {TestUser} from "../helpers/TestUser.sol";
 
-import {PositionsManager} from "../../src/PositionsManager.sol";
-import {Morpho} from "../../src/Morpho.sol";
+import {PositionsManager} from "src/PositionsManager.sol";
+import {Morpho} from "src/Morpho.sol";
 
 import "./ForkTest.sol";
 
