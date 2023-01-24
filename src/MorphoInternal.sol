@@ -339,29 +339,22 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit)
     {
-        underlyingPrice = vars.oracle.getAssetPrice(underlying);
+        if (vars.eModeCategory.priceSource != address(0)) {
+            underlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
+        } else {
+            underlyingPrice = vars.oracle.getAssetPrice(underlying);
+        }
 
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
         DataTypes.ReserveConfigurationMap memory configuration = reserveData.configuration;
-        ltv = configuration.getLtv();
-        liquidationThreshold = configuration.getLiquidationThreshold();
-        tokenUnit = configuration.getDecimals();
-
-        unchecked {
-            tokenUnit = 10 ** tokenUnit;
-        }
+        tokenUnit = 10 ** configuration.getDecimals();
 
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == configuration.getEModeCategory()) {
-            uint256 eModeUnderlyingPrice;
-            if (vars.eModeCategory.priceSource != address(0)) {
-                eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
-            }
-            underlyingPrice = eModeUnderlyingPrice != 0 ? eModeUnderlyingPrice : vars.oracle.getAssetPrice(underlying);
-
-            if (ltv != 0) ltv = vars.eModeCategory.ltv;
+            ltv = vars.eModeCategory.ltv;
             liquidationThreshold = vars.eModeCategory.liquidationThreshold;
         } else {
-            underlyingPrice = vars.oracle.getAssetPrice(underlying);
+            ltv = configuration.getLtv();
+            liquidationThreshold = configuration.getLiquidationThreshold();
         }
 
         // If a LTV has been reduced to 0 on Aave v3, the other assets of the collateral are frozen.
