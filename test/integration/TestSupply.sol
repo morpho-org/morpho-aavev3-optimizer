@@ -49,24 +49,30 @@ contract TestIntegrationSupply is IntegrationTest {
             test.scaledCollateral = morpho.scaledCollateralBalance(test.market.underlying, onBehalf);
             uint256 poolSupply = test.scaledPoolSupply.rayMul(test.indexes.supply.poolIndex);
 
+            // Assert balances on Morpho.
             assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
             assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
             assertEq(test.supplied, amount, "supplied != amount");
             assertLe(poolSupply, amount, "poolSupply > amount");
             assertApproxEqAbs(poolSupply, amount, 1, "poolSupply != amount");
 
-            assertEq(morpho.supplyBalance(test.market.underlying, onBehalf), poolSupply, "totalSupply != poolSupply"); // TODO: unit test getters
+            // Assert Morpho getters.
+            assertEq(morpho.supplyBalance(test.market.underlying, onBehalf), poolSupply, "totalSupply != poolSupply");
             assertEq(morpho.collateralBalance(test.market.underlying, onBehalf), 0, "collateral != 0");
 
-            uint256 morphoBalance = ERC20(test.market.aToken).balanceOf(address(morpho));
-            assertApproxEqAbs(morphoBalance, test.supplied, 1, "morphoBalance != supplied");
+            // Assert Morpho's position on pool.
+            uint256 morphoSupply = ERC20(test.market.aToken).balanceOf(address(morpho));
+            assertApproxEqAbs(morphoSupply, test.supplied, 1, "morphoSupply != supplied");
+            assertEq(ERC20(test.market.debtToken).balanceOf(address(morpho)), 0, "morphoBorrow != 0");
 
+            // Assert user's underlying balance.
             assertEq(
                 balanceBefore - user1.balanceOf(test.market.underlying),
                 amount,
                 "balanceBefore - balanceAfter != amount"
             );
 
+            // Assert Morpho's market state.
             test.morphoMarket = morpho.market(test.market.underlying);
             assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
             assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
@@ -88,7 +94,7 @@ contract TestIntegrationSupply is IntegrationTest {
             amount = _promoteSupply(test.market, amount); // 100% peer-to-peer.
 
             uint256 balanceBefore = user1.balanceOf(test.market.underlying);
-            uint256 morphoBalanceBefore = ERC20(test.market.aToken).balanceOf(address(morpho));
+            uint256 morphoSupplyBefore = ERC20(test.market.aToken).balanceOf(address(morpho));
 
             user1.approve(test.market.underlying, amount);
 
@@ -109,25 +115,33 @@ contract TestIntegrationSupply is IntegrationTest {
             test.scaledCollateral = morpho.scaledCollateralBalance(test.market.underlying, onBehalf);
             uint256 p2pSupply = test.scaledP2PSupply.rayMul(indexes.supply.p2pIndex);
 
+            // Assert balances on Morpho.
             assertEq(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
             assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
             assertEq(test.supplied, amount, "supplied != amount");
-            assertLe(p2pSupply, amount, "p2pSupply > amount");
-            assertApproxEqAbs(p2pSupply, amount, 1, "p2pSupply != amount");
+            assertApproxLeAbs(p2pSupply, amount, 1, "p2pSupply != amount");
 
-            assertEq(morpho.supplyBalance(test.market.underlying, onBehalf), p2pSupply, "totalSupply != p2pSupply");
-            assertEq(morpho.collateralBalance(test.market.underlying, onBehalf), 0, "collateral != 0");
+            // Assert Morpho getters.
+            assertEq(morpho.supplyBalance(test.market.underlying, onBehalf), p2pSupply, "supplyBalance != p2pSupply");
+            assertEq(morpho.collateralBalance(test.market.underlying, onBehalf), 0, "collateralBalance != 0");
 
-            uint256 morphoBalanceAfter = ERC20(test.market.aToken).balanceOf(address(morpho));
-            assertApproxEqAbs(morphoBalanceAfter, morphoBalanceBefore, 2, "morphoBalanceAfter != morphoBalanceBefore");
-            assertGe(morphoBalanceAfter, morphoBalanceBefore, "morphoBalanceAfter < morphoBalanceBefore");
+            // Assert Morpho's position on pool.
+            assertApproxGeAbs(
+                ERC20(test.market.aToken).balanceOf(address(morpho)),
+                morphoSupplyBefore,
+                2,
+                "morphoSupplyAfter != morphoSupplyBefore"
+            );
+            assertApproxEqAbs(ERC20(test.market.debtToken).balanceOf(address(morpho)), 0, 1, "morphoBorrow != 0");
 
+            // Assert user's underlying balance.
             assertEq(
                 balanceBefore - user1.balanceOf(test.market.underlying),
                 amount,
                 "balanceBefore - balanceAfter != amount"
             );
 
+            // Assert Morpho's market state.
             test.morphoMarket = morpho.market(test.market.underlying);
             assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
             assertEq(

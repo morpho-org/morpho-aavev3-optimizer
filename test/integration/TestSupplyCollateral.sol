@@ -34,28 +34,55 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
             amount = _boundSupply(test.market, amount);
 
+            uint256 balanceBefore = user1.balanceOf(test.market.underlying);
+
             user1.approve(test.market.underlying, amount);
 
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.CollateralSupplied(address(user1), onBehalf, test.market.underlying, 0, 0);
 
-            uint256 supplied = user1.supplyCollateral(test.market.underlying, amount, onBehalf);
+            test.supplied = user1.supplyCollateral(test.market.underlying, amount, onBehalf);
 
             test.indexes = morpho.updatedIndexes(test.market.underlying);
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(test.market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(test.market.underlying, onBehalf);
             test.scaledCollateral = morpho.scaledCollateralBalance(test.market.underlying, onBehalf);
-            uint256 collateral = test.scaledCollateral.rayMul(test.indexes.supply.poolIndex);
+            uint256 collateral = test.scaledCollateral.rayMulDown(test.indexes.supply.poolIndex);
 
+            // Assert balances on Morpho.
             assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
             assertEq(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
             assertEq(test.supplied, amount, "supplied != amount");
-            assertLe(collateral, amount, "collateral > amount");
-            assertApproxEqAbs(collateral, amount, 1, "collateral != amount");
+            assertApproxLeAbs(collateral, amount, 1, "collateral != amount");
 
+            // Assert Morpho getters.
+            assertEq(morpho.supplyBalance(test.market.underlying, onBehalf), 0, "supplyBalance != 0");
             assertEq(
-                morpho.collateralBalance(test.market.underlying, onBehalf), collateral, "totalSupply != collateral"
+                morpho.collateralBalance(test.market.underlying, onBehalf),
+                collateral,
+                "collateralBalance != collateral"
             );
+
+            // Assert Morpho's position on pool.
+            assertApproxEqAbs(
+                ERC20(test.market.aToken).balanceOf(address(morpho)), test.supplied, 1, "morphoSupply != supplied"
+            );
+            assertEq(ERC20(test.market.debtToken).balanceOf(address(morpho)), 0, "morphoBorrow != 0");
+
+            // Assert user's underlying balance.
+            assertEq(
+                balanceBefore - user1.balanceOf(test.market.underlying),
+                amount,
+                "balanceBefore - balanceAfter != amount"
+            );
+
+            // Assert Morpho's market state.
+            test.morphoMarket = morpho.market(test.market.underlying);
+            assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
+            assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
+            assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
+            assertEq(test.morphoMarket.deltas.borrow.scaledTotalP2P, 0, "scaledTotalBorrowP2P != 0");
+            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
         }
     }
 

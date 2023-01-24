@@ -18,6 +18,16 @@ import {Test} from "@forge-std/Test.sol";
 contract BaseTest is Test {
     uint256 internal constant DEFAULT_MAX_LOOPS = 10;
 
+    function assertApproxLeAbs(uint256 a, uint256 b, uint256 maxDelta, string memory err) internal {
+        assertLe(a, b, err);
+        assertApproxEqAbs(a, b, maxDelta, err);
+    }
+
+    function assertApproxGeAbs(uint256 a, uint256 b, uint256 maxDelta, string memory err) internal {
+        assertGe(a, b, err);
+        assertApproxEqAbs(a, b, maxDelta, err);
+    }
+
     /// @dev Rolls & warps the given number of blocks forward the blockchain.
     function _forward(uint256 blocks) internal {
         vm.roll(block.number + blocks);

@@ -100,6 +100,11 @@ contract ForkTest is BaseTest {
         vm.label(address(oracle), "PriceOracle");
         vm.label(address(addressesProvider), "AddressesProvider");
 
+        vm.label(addressesProvider.getACLAdmin(), "ACLAdmin");
+        vm.label(addressesProvider.getACLManager(), "ACLManager");
+        vm.label(addressesProvider.getPoolDataProvider(), "PoolDataProvider");
+        vm.label(addressesProvider.getPoolConfigurator(), "PoolConfigurator");
+
         vm.label(dai, "DAI");
         vm.label(frax, "FRAX");
         vm.label(mai, "MAI");

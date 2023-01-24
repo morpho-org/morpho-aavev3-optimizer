@@ -156,8 +156,14 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Disables the same block borrow/repay limitation by resetting the previous index of Morpho on AaveV3.
+    /// https://github.com/aave/aave-v3-core/blob/bb625723211944a7325b505caf6199edf4b8ed2a/contracts/protocol/tokenization/base/IncentivizedERC20.sol#L41-L50
     function _resetPreviousIndex(TestMarket memory market) internal {
-        vm.store(market.debtToken, keccak256(abi.encode(address(morpho), 56)), 0);
+        bytes32 slot = keccak256(abi.encode(address(morpho), 56));
+        vm.store(
+            market.debtToken,
+            slot,
+            vm.load(market.debtToken, slot) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff
+        );
     }
 
     /// @dev Deposits the given amount of tokens on behalf of the given address, on AaveV3.
@@ -232,7 +238,6 @@ contract IntegrationTest is ForkTest {
         vm.prank(user);
         borrowed = morpho.borrow(market.underlying, amount, onBehalf, receiver, maxLoops);
 
-        _resetPreviousIndex(market); // Enable borrow/repay in same block.
         _deposit(weth, _minCollateral(markets[0], market, borrowed), address(morpho)); // Make Morpho solvent with WETH because no supply cap.
 
         oracle.setAssetPrice(market.underlying, market.price);

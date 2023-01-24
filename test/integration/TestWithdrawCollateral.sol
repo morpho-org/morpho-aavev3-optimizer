@@ -69,17 +69,29 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(test.market.underlying, onBehalf);
             test.scaledCollateral = morpho.scaledCollateralBalance(test.market.underlying, onBehalf);
 
+            // Assert balances on Morpho.
             assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
             assertEq(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
             assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
-            assertLe(test.withdrawn, test.supplied, "withdrawn > supplied");
-            assertApproxEqAbs(test.withdrawn, test.supplied, 2, "withdrawn != supplied");
+            assertApproxLeAbs(test.withdrawn, test.supplied, 2, "withdrawn != supplied");
 
-            uint256 balanceAfter = ERC20(test.market.underlying).balanceOf(receiver);
-            uint256 expectedBalance = balanceBefore + test.withdrawn;
-            assertLe(balanceAfter, expectedBalance, "balanceAfter > expectedBalance");
-            assertApproxEqAbs(balanceAfter, expectedBalance, 2, "balanceAfter != expectedBalance");
+            // Assert Morpho getters.
+            assertEq(morpho.supplyBalance(test.market.underlying, onBehalf), 0, "supply != 0");
+            assertEq(morpho.collateralBalance(test.market.underlying, onBehalf), 0, "collateral != 0");
 
+            // Assert Morpho's position on pool.
+            assertApproxGeAbs(ERC20(test.market.aToken).balanceOf(address(morpho)), 0, 1, "morphoSupply != 0");
+            assertEq(ERC20(test.market.debtToken).balanceOf(address(morpho)), 0, "morphoBorrow != 0");
+
+            // Assert receiver's underlying balance.
+            assertApproxLeAbs(
+                ERC20(test.market.underlying).balanceOf(receiver),
+                balanceBefore + test.withdrawn,
+                2,
+                "balanceAfter != expectedBalance"
+            );
+
+            // Assert Morpho's market state.
             test.morphoMarket = morpho.market(test.market.underlying);
             assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
             assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
