@@ -218,7 +218,7 @@ library MarketLib {
 
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
 
-        return (amount - matchedIdle, inP2P + matchedIdle.rayDivDown(p2pBorrowIndex));
+        return (amount - matchedIdle, inP2P + matchedIdle.rayDiv(p2pBorrowIndex));
     }
 
     /// @dev Withdraws idle supply.

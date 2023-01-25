@@ -12,9 +12,11 @@ contract TestIntegrationWithdraw is IntegrationTest {
     }
 
     function _boundOnBehalf(address onBehalf) internal view returns (address) {
+        onBehalf = _boundAddressNotZero(onBehalf);
+
         vm.assume(onBehalf != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
 
-        return address(uint160(bound(uint256(uint160(onBehalf)), 1, type(uint160).max)));
+        return onBehalf;
     }
 
     function _boundReceiver(address receiver) internal view returns (address) {
@@ -179,7 +181,9 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             // Assert Morpho's position on pool.
             assertApproxEqAbs(ERC20(test.market.aToken).balanceOf(address(morpho)), 0, 2, "morphoSupply != 0");
-            assertEq(ERC20(test.market.debtToken).balanceOf(address(morpho)), test.promoted, "morphoBorrow != promoted");
+            assertApproxLeAbs(
+                ERC20(test.market.debtToken).balanceOf(address(morpho)), test.promoted, 1, "morphoBorrow != promoted"
+            );
 
             // Assert receiver's underlying balance.
             assertApproxLeAbs(

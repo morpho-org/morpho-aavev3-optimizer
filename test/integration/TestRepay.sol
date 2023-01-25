@@ -11,10 +11,6 @@ contract TestIntegrationRepay is IntegrationTest {
         return bound(amount, 1, type(uint256).max);
     }
 
-    function _boundOnBehalf(address onBehalf) internal view returns (address) {
-        return address(uint160(bound(uint256(uint160(onBehalf)), 1, type(uint160).max)));
-    }
-
     struct RepayTest {
         uint256 borrowed;
         uint256 promoted;
@@ -27,7 +23,7 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldRepayPoolOnly(uint256 amount, address onBehalf) public returns (RepayTest memory test) {
-        onBehalf = _boundOnBehalf(onBehalf);
+        onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
             _revert();
@@ -66,7 +62,7 @@ contract TestIntegrationRepay is IntegrationTest {
             assertApproxLeAbs(p2pBorrow, test.promoted, 2, "p2pBorrow != promoted");
 
             // Assert Morpho getters.
-            assertApproxLeAbs(
+            assertApproxGeAbs(
                 morpho.borrowBalance(test.market.underlying, onBehalf),
                 test.borrowed - test.repaid,
                 1,
@@ -104,7 +100,7 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldRepayAllBorrow(uint256 amount, address onBehalf) public returns (RepayTest memory test) {
-        onBehalf = _boundOnBehalf(onBehalf);
+        onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
             _revert();
@@ -172,7 +168,7 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldRevertRepayZero(address onBehalf) public {
-        onBehalf = _boundOnBehalf(onBehalf);
+        onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -191,7 +187,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
     function testShouldRevertRepayWhenMarketNotCreated(uint256 amount, address onBehalf) public {
         amount = _boundAmount(amount);
-        onBehalf = _boundOnBehalf(onBehalf);
+        onBehalf = _boundAddressNotZero(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user1.repay(sAvax, amount, onBehalf);
@@ -199,7 +195,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
     function testShouldRevertRepayWhenRepayPaused(uint256 amount, address onBehalf) public {
         amount = _boundAmount(amount);
-        onBehalf = _boundOnBehalf(onBehalf);
+        onBehalf = _boundAddressNotZero(onBehalf);
         vm.assume(onBehalf != address(user1));
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {

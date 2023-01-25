@@ -11,9 +11,11 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function _boundOnBehalf(address onBehalf) internal view returns (address) {
+        onBehalf = _boundAddressNotZero(onBehalf);
+
         vm.assume(onBehalf != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
 
-        return address(uint160(bound(uint256(uint160(onBehalf)), 1, type(uint160).max)));
+        return onBehalf;
     }
 
     function _boundReceiver(address receiver) internal view returns (address) {
@@ -140,7 +142,9 @@ contract TestIntegrationBorrow is IntegrationTest {
             assertApproxLeAbs(p2pBorrow, amount, 1, "p2pBorrow != amount");
 
             // Assert Morpho getters.
-            assertEq(morpho.borrowBalance(test.market.underlying, onBehalf), p2pBorrow, "borrowBalance != p2pBorrow");
+            assertApproxGeAbs(
+                morpho.borrowBalance(test.market.underlying, onBehalf), p2pBorrow, 1, "borrowBalance != p2pBorrow"
+            );
 
             // Assert Morpho's position on pool.
             assertApproxGeAbs(

@@ -10,10 +10,6 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         return bound(amount, 1, type(uint256).max);
     }
 
-    function _boundOnBehalf(address onBehalf) internal view returns (address) {
-        return address(uint160(bound(uint256(uint160(onBehalf)), 1, type(uint160).max)));
-    }
-
     struct SupplyTest {
         uint256 supplied;
         uint256 scaledP2PSupply;
@@ -25,7 +21,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     }
 
     function testShouldSupplyCollateral(uint256 amount, address onBehalf) public returns (SupplyTest memory test) {
-        onBehalf = _boundOnBehalf(onBehalf);
+        onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
@@ -47,7 +43,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(test.market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(test.market.underlying, onBehalf);
             test.scaledCollateral = morpho.scaledCollateralBalance(test.market.underlying, onBehalf);
-            uint256 collateral = test.scaledCollateral.rayMulDown(test.indexes.supply.poolIndex);
+            uint256 collateral = test.scaledCollateral.rayMul(test.indexes.supply.poolIndex);
 
             // Assert balances on Morpho.
             assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
@@ -59,8 +55,8 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
             assertEq(morpho.supplyBalance(test.market.underlying, onBehalf), 0, "supplyBalance != 0");
             assertEq(
                 morpho.collateralBalance(test.market.underlying, onBehalf),
-                collateral,
-                "collateralBalance != collateral"
+                test.supplied,
+                "collateralBalance != supplied"
             );
 
             // Assert Morpho's position on pool.
@@ -87,7 +83,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     }
 
     function testShouldUpdateIndexesAfterSupplyCollateral(uint256 amount, address onBehalf) public {
-        onBehalf = _boundOnBehalf(onBehalf);
+        onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
@@ -131,7 +127,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     }
 
     function testShouldRevertSupplyCollateralZero(address onBehalf) public {
-        onBehalf = _boundOnBehalf(onBehalf);
+        onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -150,7 +146,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
     function testShouldRevertSupplyCollateralWhenMarketNotCreated(uint256 amount, address onBehalf) public {
         amount = _boundAmount(amount);
-        onBehalf = _boundOnBehalf(onBehalf);
+        onBehalf = _boundAddressNotZero(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user1.supplyCollateral(sAvax, amount, onBehalf);
@@ -158,7 +154,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
     function testShouldRevertSupplyCollateralWhenSupplyCollateralPaused(uint256 amount, address onBehalf) public {
         amount = _boundAmount(amount);
-        onBehalf = _boundOnBehalf(onBehalf);
+        onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
@@ -174,7 +170,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
     function testShouldSupplyCollateralWhenEverythingElsePaused(uint256 amount, address onBehalf) public {
         amount = _boundAmount(amount);
-        onBehalf = _boundOnBehalf(onBehalf);
+        onBehalf = _boundAddressNotZero(onBehalf);
 
         morpho.setIsPausedForAllMarkets(true);
 

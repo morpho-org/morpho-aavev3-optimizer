@@ -214,7 +214,7 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256)
     {
-        return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
+        return _marketBalances[underlying].scaledCollateralBalance(user).rayMul(poolSupplyIndex);
     }
 
     /// @notice Returns the hypothetical liquidity data of `user`.
