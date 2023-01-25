@@ -191,8 +191,6 @@ library MarketLib {
         market.idleSupply = newIdleSupply;
 
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
-
-        return toSupply;
     }
 
     /// @dev Borrows idle supply and returns an updated p2p balance.
