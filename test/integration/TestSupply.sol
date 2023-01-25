@@ -116,12 +116,27 @@ contract TestIntegrationSupply is IntegrationTest {
             assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
             assertEq(test.supplied, amount, "supplied != amount");
             assertApproxLeAbs(p2pSupply, amount, 1, "p2pSupply != amount");
+            assertEq(
+                morpho.scaledP2PBorrowBalance(test.market.underlying, address(promoter)),
+                test.scaledP2PSupply,
+                "promoterScaledP2PBorrow != scaledP2PSupply"
+            );
+            assertEq(
+                morpho.scaledPoolBorrowBalance(test.market.underlying, address(promoter)),
+                0,
+                "promoterScaledPoolBorrow != 0"
+            );
 
             // Assert Morpho getters.
             assertApproxLeAbs(
                 morpho.supplyBalance(test.market.underlying, onBehalf), p2pSupply, 1, "supplyBalance != p2pSupply"
             );
             assertEq(morpho.collateralBalance(test.market.underlying, onBehalf), 0, "collateralBalance != 0");
+            assertEq(
+                morpho.borrowBalance(test.market.underlying, address(promoter)),
+                test.supplied,
+                "promoterSupplyBalance != supplied"
+            );
 
             // Assert Morpho's position on pool.
             assertApproxGeAbs(

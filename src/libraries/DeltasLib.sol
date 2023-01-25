@@ -38,8 +38,8 @@ library DeltasLib {
         Types.MarketSideIndexes256 memory counterIndexes = borrowSide ? indexes.supply : indexes.borrow;
 
         uint256 promotedP2P = promoted.rayDiv(promotedIndexes.p2pIndex);
-        promotedDelta.scaledTotalP2P = promotedDelta.scaledTotalP2P + promotedP2P;
-        counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P + amount.rayDiv(counterIndexes.p2pIndex);
+        promotedDelta.scaledTotalP2P += promotedP2P;
+        counterDelta.scaledTotalP2P += amount.rayDiv(counterIndexes.p2pIndex);
 
         emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
 
