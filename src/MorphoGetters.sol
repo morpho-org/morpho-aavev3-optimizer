@@ -47,46 +47,46 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _marketsCreated;
     }
 
-    /// @notice Returns the scaled pool supply balance of `user` on the `underlying` market (in ray).
+    /// @notice Returns the scaled balance of `user` on the `underlying` market, supplied on pool (with `underlying` decimals).
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledPoolSupplyBalance(user);
     }
 
-    /// @notice Returns the scaled peer-to-peer supply balance of `user` on the `underlying` market (in ray).
+    /// @notice Returns the scaled balance of `user` on the `underlying` market, supplied peer-to-peer (with `underlying` decimals).
     function scaledP2PSupplyBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledP2PSupplyBalance(user);
     }
 
-    /// @notice Returns the scaled pool borrow balance of `user` on the `underlying` market (in ray).
+    /// @notice Returns the scaled balance of `user` on the `underlying` market, borrowed from pool (with `underlying` decimals).
     function scaledPoolBorrowBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledPoolBorrowBalance(user);
     }
 
-    /// @notice Returns the scaled peer-to-peer borrow balance of `user` on the `underlying` market (in ray).
+    //// @notice Returns the scaled balance of `user` on the `underlying` market, borrowed peer-to-peer (with `underlying` decimals).
     function scaledP2PBorrowBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledP2PBorrowBalance(user);
     }
 
-    /// @notice Returns the scaled pool supply collateral balance of `user` on the `underlying` market (in ray).
+    /// @notice Returns the scaled balance of `user` on the `underlying` market, supplied on pool & used as collateral (with `underlying` decimals).
     function scaledCollateralBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledCollateralBalance(user);
     }
 
-    /// @notice Returns the total supply balance of `user` on the `underlying` market (in `underlying`).
+    /// @notice Returns the total supply balance of `user` on the `underlying` market (in underlying).
     function supplyBalance(address underlying, address user) external view returns (uint256) {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
 
         return _getUserSupplyBalanceFromIndexes(underlying, user, indexes.supply);
     }
 
-    /// @notice Returns the total borrow balance of `user` on the `underlying` market (in `underlying`).
+    /// @notice Returns the total borrow balance of `user` on the `underlying` market (in underlying).
     function borrowBalance(address underlying, address user) external view returns (uint256) {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
 
         return _getUserSupplyBalanceFromIndexes(underlying, user, indexes.borrow);
     }
 
-    /// @notice Returns the supply collateral balance of `user` on the `underlying` market (in `underlying`).
+    /// @notice Returns the supply collateral balance of `user` on the `underlying` market (in underlying).
     function collateralBalance(address underlying, address user) external view returns (uint256) {
         return _getUserCollateralBalanceFromIndex(underlying, user, _POOL.getReserveNormalizedIncome(underlying));
     }

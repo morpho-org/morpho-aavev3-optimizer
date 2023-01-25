@@ -155,9 +155,9 @@ abstract contract MorphoInternal is MorphoStorage {
         return keccak256(abi.encodePacked(Constants.EIP712_MSG_PREFIX, _DOMAIN_SEPARATOR, structHash));
     }
 
-    /// @notice Approves a `manager` to manage the position of `msg.sender`.
+    /// @notice Approves a `manager` to borrow/withdraw on behalf of the sender.
     /// @param manager The address of the manager.
-    /// @param isAllowed Whether `manager` is allowed to manage `msg.sender`'s position or not.
+    /// @param isAllowed Whether `manager` is allowed to manage `delegator`'s position or not.
     function _approveManager(address delegator, address manager, bool isAllowed) internal {
         _isManaging[delegator][manager] = isAllowed;
         emit Events.ManagerApproval(delegator, manager, isAllowed);
@@ -243,7 +243,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
     /// @dev Returns the collateral data for a given set of inputs.
     /// @dev The total collateral data is computed looping through all user's collateral assets.
-    /// @param assetWithdrawn The address of the underlying asset withdrawn. Pass address(0) if no asset is withdrawn.
+    /// @param assetWithdrawn The address of the underlying asset hypothetically withdrawn. Pass address(0) if no asset is withdrawn.
     /// @param vars The liquidity variables.
     /// @param amountWithdrawn The amount withdrawn on the `assetWithdrawn` market (if any).
     /// @return collateral The total collateral of `vars.user`.
