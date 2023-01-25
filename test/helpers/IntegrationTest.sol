@@ -251,7 +251,11 @@ contract IntegrationTest is ForkTest {
         vm.prank(user);
         borrowed = morpho.borrow(market.underlying, amount, onBehalf, receiver, maxLoops);
 
-        _deposit(weth, _minCollateral(markets[0], market, borrowed), address(morpho)); // Make Morpho solvent with WETH because no supply cap.
+        _deposit(
+            defaultCollateralMarket.underlying,
+            _minCollateral(defaultCollateralMarket, market, borrowed),
+            address(morpho)
+        ); // Make Morpho solvent with default collateral market, having no supply cap.
 
         oracle.setAssetPrice(market.underlying, market.price);
     }
@@ -268,7 +272,7 @@ contract IntegrationTest is ForkTest {
                 defaultCollateralMarket.underlying,
                 _minCollateral(defaultCollateralMarket, market, borrowed),
                 address(morpho)
-            ); // Make Morpho solvent with DAI, having the largest supply cap.
+            ); // Make Morpho solvent with default collateral market, having no supply cap.
         } catch {
             borrowed = 0;
         }
