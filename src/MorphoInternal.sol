@@ -100,14 +100,14 @@ abstract contract MorphoInternal is MorphoStorage {
 
         for (uint256 i; i < underlyings.length; ++i) {
             address underlying = underlyings[i];
+            Types.Market storage market = _market[underlying];
 
-            if (!_market[underlying].isCreated()) continue;
+            if (!market.isCreated()) continue;
 
-            uint256 underlyingBalance = ERC20(underlying).balanceOf(address(this));
+            uint256 claimable = ERC20(underlying).balanceOf(address(this)) - market.idleSupply;
+            uint256 claimed = Math.min(amounts[i], claimable);
 
-            if (underlyingBalance == 0) continue;
-
-            uint256 claimed = Math.min(amounts[i], underlyingBalance);
+            if (claimed == 0) continue;
 
             ERC20(underlying).safeTransfer(treasuryVault, claimed);
             emit Events.ReserveFeeClaimed(underlying, claimed);
