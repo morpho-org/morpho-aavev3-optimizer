@@ -23,6 +23,24 @@ contract TestUnitMarketSideDeltaLib is Test {
         marketSideIndex = Types.MarketSideIndexes256(WadRayMath.RAY, WadRayMath.RAY);
     }
 
+    function testIncreaseZeroAmount(
+        address underlying,
+        uint256 scaledDeltaPool,
+        uint256 scaledTotalP2P,
+        bool borrowSide
+    ) public {
+        scaledTotalP2P = bound(scaledTotalP2P, 0, MAX_AMOUNT);
+        scaledDeltaPool = bound(scaledDeltaPool, 0, MAX_AMOUNT);
+
+        delta.scaledDeltaPool = scaledDeltaPool;
+        delta.scaledTotalP2P = scaledTotalP2P;
+
+        delta.increase(underlying, 0, marketSideIndex, borrowSide);
+
+        assertEq(delta.scaledDeltaPool, scaledDeltaPool);
+        assertEq(delta.scaledTotalP2P, scaledTotalP2P);
+    }
+
     function testIncrease(
         address underlying,
         uint256 amount,
@@ -30,7 +48,7 @@ contract TestUnitMarketSideDeltaLib is Test {
         uint256 scaledTotalP2P,
         bool borrowSide
     ) public {
-        amount = bound(amount, 0, MAX_AMOUNT);
+        amount = bound(amount, 1, MAX_AMOUNT);
         scaledTotalP2P = bound(scaledTotalP2P, 0, MAX_AMOUNT);
         scaledDeltaPool = bound(scaledDeltaPool, 0, MAX_AMOUNT);
 
@@ -48,6 +66,20 @@ contract TestUnitMarketSideDeltaLib is Test {
         assertEq(delta.scaledTotalP2P, scaledTotalP2P);
     }
 
+    function testDecreaseWhenDeltaIsZero(address underlying, uint256 amount, uint256 scaledTotalP2P, bool borrowSide)
+        public
+    {
+        amount = bound(amount, 0, MAX_AMOUNT);
+        scaledTotalP2P = bound(scaledTotalP2P, 0, MAX_AMOUNT);
+
+        delta.scaledTotalP2P = scaledTotalP2P;
+
+        delta.decrease(underlying, 0, marketSideIndex.poolIndex, borrowSide);
+
+        assertEq(delta.scaledDeltaPool, 0);
+        assertEq(delta.scaledTotalP2P, scaledTotalP2P);
+    }
+
     function testDecrease(
         address underlying,
         uint256 amount,
@@ -57,7 +89,7 @@ contract TestUnitMarketSideDeltaLib is Test {
     ) public {
         amount = bound(amount, 0, MAX_AMOUNT);
         scaledTotalP2P = bound(scaledTotalP2P, 0, MAX_AMOUNT);
-        scaledDeltaPool = bound(scaledDeltaPool, 0, MAX_AMOUNT);
+        scaledDeltaPool = bound(scaledDeltaPool, 1, MAX_AMOUNT);
 
         delta.scaledDeltaPool = scaledDeltaPool;
         delta.scaledTotalP2P = scaledTotalP2P;
