@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IMorpho} from "src/interfaces/IMorpho.sol";
+import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
 import {MatchingEngine} from "src/MatchingEngine.sol";
 import {MorphoInternal} from "src/MorphoInternal.sol";
