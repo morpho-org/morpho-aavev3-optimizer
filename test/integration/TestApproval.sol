@@ -26,7 +26,7 @@ contract TestIntegrationApproval is IntegrationTest {
     }
 
     function testApproveManager(address delegator, address manager, bool isAllowed) public {
-        vm.assume(delegator != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
+        vm.assume(delegator != address(proxyAdmin)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
 
         vm.prank(delegator);
         morpho.approveManager(manager, isAllowed);
