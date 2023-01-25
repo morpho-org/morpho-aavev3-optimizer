@@ -255,7 +255,7 @@ contract TestIntegrationSupply is IntegrationTest {
             TestMarket memory market = markets[marketIndex];
 
             amount = _boundSupply(market, amount);
-            allowance = bound(allowance, 1, amount - 1);
+            allowance = bound(allowance, 0, amount - 1);
 
             user1.approve(market.underlying, allowance);
 

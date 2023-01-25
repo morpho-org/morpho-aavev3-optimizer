@@ -111,10 +111,8 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             test.market = borrowableMarkets[marketIndex];
 
-            amount = _boundBorrow(test.market, _boundSupply(test.market, amount)); // Don't go over the supply cap.
-
-            promoter.approve(test.market.underlying, amount);
-            promoter.supply(test.market.underlying, amount); // 100% peer-to-peer.
+            amount = _boundBorrow(test.market, amount);
+            amount = _promoteBorrow(test.market, amount); // 100% peer-to-peer.
 
             uint256 balanceBefore = ERC20(test.market.underlying).balanceOf(receiver);
             uint256 morphoBalanceBefore = ERC20(test.market.debtToken).balanceOf(address(morpho));

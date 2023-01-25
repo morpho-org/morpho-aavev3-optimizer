@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {IPositionsManager} from "src/interfaces/IPositionsManager.sol";
 import {IMorpho} from "src/interfaces/IMorpho.sol";
+import {IPositionsManager} from "src/interfaces/IPositionsManager.sol";
 
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {TestUser} from "../helpers/TestUser.sol";
 
-import {PositionsManager} from "src/PositionsManager.sol";
 import {Morpho} from "src/Morpho.sol";
-
+import {PositionsManager} from "src/PositionsManager.sol";
+import {UserMock} from "test/mocks/UserMock.sol";
 import "./ForkTest.sol";
 
 contract IntegrationTest is ForkTest {
     using stdStorage for StdStorage;
+    using Math for uint256;
     using PercentageMath for uint256;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
@@ -31,9 +31,9 @@ contract IntegrationTest is ForkTest {
     IMorpho internal morphoImpl;
     TransparentUpgradeableProxy internal morphoProxy;
 
-    TestUser internal user1;
-    TestUser internal user2;
-    TestUser internal promoter;
+    UserMock internal user1;
+    UserMock internal user2;
+    UserMock internal promoter;
 
     struct TestMarket {
         address aToken;
@@ -52,12 +52,17 @@ contract IntegrationTest is ForkTest {
         uint16 p2pIndexCursor;
         //
         uint256 price;
+        uint256 minAmount;
+        uint256 maxAmount;
     }
 
     TestMarket[] internal markets;
     TestMarket[] internal borrowableMarkets;
+    TestMarket internal defaultCollateralMarket;
 
     function setUp() public virtual override {
+        (defaultCollateralMarket,) = _initMarket(sAvax, 0, 0);
+
         _deploy();
 
         // Order should not be changed.
@@ -104,10 +109,13 @@ contract IntegrationTest is ForkTest {
         // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() always return true.
         _deposit(weth, 1e12, address(morpho));
         _deposit(dai, 1e12, address(morpho));
+
+        // Disable supply cap on default collateral market to avoid reverts.
+        poolAdmin.setSupplyCap(defaultCollateralMarket.underlying, 0);
     }
 
-    function _initUser() internal returns (TestUser user) {
-        user = new TestUser(address(morpho));
+    function _initUser() internal returns (UserMock user) {
+        user = new UserMock(address(morpho));
 
         _setBalances(address(user), INITIAL_BALANCE);
     }
@@ -134,8 +142,12 @@ contract IntegrationTest is ForkTest {
         market.price = oracle.getAssetPrice(underlying); // Price is constant, equal to price at fork block number.
 
         (market.ltv, market.lt, market.liquidationBonus, market.decimals,,) = reserve.configuration.getParams();
+
         market.supplyCap = reserve.configuration.getSupplyCap() * 10 ** market.decimals;
         market.borrowCap = reserve.configuration.getBorrowCap() * 10 ** market.decimals;
+
+        market.minAmount = (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price;
+        market.maxAmount = (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price;
 
         vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
         vm.label(reserve.variableDebtTokenAddress, string.concat("d", market.symbol));
@@ -157,6 +169,7 @@ contract IntegrationTest is ForkTest {
 
     /// @dev Disables the same block borrow/repay limitation by resetting the previous index of Morpho on AaveV3.
     /// https://github.com/aave/aave-v3-core/blob/bb625723211944a7325b505caf6199edf4b8ed2a/contracts/protocol/tokenization/base/IncentivizedERC20.sol#L41-L50
+    /// The check was removed in commit https://github.com/aave/aave-v3-core/commit/b1d94da8c4de795e94a7ff5c1429a98854cb2b65 but the change is not deployed at test block.
     function _resetPreviousIndex(TestMarket memory market) internal {
         bytes32 slot = keccak256(abi.encode(address(morpho), 56));
         vm.store(
@@ -173,30 +186,30 @@ contract IntegrationTest is ForkTest {
         pool.deposit(underlying, amount, onBehalf, 0);
     }
 
+    /// @dev Calculates the underlying amount that can be supplied on the given market, reaching the supply cap.
+    function _supplyGap(TestMarket memory market) internal view returns (uint256) {
+        return
+            market.supplyCap > 0 ? market.supplyCap.zeroFloorSub(ERC20(market.aToken).totalSupply()) : type(uint256).max;
+    }
+
+    /// @dev Calculates the underlying amount that can be supplied on the given market, reaching the borrow cap.
+    function _borrowGap(TestMarket memory market) internal view returns (uint256) {
+        return market.borrowCap > 0
+            ? market.borrowCap.zeroFloorSub(ERC20(market.debtToken).totalSupply())
+            : type(uint256).max;
+    }
+
     /// @dev Bounds the input between the minimum & the maximum USD amount expected in tests, without exceeding the market's supply cap.
     function _boundSupply(TestMarket memory market, uint256 amount) internal view returns (uint256) {
-        return bound(
-            amount,
-            (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price,
-            Math.min(
-                (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price,
-                market.supplyCap - ERC20(market.aToken).totalSupply()
-            )
-        );
+        return bound(amount, market.minAmount, Math.min(market.maxAmount, _supplyGap(market)));
     }
 
     /// @dev Bounds the input between 0 and the maximum borrowable quantity, without exceeding the market's liquidity nor its borrow cap.
     function _boundBorrow(TestMarket memory market, uint256 amount) internal view returns (uint256) {
         return bound(
             amount,
-            (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price,
-            Math.min(
-                (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price,
-                Math.min(
-                    ERC20(market.underlying).balanceOf(market.aToken),
-                    market.borrowCap > 0 ? market.borrowCap - ERC20(market.debtToken).totalSupply() : type(uint256).max
-                )
-            )
+            market.minAmount,
+            Math.min(market.maxAmount, Math.min(ERC20(market.underlying).balanceOf(market.aToken), _borrowGap(market)))
         );
     }
 
@@ -245,24 +258,29 @@ contract IntegrationTest is ForkTest {
 
     /// @dev Promotes the incoming (or already provided) supply, without collateral.
     function _promoteSupply(TestMarket memory market, uint256 amount) internal returns (uint256 borrowed) {
-        borrowed = bound(
-            amount,
-            0,
-            Math.min(
-                ERC20(market.underlying).balanceOf(market.aToken),
-                market.borrowCap > 0 ? market.borrowCap - ERC20(market.debtToken).totalSupply() : type(uint256).max
-            )
-        );
+        borrowed = bound(amount, 0, Math.min(ERC20(market.underlying).balanceOf(market.aToken), _borrowGap(market)));
 
         oracle.setAssetPrice(market.underlying, 0);
 
         try promoter.borrow(market.underlying, borrowed) {
             _resetPreviousIndex(market); // Enable borrow/repay in same block.
-            _deposit(dai, _minCollateral(markets[1], market, borrowed), address(morpho)); // Make Morpho solvent with DAI, having the largest supply cap.
+            _deposit(
+                defaultCollateralMarket.underlying,
+                _minCollateral(defaultCollateralMarket, market, borrowed),
+                address(morpho)
+            ); // Make Morpho solvent with DAI, having the largest supply cap.
         } catch {
             borrowed = 0;
         }
 
         oracle.setAssetPrice(market.underlying, market.price);
+    }
+
+    /// @dev Promotes the incoming (or already provided) borrow.
+    function _promoteBorrow(TestMarket memory market, uint256 amount) internal returns (uint256 supplied) {
+        supplied = bound(amount, 0, _supplyGap(market));
+
+        promoter.approve(market.underlying, supplied);
+        promoter.supply(market.underlying, supplied);
     }
 }
