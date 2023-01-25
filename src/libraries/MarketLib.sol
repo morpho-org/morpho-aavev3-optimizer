@@ -186,7 +186,7 @@ library MarketLib {
         uint256 totalSupply = ERC20(market.aToken).totalSupply();
         if (totalSupply + amount <= supplyCap) return amount;
 
-        toSupply = supplyCap - totalSupply;
+        toSupply = supplyCap.zeroFloorSub(totalSupply);
         uint256 newIdleSupply = market.idleSupply + amount - toSupply;
         market.idleSupply = newIdleSupply;
 
