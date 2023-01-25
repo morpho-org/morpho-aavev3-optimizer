@@ -42,7 +42,7 @@ contract TestDeltasLib is Test {
         deltas.supply.scaledTotalP2P = totalP2PSupply;
         deltas.borrow.scaledTotalP2P = totalP2PBorrow;
         uint256 newP2P = DeltasLib.increaseP2P(deltas, address(1), promoted, amount, indexes, false);
-        assertEq(newP2P, promoted.rayDiv(WadRayMath.RAY));
+        assertEq(newP2P, promoted.rayDiv(indexes.supply.p2pIndex));
         assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply + newP2P);
         assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow + amount.rayDiv(indexes.borrow.p2pIndex));
     }
@@ -57,7 +57,7 @@ contract TestDeltasLib is Test {
         deltas.supply.scaledTotalP2P = totalP2PSupply;
         deltas.borrow.scaledTotalP2P = totalP2PBorrow;
         uint256 newP2P = DeltasLib.increaseP2P(deltas, address(1), promoted, amount, indexes, true);
-        assertEq(newP2P, promoted.rayDiv(WadRayMath.RAY));
+        assertEq(newP2P, promoted.rayDiv(indexes.borrow.p2pIndex));
         assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply + amount.rayDiv(indexes.supply.p2pIndex));
         assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow + newP2P);
     }
@@ -84,7 +84,7 @@ contract TestDeltasLib is Test {
         deltas.supply.scaledTotalP2P = totalP2PSupply;
         deltas.borrow.scaledTotalP2P = totalP2PBorrow;
         DeltasLib.decreaseP2P(deltas, address(1), demoted, amount, indexes, false);
-        assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply.zeroFloorSub(demoted.rayDiv(WadRayMath.RAY)));
+        assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply.zeroFloorSub(demoted.rayDiv(indexes.supply.p2pIndex)));
         assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow.zeroFloorSub(amount.rayDiv(indexes.borrow.p2pIndex)));
     }
 
@@ -99,7 +99,7 @@ contract TestDeltasLib is Test {
         deltas.borrow.scaledTotalP2P = totalP2PBorrow;
         DeltasLib.decreaseP2P(deltas, address(1), demoted, amount, indexes, true);
         assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply.zeroFloorSub(amount.rayDiv(indexes.supply.p2pIndex)));
-        assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow.zeroFloorSub(demoted.rayDiv(WadRayMath.RAY)));
+        assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow.zeroFloorSub(demoted.rayDiv(indexes.borrow.p2pIndex)));
     }
 
     function testRepayFeeShouldReturnZeroIfAmountIsZero() public {
