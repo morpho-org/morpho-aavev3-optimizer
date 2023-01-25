@@ -72,21 +72,25 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         priceOracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
     }
 
+    function validatePermission(address owner, address manager) external view {
+        _validatePermission(owner, manager);
+    }
+
     function testValidatePermission(address owner, address manager) public {
-        _validatePermission(owner, owner);
+        this.validatePermission(owner, owner);
 
         if (owner != manager) {
             vm.expectRevert(abi.encodeWithSelector(Errors.PermissionDenied.selector));
-            _validatePermission(owner, manager);
+            this.validatePermission(owner, manager);
         }
 
         _approveManager(owner, manager, true);
-        _validatePermission(owner, manager);
+        this.validatePermission(owner, manager);
 
         _approveManager(owner, manager, false);
         if (owner != manager) {
             vm.expectRevert(abi.encodeWithSelector(Errors.PermissionDenied.selector));
-            _validatePermission(owner, manager);
+            this.validatePermission(owner, manager);
         }
     }
 
@@ -116,29 +120,36 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _validateManagerInput(dai, 1, address(1), address(2));
     }
 
+    function validateSupply(address underlying, uint256 amount, address onBehalf) external view {
+        _validateSupply(underlying, amount, onBehalf);
+    }
+
     function testValidateSupplyShouldRevertIfSupplyPaused() public {
         _market[dai].pauseStatuses.isSupplyPaused = true;
 
         vm.expectRevert(abi.encodeWithSelector(Errors.SupplyIsPaused.selector));
-        _validateSupply(dai, 1, address(1));
+        this.validateSupply(dai, 1, address(1));
     }
 
     function testValidateSupply() public view {
-        _validateSupply(dai, 1, address(1));
+        this.validateSupply(dai, 1, address(1));
+    }
+
+    function validateSupplyCollateral(address underlying, uint256 amount, address onBehalf) external view {
+        _validateSupplyCollateral(underlying, amount, onBehalf);
     }
 
     function testValidateSupplyCollateralShouldRevertIfSupplyCollateralPaused() public {
         _market[dai].pauseStatuses.isSupplyCollateralPaused = true;
 
         vm.expectRevert(abi.encodeWithSelector(Errors.SupplyCollateralIsPaused.selector));
-        _validateSupplyCollateral(dai, 1, address(1));
+        this.validateSupplyCollateral(dai, 1, address(1));
     }
 
     function testValidateSupplyCollateral() public view {
-        _validateSupplyCollateral(dai, 1, address(1));
+        this.validateSupplyCollateral(dai, 1, address(1));
     }
 
-    // Can't expect a revert if the internal function does not call a function that immediately reverts, so an external helper is needed.
     function validateBorrow(address underlying, uint256 amount, address borrower, address receiver) external view {
         _validateBorrow(underlying, amount, borrower, receiver);
     }
@@ -194,18 +205,21 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.authorizeBorrow(dai, onPool, address(this));
     }
 
+    function validateRepay(address underlying, uint256 amount, address onBehalf) external view {
+        _validateRepay(underlying, amount, onBehalf);
+    }
+
     function testValidateRepayShouldRevertIfRepayPaused() public {
         _market[dai].pauseStatuses.isRepayPaused = true;
 
         vm.expectRevert(abi.encodeWithSelector(Errors.RepayIsPaused.selector));
-        _validateRepay(dai, 1, address(1));
+        this.validateRepay(dai, 1, address(1));
     }
 
     function testValidateRepay() public view {
-        _validateRepay(dai, 1, address(1));
+        this.validateRepay(dai, 1, address(1));
     }
 
-    // Can't expect a revert if the internal function does not call a function that immediately reverts, so an external helper is needed.
     function validateWithdraw(address underlying, uint256 amount, address user, address to) external view {
         _validateWithdraw(underlying, amount, user, to);
     }
@@ -226,10 +240,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         view
     {
         _validateWithdrawCollateral(underlying, amount, supplier, receiver);
-    }
-
-    function validateWithdrawCollateral(address underlying, uint256 amount, address supplier) external view {
-        this.validateWithdrawCollateral(underlying, amount, supplier);
     }
 
     function testValidateWithdrawCollateralShouldRevertIfWithdrawCollateralPaused() public {
@@ -264,7 +274,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.authorizeWithdrawCollateral(dai, onPool.rayDiv(indexes.supply.poolIndex) / 2, address(this));
     }
 
-    // Can't expect a revert if the internal function does not call a function that immediately reverts, so an external helper is needed.
     function authorizeLiquidate(address collateral, address borrow, address liquidator)
         external
         view
