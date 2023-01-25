@@ -8,7 +8,7 @@ import {Math} from "@morpho-utils/math/Math.sol";
 
 import {Test} from "@forge-std/Test.sol";
 
-contract TestDeltasLib is Test {
+contract TestUnitDeltasLib is Test {
     using WadRayMath for uint256;
     using Math for uint256;
 
