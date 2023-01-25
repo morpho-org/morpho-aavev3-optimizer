@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
@@ -16,7 +15,7 @@ import {PoolLib} from "src/libraries/PoolLib.sol";
 
 import "test/helpers/InternalTest.sol";
 
-contract TestMorphoInternal is InternalTest, MorphoInternal {
+contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using PoolLib for IPool;
@@ -26,8 +25,6 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
-
-    IAaveOracle internal oracle;
 
     function setUp() public virtual override {
         super.setUp();
@@ -51,8 +48,6 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
         _POOL.supplyToPool(usdc, 1e8);
         _POOL.supplyToPool(usdt, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
-
-        oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
     }
 
     function createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
@@ -220,8 +215,8 @@ contract TestMorphoInternal is InternalTest, MorphoInternal {
         DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
         DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
         (uint256 poolLtv, uint256 poolLt,, uint256 poolDecimals,,) = _POOL.getConfiguration(dai).getParams();
-        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory, morphoPoolConfig);
 
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory, morphoPoolConfig);
         (uint256 price, uint256 ltv, uint256 lt, uint256 units) = _assetLiquidityData(dai, vars);
 
         assertGt(price, 0, "price not gt 0");

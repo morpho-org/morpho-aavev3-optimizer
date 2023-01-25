@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
 import {MatchingEngine} from "src/MatchingEngine.sol";
 import {MorphoInternal} from "src/MorphoInternal.sol";
@@ -10,7 +10,7 @@ import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
 
 import "test/helpers/InternalTest.sol";
 
-contract TestMatchingEngine is InternalTest, MatchingEngine {
+contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using WadRayMath for uint256;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.17;
+pragma solidity ^0.8.0;
 
 import {Types} from "src/libraries/Types.sol";
 import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
@@ -7,7 +7,7 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 
 import {Test} from "@forge-std/Test.sol";
 
-contract TestMarketBalanceLib is Test {
+contract TestUnitMarketBalanceLib is Test {
     using MarketBalanceLib for Types.MarketBalances;
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
 
