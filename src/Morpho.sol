@@ -47,7 +47,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return _supply(underlying, amount, msg.sender, onBehalf, maxLoops);
     }
 
-    /// @notice Supplies `amount` of `underlying` of `onBehalf` using permit2 for a better UX.
+    /// @notice Supplies `amount` of `underlying` of `onBehalf` using permit2 in a single tx.
     ///         The supplied amount cannot be used as collateral but is eligible for the peer-to-peer matching.
     /// @param underlying The address of the `underlying` asset to supply.
     /// @param amount The amount of `underlying` to supply.
@@ -69,7 +69,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     }
 
     /// @notice Supplies `amount` of `underlying` collateral to the pool on behalf of `onBehalf`.
-    /// @dev The supplied amount cannot be matched peer-to-peer but can be used as collateral.
+    ///         The supplied amount cannot be matched peer-to-peer but can be used as collateral.
     /// @param underlying The address of the underlying asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the collateral position.
@@ -78,8 +78,8 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return _supplyCollateral(underlying, amount, msg.sender, onBehalf);
     }
 
-    /// @notice Supplies `amount` of `underlying` collateral to the pool on behalf of `onBehalf` using permit2 for a better UX.
-    /// @dev The supplied amount cannot be matched peer-to-peer but can be used as collateral.
+    /// @notice Supplies `amount` of `underlying` collateral to the pool on behalf of `onBehalf` using permit2 in a single tx.
+    ///         The supplied amount cannot be matched peer-to-peer but can be used as collateral.
     /// @param underlying The address of the underlying asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the collateral position.
@@ -98,6 +98,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     }
 
     /// @notice Borrows `amount` of `underlying` on behalf of `onBehalf`.
+    ///         If sender is not `onBehalf`, sender must have previously been approved by `onBehalf` using `approveManager`.
     /// @param underlying The address of the underlying asset to borrow.
     /// @param amount The amount of `underlying` to borrow.
     /// @param onBehalf The address that will receive the debt position.
@@ -111,7 +112,8 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return _borrow(underlying, amount, onBehalf, receiver, maxLoops);
     }
 
-    /// @notice Borrows `amount` of `underlying` on behalf of `onBehalf`.
+    /// @notice Repays `amount` of `underlying` on behalf of `onBehalf`.
+    ///         If sender is not `onBehalf`, sender must have previously been approved by `onBehalf` using `approveManager`.
     /// @param underlying The address of the underlying asset to borrow.
     /// @param amount The amount of `underlying` to repay.
     /// @param onBehalf The address whose position will be repaid.
@@ -120,7 +122,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return _repay(underlying, amount, msg.sender, onBehalf);
     }
 
-    /// @notice Borrows `amount` of `underlying` on behalf of `onBehalf` using permit2 for a better UX.
+    /// @notice Repays `amount` of `underlying` on behalf of `onBehalf` using permit2 in a single tx.
     /// @param underlying The address of the underlying asset to borrow.
     /// @param amount The amount of `underlying` to repay.
     /// @param onBehalf The address whose position will be repaid.
@@ -177,14 +179,14 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return _liquidate(underlyingBorrowed, underlyingCollateral, amount, user, msg.sender);
     }
 
-    /// @notice Approves a `manager` to manage the position of `msg.sender`.
+    /// @notice Approves a `manager` to borrow/withdraw on behalf of the sender.
     /// @param manager The address of the manager.
     /// @param isAllowed Whether `manager` is allowed to manage `msg.sender`'s position or not.
     function approveManager(address manager, bool isAllowed) external {
         _approveManager(msg.sender, manager, isAllowed);
     }
 
-    /// @notice Approves a `manager` to manage the position of `msg.sender` using EIP712 signature for a better UX.
+    /// @notice Approves a `manager` to manage the position of `msg.sender` using EIP712 signature in a single tx.
     /// @param delegator The address of the delegator.
     /// @param manager The address of the manager.
     /// @param isAllowed Whether `manager` is allowed to manage `msg.sender`'s position or not.
