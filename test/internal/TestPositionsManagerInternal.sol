@@ -45,7 +45,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     uint256 constant MIN_AMOUNT = 1 ether;
     uint256 constant MAX_AMOUNT = type(uint96).max / 2;
 
-    IPriceOracleGetter internal oracle;
+    IPriceOracleGetter internal priceOracle;
     address internal poolConfigurator;
     address internal poolOwner;
 
@@ -69,7 +69,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _POOL.supplyToPool(usdt, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
 
-        oracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+        priceOracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
     }
 
     function testValidatePermission(address owner, address manager) public {
