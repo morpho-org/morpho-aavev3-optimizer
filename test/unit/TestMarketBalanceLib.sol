@@ -7,7 +7,7 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 
 import {Test} from "@forge-std/Test.sol";
 
-contract TestUnitMarketLib is Test {
+contract TestUnitMarketBalanceLib is Test {
     using MarketBalanceLib for Types.MarketBalances;
     using LogarithmicBuckets for LogarithmicBuckets.BucketList;
 
