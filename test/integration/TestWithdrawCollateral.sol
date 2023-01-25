@@ -11,7 +11,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     function _boundOnBehalf(address onBehalf) internal view returns (address) {
         onBehalf = _boundAddressNotZero(onBehalf);
 
-        vm.assume(onBehalf != address(this)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
+        vm.assume(onBehalf != address(proxyAdmin)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
 
         return onBehalf;
     }
