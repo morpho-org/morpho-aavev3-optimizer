@@ -18,13 +18,13 @@ test:
 	forge test -vvv
 
 test-unit:
-	@FOUNDRY_PROFILE=test-unit make test
+	@FOUNDRY_MATCH_CONTRACT=TestUnit make test
 
 test-internal:
-	@FOUNDRY_PROFILE=test-internal make test
+	@FOUNDRY_MATCH_CONTRACT=TestInternal make test
 
 test-integration:
-	@FOUNDRY_PROFILE=test-integration make test
+	@FOUNDRY_MATCH_CONTRACT=TestIntegration make test
 
 
 test-%:

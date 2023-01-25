@@ -2,7 +2,7 @@
     "usesRpcPrefix": false,
     "rpc": "https://rpc.ankr.com/avalanche",
     "chainId": 43114,
-    "testBlock": 24437213,
+    "testBlock": 24800000,
     "testMarkets": [
         "DAI",
         "USDC",

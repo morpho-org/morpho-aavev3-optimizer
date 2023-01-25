@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
 import {IMorpho} from "src/interfaces/IMorpho.sol";
 
@@ -10,7 +10,7 @@ import {Morpho} from "src/Morpho.sol";
 import {SigUtils} from "test/helpers/SigUtils.sol";
 import "test/helpers/IntegrationTest.sol";
 
-contract TestApproval is IntegrationTest {
+contract TestIntegrationApproval is IntegrationTest {
     uint256 internal constant OWNER_PK = 0xA11CE;
     uint256 internal constant MANAGER_PK = 0xB0B;
 
