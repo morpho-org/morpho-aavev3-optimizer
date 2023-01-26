@@ -2,9 +2,9 @@
 pragma solidity >=0.5.0;
 
 interface IRewardsManager {
-    function POOL() external view returns (address);
-    function MORPHO() external view returns (address);
-    function REWARDS_CONTROLLER() external view returns (address);
+    function pool() external view returns (address);
+    function morpho() external view returns (address);
+    function rewardsController() external view returns (address);
 
     function getAllUserRewards(address[] calldata assets, address user)
         external

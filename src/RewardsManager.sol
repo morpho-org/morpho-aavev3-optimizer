@@ -137,15 +137,15 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     /// GETTERS ///
 
-    function POOL() external view returns (address) {
+    function pool() external view returns (address) {
         return address(_POOL);
     }
 
-    function MORPHO() external view returns (address) {
+    function morpho() external view returns (address) {
         return address(_MORPHO);
     }
 
-    function REWARDS_CONTROLLER() external view returns (address) {
+    function rewardsController() external view returns (address) {
         return address(_REWARDS_CONTROLLER);
     }
 
