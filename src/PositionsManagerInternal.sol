@@ -329,15 +329,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         Types.Market storage market = _market[underlying];
 
-        // Withdraw idle supply.
-        amount = market.withdrawIdle(underlying, amount);
-
         // Withdraw supply peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
         _updateSupplierInDS(underlying, supplier, vars.onPool, vars.inP2P, false);
 
         if (amount == 0) return vars;
+
+        // Withdraw idle supply.
+        amount = market.withdrawIdle(underlying, amount);
 
         // Decrease the peer-to-peer supply delta.
         uint256 toWithdrawStep;
