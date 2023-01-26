@@ -168,13 +168,13 @@ library MarketLib {
         market.lastUpdateTimestamp = uint32(block.timestamp);
     }
 
-    /// @dev Adds to idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
+    /// @dev Increases the idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to repay. (by supplying on pool)
     /// @param configuration The reserve configuration for the market.
     /// @return toSupply The new amount to supply.
-    function supplyIdle(
+    function increaseIdle(
         Types.Market storage market,
         address underlying,
         uint256 amount,
@@ -193,36 +193,15 @@ library MarketLib {
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
     }
 
-    /// @dev Borrows idle supply and returns an updated p2p balance.
+    /// @dev Decreases the idle supply.
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to borrow.
-    /// @return The amount left to process, and the amount to add in peer-to-peer for the user.
-    function borrowIdle(
-        Types.Market storage market,
-        address underlying,
-        uint256 amount
-    ) internal returns (uint256, uint256) {
-        if (amount == 0) return (0, 0);
-
-        uint256 idleSupply = market.idleSupply;
-        if (idleSupply == 0) return (amount, 0);
-
-        uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
-        uint256 newIdleSupply = idleSupply.zeroFloorSub(matchedIdle);
-        market.idleSupply = newIdleSupply;
-
-        emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
-
-        return (amount - matchedIdle, matchedIdle);
-    }
-
-    /// @dev Withdraws idle supply.
-    /// @param market The market storage.
-    /// @param underlying The underlying address.
-    /// @param amount The amount to withdraw.
-    /// @return The amount left to process, and the amount to remove from in peer-to-peer for the user.
-    function withdrawIdle(Types.Market storage market, address underlying, uint256 amount) internal returns (uint256, uint256) {
+    /// @return The amount left to process, and the processed amount.
+    function decreaseIdle(Types.Market storage market, address underlying, uint256 amount)
+        internal
+        returns (uint256, uint256)
+    {
         if (amount == 0) return (0, 0);
 
         uint256 idleSupply = market.idleSupply;
