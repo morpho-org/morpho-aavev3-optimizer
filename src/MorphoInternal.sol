@@ -242,7 +242,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Returns the collateral data for a given set of inputs.
-    /// @dev The total collateral data is computed looping through all user's collateral assets.
+    /// @dev The total collateral data is computed iterating through all user's collateral assets.
     /// @param assetWithdrawn The address of the underlying asset hypothetically withdrawn. Pass address(0) if no asset is withdrawn.
     /// @param vars The liquidity variables.
     /// @param amountWithdrawn The amount withdrawn on the `assetWithdrawn` market (if any).
@@ -267,7 +267,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Returns the debt data for a given set of inputs.
-    /// @dev The total debt data is computed looping through all user's borrow assets.
+    /// @dev The total debt data is computed iterating through all user's borrow assets.
     /// @param assetBorrowed The address of the underlying asset borrowed. Pass address(0) if no asset is borrowed.
     /// @param vars The liquidity variables.
     /// @param amountBorrowed The amount borrowed on the `assetBorrowed` market (if any).
@@ -423,7 +423,7 @@ abstract contract MorphoInternal is MorphoStorage {
             demoting
         );
         // No need to update the user's list of supplied assets,
-        // as it cannot be used as collateral and thus there's no need to loop over it.
+        // as it cannot be used as collateral and thus there's no need to iterate over it.
     }
 
     /// @dev Updates a `user`'s borrow position in the data structure.

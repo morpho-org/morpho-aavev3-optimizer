@@ -16,7 +16,7 @@ import {console} from "@forge-std/console.sol";
 import {Test} from "@forge-std/Test.sol";
 
 contract BaseTest is Test {
-    uint256 internal constant DEFAULT_MAX_LOOPS = 10;
+    uint256 internal constant DEFAULT_MAX_ITERATIONS = 10;
 
     /// @dev Asserts a is approximately less than or equal to b, with a maximum absolute difference of maxDelta.
     function assertApproxLeAbs(uint256 a, uint256 b, uint256 maxDelta, string memory err) internal {

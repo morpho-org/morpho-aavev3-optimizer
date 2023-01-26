@@ -26,10 +26,10 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @dev Demotes suppliers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to promote suppliers.
     /// @param amount The amount of `underlying` to promote.
-    /// @param maxLoops The maximum number of loops allowed during the matching process.
-    function _promoteSuppliers(address underlying, uint256 amount, uint256 maxLoops)
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
+    function _promoteSuppliers(address underlying, uint256 amount, uint256 maxIterations)
         internal
-        returns (uint256 promoted, uint256 loopsDone)
+        returns (uint256 promoted, uint256 iterationsDone)
     {
         Types.Market storage market = _market[underlying];
         return _promoteOrDemote(
@@ -39,7 +39,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 underlying: underlying,
                 indexes: market.getSupplyIndexes(),
                 amount: amount,
-                maxLoops: maxLoops,
+                maxIterations: maxIterations,
                 borrow: false,
                 updateDS: _updateSupplierInDS,
                 demoting: false,
@@ -51,10 +51,10 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @dev Promotes borrowers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to promote borrowers.
     /// @param amount The amount of `underlying` to promote.
-    /// @param maxLoops The maximum number of loops allowed during the matching process.
-    function _promoteBorrowers(address underlying, uint256 amount, uint256 maxLoops)
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
+    function _promoteBorrowers(address underlying, uint256 amount, uint256 maxIterations)
         internal
-        returns (uint256 promoted, uint256 loopsDone)
+        returns (uint256 promoted, uint256 iterationsDone)
     {
         Types.Market storage market = _market[underlying];
         return _promoteOrDemote(
@@ -64,7 +64,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 underlying: underlying,
                 indexes: market.getBorrowIndexes(),
                 amount: amount,
-                maxLoops: maxLoops,
+                maxIterations: maxIterations,
                 borrow: true,
                 updateDS: _updateBorrowerInDS,
                 demoting: false,
@@ -76,8 +76,8 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @dev Demotes suppliers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to demote suppliers.
     /// @param amount The amount of `underlying` to demote.
-    /// @param maxLoops The maximum number of loops allowed during the matching process.
-    function _demoteSuppliers(address underlying, uint256 amount, uint256 maxLoops)
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
+    function _demoteSuppliers(address underlying, uint256 amount, uint256 maxIterations)
         internal
         returns (uint256 demoted)
     {
@@ -89,7 +89,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 underlying: underlying,
                 indexes: market.getSupplyIndexes(),
                 amount: amount,
-                maxLoops: maxLoops,
+                maxIterations: maxIterations,
                 borrow: false,
                 updateDS: _updateSupplierInDS,
                 demoting: true,
@@ -101,8 +101,8 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @dev Demotes borrowers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to demote borrowers.
     /// @param amount The amount of `underlying` to demote.
-    /// @param maxLoops The maximum number of loops allowed during the matching process.
-    function _demoteBorrowers(address underlying, uint256 amount, uint256 maxLoops)
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
+    function _demoteBorrowers(address underlying, uint256 amount, uint256 maxIterations)
         internal
         returns (uint256 demoted)
     {
@@ -114,7 +114,7 @@ abstract contract MatchingEngine is MorphoInternal {
                 underlying: underlying,
                 indexes: market.getBorrowIndexes(),
                 amount: amount,
-                maxLoops: maxLoops,
+                maxIterations: maxIterations,
                 borrow: true,
                 updateDS: _updateBorrowerInDS,
                 demoting: true,
@@ -131,13 +131,13 @@ abstract contract MatchingEngine is MorphoInternal {
         LogarithmicBuckets.BucketList storage poolBuckets,
         LogarithmicBuckets.BucketList storage p2pBuckets,
         Types.MatchingEngineVars memory vars
-    ) internal returns (uint256 processed, uint256 loopsDone) {
-        if (vars.maxLoops == 0) return (0, 0);
+    ) internal returns (uint256 processed, uint256 iterationsDone) {
+        if (vars.maxIterations == 0) return (0, 0);
 
         uint256 remaining = vars.amount;
         LogarithmicBuckets.BucketList storage workingBuckets = vars.demoting ? p2pBuckets : poolBuckets;
 
-        for (; loopsDone < vars.maxLoops && remaining != 0; ++loopsDone) {
+        for (; iterationsDone < vars.maxIterations && remaining != 0; ++iterationsDone) {
             address firstUser = workingBuckets.getMatch(remaining);
             if (firstUser == address(0)) break;
 

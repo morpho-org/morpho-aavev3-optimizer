@@ -72,10 +72,10 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         assertEq(newRemaining, remaining - toProcess);
     }
 
-    function testPromoteSuppliers(uint256 numSuppliers, uint256 amountToPromote, uint256 maxLoops) public {
+    function testPromoteSuppliers(uint256 numSuppliers, uint256 amountToPromote, uint256 maxIterations) public {
         numSuppliers = bound(numSuppliers, 0, 10);
         amountToPromote = bound(amountToPromote, 0, TOTAL_AMOUNT);
-        maxLoops = bound(maxLoops, 0, numSuppliers);
+        maxIterations = bound(maxIterations, 0, numSuppliers);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
 
@@ -83,7 +83,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
             _updateSupplierInDS(dai, vm.addr(i + 1), USER_AMOUNT, 0, true);
         }
 
-        (uint256 promoted, uint256 loopsDone) = _promoteSuppliers(dai, amountToPromote, maxLoops);
+        (uint256 promoted, uint256 iterationsDone) = _promoteSuppliers(dai, amountToPromote, maxIterations);
 
         uint256 totalP2PSupply;
         for (uint256 i; i < numSuppliers; i++) {
@@ -96,20 +96,20 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
             totalP2PSupply += marketBalances.scaledP2PSupplyBalance(user);
         }
 
-        uint256 expectedPromoted = Math.min(amountToPromote, maxLoops * USER_AMOUNT);
+        uint256 expectedPromoted = Math.min(amountToPromote, maxIterations * USER_AMOUNT);
         expectedPromoted = Math.min(expectedPromoted, numSuppliers * USER_AMOUNT);
 
-        uint256 expectedLoops = Math.min(expectedPromoted.divUp(USER_AMOUNT), maxLoops);
+        uint256 expectedIterations = Math.min(expectedPromoted.divUp(USER_AMOUNT), maxIterations);
 
         assertEq(promoted, expectedPromoted, "promoted");
         assertEq(totalP2PSupply, promoted, "total borrow");
-        assertEq(loopsDone, expectedLoops, "loops");
+        assertEq(iterationsDone, expectedIterations, "iterations");
     }
 
-    function testPromoteBorrowers(uint256 numBorrowers, uint256 amountToPromote, uint256 maxLoops) public {
+    function testPromoteBorrowers(uint256 numBorrowers, uint256 amountToPromote, uint256 maxIterations) public {
         numBorrowers = bound(numBorrowers, 0, 10);
         amountToPromote = bound(amountToPromote, 0, TOTAL_AMOUNT);
-        maxLoops = bound(maxLoops, 0, numBorrowers);
+        maxIterations = bound(maxIterations, 0, numBorrowers);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
 
@@ -117,7 +117,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
             _updateBorrowerInDS(dai, vm.addr(i + 1), USER_AMOUNT, 0, true);
         }
 
-        (uint256 promoted, uint256 loopsDone) = _promoteBorrowers(dai, amountToPromote, maxLoops);
+        (uint256 promoted, uint256 iterationsDone) = _promoteBorrowers(dai, amountToPromote, maxIterations);
 
         uint256 totalP2PBorrow;
         for (uint256 i; i < numBorrowers; i++) {
@@ -130,20 +130,20 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
             totalP2PBorrow += marketBalances.scaledP2PBorrowBalance(user);
         }
 
-        uint256 expectedPromoted = Math.min(amountToPromote, maxLoops * USER_AMOUNT);
+        uint256 expectedPromoted = Math.min(amountToPromote, maxIterations * USER_AMOUNT);
         expectedPromoted = Math.min(expectedPromoted, numBorrowers * USER_AMOUNT);
 
-        uint256 expectedLoops = Math.min(expectedPromoted.divUp(USER_AMOUNT), maxLoops);
+        uint256 expectedIterations = Math.min(expectedPromoted.divUp(USER_AMOUNT), maxIterations);
 
         assertEq(promoted, expectedPromoted, "promoted");
         assertEq(totalP2PBorrow, promoted, "total borrow");
-        assertEq(loopsDone, expectedLoops, "loops");
+        assertEq(iterationsDone, expectedIterations, "iterations");
     }
 
-    function testDemoteSuppliers(uint256 numSuppliers, uint256 amountToDemote, uint256 maxLoops) public {
+    function testDemoteSuppliers(uint256 numSuppliers, uint256 amountToDemote, uint256 maxIterations) public {
         numSuppliers = bound(numSuppliers, 0, 10);
         amountToDemote = bound(amountToDemote, 0, TOTAL_AMOUNT);
-        maxLoops = bound(maxLoops, 0, numSuppliers);
+        maxIterations = bound(maxIterations, 0, numSuppliers);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
 
@@ -151,7 +151,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
             _updateSupplierInDS(dai, vm.addr(i + 1), 0, USER_AMOUNT, true);
         }
 
-        uint256 demoted = _demoteSuppliers(dai, amountToDemote, maxLoops);
+        uint256 demoted = _demoteSuppliers(dai, amountToDemote, maxIterations);
 
         uint256 totalP2PSupply;
         for (uint256 i; i < numSuppliers; i++) {
@@ -164,17 +164,17 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
             totalP2PSupply += marketBalances.scaledP2PSupplyBalance(user);
         }
 
-        uint256 expectedDemoted = Math.min(amountToDemote, maxLoops * USER_AMOUNT);
+        uint256 expectedDemoted = Math.min(amountToDemote, maxIterations * USER_AMOUNT);
         expectedDemoted = Math.min(expectedDemoted, numSuppliers * USER_AMOUNT);
 
         assertEq(demoted, expectedDemoted, "demoted");
         assertEq(totalP2PSupply, USER_AMOUNT * numSuppliers - demoted, "total borrow");
     }
 
-    function testDemoteBorrowers(uint256 numBorrowers, uint256 amountToDemote, uint256 maxLoops) public {
+    function testDemoteBorrowers(uint256 numBorrowers, uint256 amountToDemote, uint256 maxIterations) public {
         numBorrowers = bound(numBorrowers, 0, 10);
         amountToDemote = bound(amountToDemote, 0, TOTAL_AMOUNT);
-        maxLoops = bound(maxLoops, 0, numBorrowers);
+        maxIterations = bound(maxIterations, 0, numBorrowers);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
 
@@ -182,7 +182,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
             _updateBorrowerInDS(dai, vm.addr(i + 1), 0, USER_AMOUNT, true);
         }
 
-        uint256 demoted = _demoteBorrowers(dai, amountToDemote, maxLoops);
+        uint256 demoted = _demoteBorrowers(dai, amountToDemote, maxIterations);
 
         uint256 totalP2PBorrow;
         for (uint256 i; i < numBorrowers; i++) {
@@ -195,7 +195,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
             totalP2PBorrow += marketBalances.scaledP2PBorrowBalance(user);
         }
 
-        uint256 expectedDemoted = Math.min(amountToDemote, maxLoops * USER_AMOUNT);
+        uint256 expectedDemoted = Math.min(amountToDemote, maxIterations * USER_AMOUNT);
         expectedDemoted = Math.min(expectedDemoted, numBorrowers * USER_AMOUNT);
 
         assertEq(demoted, expectedDemoted, "demoted");
