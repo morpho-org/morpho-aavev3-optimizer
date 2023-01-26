@@ -197,18 +197,16 @@ library MarketLib {
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to borrow.
-    /// @param inP2P The user's amount in p2p.
-    /// @param p2pBorrowIndex The current p2p borrow index.
-    /// @return The amount left to process, and the updated p2p amount of the user.
+    /// @return The amount left to process, and the amount to add in peer-to-peer for the user.
     function borrowIdle(
         Types.Market storage market,
         address underlying,
-        uint256 amount,
-        uint256 inP2P,
-        uint256 p2pBorrowIndex
+        uint256 amount
     ) internal returns (uint256, uint256) {
+        if (amount == 0) return (0, 0);
+
         uint256 idleSupply = market.idleSupply;
-        if (idleSupply == 0) return (amount, inP2P);
+        if (idleSupply == 0) return (amount, 0);
 
         uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
         uint256 newIdleSupply = idleSupply.zeroFloorSub(matchedIdle);
@@ -216,19 +214,19 @@ library MarketLib {
 
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
 
-        return (amount - matchedIdle, inP2P + matchedIdle.rayDivDown(p2pBorrowIndex));
+        return (amount - matchedIdle, matchedIdle);
     }
 
     /// @dev Withdraws idle supply.
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to withdraw.
-    /// @return The amount left to process.
-    function withdrawIdle(Types.Market storage market, address underlying, uint256 amount) internal returns (uint256) {
-        if (amount == 0) return 0;
+    /// @return The amount left to process, and the amount to remove from in peer-to-peer for the user.
+    function withdrawIdle(Types.Market storage market, address underlying, uint256 amount) internal returns (uint256, uint256) {
+        if (amount == 0) return (0, 0);
 
         uint256 idleSupply = market.idleSupply;
-        if (idleSupply == 0) return amount;
+        if (idleSupply == 0) return (amount, 0);
 
         uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
         uint256 newIdleSupply = idleSupply.zeroFloorSub(matchedIdle);
@@ -236,6 +234,6 @@ library MarketLib {
 
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
 
-        return amount - matchedIdle;
+        return (amount - matchedIdle, matchedIdle);
     }
 }
