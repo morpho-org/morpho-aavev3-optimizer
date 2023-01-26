@@ -16,7 +16,7 @@ contract TestUser {
 
     constructor(address _morpho) {
         morpho = IMorpho(_morpho);
-        pool = IPool(morpho.POOL());
+        pool = IPool(morpho.pool());
     }
 
     receive() external payable {}

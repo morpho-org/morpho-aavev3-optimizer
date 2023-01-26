@@ -23,18 +23,13 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     /// STORAGE ///
 
     /// @notice Returns the pool address.
-    function POOL() external view returns (address) {
+    function pool() external view returns (address) {
         return address(_POOL);
     }
 
     /// @notice Returns the addresses provider address.
-    function ADDRESSES_PROVIDER() external view returns (address) {
+    function addressesProvider() external view returns (address) {
         return address(_ADDRESSES_PROVIDER);
-    }
-
-    /// @notice Returns the domain separator of the EIP712.
-    function DOMAIN_SEPARATOR() external view returns (bytes32) {
-        return _DOMAIN_SEPARATOR;
     }
 
     /// @notice Returns the market data.
@@ -153,5 +148,10 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         returns (Types.LiquidityData memory)
     {
         return _liquidityData(underlying, user, amountWithdrawn, amountBorrowed);
+    }
+
+    /// @notice Returns the domain separator of the EIP712.
+    function DOMAIN_SEPARATOR() external view returns (bytes32) {
+        return _DOMAIN_SEPARATOR;
     }
 }
