@@ -21,7 +21,7 @@ library DeltasLib {
     /// @param amount The amount to repay/withdraw (in underlying).
     /// @param indexes The current indexes.
     /// @param borrowSide Whether the promotion was performed on the borrow side.
-    /// @return The new amount in peer-to-peer.
+    /// @return newP2PBalance The new amount in peer-to-peer.
     function increaseP2P(
         Types.Deltas storage deltas,
         address underlying,
@@ -29,7 +29,7 @@ library DeltasLib {
         uint256 amount,
         Types.Indexes256 memory indexes,
         bool borrowSide
-    ) internal returns (uint256) {
+    ) internal returns (uint256 newP2PBalance) {
         if (amount == 0) return 0; // promoted == 0 is not checked since promoted <= amount.
 
         Types.MarketSideDelta storage promotedDelta = borrowSide ? deltas.borrow : deltas.supply;
@@ -37,13 +37,11 @@ library DeltasLib {
         Types.MarketSideIndexes256 memory promotedIndexes = borrowSide ? indexes.borrow : indexes.supply;
         Types.MarketSideIndexes256 memory counterIndexes = borrowSide ? indexes.supply : indexes.borrow;
 
-        uint256 promotedP2P = promoted.rayDiv(promotedIndexes.p2pIndex);
-        promotedDelta.scaledTotalP2P = promotedDelta.scaledTotalP2P + promotedP2P;
-        counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P + amount.rayDiv(counterIndexes.p2pIndex);
+        newP2PBalance = amount.rayDiv(counterIndexes.p2pIndex);
+        promotedDelta.scaledTotalP2P = promotedDelta.scaledTotalP2P + promoted.rayDiv(promotedIndexes.p2pIndex);
+        counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P + newP2PBalance;
 
         emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
-
-        return promotedP2P;
     }
 
     /// @notice Decreases the peer-to-peer amounts following a demotion.
