@@ -166,6 +166,13 @@ library MarketLib {
         market.indexes.supply.p2pIndex = indexes.supply.p2pIndex.toUint128();
         market.indexes.borrow.p2pIndex = indexes.borrow.p2pIndex.toUint128();
         market.lastUpdateTimestamp = uint32(block.timestamp);
+        emit Events.IndexesUpdated(
+            market.underlying,
+            indexes.supply.p2pIndex,
+            indexes.borrow.p2pIndex,
+            indexes.supply.poolIndex,
+            indexes.borrow.poolIndex
+            );
     }
 
     /// @dev Adds to idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
