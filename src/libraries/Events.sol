@@ -134,10 +134,10 @@ library Events {
 
     event IndexesUpdated(
         address indexed underlying,
-        uint256 p2pSupplyIndex,
-        uint256 p2pBorrowIndex,
         uint256 poolSupplyIndex,
-        uint256 poolBorrowIndex
+        uint256 p2pSupplyIndex,
+        uint256 poolBorrowIndex,
+        uint256 p2pBorrowIndex
     );
 
     event IdleSupplyUpdated(address indexed underlying, uint256 idleSupply);

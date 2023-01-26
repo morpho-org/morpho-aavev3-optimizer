@@ -72,9 +72,9 @@ abstract contract MorphoInternal is MorphoStorage {
         if (market.isCreated()) revert Errors.MarketAlreadyCreated();
 
         Types.Indexes256 memory indexes;
+        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
         indexes.supply.p2pIndex = WadRayMath.RAY;
         indexes.borrow.p2pIndex = WadRayMath.RAY;
-        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
 
@@ -472,10 +472,10 @@ abstract contract MorphoInternal is MorphoStorage {
 
             emit Events.IndexesUpdated(
                 underlying,
-                indexes.supply.p2pIndex,
-                indexes.borrow.p2pIndex,
                 indexes.supply.poolIndex,
-                indexes.borrow.poolIndex
+                indexes.supply.p2pIndex,
+                indexes.borrow.poolIndex,
+                indexes.borrow.p2pIndex
                 );
         }
     }
