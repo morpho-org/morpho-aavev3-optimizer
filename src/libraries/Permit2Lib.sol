@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
 import {IPermit2} from "../interfaces/IPermit2.sol";
@@ -10,6 +10,11 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 /// @title Permit2Lib
 /// @notice Enables efficient transfers permits for any token by using Permit2.
+/// @dev Modified version of the Permit2Lib from https://github.com/Uniswap/permit2.
+///      The original version is licensed under the MIT license and has been modified to AGPL-3.0-only.
+///      The most noticable change is the removal of the call to the permit function on a token
+///      contract in the permit2 function. This is to simplify the library and reduce the operational costs
+///      since now only allowances via Permit2 or directly via "approve" are allowed.
 library Permit2Lib {
     using SafeCast160 for uint256;
 
@@ -20,7 +25,7 @@ library Permit2Lib {
 
     /// INTERNAL ///
 
-    /// @notice Transfer a given amount of tokens from one user to another.
+    /// @notice Transfers a given amount of tokens from one user to another.
     /// @param token The token to transfer.
     /// @param from The user to transfer from.
     /// @param to The user to transfer to.
@@ -47,7 +52,7 @@ library Permit2Lib {
         if (!success) PERMIT2.transferFrom(from, to, amount.toUint160(), address(token));
     }
 
-    /// @notice Permit a user to spend a given amount of
+    /// @notice Permits a user to spend a given amount of
     /// another user's tokens via the owner's EIP-712 signature.
     /// @param token The token to permit spending.
     /// @param owner The user to permit spending from.
