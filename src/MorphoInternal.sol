@@ -452,14 +452,14 @@ abstract contract MorphoInternal is MorphoStorage {
     function _setPauseStatus(address underlying, bool isPaused) internal {
         Types.Market storage market = _market[underlying];
 
-        market.setIsSupplyPaused(underlying, isPaused);
-        market.setIsSupplyCollateralPaused(underlying, isPaused);
-        market.setIsBorrowPaused(underlying, isPaused);
-        market.setIsRepayPaused(underlying, isPaused);
-        market.setIsWithdrawPaused(underlying, isPaused);
-        market.setIsWithdrawCollateralPaused(underlying, isPaused);
-        market.setIsLiquidateCollateralPaused(underlying, isPaused);
-        market.setIsLiquidateBorrowPaused(underlying, isPaused);
+        market.setIsSupplyPaused(isPaused);
+        market.setIsSupplyCollateralPaused(isPaused);
+        market.setIsBorrowPaused(isPaused);
+        market.setIsRepayPaused(isPaused);
+        market.setIsWithdrawPaused(isPaused);
+        market.setIsWithdrawCollateralPaused(isPaused);
+        market.setIsLiquidateCollateralPaused(isPaused);
+        market.setIsLiquidateBorrowPaused(isPaused);
     }
 
     /// @dev Updates the indexes of the `underlying` market and returns them.
