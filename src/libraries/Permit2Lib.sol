@@ -9,12 +9,12 @@ import {SafeCast160} from "./SafeCast160.sol";
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 /// @title Permit2Lib
-/// @notice Enables efficient transfers permits for any token by using Permit2.
+/// @notice Enables efficient transfers and EIP-2612 permits for any token by using Permit2.
 /// @dev Modified version of the Permit2Lib from https://github.com/Uniswap/permit2.
 ///      The original version is licensed under the MIT license and has been modified to AGPL-3.0-only.
-///      The most noticable change is the removal of the call to the permit function on a token
+///      The most noticable change is the removal of the call to the permit function on the token
 ///      contract in the permit2 function. This is to simplify the library and reduce the operational costs
-///      since now only allowances via Permit2 or directly via "approve" are allowed.
+///      since now only the Permit2 allowance is updated. Transfers still rely on the token's transfer method, then fallback to Permit2's transfer.
 library Permit2Lib {
     using SafeCast160 for uint256;
 
