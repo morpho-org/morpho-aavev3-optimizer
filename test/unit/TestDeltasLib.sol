@@ -2,6 +2,8 @@
 pragma solidity 0.8.17;
 
 import {Types} from "src/libraries/Types.sol";
+import {Events} from "src/libraries/Events.sol";
+
 import {DeltasLib} from "src/libraries/DeltasLib.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
@@ -28,7 +30,7 @@ contract TestUnitDeltasLib is Test {
     function testIncreaseP2PShouldReturnZeroIfAmountIsZero() public {
         uint256 promoted = 100;
         uint256 amount = 0;
-        uint256 newP2P = DeltasLib.increaseP2P(deltas, address(1), promoted, amount, indexes, false);
+        uint256 newP2P = this.increaseP2P(address(1), promoted, amount, false);
         assertEq(newP2P, 0);
     }
 
@@ -41,7 +43,15 @@ contract TestUnitDeltasLib is Test {
         totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
         deltas.supply.scaledTotalP2P = totalP2PSupply;
         deltas.borrow.scaledTotalP2P = totalP2PBorrow;
-        uint256 newP2P = DeltasLib.increaseP2P(deltas, address(1), promoted, amount, indexes, false);
+
+        vm.expectEmit(true, false, false, true);
+        emit Events.P2PTotalsUpdated(
+            address(1),
+            totalP2PSupply + promoted.rayDiv(indexes.supply.p2pIndex),
+            totalP2PBorrow + amount.rayDiv(indexes.borrow.p2pIndex)
+            );
+
+        uint256 newP2P = this.increaseP2P(address(1), promoted, amount, false);
         assertEq(newP2P, promoted.rayDiv(indexes.supply.p2pIndex));
         assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply + newP2P);
         assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow + amount.rayDiv(indexes.borrow.p2pIndex));
@@ -56,7 +66,15 @@ contract TestUnitDeltasLib is Test {
         totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
         deltas.supply.scaledTotalP2P = totalP2PSupply;
         deltas.borrow.scaledTotalP2P = totalP2PBorrow;
-        uint256 newP2P = DeltasLib.increaseP2P(deltas, address(1), promoted, amount, indexes, true);
+
+        vm.expectEmit(true, false, false, true);
+        emit Events.P2PTotalsUpdated(
+            address(1),
+            totalP2PSupply + amount.rayDiv(indexes.supply.p2pIndex),
+            totalP2PBorrow + promoted.rayDiv(indexes.borrow.p2pIndex)
+            );
+
+        uint256 newP2P = this.increaseP2P(address(1), promoted, amount, true);
         assertEq(newP2P, promoted.rayDiv(indexes.borrow.p2pIndex));
         assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply + amount.rayDiv(indexes.supply.p2pIndex));
         assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow + newP2P);
@@ -69,7 +87,7 @@ contract TestUnitDeltasLib is Test {
         uint256 totalP2PBorrow = 1000;
         deltas.supply.scaledTotalP2P = totalP2PSupply;
         deltas.borrow.scaledTotalP2P = totalP2PBorrow;
-        DeltasLib.decreaseP2P(deltas, address(1), demoted, amount, indexes, false);
+        this.decreaseP2P(address(1), demoted, amount, false);
         assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply);
         assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow);
     }
@@ -83,7 +101,15 @@ contract TestUnitDeltasLib is Test {
         totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
         deltas.supply.scaledTotalP2P = totalP2PSupply;
         deltas.borrow.scaledTotalP2P = totalP2PBorrow;
-        DeltasLib.decreaseP2P(deltas, address(1), demoted, amount, indexes, false);
+
+        vm.expectEmit(true, false, false, true);
+        emit Events.P2PTotalsUpdated(
+            address(1),
+            totalP2PSupply.zeroFloorSub(demoted.rayDiv(indexes.supply.p2pIndex)),
+            totalP2PBorrow.zeroFloorSub(amount.rayDiv(indexes.borrow.p2pIndex))
+            );
+
+        this.decreaseP2P(address(1), demoted, amount, false);
         assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply.zeroFloorSub(demoted.rayDiv(indexes.supply.p2pIndex)));
         assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow.zeroFloorSub(amount.rayDiv(indexes.borrow.p2pIndex)));
     }
@@ -97,7 +123,15 @@ contract TestUnitDeltasLib is Test {
         totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
         deltas.supply.scaledTotalP2P = totalP2PSupply;
         deltas.borrow.scaledTotalP2P = totalP2PBorrow;
-        DeltasLib.decreaseP2P(deltas, address(1), demoted, amount, indexes, true);
+
+        vm.expectEmit(true, false, false, true);
+        emit Events.P2PTotalsUpdated(
+            address(1),
+            totalP2PSupply.zeroFloorSub(amount.rayDiv(indexes.supply.p2pIndex)),
+            totalP2PBorrow.zeroFloorSub(demoted.rayDiv(indexes.borrow.p2pIndex))
+            );
+
+        this.decreaseP2P(address(1), demoted, amount, true);
         assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply.zeroFloorSub(amount.rayDiv(indexes.supply.p2pIndex)));
         assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow.zeroFloorSub(demoted.rayDiv(indexes.borrow.p2pIndex)));
     }
@@ -136,5 +170,16 @@ contract TestUnitDeltasLib is Test {
             totalP2PBorrow.zeroFloorSub(expectedFee.rayDiv(indexes.borrow.p2pIndex)),
             "borrow total"
         );
+    }
+
+    function increaseP2P(address underlying, uint256 promoted, uint256 amount, bool borrowSide)
+        external
+        returns (uint256)
+    {
+        return DeltasLib.increaseP2P(deltas, underlying, promoted, amount, indexes, borrowSide);
+    }
+
+    function decreaseP2P(address underlying, uint256 demoted, uint256 amount, bool borrowSide) external {
+        DeltasLib.decreaseP2P(deltas, underlying, demoted, amount, indexes, borrowSide);
     }
 }
