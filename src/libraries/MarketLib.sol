@@ -162,8 +162,8 @@ library MarketLib {
 
     function setIndexes(Types.Market storage market, Types.Indexes256 memory indexes) internal {
         market.indexes.supply.poolIndex = indexes.supply.poolIndex.toUint128();
-        market.indexes.borrow.poolIndex = indexes.borrow.poolIndex.toUint128();
         market.indexes.supply.p2pIndex = indexes.supply.p2pIndex.toUint128();
+        market.indexes.borrow.poolIndex = indexes.borrow.poolIndex.toUint128();
         market.indexes.borrow.p2pIndex = indexes.borrow.p2pIndex.toUint128();
         market.lastUpdateTimestamp = uint32(block.timestamp);
         emit Events.IndexesUpdated(

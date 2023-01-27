@@ -41,9 +41,9 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param amount The amount of `underlying` to supply.
     /// @param from The address to transfer the underlying from.
     /// @param onBehalf The address that will receive the supply position.
-    /// @param maxLoops The maximum number of loops allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during matching process.
     /// @return The amount supplied.
-    function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)
+    function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxIterations)
         external
         returns (uint256)
     {
@@ -53,7 +53,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         ERC20(underlying).transferFrom2(from, address(this), amount);
 
-        Types.SupplyRepayVars memory vars = _executeSupply(underlying, amount, from, onBehalf, maxLoops, indexes);
+        Types.SupplyRepayVars memory vars = _executeSupply(underlying, amount, from, onBehalf, maxIterations, indexes);
 
         _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
         _POOL.supplyToPool(underlying, vars.toSupply);
@@ -89,9 +89,9 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param amount The amount of `underlying` to borrow.
     /// @param borrower The address that will receive the debt position.
     /// @param receiver The address that will receive the borrowed funds.
-    /// @param maxLoops The maximum number of loops allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during matching process.
     /// @return The amount borrowed.
-    function borrowLogic(address underlying, uint256 amount, address borrower, address receiver, uint256 maxLoops)
+    function borrowLogic(address underlying, uint256 amount, address borrower, address receiver, uint256 maxIterations)
         external
         returns (uint256)
     {
@@ -102,7 +102,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         // The following check requires storage indexes to be up-to-date.
         _authorizeBorrow(underlying, amount, borrower);
 
-        Types.BorrowWithdrawVars memory vars = _executeBorrow(underlying, amount, borrower, receiver, maxLoops, indexes);
+        Types.BorrowWithdrawVars memory vars =
+            _executeBorrow(underlying, amount, borrower, receiver, maxIterations, indexes);
 
         _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
         _POOL.borrowFromPool(underlying, vars.toBorrow);
@@ -131,7 +132,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         ERC20(underlying).transferFrom2(repayer, address(this), amount);
 
         Types.SupplyRepayVars memory vars =
-            _executeRepay(underlying, amount, repayer, onBehalf, _defaultMaxLoops.repay, indexes);
+            _executeRepay(underlying, amount, repayer, onBehalf, _defaultMaxIterations.repay, indexes);
 
         _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
         _POOL.supplyToPool(underlying, vars.toSupply);
@@ -157,7 +158,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         if (amount == 0) return 0;
 
         Types.BorrowWithdrawVars memory vars =
-            _executeWithdraw(underlying, amount, supplier, receiver, _defaultMaxLoops.withdraw, indexes);
+            _executeWithdraw(underlying, amount, supplier, receiver, _defaultMaxIterations.withdraw, indexes);
 
         _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
         _POOL.borrowFromPool(underlying, vars.toBorrow);

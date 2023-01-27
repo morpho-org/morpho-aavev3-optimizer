@@ -71,14 +71,14 @@ library Types {
 
     // Contains storage-only dynamic arrays and mappings.
     struct MarketBalances {
-        LogarithmicBuckets.BucketList p2pSuppliers; // In peer-to-peer unit.
         LogarithmicBuckets.BucketList poolSuppliers; // In pool unit.
-        LogarithmicBuckets.BucketList p2pBorrowers; // In peer-to-peer unit.
+        LogarithmicBuckets.BucketList p2pSuppliers; // In peer-to-peer unit.
         LogarithmicBuckets.BucketList poolBorrowers; // In pool unit.
+        LogarithmicBuckets.BucketList p2pBorrowers; // In peer-to-peer unit.
         mapping(address => uint256) collateral; // In pool unit.
     }
 
-    struct MaxLoops {
+    struct MaxIterations {
         uint64 repay;
         uint64 withdraw;
     }
@@ -105,8 +105,8 @@ library Types {
 
     struct GrowthFactors {
         uint256 poolSupplyGrowthFactor; // The pool's supply index growth factor (in ray).
-        uint256 poolBorrowGrowthFactor; // The pool's borrow index growth factor (in ray).
         uint256 p2pSupplyGrowthFactor; // Peer-to-peer supply index growth factor (in ray).
+        uint256 poolBorrowGrowthFactor; // The pool's borrow index growth factor (in ray).
         uint256 p2pBorrowGrowthFactor; // Peer-to-peer borrow index growth factor (in ray).
     }
 
@@ -130,7 +130,7 @@ library Types {
         address underlying;
         MarketSideIndexes256 indexes;
         uint256 amount;
-        uint256 maxLoops;
+        uint256 maxIterations;
         bool borrow;
         function (address, address, uint256, uint256, bool) updateDS; // This function will be used to update the data-structure.
         bool demoting; // True for demote, False for promote.
@@ -149,7 +149,7 @@ library Types {
         address underlying;
         uint256 amount;
         uint256 p2pIndex;
-        uint256 maxLoops;
+        uint256 maxIterations;
         function(address, uint256, uint256) returns (uint256, uint256) promote;
     }
 

@@ -188,7 +188,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address underlying,
         uint256 amount,
         address onBehalf,
-        uint256 maxLoops,
+        uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
         Types.Deltas storage deltas = _market[underlying].deltas;
@@ -199,11 +199,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Peer-to-peer supply ///
 
         // Decrease the peer-to-peer borrow delta.
-        (vars.toRepay, amount) = deltas.borrow.decrease(underlying, amount, indexes.borrow.poolIndex, true);
+        (vars.toRepay, amount) = deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
 
         // Promote pool borrowers.
         uint256 promoted;
-        (promoted, amount,) = _promoteRoutine(underlying, amount, maxLoops, _promoteBorrowers);
+        (promoted, amount,) = _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
         vars.toRepay += promoted;
 
         // Update the peer-to-peer totals.
@@ -222,7 +222,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address underlying,
         uint256 amount,
         address borrower,
-        uint256 maxLoops,
+        uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.BorrowWithdrawVars memory vars) {
         Types.Market storage market = _market[underlying];
@@ -236,11 +236,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         (amount, vars.inP2P) = market.borrowIdle(underlying, amount, vars.inP2P, indexes.borrow.p2pIndex);
 
         // Decrease the peer-to-peer supply delta.
-        (vars.toWithdraw, amount) = market.deltas.supply.decrease(underlying, amount, indexes.supply.poolIndex, false);
+        (vars.toWithdraw, amount) =
+            market.deltas.supply.decreaseDelta(underlying, amount, indexes.supply.poolIndex, false);
 
         // Promote pool suppliers.
         uint256 promoted;
-        (promoted, amount,) = _promoteRoutine(underlying, amount, maxLoops, _promoteSuppliers);
+        (promoted, amount,) = _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
         vars.toWithdraw += promoted;
 
         // Update the peer-to-peer totals.
@@ -259,7 +260,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address underlying,
         uint256 amount,
         address onBehalf,
-        uint256 maxLoops,
+        uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
@@ -282,7 +283,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Decrease the peer-to-peer borrow delta.
         uint256 toRepayStep;
-        (toRepayStep, amount) = market.deltas.borrow.decrease(underlying, amount, indexes.borrow.poolIndex, true);
+        (toRepayStep, amount) = market.deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
         vars.toRepay += toRepayStep;
 
         // Repay the fee.
@@ -291,16 +292,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Transfer repay ///
 
         // Promote pool borrowers.
-        (toRepayStep, vars.toSupply, maxLoops) = _promoteRoutine(underlying, amount, maxLoops, _promoteBorrowers);
+        (toRepayStep, vars.toSupply, maxIterations) =
+            _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
         vars.toRepay += toRepayStep;
 
         /// Breaking repay ///
 
         // Demote peer-to-peer suppliers.
-        uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxLoops);
+        uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxIterations);
 
         // Increase the peer-to-peer supply delta.
-        market.deltas.supply.increase(underlying, vars.toSupply - demoted, indexes.supply, false);
+        market.deltas.supply.increaseDelta(underlying, vars.toSupply - demoted, indexes.supply, false);
 
         // Update the peer-to-peer totals.
         market.deltas.decreaseP2P(underlying, demoted, vars.toSupply, indexes, false);
@@ -314,7 +316,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address underlying,
         uint256 amount,
         address supplier,
-        uint256 maxLoops,
+        uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.BorrowWithdrawVars memory vars) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
@@ -340,22 +342,24 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Decrease the peer-to-peer supply delta.
         uint256 toWithdrawStep;
-        (toWithdrawStep, amount) = market.deltas.supply.decrease(underlying, amount, indexes.supply.poolIndex, false);
+        (toWithdrawStep, amount) =
+            market.deltas.supply.decreaseDelta(underlying, amount, indexes.supply.poolIndex, false);
         vars.toWithdraw += toWithdrawStep;
 
         /// Transfer withdraw ///
 
         // Promote pool suppliers.
-        (toWithdrawStep, vars.toBorrow, maxLoops) = _promoteRoutine(underlying, amount, maxLoops, _promoteSuppliers);
+        (toWithdrawStep, vars.toBorrow, maxIterations) =
+            _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
         vars.toWithdraw += toWithdrawStep;
 
         /// Breaking withdraw ///
 
         // Demote peer-to-peer borrowers.
-        uint256 demoted = _demoteBorrowers(underlying, vars.toBorrow, maxLoops);
+        uint256 demoted = _demoteBorrowers(underlying, vars.toBorrow, maxIterations);
 
         // Increase the peer-to-peer borrow delta.
-        market.deltas.borrow.increase(underlying, vars.toBorrow - demoted, indexes.borrow, true);
+        market.deltas.borrow.increaseDelta(underlying, vars.toBorrow - demoted, indexes.borrow, true);
 
         // Update the peer-to-peer totals.
         market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow, indexes, true);
@@ -393,10 +397,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 amount,
         address from,
         address onBehalf,
-        uint256 maxLoops,
+        uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
-        vars = _accountSupply(underlying, amount, onBehalf, maxLoops, indexes);
+        vars = _accountSupply(underlying, amount, onBehalf, maxIterations, indexes);
 
         emit Events.Supplied(from, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
     }
@@ -407,10 +411,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 amount,
         address onBehalf,
         address receiver,
-        uint256 maxLoops,
+        uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.BorrowWithdrawVars memory vars) {
-        vars = _accountBorrow(underlying, amount, onBehalf, maxLoops, indexes);
+        vars = _accountBorrow(underlying, amount, onBehalf, maxIterations, indexes);
 
         emit Events.Borrowed(msg.sender, onBehalf, receiver, underlying, amount, vars.onPool, vars.inP2P);
     }
@@ -421,10 +425,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 amount,
         address repayer,
         address onBehalf,
-        uint256 maxLoops,
+        uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
-        vars = _accountRepay(underlying, amount, onBehalf, maxLoops, indexes);
+        vars = _accountRepay(underlying, amount, onBehalf, maxIterations, indexes);
 
         emit Events.Repaid(repayer, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
     }
@@ -435,10 +439,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 amount,
         address onBehalf,
         address receiver,
-        uint256 maxLoops,
+        uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.BorrowWithdrawVars memory vars) {
-        vars = _accountWithdraw(underlying, amount, onBehalf, maxLoops, indexes);
+        vars = _accountWithdraw(underlying, amount, onBehalf, maxIterations, indexes);
 
         emit Events.Withdrawn(msg.sender, onBehalf, receiver, underlying, amount, vars.onPool, vars.inP2P);
     }
@@ -505,24 +509,24 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @notice Given variables from a market side, promotes users and calculates the amount to repay/withdraw from promote,
-    ///         the amount left to process, and the number of loops left.
+    ///         the amount left to process, and the number of iterations left.
     /// @param underlying The underlying address.
     /// @param amount The amount to supply/borrow.
-    /// @param maxLoops The maximum number of loops to run.
+    /// @param maxIterations The maximum number of iterations to run.
     /// @param promote The promote function.
-    /// @return The amount to repay/withdraw from promote, the amount left to process, and the number of loops left.
+    /// @return The amount to repay/withdraw from promote, the amount left to process, and the number of iterations left.
     function _promoteRoutine(
         address underlying,
         uint256 amount,
-        uint256 maxLoops,
+        uint256 maxIterations,
         function(address, uint256, uint256) returns (uint256, uint256) promote
     ) internal returns (uint256, uint256, uint256) {
         if (amount == 0 || _market[underlying].isP2PDisabled()) {
-            return (0, amount, maxLoops);
+            return (0, amount, maxIterations);
         }
 
-        (uint256 promoted, uint256 loopsDone) = promote(underlying, amount, maxLoops); // In underlying.
+        (uint256 promoted, uint256 iterationsDone) = promote(underlying, amount, maxIterations); // In underlying.
 
-        return (promoted, amount - promoted, maxLoops - loopsDone);
+        return (promoted, amount - promoted, maxIterations - iterationsDone);
     }
 }
