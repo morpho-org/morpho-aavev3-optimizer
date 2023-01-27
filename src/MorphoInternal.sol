@@ -288,7 +288,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Returns the collateral data for a given set of inputs.
-    /// @param underlying The address of the underlying asset to borrow.
+    /// @param underlying The address of the underlying collateral asset.
     /// @param vars The liquidity variables.
     /// @param amountWithdrawn The amount withdrawn on the `underlying` market (if any).
     /// @return collateral The collateral of `vars.user` on the `underlying` market.
