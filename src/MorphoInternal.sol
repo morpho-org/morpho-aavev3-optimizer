@@ -77,12 +77,12 @@ abstract contract MorphoInternal is MorphoStorage {
         indexes.borrow.p2pIndex = WadRayMath.RAY;
 
         market.setIndexes(indexes);
+        market.setReserveFactor(reserveFactor);
+        market.setP2PIndexCursor(p2pIndexCursor);
 
         market.underlying = underlying;
         market.aToken = reserveData.aTokenAddress;
         market.variableDebtToken = reserveData.variableDebtTokenAddress;
-        market.reserveFactor = reserveFactor;
-        market.p2pIndexCursor = p2pIndexCursor;
 
         _marketsCreated.push(underlying);
 
