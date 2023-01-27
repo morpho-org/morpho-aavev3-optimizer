@@ -60,9 +60,6 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @dev Creates a new market for the `underlying` token with a given `reserveFactor` (in bps) and a given `p2pIndexCursor` (in bps).
     function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         if (underlying == address(0)) revert Errors.AddressIsZero();
-        if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR || reserveFactor > PercentageMath.PERCENTAGE_FACTOR) {
-            revert Errors.ExceedsMaxBasisPoints();
-        }
 
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
         if (!reserveData.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();

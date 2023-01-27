@@ -5,9 +5,11 @@ import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {Types} from "./Types.sol";
 import {Events} from "./Events.sol";
+import {Errors} from "./Errors.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
+import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
@@ -130,12 +132,14 @@ library MarketLib {
     }
 
     function setReserveFactor(Types.Market storage market, uint16 reserveFactor) internal {
+        if (reserveFactor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
         market.reserveFactor = reserveFactor;
 
         emit Events.ReserveFactorSet(market.underlying, reserveFactor);
     }
 
     function setP2PIndexCursor(Types.Market storage market, uint16 p2pIndexCursor) internal {
+        if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
         market.p2pIndexCursor = p2pIndexCursor;
 
         emit Events.P2PIndexCursorSet(market.underlying, p2pIndexCursor);
