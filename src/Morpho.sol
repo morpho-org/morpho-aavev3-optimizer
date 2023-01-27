@@ -38,13 +38,13 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param underlying The address of the underlying asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the supply position.
-    /// @param maxLoops The maximum number of loops allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during matching process.
     /// @return The amount supplied.
-    function supply(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
+    function supply(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
         external
         returns (uint256)
     {
-        return _supply(underlying, amount, msg.sender, onBehalf, maxLoops);
+        return _supply(underlying, amount, msg.sender, onBehalf, maxIterations);
     }
 
     /// @notice Supplies `amount` of `underlying` of `onBehalf` using permit2 in a single tx.
@@ -52,7 +52,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param underlying The address of the `underlying` asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the supply position.
-    /// @param maxLoops The maximum number of loops allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during matching process.
     /// @param deadline The deadline for the permit2 signature.
     /// @param signature The permit2 signature.
     /// @return The amount supplied.
@@ -60,12 +60,12 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         address underlying,
         uint256 amount,
         address onBehalf,
-        uint256 maxLoops,
+        uint256 maxIterations,
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256) {
         ERC20(underlying).permit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
-        return _supply(underlying, amount, msg.sender, onBehalf, maxLoops);
+        return _supply(underlying, amount, msg.sender, onBehalf, maxIterations);
     }
 
     /// @notice Supplies `amount` of `underlying` collateral to the pool on behalf of `onBehalf`.
@@ -103,13 +103,13 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to borrow.
     /// @param onBehalf The address that will receive the debt position.
     /// @param receiver The address that will receive the borrowed funds.
-    /// @param maxLoops The maximum number of loops allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during matching process.
     /// @return The amount borrowed.
-    function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
+    function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
         returns (uint256)
     {
-        return _borrow(underlying, amount, onBehalf, receiver, maxLoops);
+        return _borrow(underlying, amount, onBehalf, receiver, maxIterations);
     }
 
     /// @notice Repays `amount` of `underlying` on behalf of `onBehalf`.
@@ -248,12 +248,12 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     /// INTERNAL ///
 
-    function _supply(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)
+    function _supply(address underlying, uint256 amount, address from, address onBehalf, uint256 maxIterations)
         internal
         returns (uint256 supplied)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeCall(IPositionsManager.supplyLogic, (underlying, amount, from, onBehalf, maxLoops))
+            abi.encodeCall(IPositionsManager.supplyLogic, (underlying, amount, from, onBehalf, maxIterations))
         );
         return (abi.decode(returnData, (uint256)));
     }
@@ -269,12 +269,12 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
-    function _borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
+    function _borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         internal
         returns (uint256 borrowed)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeCall(IPositionsManager.borrowLogic, (underlying, amount, onBehalf, receiver, maxLoops))
+            abi.encodeCall(IPositionsManager.borrowLogic, (underlying, amount, onBehalf, receiver, maxIterations))
         );
 
         return (abi.decode(returnData, (uint256)));

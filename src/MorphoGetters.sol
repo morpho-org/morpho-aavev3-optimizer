@@ -83,7 +83,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     function borrowBalance(address underlying, address user) external view returns (uint256) {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
 
-        return _getUserSupplyBalanceFromIndexes(underlying, user, indexes.borrow);
+        return _getUserBorrowBalanceFromIndexes(underlying, user, indexes.borrow);
     }
 
     /// @notice Returns the supply collateral balance of `user` on the `underlying` market (in underlying).
@@ -111,9 +111,9 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _userNonce[user];
     }
 
-    /// @notice Returns the default max loops.
-    function defaultMaxLoops() external view returns (Types.MaxLoops memory) {
-        return _defaultMaxLoops;
+    /// @notice Returns the default max iterations.
+    function defaultMaxIterations() external view returns (Types.MaxIterations memory) {
+        return _defaultMaxIterations;
     }
 
     /// @notice Returns the address of the positions manager.
