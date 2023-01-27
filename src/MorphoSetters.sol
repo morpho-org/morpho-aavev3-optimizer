@@ -24,14 +24,17 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
     /// @notice Initializes the contract.
     /// @param newPositionsManager The address of the `_positionsManager` to set.
-    /// @param newDefaultMaxLoops The `_defaultMaxLoops` to set.
-    function initialize(address newPositionsManager, Types.MaxLoops memory newDefaultMaxLoops) external initializer {
+    /// @param newDefaultMaxIterations The `_defaultMaxIterations` to set.
+    function initialize(address newPositionsManager, Types.MaxIterations memory newDefaultMaxIterations)
+        external
+        initializer
+    {
         __Ownable_init_unchained();
 
         _positionsManager = newPositionsManager;
-        _defaultMaxLoops = newDefaultMaxLoops;
+        _defaultMaxIterations = newDefaultMaxIterations;
 
-        emit Events.DefaultMaxLoopsSet(newDefaultMaxLoops.repay, newDefaultMaxLoops.withdraw);
+        emit Events.DefaultMaxIterationsSet(newDefaultMaxIterations.repay, newDefaultMaxIterations.withdraw);
         emit Events.PositionsManagerSet(newPositionsManager);
     }
 
@@ -54,10 +57,10 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
     /// SETTERS ///
 
-    /// @notice Sets `_defaultMaxLoops` to `defaultMaxLoops`.
-    function setDefaultMaxLoops(Types.MaxLoops calldata defaultMaxLoops) external onlyOwner {
-        _defaultMaxLoops = defaultMaxLoops;
-        emit Events.DefaultMaxLoopsSet(defaultMaxLoops.repay, defaultMaxLoops.withdraw);
+    /// @notice Sets `_defaultMaxIterations` to `defaultMaxIterations`.
+    function setDefaultMaxIterations(Types.MaxIterations calldata defaultMaxIterations) external onlyOwner {
+        _defaultMaxIterations = defaultMaxIterations;
+        emit Events.DefaultMaxIterationsSet(defaultMaxIterations.repay, defaultMaxIterations.withdraw);
     }
 
     /// @notice Sets `_positionsManager` to `positionsManager`.

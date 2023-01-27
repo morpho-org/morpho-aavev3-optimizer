@@ -78,7 +78,7 @@ library Types {
         mapping(address => uint256) collateral; // In pool unit.
     }
 
-    struct MaxLoops {
+    struct MaxIterations {
         uint64 repay;
         uint64 withdraw;
     }
@@ -130,7 +130,7 @@ library Types {
         address underlying;
         MarketSideIndexes256 indexes;
         uint256 amount;
-        uint256 maxLoops;
+        uint256 maxIterations;
         bool borrow;
         function (address, address, uint256, uint256, bool) updateDS; // This function will be used to update the data-structure.
         bool demoting; // True for demote, False for promote.
@@ -149,7 +149,7 @@ library Types {
         address underlying;
         uint256 amount;
         uint256 p2pIndex;
-        uint256 maxLoops;
+        uint256 maxIterations;
         function(address, uint256, uint256) returns (uint256, uint256) promote;
     }
 

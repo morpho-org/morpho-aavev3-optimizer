@@ -116,7 +116,7 @@ library Events {
         uint256 poolBorrowIndex
     );
 
-    event DefaultMaxLoopsSet(uint64 repay, uint64 withdraw);
+    event DefaultMaxIterationsSet(uint64 repay, uint64 withdraw);
 
     event PositionsManagerSet(address indexed positionsManager);
 

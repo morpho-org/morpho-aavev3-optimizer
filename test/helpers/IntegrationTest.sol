@@ -99,7 +99,7 @@ contract IntegrationTest is ForkTest {
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImpl)), address(proxyAdmin), "");
         morpho = Morpho(payable(address(morphoProxy)));
 
-        morpho.initialize(address(positionsManager), Types.MaxLoops({repay: 10, withdraw: 10}));
+        morpho.initialize(address(positionsManager), Types.MaxIterations({repay: 10, withdraw: 10}));
 
         // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() always return true.
         _deposit(weth, 1e12, address(morpho));
@@ -231,12 +231,12 @@ contract IntegrationTest is ForkTest {
         uint256 amount,
         address onBehalf,
         address receiver,
-        uint256 maxLoops
+        uint256 maxIterations
     ) internal returns (uint256 borrowed) {
         oracle.setAssetPrice(market.underlying, 0);
 
         vm.prank(user);
-        borrowed = morpho.borrow(market.underlying, amount, onBehalf, receiver, maxLoops);
+        borrowed = morpho.borrow(market.underlying, amount, onBehalf, receiver, maxIterations);
 
         _deposit(weth, _minCollateral(markets[0], market, borrowed), address(morpho)); // Make Morpho solvent with WETH because no supply cap.
 
