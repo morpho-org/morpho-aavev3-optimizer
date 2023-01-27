@@ -154,6 +154,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         view
         returns (uint256)
     {
+        if (borrower == address(0)) revert Errors.AddressIsZero();
+
         Types.Market storage borrowMarket = _market[underlyingBorrowed];
         Types.Market storage collateralMarket = _market[underlyingCollateral];
 
