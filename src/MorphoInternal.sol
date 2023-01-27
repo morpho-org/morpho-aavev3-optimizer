@@ -335,8 +335,6 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit)
     {
-        underlyingPrice = vars.oracle.getAssetPrice(underlying);
-
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
         DataTypes.ReserveConfigurationMap memory configuration = reserveData.configuration;
         ltv = configuration.getLtv();
