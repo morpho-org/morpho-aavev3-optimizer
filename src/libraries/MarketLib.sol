@@ -145,6 +145,14 @@ library MarketLib {
         emit Events.P2PIndexCursorSet(market.underlying, p2pIndexCursor);
     }
 
+    function setAssets(Types.Market storage market, address underlying, address aToken, address variableDebtToken)
+        internal
+    {
+        market.underlying = underlying;
+        market.aToken = aToken;
+        market.variableDebtToken = variableDebtToken;
+    }
+
     function setIndexes(Types.Market storage market, Types.Indexes256 memory indexes) internal {
         market.indexes.supply.poolIndex = indexes.supply.poolIndex.toUint128();
         market.indexes.supply.p2pIndex = indexes.supply.p2pIndex.toUint128();
