@@ -224,7 +224,6 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.LiquidityVars memory vars;
 
         if (_E_MODE_CATEGORY_ID != 0) vars.eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
-        vars.morphoPoolConfig = _POOL.getUserConfiguration(address(this));
         vars.oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.user = user;
 

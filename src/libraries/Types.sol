@@ -142,7 +142,6 @@ library Types {
         address user;
         IAaveOracle oracle;
         DataTypes.EModeCategory eModeCategory;
-        DataTypes.UserConfigurationMap morphoPoolConfig;
     }
 
     struct PromoteVars {
