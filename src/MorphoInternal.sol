@@ -46,15 +46,6 @@ abstract contract MorphoInternal is MorphoStorage {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
-    /// MODIFIERS ///
-
-    /// @notice Prevents to update a market not created yet.
-    /// @param underlying The address of the underlying market.
-    modifier isMarketCreated(address underlying) {
-        if (!_market[underlying].isCreated()) revert Errors.MarketNotCreated();
-        _;
-    }
-
     /// INTERNAL ///
 
     /// @dev Creates a new market for the `underlying` token with a given `reserveFactor` (in bps) and a given `p2pIndexCursor` (in bps).

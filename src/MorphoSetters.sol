@@ -20,6 +20,15 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     using MarketLib for Types.Market;
 
+    /// MODIFIERS ///
+
+    /// @notice Prevents to update a market not created yet.
+    /// @param underlying The address of the underlying market.
+    modifier isMarketCreated(address underlying) {
+        if (!_market[underlying].isCreated()) revert Errors.MarketNotCreated();
+        _;
+    }
+
     /// INITIALIZER ///
 
     /// @notice Initializes the contract.
