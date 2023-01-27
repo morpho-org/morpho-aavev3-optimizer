@@ -163,19 +163,6 @@ abstract contract MorphoInternal is MorphoStorage {
         emit Events.ManagerApproval(delegator, manager, isAllowed);
     }
 
-    /// @dev Returns the total balance of `user` on the `underlying` market given `indexes`.
-    /// @param scaledPoolBalance The scaled balance of the user on the pool.
-    /// @param scaledP2PBalance The scaled balance of the user in peer-to-peer.
-    /// @param indexes pool & peer-to-peer borrow.
-    /// @return The total balance of `user` on the `underlying` market (in underlying).
-    function _getUserBalanceFromIndexes(
-        uint256 scaledPoolBalance,
-        uint256 scaledP2PBalance,
-        Types.MarketSideIndexes256 memory indexes
-    ) internal pure returns (uint256) {
-        return scaledPoolBalance.rayMul(indexes.poolIndex) + scaledP2PBalance.rayMul(indexes.p2pIndex);
-    }
-
     /// @dev Returns the total supply balance of `user` on the `underlying` market given `indexes`.
     /// @param underlying The address of the underlying asset.
     /// @param user The address of the user.
@@ -187,9 +174,8 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.MarketSideIndexes256 memory indexes
     ) internal view returns (uint256) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return _getUserBalanceFromIndexes(
-            marketBalances.scaledPoolSupplyBalance(user), marketBalances.scaledP2PSupplyBalance(user), indexes
-        );
+        return marketBalances.scaledPoolSupplyBalance(user).rayMulDown(indexes.poolIndex)
+            + marketBalances.scaledP2PSupplyBalance(user).rayMulDown(indexes.p2pIndex);
     }
 
     /// @dev Returns the total borrow balance of `user` on the `underlying` market given `indexes`.
@@ -203,9 +189,8 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.MarketSideIndexes256 memory indexes
     ) internal view returns (uint256) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return _getUserBalanceFromIndexes(
-            marketBalances.scaledPoolBorrowBalance(user), marketBalances.scaledP2PBorrowBalance(user), indexes
-        );
+        return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.poolIndex)
+            + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.p2pIndex);
     }
 
     /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
