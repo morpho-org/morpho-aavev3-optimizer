@@ -71,10 +71,10 @@ library Types {
 
     // Contains storage-only dynamic arrays and mappings.
     struct MarketBalances {
-        LogarithmicBuckets.BucketList p2pSuppliers; // In peer-to-peer unit.
         LogarithmicBuckets.BucketList poolSuppliers; // In pool unit.
-        LogarithmicBuckets.BucketList p2pBorrowers; // In peer-to-peer unit.
+        LogarithmicBuckets.BucketList p2pSuppliers; // In peer-to-peer unit.
         LogarithmicBuckets.BucketList poolBorrowers; // In pool unit.
+        LogarithmicBuckets.BucketList p2pBorrowers; // In peer-to-peer unit.
         mapping(address => uint256) collateral; // In pool unit.
     }
 
@@ -105,8 +105,8 @@ library Types {
 
     struct GrowthFactors {
         uint256 poolSupplyGrowthFactor; // The pool's supply index growth factor (in ray).
-        uint256 poolBorrowGrowthFactor; // The pool's borrow index growth factor (in ray).
         uint256 p2pSupplyGrowthFactor; // Peer-to-peer supply index growth factor (in ray).
+        uint256 poolBorrowGrowthFactor; // The pool's borrow index growth factor (in ray).
         uint256 p2pBorrowGrowthFactor; // Peer-to-peer borrow index growth factor (in ray).
     }
 
