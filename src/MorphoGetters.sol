@@ -6,6 +6,7 @@ import {IMorphoGetters} from "./interfaces/IMorpho.sol";
 import {Types} from "./libraries/Types.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -19,6 +20,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
 
     /// STORAGE ///
 
@@ -158,5 +160,25 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         returns (Types.LiquidityData memory)
     {
         return _liquidityData(underlying, user, amountWithdrawn, amountBorrowed);
+    }
+
+    /// @notice Returns the hypothetical account that would be promoted or demoted.
+    /// @param underlying The address of the underlying asset.
+    /// @param amount The amount to be promoted or demoted.
+    /// @param position The position type, either pool or peer-to-peer and either supply or borrow.
+    function getMatch(address underlying, uint256 amount, Types.Position position)
+        external
+        view
+        returns (address account)
+    {
+        if (position == Types.Position.POOL_SUPPLIER) {
+            account = _marketBalances[underlying].poolSuppliers.getMatch(amount);
+        } else if (position == Types.Position.P2P_SUPPLIER) {
+            account = _marketBalances[underlying].p2pSuppliers.getMatch(amount);
+        } else if (position == Types.Position.POOL_BORROWER) {
+            account = _marketBalances[underlying].poolBorrowers.getMatch(amount);
+        } else if (position == Types.Position.P2P_BORROWER) {
+            account = _marketBalances[underlying].p2pBorrowers.getMatch(amount);
+        }
     }
 }
