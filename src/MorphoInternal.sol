@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
+import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -385,8 +386,9 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 formerInP2P = p2pBuckets.getValueOf(user);
 
         if (onPool != formerOnPool) {
-            if (address(_rewardsManager) != address(0)) {
-                _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
+            IRewardsManager rewardsManager = _rewardsManager;
+            if (address(rewardsManager) != address(0)) {
+                rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
 
             poolBuckets.update(user, onPool, demoting);
