@@ -518,19 +518,19 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @dev Calculates the amount to seize during a liquidation process.
     /// @param underlyingBorrowed The address of the underlying borrowed asset.
     /// @param underlyingCollateral The address of the underlying collateral asset.
-    /// @param maxToLiquidate The maximum amount of `underlyingBorrowed` to liquidate.
+    /// @param maxToRepay The maximum amount of `underlyingBorrowed` to repay.
     /// @param borrower The address of the borrower being liquidated.
     /// @param poolSupplyIndex The current pool supply index of the `underlyingCollateral` market.
-    /// @return amountToLiquidate The amount of `underlyingBorrowed` to liquidate.
+    /// @return amountToRepay The amount of `underlyingBorrowed` to repay.
     /// @return amountToSeize The amount of `underlyingCollateral` to seize.
     function _calculateAmountToSeize(
         address underlyingBorrowed,
         address underlyingCollateral,
-        uint256 maxToLiquidate,
+        uint256 maxToRepay,
         address borrower,
         uint256 poolSupplyIndex
-    ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
-        amountToLiquidate = maxToLiquidate;
+    ) internal view returns (uint256 amountToRepay, uint256 amountToSeize) {
+        amountToRepay = maxToRepay;
         DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(underlyingCollateral);
         uint256 liquidationBonus = collateralConfig.getLiquidationBonus();
         uint256 collateralTokenUnit = collateralConfig.getDecimals();
@@ -545,14 +545,14 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
         uint256 collateralPrice = oracle.getAssetPrice(underlyingCollateral);
 
-        amountToSeize = ((amountToLiquidate * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
+        amountToSeize = ((amountToRepay * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
             .percentMul(liquidationBonus);
 
         uint256 collateralBalance = _getUserCollateralBalanceFromIndex(underlyingCollateral, borrower, poolSupplyIndex);
 
         if (amountToSeize > collateralBalance) {
             amountToSeize = collateralBalance;
-            amountToLiquidate = (
+            amountToRepay = (
                 (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
             ).percentDiv(liquidationBonus);
         }
