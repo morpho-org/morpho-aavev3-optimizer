@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import {IPermit2} from "../interfaces/IPermit2.sol";
 import {IAllowanceTransfer} from "../interfaces/IAllowanceTransfer.sol";
 
-import {SafeCast160} from "./SafeCast160.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
@@ -16,7 +16,7 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 ///      contract in the permit2 function. This is to simplify the library and reduce the operational costs
 ///      since now only the Permit2 allowance is updated. Transfers still rely on the token's transfer method, then fallback to Permit2's transfer.
 library Permit2Lib {
-    using SafeCast160 for uint256;
+    using SafeCast for uint256;
 
     /// CONSTANTS ///
 
