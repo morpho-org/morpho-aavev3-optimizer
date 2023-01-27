@@ -86,6 +86,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Claims the fee for the `underlyings` and send it to the `_treasuryVault`.
+    ///      Claiming on a market where there are some rewards might steal users' rewards.
     function _claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) internal {
         address treasuryVault = _treasuryVault;
         if (treasuryVault == address(0)) revert Errors.AddressIsZero();

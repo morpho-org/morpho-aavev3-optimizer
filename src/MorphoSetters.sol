@@ -55,6 +55,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     /// @notice Claims the fee for the `underlyings` and send it to the `_treasuryVault`.
+    /// @dev Claiming on a market where there are some rewards might steal users' rewards.
     function claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) external onlyOwner {
         _claimToTreasury(underlyings, amounts);
     }
