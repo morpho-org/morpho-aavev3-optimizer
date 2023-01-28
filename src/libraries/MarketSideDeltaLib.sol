@@ -44,16 +44,18 @@ library MarketSideDeltaLib {
     /// @param amount The amount to supply/borrow (in underlying).
     /// @param poolIndex The current pool index.
     /// @param borrowSide Whether the market side is borrow.
+    /// @param isWithdrawOrRepay Whether the operation is a withdraw or repay.
     /// @return The amount left to process and the amount to repay/withdraw.
     function decreaseDelta(
         Types.MarketSideDelta storage delta,
         address underlying,
         uint256 amount,
         uint256 poolIndex,
-        bool borrowSide
+        bool borrowSide,
+        bool isWithdrawOrRepay
     ) internal returns (uint256, uint256) {
         uint256 scaledDeltaPool = delta.scaledDeltaPool;
-        if (scaledDeltaPool == 0) return (0, amount);
+        if (scaledDeltaPool == 0 || isWithdrawOrRepay) return (0, amount);
 
         uint256 decreased = Math.min(scaledDeltaPool.rayMulUp(poolIndex), amount); // In underlying.
         uint256 newScaledDeltaPool = scaledDeltaPool.zeroFloorSub(decreased.rayDivDown(poolIndex));
