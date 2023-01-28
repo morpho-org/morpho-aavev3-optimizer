@@ -425,6 +425,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Sets globally the pause status to `isPaused` on the `underlying` market.
+    ///      Will not revert if borrow unpausing fails due to deprecation.
     function _setPauseStatus(address underlying, bool isPaused) internal {
         Types.Market storage market = _market[underlying];
 

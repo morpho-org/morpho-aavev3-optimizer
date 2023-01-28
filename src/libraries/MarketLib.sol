@@ -81,10 +81,17 @@ library MarketLib {
         emit Events.IsSupplyCollateralPausedSet(underlying, isPaused);
     }
 
-    function setIsBorrowPaused(Types.Market storage market, address underlying, bool isPaused) internal {
-        if (!market.pauseStatuses.isDeprecated) market.pauseStatuses.isBorrowPaused = isPaused;
-
-        emit Events.IsBorrowPausedSet(underlying, isPaused);
+    function setIsBorrowPaused(Types.Market storage market, address underlying, bool isPaused)
+        internal
+        returns (bool)
+    {
+        if (isPaused || !market.pauseStatuses.isDeprecated) {
+            market.pauseStatuses.isBorrowPaused = isPaused;
+            emit Events.IsBorrowPausedSet(underlying, isPaused);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     function setIsRepayPaused(Types.Market storage market, address underlying, bool isPaused) internal {
@@ -117,10 +124,17 @@ library MarketLib {
         emit Events.IsLiquidateBorrowPausedSet(underlying, isPaused);
     }
 
-    function setIsDeprecated(Types.Market storage market, address underlying, bool deprecated) internal {
-        market.pauseStatuses.isDeprecated = deprecated;
-
-        emit Events.IsDeprecatedSet(underlying, deprecated);
+    function setIsDeprecated(Types.Market storage market, address underlying, bool deprecated)
+        internal
+        returns (bool)
+    {
+        if (market.pauseStatuses.isBorrowPaused) {
+            market.pauseStatuses.isDeprecated = deprecated;
+            emit Events.IsDeprecatedSet(underlying, deprecated);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     function setIsP2PDisabled(Types.Market storage market, address underlying, bool p2pDisabled) internal {

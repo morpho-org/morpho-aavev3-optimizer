@@ -135,9 +135,8 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     /// @notice Sets the borrow pause status to `isPaused` on the `underlying` market.
     function setIsBorrowPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
         Types.Market storage market = _market[underlying];
-        if (!isPaused && market.isDeprecated()) revert Errors.MarketIsDeprecated();
 
-        market.setIsBorrowPaused(underlying, isPaused);
+        if (!market.setIsBorrowPaused(underlying, isPaused)) revert Errors.MarketIsDeprecated();
     }
 
     /// @notice Sets the repay pause status to `isPaused` on the `underlying` market.
@@ -178,11 +177,13 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     /// @notice Sets globally the pause status to `isPaused` on the `underlying` market.
+    /// @dev Will not unpause borrow if deprecated.
     function setIsPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
         _setPauseStatus(underlying, isPaused);
     }
 
     /// @notice Sets the global pause status to `isPaused` on all markets.
+    /// @dev Will not unpause borrow for markets that are deprecated.
     function setIsPausedForAllMarkets(bool isPaused) external onlyOwner {
         uint256 marketsCreatedLength = _marketsCreated.length;
         for (uint256 i; i < marketsCreatedLength; ++i) {
@@ -198,8 +199,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     /// @notice Sets the deprecation status to `isDeprecated` on the `underlying` market.
     function setIsDeprecated(address underlying, bool isDeprecated) external onlyOwner isMarketCreated(underlying) {
         Types.Market storage market = _market[underlying];
-        if (!market.isBorrowPaused()) revert Errors.BorrowNotPaused();
 
-        market.setIsDeprecated(underlying, isDeprecated);
+        if (!market.setIsDeprecated(underlying, isDeprecated)) revert Errors.BorrowNotPaused();
     }
 }
