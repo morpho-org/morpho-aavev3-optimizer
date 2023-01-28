@@ -87,6 +87,18 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     {
         market = _validateInput(underlying, amount, user);
         if (market.isSupplyCollateralPaused()) revert Errors.SupplyCollateralIsPaused();
+
+        Types.MarketSideDelta memory delta = _market[underlying].deltas.supply;
+        Types.MarketSideIndexes256 memory indexes = _market[underlying].getSupplyIndexes();
+
+        uint256 totalSupply = ERC20(market.aToken).totalSupply();
+        DataTypes.ReserveConfigurationMap memory configuration = _POOL.getConfiguration(underlying);
+        uint256 supplyCap = configuration.getSupplyCap() * (10 ** configuration.getDecimals());
+        uint256 totalP2P =
+            delta.scaledTotalP2P.rayMul(indexes.p2pIndex).zeroFloorSub(delta.scaledTotalP2P.rayMul(indexes.poolIndex));
+
+        // The total P2P amount on Morpho plus the total supply on Aave must not exceed the supply cap.
+        if (amount + totalSupply + totalP2P > supplyCap) revert Errors.AboveSupplyCap();
     }
 
     /// @dev Validates a borrow action.
