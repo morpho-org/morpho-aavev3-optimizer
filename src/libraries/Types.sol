@@ -86,7 +86,6 @@ library Types {
     /// STACK AND RETURN STRUCTS ///
 
     struct LiquidityData {
-        uint256 collateral; // The collateral value (in base currency).
         uint256 borrowable; // The maximum debt value allowed to borrow (in base currency).
         uint256 maxDebt; // The maximum debt value allowed before being liquidatable (in base currency).
         uint256 debt; // The debt value (in base currency).
