@@ -62,9 +62,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         view
         returns (Types.Market storage market)
     {
-        if (onBehalf == address(0)) revert Errors.AddressIsZero();
+        if (receiver == address(0)) revert Errors.AddressIsZero();
 
-        market = _validateInput(underlying, amount, receiver);
+        market = _validateInput(underlying, amount, onBehalf);
 
         _validatePermission(onBehalf, msg.sender);
     }
@@ -154,6 +154,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         view
         returns (uint256)
     {
+        if (borrower == address(0)) revert Errors.AddressIsZero();
+
         Types.Market storage borrowMarket = _market[underlyingBorrowed];
         Types.Market storage collateralMarket = _market[underlyingCollateral];
 

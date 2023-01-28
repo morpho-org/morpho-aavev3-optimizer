@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
+import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -46,15 +47,6 @@ abstract contract MorphoInternal is MorphoStorage {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
-    /// MODIFIERS ///
-
-    /// @notice Prevents to update a market not created yet.
-    /// @param underlying The address of the underlying market.
-    modifier isMarketCreated(address underlying) {
-        if (!_market[underlying].isCreated()) revert Errors.MarketNotCreated();
-        _;
-    }
-
     /// INTERNAL ///
 
     /// @dev Creates a new market for the `underlying` token with a given `reserveFactor` (in bps) and a given `p2pIndexCursor` (in bps).
@@ -94,6 +86,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Claims the fee for the `underlyings` and send it to the `_treasuryVault`.
+    ///      Claiming on a market where there are some rewards might steal users' rewards.
     function _claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) internal {
         address treasuryVault = _treasuryVault;
         if (treasuryVault == address(0)) revert Errors.AddressIsZero();
@@ -231,7 +224,6 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.LiquidityVars memory vars;
 
         if (_E_MODE_CATEGORY_ID != 0) vars.eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
-        vars.morphoPoolConfig = _POOL.getUserConfiguration(address(this));
         vars.oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.user = user;
 
@@ -343,8 +335,6 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit)
     {
-        underlyingPrice = vars.oracle.getAssetPrice(underlying);
-
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
         DataTypes.ReserveConfigurationMap memory configuration = reserveData.configuration;
         ltv = configuration.getLtv();
@@ -394,8 +384,9 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 formerInP2P = p2pBuckets.getValueOf(user);
 
         if (onPool != formerOnPool) {
-            if (address(_rewardsManager) != address(0)) {
-                _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
+            IRewardsManager rewardsManager = _rewardsManager;
+            if (address(rewardsManager) != address(0)) {
+                rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
 
             poolBuckets.update(user, onPool, demoting);
