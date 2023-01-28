@@ -90,16 +90,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.isSupplyCollateralPaused()) revert Errors.SupplyCollateralIsPaused();
 
         Types.MarketSideDelta memory delta = _market[underlying].deltas.supply;
-
-        uint256 totalSupply = ERC20(market.aToken).totalSupply();
-        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
-        uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
         uint256 totalP2P = delta.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
             delta.scaledTotalP2P.rayMul(indexes.supply.poolIndex)
         );
 
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+        uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
+        uint256 totalSupply = ERC20(market.aToken).totalSupply();
+
         // The total P2P amount on Morpho plus the total supply on Aave must not exceed the supply cap.
-        if (amount + totalSupply + totalP2P > supplyCap) revert Errors.AboveSupplyCap();
+        if (amount + totalP2P + totalSupply > supplyCap) revert Errors.AboveSupplyCap();
     }
 
     /// @dev Validates a borrow action.
@@ -121,16 +121,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         Types.MarketSideDelta memory delta = market.deltas.borrow;
-
-        uint256 totalDebt =
-            ERC20(market.variableDebtToken).totalSupply() + ERC20(reserve.stableDebtTokenAddress).totalSupply();
-        uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
         uint256 totalP2P = delta.scaledTotalP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
             delta.scaledTotalP2P.rayMul(indexes.borrow.poolIndex)
         );
 
+        uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
+        uint256 totalDebt =
+            ERC20(market.variableDebtToken).totalSupply() + ERC20(reserve.stableDebtTokenAddress).totalSupply();
+
         // The total P2P amount on Morpho plus the total borrow on Aave must not exceed the borrow cap.
-        if (amount + totalDebt + totalP2P > borrowCap) revert Errors.AboveBorrowCap();
+        if (amount + totalP2P + totalDebt > borrowCap) revert Errors.AboveBorrowCap();
     }
 
     /// @dev Authorizes a borrow action.
