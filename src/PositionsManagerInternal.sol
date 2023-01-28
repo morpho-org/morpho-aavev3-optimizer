@@ -520,7 +520,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     /// @param amount The amount to supply/borrow.
     /// @param maxIterations The maximum number of iterations to run.
     /// @param promote The promote function.
-    /// @return The the amount left to process, the amount to repay/withdraw from promote, and the number of iterations left.
+    /// @return The amount left to process, the amount to repay/withdraw from promote, and the number of iterations left.
     function _promoteRoutine(
         address underlying,
         uint256 amount,
