@@ -82,9 +82,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
         ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
 
-        emit Events.MarketCreated(
-            underlying, reserveFactor, p2pIndexCursor, indexes.supply.poolIndex, indexes.borrow.poolIndex
-            );
+        emit Events.MarketCreated(underlying);
     }
 
     /// @dev Claims the fee for the `underlyings` and send it to the `_treasuryVault`.
