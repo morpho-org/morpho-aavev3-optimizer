@@ -31,6 +31,24 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     constructor(address addressesProvider, uint8 eModeCategoryId) MorphoStorage(addressesProvider, eModeCategoryId) {}
 
+    /// INITIALIZER ///
+
+    /// @notice Initializes the contract.
+    /// @param newPositionsManager The address of the `_positionsManager` to set.
+    /// @param newDefaultMaxIterations The `_defaultMaxIterations` to set.
+    function initialize(address newPositionsManager, Types.MaxIterations memory newDefaultMaxIterations)
+        external
+        initializer
+    {
+        __Ownable_init_unchained();
+
+        _positionsManager = newPositionsManager;
+        _defaultMaxIterations = newDefaultMaxIterations;
+
+        emit Events.DefaultMaxIterationsSet(newDefaultMaxIterations.repay, newDefaultMaxIterations.withdraw);
+        emit Events.PositionsManagerSet(newPositionsManager);
+    }
+
     /// EXTERNAL ///
 
     /// @notice Supplies `amount` of `underlying` on behalf of `onBehalf`.
