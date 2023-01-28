@@ -205,7 +205,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Promote pool borrowers.
         uint256 promoted;
-        (promoted, amount,) = _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
+        (amount, promoted,) = _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
         vars.toRepay += promoted;
 
         // Update the peer-to-peer totals.
@@ -244,7 +244,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Promote pool suppliers.
         uint256 promoted;
-        (promoted, amount,) = _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
+        (amount, promoted,) = _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
         vars.toWithdraw += promoted;
 
         // Update the peer-to-peer totals.
@@ -296,7 +296,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Transfer repay ///
 
         // Promote pool borrowers.
-        (toRepayStep, vars.toSupply, maxIterations) =
+        (vars.toSupply, toRepayStep, maxIterations) =
             _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
         vars.toRepay += toRepayStep;
 
@@ -355,7 +355,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Transfer withdraw ///
 
         // Promote pool suppliers.
-        (toWithdrawStep, vars.toBorrow, maxIterations) =
+        (vars.toBorrow, toWithdrawStep, maxIterations) =
             _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
         vars.toWithdraw += toWithdrawStep;
 
@@ -520,7 +520,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     /// @param amount The amount to supply/borrow.
     /// @param maxIterations The maximum number of iterations to run.
     /// @param promote The promote function.
-    /// @return The amount to repay/withdraw from promote, the amount left to process, and the number of iterations left.
+    /// @return The the amount left to process, the amount to repay/withdraw from promote, and the number of iterations left.
     function _promoteRoutine(
         address underlying,
         uint256 amount,
@@ -528,11 +528,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         function(address, uint256, uint256) returns (uint256, uint256) promote
     ) internal returns (uint256, uint256, uint256) {
         if (amount == 0 || _market[underlying].isP2PDisabled()) {
-            return (0, amount, maxIterations);
+            return (amount, 0, maxIterations);
         }
 
         (uint256 promoted, uint256 iterationsDone) = promote(underlying, amount, maxIterations); // In underlying.
 
-        return (promoted, amount - promoted, maxIterations - iterationsDone);
+        return (amount - promoted, promoted, maxIterations - iterationsDone);
     }
 }
