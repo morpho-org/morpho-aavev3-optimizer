@@ -92,8 +92,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.MarketSideIndexes256 memory indexes = _market[underlying].getSupplyIndexes();
 
         uint256 totalSupply = ERC20(market.aToken).totalSupply();
-        DataTypes.ReserveConfigurationMap memory configuration = _POOL.getConfiguration(underlying);
-        uint256 supplyCap = configuration.getSupplyCap() * (10 ** configuration.getDecimals());
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+        uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
         uint256 totalP2P =
             delta.scaledTotalP2P.rayMul(indexes.p2pIndex).zeroFloorSub(delta.scaledTotalP2P.rayMul(indexes.poolIndex));
 

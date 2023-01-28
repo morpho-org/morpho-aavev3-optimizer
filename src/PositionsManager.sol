@@ -71,9 +71,10 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256)
     {
-        _validateSupplyCollateral(underlying, amount, onBehalf);
-
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
+
+        // The following check requires storage indexes to be up-to-date.
+        _validateSupplyCollateral(underlying, amount, onBehalf);
 
         ERC20(underlying).transferFrom2(from, address(this), amount);
 
