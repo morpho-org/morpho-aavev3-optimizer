@@ -82,7 +82,7 @@ library MarketLib {
     }
 
     function setIsBorrowPaused(Types.Market storage market, address underlying, bool isPaused) internal {
-        market.pauseStatuses.isBorrowPaused = isPaused;
+        if (!market.pauseStatuses.isDeprecated) market.pauseStatuses.isBorrowPaused = isPaused;
 
         emit Events.IsBorrowPausedSet(underlying, isPaused);
     }
