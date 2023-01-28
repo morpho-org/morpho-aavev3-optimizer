@@ -200,13 +200,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Peer-to-peer supply ///
 
-        // Decrease the peer-to-peer borrow delta.
-        (amount, vars.toRepay) = deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
-
-        // Promote pool borrowers.
         uint256 promoted;
-        (amount, promoted,) = _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
-        vars.toRepay += promoted;
+        if (!_market[underlying].isP2PDisabled()) {
+            // Decrease the peer-to-peer borrow delta.
+            (amount, vars.toRepay) = deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
+
+            // Promote pool borrowers.
+            (amount, promoted,) = _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
+            vars.toRepay += promoted;
+        }
 
         // Update the peer-to-peer totals.
         vars.inP2P += deltas.increaseP2P(underlying, promoted, vars.toRepay, indexes, true);
@@ -238,14 +240,18 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 matchedIdle;
         (amount, matchedIdle) = market.decreaseIdle(underlying, amount);
 
-        // Decrease the peer-to-peer supply delta.
-        (amount, vars.toWithdraw) =
-            market.deltas.supply.decreaseDelta(underlying, amount, indexes.supply.poolIndex, false);
-
         // Promote pool suppliers.
         uint256 promoted;
-        (amount, promoted,) = _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
-        vars.toWithdraw += promoted;
+        if (!_market[underlying].isP2PDisabled()) {
+            // Decrease the peer-to-peer supply delta.
+            (amount, vars.toWithdraw) =
+                market.deltas.supply.decreaseDelta(underlying, amount, indexes.supply.poolIndex, false);
+
+            // Promote pool suppliers.
+
+            (amount, promoted,) = _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
+            vars.toWithdraw += promoted;
+        }
 
         // Update the peer-to-peer totals.
         vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toWithdraw + matchedIdle, indexes, false);
@@ -295,10 +301,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Transfer repay ///
 
-        // Promote pool borrowers.
-        (vars.toSupply, toRepayStep, maxIterations) =
-            _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
-        vars.toRepay += toRepayStep;
+        if (!_market[underlying].isP2PDisabled()) {
+            // Promote pool borrowers.
+            (vars.toSupply, toRepayStep, maxIterations) =
+                _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
+            vars.toRepay += toRepayStep;
+        } else {
+            vars.toSupply = amount;
+        }
 
         /// Breaking repay ///
 
@@ -354,10 +364,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Transfer withdraw ///
 
-        // Promote pool suppliers.
-        (vars.toBorrow, toWithdrawStep, maxIterations) =
-            _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
-        vars.toWithdraw += toWithdrawStep;
+        if (!_market[underlying].isP2PDisabled()) {
+            // Promote pool suppliers.
+            (vars.toBorrow, toWithdrawStep, maxIterations) =
+                _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
+            vars.toWithdraw += toWithdrawStep;
+        } else {
+            vars.toBorrow = amount;
+        }
 
         /// Breaking withdraw ///
 
@@ -527,9 +541,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxIterations,
         function(address, uint256, uint256) returns (uint256, uint256) promote
     ) internal returns (uint256, uint256, uint256) {
-        if (amount == 0 || _market[underlying].isP2PDisabled()) {
-            return (amount, 0, maxIterations);
-        }
+        if (amount == 0) return (amount, 0, maxIterations);
 
         (uint256 promoted, uint256 iterationsDone) = promote(underlying, amount, maxIterations); // In underlying.
 
