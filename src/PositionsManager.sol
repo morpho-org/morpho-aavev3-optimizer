@@ -96,11 +96,10 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256)
     {
-        Types.Market storage market = _validateBorrow(underlying, amount, borrower, receiver);
-
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        // The following check requires storage indexes to be up-to-date.
+        // The following checks requires storage indexes to be up-to-date.
+        Types.Market storage market = _validateBorrow(underlying, amount, borrower, receiver);
         _authorizeBorrow(underlying, amount, borrower);
 
         Types.BorrowWithdrawVars memory vars =
