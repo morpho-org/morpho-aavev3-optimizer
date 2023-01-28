@@ -71,7 +71,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
         if (market.isCreated()) revert Errors.MarketAlreadyCreated();
 
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != _POOL.getConfiguration(underlying).getEModeCategory()) {
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != reserveData.configuration.getEModeCategory()) {
             revert Errors.InconsistentEMode();
         }
 
