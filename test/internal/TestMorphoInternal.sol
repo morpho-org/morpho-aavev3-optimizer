@@ -159,15 +159,6 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         assertEq(marketBalances.scaledCollateralBalance(user), 0);
     }
 
-    function testGetUserBalanceFromIndexes(uint96 onPool, uint96 inP2P, uint256 poolIndex, uint256 p2pIndex) public {
-        poolIndex = bound(poolIndex, WadRayMath.RAY, 10 * WadRayMath.RAY);
-        p2pIndex = bound(p2pIndex, WadRayMath.RAY, 10 * WadRayMath.RAY);
-
-        uint256 balance = _getUserBalanceFromIndexes(onPool, inP2P, Types.MarketSideIndexes256(poolIndex, p2pIndex));
-
-        assertEq(balance, uint256(onPool).rayMul(poolIndex) + uint256(inP2P).rayMul(p2pIndex));
-    }
-
     function testGetUserSupplyBalanceFromIndexes(
         address user,
         uint96 onPool,
@@ -183,10 +174,7 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         uint256 balance =
             _getUserSupplyBalanceFromIndexes(dai, user, Types.MarketSideIndexes256(poolSupplyIndex, p2pSupplyIndex));
 
-        assertEq(
-            balance,
-            _getUserBalanceFromIndexes(onPool, inP2P, Types.MarketSideIndexes256(poolSupplyIndex, p2pSupplyIndex))
-        );
+        assertEq(balance, uint256(onPool).rayMulDown(poolSupplyIndex) + uint256(inP2P).rayMulDown(p2pSupplyIndex));
     }
 
     function testGetUserBorrowBalanceFromIndexes(
@@ -205,10 +193,7 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         uint256 balance =
             _getUserBorrowBalanceFromIndexes(dai, user, Types.MarketSideIndexes256(poolBorrowIndex, p2pBorrowIndex));
 
-        assertEq(
-            balance,
-            _getUserBalanceFromIndexes(onPool, inP2P, Types.MarketSideIndexes256(poolBorrowIndex, p2pBorrowIndex))
-        );
+        assertEq(balance, uint256(onPool).rayMulUp(poolBorrowIndex) + uint256(inP2P).rayMulUp(p2pBorrowIndex));
     }
 
     function testAssetLiquidityData() public {
