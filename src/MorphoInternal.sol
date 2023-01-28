@@ -216,8 +216,7 @@ abstract contract MorphoInternal is MorphoStorage {
         vars.oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.user = user;
 
-        (liquidityData.collateral, liquidityData.borrowable, liquidityData.maxDebt) =
-            _totalCollateralData(underlying, vars, amountWithdrawn);
+        (liquidityData.borrowable, liquidityData.maxDebt) = _totalCollateralData(underlying, vars, amountWithdrawn);
 
         liquidityData.debt = _totalDebt(underlying, vars, amountBorrowed);
     }
@@ -227,21 +226,19 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param assetWithdrawn The address of the underlying asset hypothetically withdrawn. Pass address(0) if no asset is withdrawn.
     /// @param vars The liquidity variables.
     /// @param amountWithdrawn The amount withdrawn on the `assetWithdrawn` market (if any).
-    /// @return collateral The total collateral of `vars.user`.
     /// @return borrowable The total borrowable amount of `vars.user`.
     /// @return maxDebt The total maximum debt of `vars.user`.
     function _totalCollateralData(address assetWithdrawn, Types.LiquidityVars memory vars, uint256 amountWithdrawn)
         internal
         view
-        returns (uint256 collateral, uint256 borrowable, uint256 maxDebt)
+        returns (uint256 borrowable, uint256 maxDebt)
     {
         address[] memory userCollaterals = _userCollaterals[vars.user].values();
 
         for (uint256 i; i < userCollaterals.length; ++i) {
-            (uint256 collateralSingle, uint256 borrowableSingle, uint256 maxDebtSingle) =
+            (uint256 borrowableSingle, uint256 maxDebtSingle) =
                 _collateralData(userCollaterals[i], vars, userCollaterals[i] == assetWithdrawn ? amountWithdrawn : 0);
 
-            collateral += collateralSingle;
             borrowable += borrowableSingle;
             maxDebt += maxDebtSingle;
         }
@@ -272,19 +269,18 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param underlying The address of the underlying collateral asset.
     /// @param vars The liquidity variables.
     /// @param amountWithdrawn The amount withdrawn on the `underlying` market (if any).
-    /// @return collateral The collateral of `vars.user` on the `underlying` market.
     /// @return borrowable The borrowable amount of `vars.user` on the `underlying` market.
     /// @return maxDebt The maximum debt of `vars.user` on the `underlying` market.
     function _collateralData(address underlying, Types.LiquidityVars memory vars, uint256 amountWithdrawn)
         internal
         view
-        returns (uint256 collateral, uint256 borrowable, uint256 maxDebt)
+        returns (uint256 borrowable, uint256 maxDebt)
     {
         (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
             _assetLiquidityData(underlying, vars);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
-        collateral = (
+        uint256 collateral = (
             _getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex).zeroFloorSub(
                 amountWithdrawn
             )
