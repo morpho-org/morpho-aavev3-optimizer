@@ -159,15 +159,6 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         assertEq(marketBalances.scaledCollateralBalance(user), 0);
     }
 
-    function testGetUserBalanceFromIndexes(uint96 onPool, uint96 inP2P, uint256 poolIndex, uint256 p2pIndex) public {
-        poolIndex = bound(poolIndex, WadRayMath.RAY, 10 * WadRayMath.RAY);
-        p2pIndex = bound(p2pIndex, WadRayMath.RAY, 10 * WadRayMath.RAY);
-
-        uint256 balance = _getUserBalanceFromIndexes(onPool, inP2P, Types.MarketSideIndexes256(poolIndex, p2pIndex));
-
-        assertEq(balance, uint256(onPool).rayMul(poolIndex) + uint256(inP2P).rayMul(p2pIndex));
-    }
-
     function testGetUserSupplyBalanceFromIndexes(
         address user,
         uint96 onPool,
@@ -183,10 +174,7 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         uint256 balance =
             _getUserSupplyBalanceFromIndexes(dai, user, Types.MarketSideIndexes256(poolSupplyIndex, p2pSupplyIndex));
 
-        assertEq(
-            balance,
-            _getUserBalanceFromIndexes(onPool, inP2P, Types.MarketSideIndexes256(poolSupplyIndex, p2pSupplyIndex))
-        );
+        assertEq(balance, uint256(onPool).rayMulDown(poolSupplyIndex) + uint256(inP2P).rayMulDown(p2pSupplyIndex));
     }
 
     function testGetUserBorrowBalanceFromIndexes(
@@ -205,18 +193,14 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         uint256 balance =
             _getUserBorrowBalanceFromIndexes(dai, user, Types.MarketSideIndexes256(poolBorrowIndex, p2pBorrowIndex));
 
-        assertEq(
-            balance,
-            _getUserBalanceFromIndexes(onPool, inP2P, Types.MarketSideIndexes256(poolBorrowIndex, p2pBorrowIndex))
-        );
+        assertEq(balance, uint256(onPool).rayMulUp(poolBorrowIndex) + uint256(inP2P).rayMulUp(p2pBorrowIndex));
     }
 
     function testAssetLiquidityData() public {
-        DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
         DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
         (uint256 poolLtv, uint256 poolLt,, uint256 poolDecimals,,) = _POOL.getConfiguration(dai).getParams();
 
-        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory, morphoPoolConfig);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
         (uint256 price, uint256 ltv, uint256 lt, uint256 units) = _assetLiquidityData(dai, vars);
 
         assertGt(price, 0, "price not gt 0");
@@ -236,11 +220,10 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
 
         _marketBalances[dai].collateral[address(1)] = amount.rayDivUp(_market[dai].indexes.supply.poolIndex);
 
-        DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
         DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
-        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory, morphoPoolConfig);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
 
-        (uint256 collateral, uint256 borrowable, uint256 maxDebt) = _collateralData(dai, vars, amountWithdrawn);
+        (uint256 borrowable, uint256 maxDebt) = _collateralData(dai, vars, amountWithdrawn);
 
         (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
             _assetLiquidityData(dai, vars);
@@ -253,7 +236,6 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         uint256 expectedCollateralValue = (
             _getUserCollateralBalanceFromIndex(dai, address(1), _market[dai].indexes.supply.poolIndex) - amountWithdrawn
         ) * underlyingPrice / tokenUnit;
-        assertEq(collateral, expectedCollateralValue, "collateralValue not equal to expected");
         assertEq(borrowable, expectedCollateralValue.percentMulDown(ltv), "borrowable not equal to expected");
         assertEq(maxDebt, expectedCollateralValue.percentMulDown(liquidationThreshold), "maxDebt not equal to expected");
     }
@@ -271,9 +253,8 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
             true
         );
 
-        DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
         DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
-        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory, morphoPoolConfig);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
@@ -295,25 +276,18 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         _userCollaterals[address(1)].add(wbtc);
         _userCollaterals[address(1)].add(usdc);
 
-        DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
         DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
-        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory, morphoPoolConfig);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
 
-        (uint256 collateral, uint256 borrowable, uint256 maxDebt) = _totalCollateralData(dai, vars, 10 ether);
+        (uint256 borrowable, uint256 maxDebt) = _totalCollateralData(dai, vars, 10 ether);
 
-        uint256[3] memory collateralSingles;
         uint256[3] memory borrowableSingles;
         uint256[3] memory maxDebtSingles;
 
-        (collateralSingles[0], borrowableSingles[0], maxDebtSingles[0]) = _collateralData(dai, vars, 10 ether);
-        (collateralSingles[1], borrowableSingles[1], maxDebtSingles[1]) = _collateralData(wbtc, vars, 0);
-        (collateralSingles[2], borrowableSingles[2], maxDebtSingles[2]) = _collateralData(usdc, vars, 0);
+        (borrowableSingles[0], maxDebtSingles[0]) = _collateralData(dai, vars, 10 ether);
+        (borrowableSingles[1], maxDebtSingles[1]) = _collateralData(wbtc, vars, 0);
+        (borrowableSingles[2], maxDebtSingles[2]) = _collateralData(usdc, vars, 0);
 
-        assertEq(
-            collateral,
-            collateralSingles[0] + collateralSingles[1] + collateralSingles[2],
-            "collateral not equal to single"
-        );
         assertEq(
             borrowable,
             borrowableSingles[0] + borrowableSingles[1] + borrowableSingles[2],
@@ -349,9 +323,8 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         _userBorrows[address(1)].add(wbtc);
         _userBorrows[address(1)].add(usdc);
 
-        DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
         DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
-        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory, morphoPoolConfig);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
         uint256 debt = _totalDebt(dai, vars, 10 ether);
 
         uint256[3] memory debtSingles = [_debt(dai, vars, 10 ether), _debt(wbtc, vars, 0), _debt(usdc, vars, 0)];
@@ -396,16 +369,13 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         _userBorrows[address(1)].add(wbtc);
         _userBorrows[address(1)].add(usdc);
 
-        DataTypes.UserConfigurationMap memory morphoPoolConfig = _POOL.getUserConfiguration(address(this));
-
         Types.LiquidityData memory liquidityData = _liquidityData(dai, address(1), 10 ether, 10 ether);
         DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
-        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory, morphoPoolConfig);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
 
-        (uint256 collateral, uint256 borrowable, uint256 maxDebt) = _totalCollateralData(dai, vars, 10 ether);
+        (uint256 borrowable, uint256 maxDebt) = _totalCollateralData(dai, vars, 10 ether);
         uint256 debt = _totalDebt(dai, vars, 10 ether);
 
-        assertEq(liquidityData.collateral, collateral, "collateral not equal");
         assertEq(liquidityData.borrowable, borrowable, "borrowable not equal");
         assertEq(liquidityData.maxDebt, maxDebt, "maxDebt not equal");
         assertEq(liquidityData.debt, debt, "debt not equal");
