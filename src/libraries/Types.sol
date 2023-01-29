@@ -172,4 +172,13 @@ library Types {
         uint256 closeFactor;
         uint256 seized;
     }
+
+    /// STACK TOO DEEP ///
+
+    struct BalanceVars {
+        uint256 formerOnPool;
+        uint256 formerInP2P;
+        uint256 newOnPool;
+        uint256 newInP2P;
+    }
 }

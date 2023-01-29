@@ -119,13 +119,6 @@ abstract contract MatchingEngine is MorphoInternal {
         );
     }
 
-    struct AvoidAnnoyingStackTooDeep {
-        uint256 formerOnPool;
-        uint256 formerInP2P;
-        uint256 newOnPool;
-        uint256 newInP2P;
-    }
-
     /// @dev Promotes or demotes users.
     /// @param poolBuckets The pool buckets.
     /// @param poolBuckets The peer-to-peer buckets.
@@ -144,28 +137,27 @@ abstract contract MatchingEngine is MorphoInternal {
             address firstUser = workingBuckets.getMatch(remaining);
             if (firstUser == address(0)) break;
 
-            AvoidAnnoyingStackTooDeep memory tempVars;
+            Types.BalanceVars memory balVars;
+            balVars.formerOnPool = poolBuckets.getValueOf(firstUser);
+            balVars.formerInP2P = p2pBuckets.getValueOf(firstUser);
 
-            tempVars.formerOnPool = poolBuckets.getValueOf(firstUser);
-            tempVars.formerInP2P = p2pBuckets.getValueOf(firstUser);
-
-            (tempVars.newOnPool, tempVars.newInP2P, remaining) =
-                vars.step(tempVars.formerOnPool, tempVars.formerInP2P, vars.indexes, remaining);
+            (balVars.newOnPool, balVars.newInP2P, remaining) =
+                vars.step(balVars.formerOnPool, balVars.formerInP2P, vars.indexes, remaining);
 
             vars.updateDS(
                 vars.underlying,
                 firstUser,
-                tempVars.formerOnPool,
-                tempVars.formerInP2P,
-                tempVars.newOnPool,
-                tempVars.newInP2P,
+                balVars.formerOnPool,
+                balVars.formerInP2P,
+                balVars.newOnPool,
+                balVars.newInP2P,
                 vars.demoting
             );
 
             if (vars.borrow) {
-                emit Events.BorrowPositionUpdated(firstUser, vars.underlying, tempVars.newOnPool, tempVars.newInP2P);
+                emit Events.BorrowPositionUpdated(firstUser, vars.underlying, balVars.newOnPool, balVars.newInP2P);
             } else {
-                emit Events.SupplyPositionUpdated(firstUser, vars.underlying, tempVars.newOnPool, tempVars.newInP2P);
+                emit Events.SupplyPositionUpdated(firstUser, vars.underlying, balVars.newOnPool, balVars.newInP2P);
             }
         }
 
