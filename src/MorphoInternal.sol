@@ -357,49 +357,60 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param user The address of the user to update.
     /// @param poolBuckets The pool buckets.
     /// @param p2pBuckets The peer-to-peer buckets.
-    /// @param onPool The new scaled balance on pool of the `user`.
-    /// @param inP2P The new scaled balance in peer-to-peer of the `user`.
+    /// @param formerOnPool The former scaled balance on pool of the `user`.
+    /// @param formerInP2P The former scaled balance in peer-to-peer of the `user`.
+    /// @param newOnPool The new scaled balance on pool of the `user`.
+    /// @param newInP2P The new scaled balance in peer-to-peer of the `user`.
     /// @param demoting Whether the update is happening during a demoting process or not.
     function _updateInDS(
         address poolToken,
         address user,
         LogarithmicBuckets.BucketList storage poolBuckets,
         LogarithmicBuckets.BucketList storage p2pBuckets,
-        uint256 onPool,
-        uint256 inP2P,
+        uint256 formerOnPool,
+        uint256 formerInP2P,
+        uint256 newOnPool,
+        uint256 newInP2P,
         bool demoting
     ) internal {
-        uint256 formerOnPool = poolBuckets.getValueOf(user);
-        uint256 formerInP2P = p2pBuckets.getValueOf(user);
-
-        if (onPool != formerOnPool) {
+        if (newOnPool != formerOnPool) {
             IRewardsManager rewardsManager = _rewardsManager;
             if (address(rewardsManager) != address(0)) {
                 rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
 
-            poolBuckets.update(user, onPool, demoting);
+            poolBuckets.update(user, newOnPool, demoting);
         }
 
-        if (inP2P != formerInP2P) p2pBuckets.update(user, inP2P, true);
+        if (newInP2P != formerInP2P) p2pBuckets.update(user, newInP2P, true);
     }
 
     /// @dev Updates a `user`'s supply position in the data structure.
     /// @param underlying The address of the underlying asset.
     /// @param user The address of the user to update.
-    /// @param onPool The new scaled balance on pool of the `user`.
-    /// @param inP2P The new scaled balance in peer-to-peer of the `user`.
+    /// @param formerOnPool The former scaled balance on pool of the `user`.
+    /// @param formerInP2P The former scaled balance in peer-to-peer of the `user`.
+    /// @param newOnPool The new scaled balance on pool of the `user`.
+    /// @param newInP2P The new scaled balance in peer-to-peer of the `user`.
     /// @param demoting Whether the update is happening during a demoting process or not.
-    function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
-        internal
-    {
+    function _updateSupplierInDS(
+        address underlying,
+        address user,
+        uint256 formerOnPool,
+        uint256 formerInP2P,
+        uint256 newOnPool,
+        uint256 newInP2P,
+        bool demoting
+    ) internal {
         _updateInDS(
             _market[underlying].aToken,
             user,
             _marketBalances[underlying].poolSuppliers,
             _marketBalances[underlying].p2pSuppliers,
-            onPool,
-            inP2P,
+            formerOnPool,
+            formerInP2P,
+            newOnPool,
+            newInP2P,
             demoting
         );
         // No need to update the user's list of supplied assets,
@@ -409,22 +420,32 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @dev Updates a `user`'s borrow position in the data structure.
     /// @param underlying The address of the underlying asset.
     /// @param user The address of the user to update.
-    /// @param onPool The new scaled balance on pool of the `user`.
-    /// @param inP2P The new scaled balance in peer-to-peer of the `user`.
+    /// @param formerOnPool The former scaled balance on pool of the `user`.
+    /// @param formerInP2P The former scaled balance in peer-to-peer of the `user`.
+    /// @param newOnPool The new scaled balance on pool of the `user`.
+    /// @param newInP2P The new scaled balance in peer-to-peer of the `user`.
     /// @param demoting Whether the update is happening during a demoting process or not.
-    function _updateBorrowerInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
-        internal
-    {
+    function _updateBorrowerInDS(
+        address underlying,
+        address user,
+        uint256 formerOnPool,
+        uint256 formerInP2P,
+        uint256 newOnPool,
+        uint256 newInP2P,
+        bool demoting
+    ) internal {
         _updateInDS(
             _market[underlying].variableDebtToken,
             user,
             _marketBalances[underlying].poolBorrowers,
             _marketBalances[underlying].p2pBorrowers,
-            onPool,
-            inP2P,
+            formerOnPool,
+            formerInP2P,
+            newOnPool,
+            newInP2P,
             demoting
         );
-        if (onPool == 0 && inP2P == 0) _userBorrows[user].remove(underlying);
+        if (newOnPool == 0 && newInP2P == 0) _userBorrows[user].remove(underlying);
         else _userBorrows[user].add(underlying);
     }
 

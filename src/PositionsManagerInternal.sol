@@ -195,8 +195,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     ) internal returns (Types.SupplyRepayVars memory vars) {
         Types.Deltas storage deltas = _market[underlying].deltas;
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        vars.onPool = marketBalances.scaledPoolSupplyBalance(onBehalf);
-        vars.inP2P = marketBalances.scaledP2PSupplyBalance(onBehalf);
+        uint256 formerOnPool = vars.onPool = marketBalances.scaledPoolSupplyBalance(onBehalf);
+        uint256 formerInP2P = vars.inP2P = marketBalances.scaledP2PSupplyBalance(onBehalf);
 
         /// Peer-to-peer supply ///
 
@@ -216,7 +216,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Supply on pool.
         (vars.toSupply, vars.onPool) = _addToPool(amount, vars.onPool, indexes.supply.poolIndex);
 
-        _updateSupplierInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
+        _updateSupplierInDS(underlying, onBehalf, formerOnPool, formerInP2P, vars.onPool, vars.inP2P, false);
     }
 
     /// @dev Performs the accounting of a borrow action.
@@ -229,8 +229,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     ) internal returns (Types.BorrowWithdrawVars memory vars) {
         Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        vars.onPool = marketBalances.scaledPoolBorrowBalance(borrower);
-        vars.inP2P = marketBalances.scaledP2PBorrowBalance(borrower);
+        uint256 formerOnPool = vars.onPool = marketBalances.scaledPoolBorrowBalance(borrower);
+        uint256 formerInP2P = vars.inP2P = marketBalances.scaledP2PBorrowBalance(borrower);
 
         /// Peer-to-peer borrow ///
 
@@ -254,7 +254,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Borrow on pool.
         (vars.toBorrow, vars.onPool) = _addToPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
-        _updateBorrowerInDS(underlying, borrower, vars.onPool, vars.inP2P, false);
+        _updateBorrowerInDS(underlying, borrower, formerOnPool, formerInP2P, vars.onPool, vars.inP2P, false);
     }
 
     /// @dev Performs the accounting of a repay action.
@@ -266,8 +266,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        vars.onPool = marketBalances.scaledPoolBorrowBalance(onBehalf);
-        vars.inP2P = marketBalances.scaledP2PBorrowBalance(onBehalf);
+        vars.formerOnPool = vars.onPool = marketBalances.scaledPoolBorrowBalance(onBehalf);
+        vars.formerInP2P = vars.inP2P = marketBalances.scaledP2PBorrowBalance(onBehalf);
 
         /// Pool repay ///
 
@@ -277,7 +277,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Repay borrow peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
 
-        _updateBorrowerInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
+        _updateBorrowerInDS(underlying, onBehalf, vars.formerOnPool, vars.formerInP2P, vars.onPool, vars.inP2P, false);
 
         if (amount == 0) return vars;
 
@@ -322,8 +322,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Indexes256 memory indexes
     ) internal returns (Types.BorrowWithdrawVars memory vars) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        vars.onPool = marketBalances.scaledPoolSupplyBalance(supplier);
-        vars.inP2P = marketBalances.scaledP2PSupplyBalance(supplier);
+        uint256 formerOnPool = vars.onPool = marketBalances.scaledPoolSupplyBalance(supplier);
+        uint256 formerInP2P = vars.inP2P = marketBalances.scaledP2PSupplyBalance(supplier);
 
         /// Pool withdraw ///
 
@@ -338,7 +338,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Withdraw supply peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
-        _updateSupplierInDS(underlying, supplier, vars.onPool, vars.inP2P, false);
+        _updateSupplierInDS(underlying, supplier, formerOnPool, formerInP2P, vars.onPool, vars.inP2P, false);
 
         if (amount == 0) return vars;
 

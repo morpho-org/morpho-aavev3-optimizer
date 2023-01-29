@@ -119,6 +119,13 @@ abstract contract MatchingEngine is MorphoInternal {
         );
     }
 
+    struct AvoidAnnoyingStackTooDeep {
+        uint256 formerOnPool;
+        uint256 formerInP2P;
+        uint256 newOnPool;
+        uint256 newInP2P;
+    }
+
     /// @dev Promotes or demotes users.
     /// @param poolBuckets The pool buckets.
     /// @param poolBuckets The peer-to-peer buckets.
@@ -137,16 +144,29 @@ abstract contract MatchingEngine is MorphoInternal {
             address firstUser = workingBuckets.getMatch(remaining);
             if (firstUser == address(0)) break;
 
-            uint256 onPool;
-            uint256 inP2P;
+            AvoidAnnoyingStackTooDeep memory tempVars;
 
-            (onPool, inP2P, remaining) =
-                vars.step(poolBuckets.getValueOf(firstUser), p2pBuckets.getValueOf(firstUser), vars.indexes, remaining);
+            tempVars.formerOnPool = poolBuckets.getValueOf(firstUser);
+            tempVars.formerInP2P = p2pBuckets.getValueOf(firstUser);
 
-            vars.updateDS(vars.underlying, firstUser, onPool, inP2P, vars.demoting);
+            (tempVars.newOnPool, tempVars.newInP2P, remaining) =
+                vars.step(tempVars.formerOnPool, tempVars.formerInP2P, vars.indexes, remaining);
 
-            if (vars.borrow) emit Events.BorrowPositionUpdated(firstUser, vars.underlying, onPool, inP2P);
-            else emit Events.SupplyPositionUpdated(firstUser, vars.underlying, onPool, inP2P);
+            vars.updateDS(
+                vars.underlying,
+                firstUser,
+                tempVars.formerOnPool,
+                tempVars.formerInP2P,
+                tempVars.newOnPool,
+                tempVars.newInP2P,
+                vars.demoting
+            );
+
+            if (vars.borrow) {
+                emit Events.BorrowPositionUpdated(firstUser, vars.underlying, tempVars.newOnPool, tempVars.newInP2P);
+            } else {
+                emit Events.SupplyPositionUpdated(firstUser, vars.underlying, tempVars.newOnPool, tempVars.newInP2P);
+            }
         }
 
         // Safe unchecked because vars.amount >= remaining.
