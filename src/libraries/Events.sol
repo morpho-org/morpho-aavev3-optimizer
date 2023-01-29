@@ -108,13 +108,7 @@ library Events {
 
     event P2PDeltasIncreased(address indexed underlying, uint256 amount);
 
-    event MarketCreated(
-        address indexed underlying,
-        uint16 reserveFactor,
-        uint16 p2pIndexCursor,
-        uint256 poolSupplyIndex,
-        uint256 poolBorrowIndex
-    );
+    event MarketCreated(address indexed underlying, uint16 reserveFactor, uint16 p2pIndexCursor);
 
     event DefaultMaxIterationsSet(uint64 repay, uint64 withdraw);
 
