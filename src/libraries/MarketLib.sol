@@ -205,7 +205,7 @@ library MarketLib {
         if (amount == 0) return (0, 0);
 
         uint256 idleSupply = market.idleSupply;
-        if (idleSupply == 0) return (amount, 0);
+        if (idleSupply == 0 || market.pauseStatuses.isP2PDisabled) return (amount, 0);
 
         uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
         uint256 newIdleSupply = idleSupply.zeroFloorSub(matchedIdle);
