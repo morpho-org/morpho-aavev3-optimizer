@@ -91,7 +91,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         Types.MarketSideDelta memory delta = _market[underlying].deltas.supply;
         uint256 totalP2P = delta.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-            delta.scaledTotalP2P.rayMul(indexes.supply.poolIndex)
+            delta.scaledDeltaPool.rayMul(indexes.supply.poolIndex)
         );
 
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
@@ -122,7 +122,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         Types.MarketSideDelta memory delta = market.deltas.borrow;
         uint256 totalP2P = delta.scaledTotalP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-            delta.scaledTotalP2P.rayMul(indexes.borrow.poolIndex)
+            delta.scaledDeltaPool.rayMul(indexes.borrow.poolIndex)
         );
 
         uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
