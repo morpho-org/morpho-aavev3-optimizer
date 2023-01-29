@@ -137,28 +137,25 @@ abstract contract MatchingEngine is MorphoInternal {
             address firstUser = workingBuckets.getMatch(remaining);
             if (firstUser == address(0)) break;
 
-            Types.BalanceVars memory balVars;
-            balVars.formerOnPool = poolBuckets.getValueOf(firstUser);
-            balVars.formerInP2P = p2pBuckets.getValueOf(firstUser);
+            Types.BalanceVars memory bal;
+            bal.formerOnPool = poolBuckets.getValueOf(firstUser);
+            bal.formerInP2P = p2pBuckets.getValueOf(firstUser);
 
-            (balVars.newOnPool, balVars.newInP2P, remaining) =
-                vars.step(balVars.formerOnPool, balVars.formerInP2P, vars.indexes, remaining);
+            (bal.newOnPool, bal.newInP2P, remaining) =
+                vars.step(bal.formerOnPool, bal.formerInP2P, vars.indexes, remaining);
 
             vars.updateDS(
                 vars.underlying,
                 firstUser,
-                balVars.formerOnPool,
-                balVars.formerInP2P,
-                balVars.newOnPool,
-                balVars.newInP2P,
+                bal.formerOnPool,
+                bal.formerInP2P,
+                bal.newOnPool,
+                bal.newInP2P,
                 vars.demoting
             );
 
-            if (vars.borrow) {
-                emit Events.BorrowPositionUpdated(firstUser, vars.underlying, balVars.newOnPool, balVars.newInP2P);
-            } else {
-                emit Events.SupplyPositionUpdated(firstUser, vars.underlying, balVars.newOnPool, balVars.newInP2P);
-            }
+            if (vars.borrow) emit Events.BorrowPositionUpdated(firstUser, vars.underlying, bal.newOnPool, bal.newInP2P);
+            else emit Events.SupplyPositionUpdated(firstUser, vars.underlying, bal.newOnPool, bal.newInP2P);
         }
 
         // Safe unchecked because vars.amount >= remaining.
