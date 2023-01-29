@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
+import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -46,15 +47,6 @@ abstract contract MorphoInternal is MorphoStorage {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
-    /// MODIFIERS ///
-
-    /// @notice Prevents to update a market not created yet.
-    /// @param underlying The address of the underlying market.
-    modifier isMarketCreated(address underlying) {
-        if (!_market[underlying].isCreated()) revert Errors.MarketNotCreated();
-        _;
-    }
-
     /// INTERNAL ///
 
     /// @dev Creates a new market for the `underlying` token with a given `reserveFactor` (in bps) and a given `p2pIndexCursor` (in bps).
@@ -71,10 +63,14 @@ abstract contract MorphoInternal is MorphoStorage {
 
         if (market.isCreated()) revert Errors.MarketAlreadyCreated();
 
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != reserveData.configuration.getEModeCategory()) {
+            revert Errors.InconsistentEMode();
+        }
+
         Types.Indexes256 memory indexes;
+        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
         indexes.supply.p2pIndex = WadRayMath.RAY;
         indexes.borrow.p2pIndex = WadRayMath.RAY;
-        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
 
@@ -88,26 +84,25 @@ abstract contract MorphoInternal is MorphoStorage {
 
         ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
 
-        emit Events.MarketCreated(
-            underlying, reserveFactor, p2pIndexCursor, indexes.supply.poolIndex, indexes.borrow.poolIndex
-            );
+        emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
     }
 
     /// @dev Claims the fee for the `underlyings` and send it to the `_treasuryVault`.
+    ///      Claiming on a market where there are some rewards might steal users' rewards.
     function _claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) internal {
         address treasuryVault = _treasuryVault;
         if (treasuryVault == address(0)) revert Errors.AddressIsZero();
 
         for (uint256 i; i < underlyings.length; ++i) {
             address underlying = underlyings[i];
+            Types.Market storage market = _market[underlying];
 
-            if (!_market[underlying].isCreated()) continue;
+            if (!market.isCreated()) continue;
 
-            uint256 underlyingBalance = ERC20(underlying).balanceOf(address(this));
+            uint256 claimable = ERC20(underlying).balanceOf(address(this)) - market.idleSupply;
+            uint256 claimed = Math.min(amounts[i], claimable);
 
-            if (underlyingBalance == 0) continue;
-
-            uint256 claimed = Math.min(amounts[i], underlyingBalance);
+            if (claimed == 0) continue;
 
             ERC20(underlying).safeTransfer(treasuryVault, claimed);
             emit Events.ReserveFeeClaimed(underlying, claimed);
@@ -155,25 +150,12 @@ abstract contract MorphoInternal is MorphoStorage {
         return keccak256(abi.encodePacked(Constants.EIP712_MSG_PREFIX, _DOMAIN_SEPARATOR, structHash));
     }
 
-    /// @notice Approves a `manager` to manage the position of `msg.sender`.
+    /// @notice Approves a `manager` to borrow/withdraw on behalf of the sender.
     /// @param manager The address of the manager.
-    /// @param isAllowed Whether `manager` is allowed to manage `msg.sender`'s position or not.
+    /// @param isAllowed Whether `manager` is allowed to manage `delegator`'s position or not.
     function _approveManager(address delegator, address manager, bool isAllowed) internal {
         _isManaging[delegator][manager] = isAllowed;
         emit Events.ManagerApproval(delegator, manager, isAllowed);
-    }
-
-    /// @dev Returns the total balance of `user` on the `underlying` market given `indexes`.
-    /// @param scaledPoolBalance The scaled balance of the user on the pool.
-    /// @param scaledP2PBalance The scaled balance of the user in peer-to-peer.
-    /// @param indexes pool & peer-to-peer borrow.
-    /// @return The total balance of `user` on the `underlying` market (in underlying).
-    function _getUserBalanceFromIndexes(
-        uint256 scaledPoolBalance,
-        uint256 scaledP2PBalance,
-        Types.MarketSideIndexes256 memory indexes
-    ) internal pure returns (uint256) {
-        return scaledPoolBalance.rayMul(indexes.poolIndex) + scaledP2PBalance.rayMul(indexes.p2pIndex);
     }
 
     /// @dev Returns the total supply balance of `user` on the `underlying` market given `indexes`.
@@ -187,9 +169,8 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.MarketSideIndexes256 memory indexes
     ) internal view returns (uint256) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return _getUserBalanceFromIndexes(
-            marketBalances.scaledPoolSupplyBalance(user), marketBalances.scaledP2PSupplyBalance(user), indexes
-        );
+        return marketBalances.scaledPoolSupplyBalance(user).rayMulDown(indexes.poolIndex)
+            + marketBalances.scaledP2PSupplyBalance(user).rayMulDown(indexes.p2pIndex);
     }
 
     /// @dev Returns the total borrow balance of `user` on the `underlying` market given `indexes`.
@@ -203,9 +184,8 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.MarketSideIndexes256 memory indexes
     ) internal view returns (uint256) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return _getUserBalanceFromIndexes(
-            marketBalances.scaledPoolBorrowBalance(user), marketBalances.scaledP2PBorrowBalance(user), indexes
-        );
+        return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.poolIndex)
+            + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.p2pIndex);
     }
 
     /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
@@ -231,7 +211,6 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.LiquidityVars memory vars;
 
         if (_E_MODE_CATEGORY_ID != 0) vars.eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
-        vars.morphoPoolConfig = _POOL.getUserConfiguration(address(this));
         vars.oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.user = user;
 
@@ -241,8 +220,8 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Returns the collateral data for a given set of inputs.
-    /// @dev The total collateral data is computed looping through all user's collateral assets.
-    /// @param assetWithdrawn The address of the underlying asset withdrawn. Pass address(0) if no asset is withdrawn.
+    /// @dev The total collateral data is computed iterating through all user's collateral assets.
+    /// @param assetWithdrawn The address of the underlying asset hypothetically withdrawn. Pass address(0) if no asset is withdrawn.
     /// @param vars The liquidity variables.
     /// @param amountWithdrawn The amount withdrawn on the `assetWithdrawn` market (if any).
     /// @return borrowable The total borrowable amount of `vars.user`.
@@ -264,7 +243,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Returns the debt data for a given set of inputs.
-    /// @dev The total debt data is computed looping through all user's borrow assets.
+    /// @dev The total debt data is computed iterating through all user's borrow assets.
     /// @param assetBorrowed The address of the underlying asset borrowed. Pass address(0) if no asset is borrowed.
     /// @param vars The liquidity variables.
     /// @param amountBorrowed The amount borrowed on the `assetBorrowed` market (if any).
@@ -285,7 +264,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Returns the collateral data for a given set of inputs.
-    /// @param underlying The address of the underlying asset to borrow.
+    /// @param underlying The address of the underlying collateral asset.
     /// @param vars The liquidity variables.
     /// @param amountWithdrawn The amount withdrawn on the `underlying` market (if any).
     /// @return borrowable The borrowable amount of `vars.user` on the `underlying` market.
@@ -385,8 +364,9 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 formerInP2P = p2pBuckets.getValueOf(user);
 
         if (onPool != formerOnPool) {
-            if (address(_rewardsManager) != address(0)) {
-                _rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
+            IRewardsManager rewardsManager = _rewardsManager;
+            if (address(rewardsManager) != address(0)) {
+                rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
             }
 
             poolBuckets.update(user, onPool, demoting);
@@ -414,7 +394,7 @@ abstract contract MorphoInternal is MorphoStorage {
             demoting
         );
         // No need to update the user's list of supplied assets,
-        // as it cannot be used as collateral and thus there's no need to loop over it.
+        // as it cannot be used as collateral and thus there's no need to iterate over it.
     }
 
     /// @dev Updates a `user`'s borrow position in the data structure.
@@ -445,12 +425,12 @@ abstract contract MorphoInternal is MorphoStorage {
 
         market.setIsSupplyPaused(underlying, isPaused);
         market.setIsSupplyCollateralPaused(underlying, isPaused);
-        market.setIsBorrowPaused(underlying, isPaused);
         market.setIsRepayPaused(underlying, isPaused);
         market.setIsWithdrawPaused(underlying, isPaused);
         market.setIsWithdrawCollateralPaused(underlying, isPaused);
         market.setIsLiquidateCollateralPaused(underlying, isPaused);
         market.setIsLiquidateBorrowPaused(underlying, isPaused);
+        if (!market.pauseStatuses.isDeprecated) market.setIsBorrowPaused(underlying, isPaused);
     }
 
     /// @dev Updates the indexes of the `underlying` market and returns them.
@@ -460,14 +440,6 @@ abstract contract MorphoInternal is MorphoStorage {
 
         if (!cached) {
             _market[underlying].setIndexes(indexes);
-
-            emit Events.IndexesUpdated(
-                underlying,
-                indexes.supply.p2pIndex,
-                indexes.borrow.p2pIndex,
-                indexes.supply.poolIndex,
-                indexes.borrow.poolIndex
-                );
         }
     }
 
@@ -509,19 +481,19 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @dev Calculates the amount to seize during a liquidation process.
     /// @param underlyingBorrowed The address of the underlying borrowed asset.
     /// @param underlyingCollateral The address of the underlying collateral asset.
-    /// @param maxToLiquidate The maximum amount of `underlyingBorrowed` to liquidate.
+    /// @param maxToRepay The maximum amount of `underlyingBorrowed` to repay.
     /// @param borrower The address of the borrower being liquidated.
     /// @param poolSupplyIndex The current pool supply index of the `underlyingCollateral` market.
-    /// @return amountToLiquidate The amount of `underlyingBorrowed` to liquidate.
+    /// @return amountToRepay The amount of `underlyingBorrowed` to repay.
     /// @return amountToSeize The amount of `underlyingCollateral` to seize.
     function _calculateAmountToSeize(
         address underlyingBorrowed,
         address underlyingCollateral,
-        uint256 maxToLiquidate,
+        uint256 maxToRepay,
         address borrower,
         uint256 poolSupplyIndex
-    ) internal view returns (uint256 amountToLiquidate, uint256 amountToSeize) {
-        amountToLiquidate = maxToLiquidate;
+    ) internal view returns (uint256 amountToRepay, uint256 amountToSeize) {
+        amountToRepay = maxToRepay;
         DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(underlyingCollateral);
         uint256 liquidationBonus = collateralConfig.getLiquidationBonus();
         uint256 collateralTokenUnit = collateralConfig.getDecimals();
@@ -536,14 +508,14 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
         uint256 collateralPrice = oracle.getAssetPrice(underlyingCollateral);
 
-        amountToSeize = ((amountToLiquidate * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
+        amountToSeize = ((amountToRepay * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
             .percentMul(liquidationBonus);
 
         uint256 collateralBalance = _getUserCollateralBalanceFromIndex(underlyingCollateral, borrower, poolSupplyIndex);
 
         if (amountToSeize > collateralBalance) {
             amountToSeize = collateralBalance;
-            amountToLiquidate = (
+            amountToRepay = (
                 (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
             ).percentDiv(liquidationBonus);
         }

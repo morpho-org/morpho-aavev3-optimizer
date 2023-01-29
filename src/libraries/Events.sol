@@ -24,7 +24,8 @@ library Events {
     );
 
     event Borrowed(
-        address indexed borrower,
+        address caller,
+        address indexed onBehalf,
         address indexed receiver,
         address indexed underlying,
         uint256 amount,
@@ -33,7 +34,8 @@ library Events {
     );
 
     event Withdrawn(
-        address indexed supplier,
+        address caller,
+        address indexed onBehalf,
         address indexed receiver,
         address indexed underlying,
         uint256 amount,
@@ -42,7 +44,8 @@ library Events {
     );
 
     event CollateralWithdrawn(
-        address indexed supplier,
+        address caller,
+        address indexed onBehalf,
         address indexed receiver,
         address indexed underlying,
         uint256 amount,
@@ -105,15 +108,9 @@ library Events {
 
     event P2PDeltasIncreased(address indexed underlying, uint256 amount);
 
-    event MarketCreated(
-        address indexed underlying,
-        uint16 reserveFactor,
-        uint16 p2pIndexCursor,
-        uint256 poolSupplyIndex,
-        uint256 poolBorrowIndex
-    );
+    event MarketCreated(address indexed underlying, uint16 reserveFactor, uint16 p2pIndexCursor);
 
-    event DefaultMaxLoopsSet(uint64 repay, uint64 withdraw);
+    event DefaultMaxIterationsSet(uint64 repay, uint64 withdraw);
 
     event PositionsManagerSet(address indexed positionsManager);
 
@@ -131,10 +128,10 @@ library Events {
 
     event IndexesUpdated(
         address indexed underlying,
-        uint256 p2pSupplyIndex,
-        uint256 p2pBorrowIndex,
         uint256 poolSupplyIndex,
-        uint256 poolBorrowIndex
+        uint256 p2pSupplyIndex,
+        uint256 poolBorrowIndex,
+        uint256 p2pBorrowIndex
     );
 
     event IdleSupplyUpdated(address indexed underlying, uint256 idleSupply);

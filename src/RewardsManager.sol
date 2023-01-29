@@ -25,7 +25,7 @@ contract RewardsManager is IRewardsManager, Initializable {
     struct UserAssetBalance {
         address asset; // The rewarded asset (either aToken or debt token).
         uint256 balance; // The user balance of this asset (in asset decimals).
-        uint256 totalSupply; // The total supply of this asset.
+        uint256 scaledTotalSupply; // The scaled total supply of this asset.
     }
 
     struct UserData {
@@ -132,7 +132,7 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @param asset The address of the reference asset of the distribution (aToken or variable debt token).
     /// @param userBalance The current user asset balance.
     function updateUserRewards(address user, address asset, uint256 userBalance) external onlyMorpho {
-        _updateData(user, asset, userBalance);
+        _updateData(user, asset, userBalance, IScaledBalanceToken(asset).scaledTotalSupply());
     }
 
     /// GETTERS ///
@@ -274,11 +274,10 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @param user The user address.
     /// @param asset The address of the reference asset of the distribution.
     /// @param userBalance The current user asset balance.
-    function _updateData(address user, address asset, uint256 userBalance) internal {
+    /// @param scaledTotalSupply The current scaled total supply for this distribution.
+    function _updateData(address user, address asset, uint256 userBalance, uint256 scaledTotalSupply) internal {
         address[] memory availableRewards = _REWARDS_CONTROLLER.getRewardsByAsset(asset);
         if (availableRewards.length == 0) return;
-
-        uint256 totalSupply = IScaledBalanceToken(asset).scaledTotalSupply();
 
         unchecked {
             uint256 assetUnit = 10 ** _REWARDS_CONTROLLER.getAssetDecimals(asset);
@@ -288,7 +287,7 @@ contract RewardsManager is IRewardsManager, Initializable {
                 RewardData storage localRewardData = _localAssetData[asset][reward];
 
                 (uint256 newAssetIndex, bool rewardDataUpdated) =
-                    _updateRewardData(localRewardData, asset, reward, totalSupply, assetUnit);
+                    _updateRewardData(localRewardData, asset, reward, scaledTotalSupply, assetUnit);
 
                 (uint256 rewardsAccrued, bool userDataUpdated) =
                     _updateUserData(localRewardData, user, userBalance, newAssetIndex, assetUnit);
@@ -305,7 +304,12 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @param _userAssetBalances The list of structs with the user balance and total supply of a set of assets.
     function _updateDataMultiple(address user, UserAssetBalance[] memory _userAssetBalances) internal {
         for (uint256 i; i < _userAssetBalances.length; ++i) {
-            _updateData(user, _userAssetBalances[i].asset, _userAssetBalances[i].balance);
+            _updateData(
+                user,
+                _userAssetBalances[i].asset,
+                _userAssetBalances[i].balance,
+                _userAssetBalances[i].scaledTotalSupply
+            );
         }
     }
 
@@ -348,8 +352,9 @@ contract RewardsManager is IRewardsManager, Initializable {
             assetUnit = 10 ** _REWARDS_CONTROLLER.getAssetDecimals(_userAssetBalance.asset);
         }
 
-        (, uint256 nextIndex) =
-            _getAssetIndex(localRewardData, _userAssetBalance.asset, reward, _userAssetBalance.totalSupply, assetUnit);
+        (, uint256 nextIndex) = _getAssetIndex(
+            localRewardData, _userAssetBalance.asset, reward, _userAssetBalance.scaledTotalSupply, assetUnit
+        );
 
         return _getRewards(_userAssetBalance.balance, nextIndex, localRewardData.usersData[user].index, assetUnit);
     }
@@ -434,7 +439,7 @@ contract RewardsManager is IRewardsManager, Initializable {
                 revert InvalidAsset();
             }
 
-            userAssetBalances[i].totalSupply = IScaledBalanceToken(asset).scaledTotalSupply();
+            userAssetBalances[i].scaledTotalSupply = IScaledBalanceToken(asset).scaledTotalSupply();
         }
     }
 }

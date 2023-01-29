@@ -62,9 +62,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         view
         returns (Types.Market storage market)
     {
-        if (onBehalf == address(0)) revert Errors.AddressIsZero();
+        if (receiver == address(0)) revert Errors.AddressIsZero();
 
-        market = _validateInput(underlying, amount, receiver);
+        market = _validateInput(underlying, amount, onBehalf);
 
         _validatePermission(onBehalf, msg.sender);
     }
@@ -154,6 +154,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         view
         returns (uint256)
     {
+        if (borrower == address(0)) revert Errors.AddressIsZero();
+
         Types.Market storage borrowMarket = _market[underlyingBorrowed];
         Types.Market storage collateralMarket = _market[underlyingCollateral];
 
@@ -183,13 +185,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return Constants.MAX_CLOSE_FACTOR;
     }
 
-    /// @dev Executes a supply action.
-    function _executeSupply(
+    /// @dev Performs the accounting of a supply action.
+    function _accountSupply(
         address underlying,
         uint256 amount,
-        address from,
         address onBehalf,
-        uint256 maxLoops,
+        uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
         Types.Deltas storage deltas = _market[underlying].deltas;
@@ -200,15 +201,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Peer-to-peer supply ///
 
         // Decrease the peer-to-peer borrow delta.
-        (vars.toRepay, amount) = deltas.borrow.decrease(underlying, amount, indexes.borrow.poolIndex, true);
+        (amount, vars.toRepay) = deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
 
         // Promote pool borrowers.
         uint256 promoted;
-        (promoted, amount,) = _promoteRoutine(underlying, amount, maxLoops, _promoteBorrowers);
+        (promoted, amount,) = _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
         vars.toRepay += promoted;
 
         // Update the peer-to-peer totals.
-        vars.inP2P = deltas.increaseP2P(underlying, promoted, vars.toRepay, indexes, true);
+        vars.inP2P += deltas.increaseP2P(underlying, promoted, vars.toRepay, indexes, true);
 
         /// Pool supply ///
 
@@ -216,17 +217,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         (vars.toSupply, vars.onPool) = _addToPool(amount, vars.onPool, indexes.supply.poolIndex);
 
         _updateSupplierInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
-
-        emit Events.Supplied(from, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
     }
 
-    /// @dev Executes a borrow action.
-    function _executeBorrow(
+    /// @dev Performs the accounting of a borrow action.
+    function _accountBorrow(
         address underlying,
         uint256 amount,
         address borrower,
-        address receiver,
-        uint256 maxLoops,
+        uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.BorrowWithdrawVars memory vars) {
         Types.Market storage market = _market[underlying];
@@ -237,18 +235,20 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Peer-to-peer borrow ///
 
         // Decrease the peer-to-peer idle supply.
-        (amount, vars.inP2P) = market.borrowIdle(underlying, amount, vars.inP2P, indexes.borrow.p2pIndex);
+        uint256 matchedIdle;
+        (amount, matchedIdle) = market.decreaseIdle(underlying, amount);
 
         // Decrease the peer-to-peer supply delta.
-        (vars.toWithdraw, amount) = market.deltas.supply.decrease(underlying, amount, indexes.supply.poolIndex, false);
+        (amount, vars.toWithdraw) =
+            market.deltas.supply.decreaseDelta(underlying, amount, indexes.supply.poolIndex, false);
 
         // Promote pool suppliers.
         uint256 promoted;
-        (promoted, amount,) = _promoteRoutine(underlying, amount, maxLoops, _promoteSuppliers);
+        (promoted, amount,) = _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
         vars.toWithdraw += promoted;
 
         // Update the peer-to-peer totals.
-        vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toWithdraw, indexes, false);
+        vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toWithdraw + matchedIdle, indexes, false);
 
         /// Pool borrow ///
 
@@ -256,17 +256,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         (vars.toBorrow, vars.onPool) = _addToPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
         _updateBorrowerInDS(underlying, borrower, vars.onPool, vars.inP2P, false);
-
-        emit Events.Borrowed(borrower, underlying, receiver, amount, vars.onPool, vars.inP2P);
     }
 
-    /// @dev Executes a repay action.
-    function _executeRepay(
+    /// @dev Performs the accounting of a repay action.
+    function _accountRepay(
         address underlying,
         uint256 amount,
-        address repayer,
         address onBehalf,
-        uint256 maxLoops,
+        uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
@@ -289,8 +286,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Decrease the peer-to-peer borrow delta.
         uint256 toRepayStep;
-        (toRepayStep, amount) = market.deltas.borrow.decrease(underlying, amount, indexes.borrow.poolIndex, true);
+        (amount, toRepayStep) = market.deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
         vars.toRepay += toRepayStep;
+        uint256 p2pTotalBorrowDecrease = toRepayStep;
 
         // Repay the fee.
         amount = market.deltas.repayFee(amount, indexes);
@@ -298,33 +296,31 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Transfer repay ///
 
         // Promote pool borrowers.
-        (toRepayStep, vars.toSupply, maxLoops) = _promoteRoutine(underlying, amount, maxLoops, _promoteBorrowers);
+        (toRepayStep, vars.toSupply, maxIterations) =
+            _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
         vars.toRepay += toRepayStep;
 
         /// Breaking repay ///
 
         // Demote peer-to-peer suppliers.
-        uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxLoops);
+        uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxIterations);
 
         // Increase the peer-to-peer supply delta.
-        market.deltas.supply.increase(underlying, vars.toSupply - demoted, indexes.supply, false);
+        market.deltas.supply.increaseDelta(underlying, vars.toSupply - demoted, indexes.supply, false);
 
         // Update the peer-to-peer totals.
-        market.deltas.decreaseP2P(underlying, demoted, vars.toSupply, indexes, false);
+        market.deltas.decreaseP2P(underlying, demoted, vars.toSupply + p2pTotalBorrowDecrease, indexes, false);
 
         // Handle the supply cap.
-        vars.toSupply = market.supplyIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
-
-        emit Events.Repaid(repayer, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
+        vars.toSupply = market.increaseIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
     }
 
-    /// @dev Executes a withdraw action.
-    function _executeWithdraw(
+    /// @dev Performs the accounting of a withdraw action.
+    function _accountWithdraw(
         address underlying,
         uint256 amount,
         address supplier,
-        address receiver,
-        uint256 maxLoops,
+        uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.BorrowWithdrawVars memory vars) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
@@ -338,9 +334,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         Types.Market storage market = _market[underlying];
 
-        // Withdraw idle supply.
-        amount = market.withdrawIdle(underlying, amount);
-
         // Withdraw supply peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
@@ -348,32 +341,119 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         if (amount == 0) return vars;
 
+        // Decrease the peer-to-peer idle supply.
+        uint256 matchedIdle;
+        (amount, matchedIdle) = market.decreaseIdle(underlying, amount);
+
         // Decrease the peer-to-peer supply delta.
         uint256 toWithdrawStep;
-        (toWithdrawStep, amount) = market.deltas.supply.decrease(underlying, amount, indexes.supply.poolIndex, false);
+        (amount, toWithdrawStep) =
+            market.deltas.supply.decreaseDelta(underlying, amount, indexes.supply.poolIndex, false);
         vars.toWithdraw += toWithdrawStep;
+        uint256 p2pTotalSupplyDecrease = toWithdrawStep + matchedIdle;
 
         /// Transfer withdraw ///
 
         // Promote pool suppliers.
-        (toWithdrawStep, vars.toBorrow, maxLoops) = _promoteRoutine(underlying, amount, maxLoops, _promoteSuppliers);
+        (toWithdrawStep, vars.toBorrow, maxIterations) =
+            _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
         vars.toWithdraw += toWithdrawStep;
 
         /// Breaking withdraw ///
 
         // Demote peer-to-peer borrowers.
-        uint256 demoted = _demoteBorrowers(underlying, vars.toBorrow, maxLoops);
+        uint256 demoted = _demoteBorrowers(underlying, vars.toBorrow, maxIterations);
 
         // Increase the peer-to-peer borrow delta.
-        market.deltas.borrow.increase(underlying, vars.toBorrow - demoted, indexes.borrow, true);
+        market.deltas.borrow.increaseDelta(underlying, vars.toBorrow - demoted, indexes.borrow, true);
 
         // Update the peer-to-peer totals.
-        market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow, indexes, true);
+        market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow + p2pTotalSupplyDecrease, indexes, true);
+    }
 
-        emit Events.Withdrawn(supplier, receiver, underlying, amount, vars.onPool, vars.inP2P);
+    /// @dev Performs the accounting of a supply action.
+    function _accountSupplyCollateral(address underlying, uint256 amount, address onBehalf, uint256 poolSupplyIndex)
+        internal
+        returns (uint256 collateralBalance)
+    {
+        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+
+        collateralBalance = marketBalances.collateral[onBehalf] + amount.rayDivDown(poolSupplyIndex);
+        marketBalances.collateral[onBehalf] = collateralBalance;
+
+        _userCollaterals[onBehalf].add(underlying);
+    }
+
+    /// @dev Performs the accounting of a withdraw collateral action.
+    function _accountWithdrawCollateral(address underlying, uint256 amount, address onBehalf, uint256 poolSupplyIndex)
+        internal
+        returns (uint256 collateralBalance)
+    {
+        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+
+        collateralBalance = marketBalances.collateral[onBehalf].zeroFloorSub(amount.rayDivUp(poolSupplyIndex));
+        marketBalances.collateral[onBehalf] = collateralBalance;
+
+        if (collateralBalance == 0) _userCollaterals[onBehalf].remove(underlying);
     }
 
     /// @dev Executes a supply action.
+    function _executeSupply(
+        address underlying,
+        uint256 amount,
+        address from,
+        address onBehalf,
+        uint256 maxIterations,
+        Types.Indexes256 memory indexes
+    ) internal returns (Types.SupplyRepayVars memory vars) {
+        vars = _accountSupply(underlying, amount, onBehalf, maxIterations, indexes);
+
+        emit Events.Supplied(from, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
+    }
+
+    /// @dev Executes a borrow action.
+    function _executeBorrow(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        address receiver,
+        uint256 maxIterations,
+        Types.Indexes256 memory indexes
+    ) internal returns (Types.BorrowWithdrawVars memory vars) {
+        vars = _accountBorrow(underlying, amount, onBehalf, maxIterations, indexes);
+
+        emit Events.Borrowed(msg.sender, onBehalf, receiver, underlying, amount, vars.onPool, vars.inP2P);
+    }
+
+    /// @dev Executes a repay action.
+    function _executeRepay(
+        address underlying,
+        uint256 amount,
+        address repayer,
+        address onBehalf,
+        uint256 maxIterations,
+        Types.Indexes256 memory indexes
+    ) internal returns (Types.SupplyRepayVars memory vars) {
+        vars = _accountRepay(underlying, amount, onBehalf, maxIterations, indexes);
+
+        emit Events.Repaid(repayer, onBehalf, underlying, amount, vars.onPool, vars.inP2P);
+    }
+
+    /// @dev Executes a withdraw action.
+    function _executeWithdraw(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        address receiver,
+        uint256 maxIterations,
+        Types.Indexes256 memory indexes
+    ) internal returns (Types.BorrowWithdrawVars memory vars) {
+        vars = _accountWithdraw(underlying, amount, onBehalf, maxIterations, indexes);
+
+        emit Events.Withdrawn(msg.sender, onBehalf, receiver, underlying, amount, vars.onPool, vars.inP2P);
+    }
+
+    /// @dev Executes a supply collateral action.
     function _executeSupplyCollateral(
         address underlying,
         uint256 amount,
@@ -381,32 +461,22 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         address onBehalf,
         uint256 poolSupplyIndex
     ) internal {
-        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+        uint256 collateralBalance = _accountSupplyCollateral(underlying, amount, onBehalf, poolSupplyIndex);
 
-        uint256 newBalance = marketBalances.collateral[onBehalf] + amount.rayDivDown(poolSupplyIndex);
-        marketBalances.collateral[onBehalf] = newBalance;
-
-        _userCollaterals[onBehalf].add(underlying);
-
-        emit Events.CollateralSupplied(from, onBehalf, underlying, amount, newBalance);
+        emit Events.CollateralSupplied(from, onBehalf, underlying, amount, collateralBalance);
     }
 
     /// @dev Executes a withdraw collateral action.
     function _executeWithdrawCollateral(
         address underlying,
         uint256 amount,
-        address supplier,
+        address onBehalf,
         address receiver,
         uint256 poolSupplyIndex
     ) internal {
-        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+        uint256 collateralBalance = _accountWithdrawCollateral(underlying, amount, onBehalf, poolSupplyIndex);
 
-        uint256 newBalance = marketBalances.collateral[supplier].zeroFloorSub(amount.rayDivUp(poolSupplyIndex));
-        marketBalances.collateral[supplier] = newBalance;
-
-        if (newBalance == 0) _userCollaterals[supplier].remove(underlying);
-
-        emit Events.CollateralWithdrawn(supplier, receiver, underlying, amount, newBalance);
+        emit Events.CollateralWithdrawn(msg.sender, onBehalf, receiver, underlying, amount, collateralBalance);
     }
 
     /// @notice Given variables from a market side, calculates the amount to supply/borrow and a new on pool amount.
@@ -445,24 +515,24 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @notice Given variables from a market side, promotes users and calculates the amount to repay/withdraw from promote,
-    ///         the amount left to process, and the number of loops left.
+    ///         the amount left to process, and the number of iterations left.
     /// @param underlying The underlying address.
     /// @param amount The amount to supply/borrow.
-    /// @param maxLoops The maximum number of loops to run.
+    /// @param maxIterations The maximum number of iterations to run.
     /// @param promote The promote function.
-    /// @return The amount to repay/withdraw from promote, the amount left to process, and the number of loops left.
+    /// @return The amount to repay/withdraw from promote, the amount left to process, and the number of iterations left.
     function _promoteRoutine(
         address underlying,
         uint256 amount,
-        uint256 maxLoops,
+        uint256 maxIterations,
         function(address, uint256, uint256) returns (uint256, uint256) promote
     ) internal returns (uint256, uint256, uint256) {
         if (amount == 0 || _market[underlying].isP2PDisabled()) {
-            return (0, amount, maxLoops);
+            return (0, amount, maxIterations);
         }
 
-        (uint256 promoted, uint256 loopsDone) = promote(underlying, amount, maxLoops); // In underlying.
+        (uint256 promoted, uint256 iterationsDone) = promote(underlying, amount, maxIterations); // In underlying.
 
-        return (promoted, amount - promoted, maxLoops - loopsDone);
+        return (promoted, amount - promoted, maxIterations - iterationsDone);
     }
 }
