@@ -266,8 +266,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        vars.formerOnPool = vars.onPool = marketBalances.scaledPoolBorrowBalance(onBehalf);
-        vars.formerInP2P = vars.inP2P = marketBalances.scaledP2PBorrowBalance(onBehalf);
+        Types.FormerBalanceVars memory formerBal;
+        formerBal.formerOnPool = vars.onPool = marketBalances.scaledPoolBorrowBalance(onBehalf);
+        formerBal.formerInP2P = vars.inP2P = marketBalances.scaledP2PBorrowBalance(onBehalf);
 
         /// Pool repay ///
 
@@ -277,7 +278,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Repay borrow peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
 
-        _updateBorrowerInDS(underlying, onBehalf, vars.formerOnPool, vars.formerInP2P, vars.onPool, vars.inP2P, false);
+        _updateBorrowerInDS(
+            underlying, onBehalf, formerBal.formerOnPool, formerBal.formerInP2P, vars.onPool, vars.inP2P, false
+        );
 
         if (amount == 0) return vars;
 

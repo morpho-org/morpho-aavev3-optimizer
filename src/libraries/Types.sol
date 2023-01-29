@@ -160,8 +160,6 @@ library Types {
     }
 
     struct SupplyRepayVars {
-        uint256 formerOnPool;
-        uint256 formerInP2P;
         uint256 onPool;
         uint256 inP2P;
         uint256 toSupply;
@@ -174,6 +172,11 @@ library Types {
     }
 
     /// STACK TOO DEEP ///
+
+    struct FormerBalanceVars {
+        uint256 formerOnPool;
+        uint256 formerInP2P;
+    }
 
     struct BalanceVars {
         uint256 formerOnPool;
