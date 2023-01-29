@@ -77,6 +77,7 @@ abstract contract MorphoInternal is MorphoStorage {
         market.underlying = underlying;
         market.aToken = reserveData.aTokenAddress;
         market.variableDebtToken = reserveData.variableDebtTokenAddress;
+        market.stableDebtToken = reserveData.stableDebtTokenAddress;
         market.reserveFactor = reserveFactor;
         market.p2pIndexCursor = p2pIndexCursor;
 

@@ -113,8 +113,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         market = _validateManagerInput(underlying, amount, borrower, receiver);
         if (market.isBorrowPaused()) revert Errors.BorrowIsPaused();
 
-        DataTypes.ReserveData memory reserve = _POOL.getReserveData(underlying);
-        DataTypes.ReserveConfigurationMap memory config = reserve.configuration;
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
             revert Errors.InconsistentEMode();
@@ -126,8 +125,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         );
 
         uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
-        uint256 totalDebt =
-            ERC20(market.variableDebtToken).totalSupply() + ERC20(reserve.stableDebtTokenAddress).totalSupply();
+        uint256 totalDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
 
         // The total P2P amount on Morpho plus the total borrow on Aave must not exceed the borrow cap.
         if (amount + totalP2P + totalDebt > borrowCap) revert Errors.AboveBorrowCap();
