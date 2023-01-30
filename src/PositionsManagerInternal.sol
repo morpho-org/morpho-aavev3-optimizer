@@ -80,22 +80,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Validates a supply collateral action.
-    function _validateSupplyCollateral(address underlying, uint256 amount, address user)
-        internal
-        view
-        returns (Types.Market storage market)
-    {
-        market = _validateInput(underlying, amount, user);
+    function _validateSupplyCollateral(address underlying, uint256 amount, address user) internal view {
+        Types.Market storage market = _validateInput(underlying, amount, user);
         if (market.isSupplyCollateralPaused()) revert Errors.SupplyCollateralIsPaused();
     }
 
     /// @dev Authorizes a supply collateral action.
-    function _authorizeSupplyCollateral(
-        address underlying,
-        uint256 amount,
-        Types.Market storage market,
-        Types.Indexes256 memory indexes
-    ) internal view {
+    function _authorizeSupplyCollateral(address underlying, uint256 amount, Types.Indexes256 memory indexes)
+        internal
+        view
+    {
+        Types.Market storage market = _market[underlying];
         Types.MarketSideDelta memory delta = market.deltas.supply;
         uint256 totalP2P = delta.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
             delta.scaledDeltaPool.rayMul(indexes.supply.poolIndex)
@@ -120,19 +115,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Authorizes a borrow action.
-    function _authorizeBorrow(
-        address underlying,
-        uint256 amount,
-        address borrower,
-        Types.Market storage market,
-        Types.Indexes256 memory indexes
-    ) internal view {
+    function _authorizeBorrow(address underlying, uint256 amount, address borrower, Types.Indexes256 memory indexes)
+        internal
+        view
+    {
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
             revert Errors.InconsistentEMode();
         }
 
+        Types.Market storage market = _market[underlying];
         Types.MarketSideDelta memory delta = market.deltas.borrow;
         uint256 totalP2P = delta.scaledTotalP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
             delta.scaledDeltaPool.rayMul(indexes.borrow.poolIndex)
