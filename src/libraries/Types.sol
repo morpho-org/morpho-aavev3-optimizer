@@ -71,10 +71,10 @@ library Types {
 
     // Contains storage-only dynamic arrays and mappings.
     struct MarketBalances {
-        LogarithmicBuckets.BucketList poolSuppliers; // In pool unit.
-        LogarithmicBuckets.BucketList p2pSuppliers; // In peer-to-peer unit.
-        LogarithmicBuckets.BucketList poolBorrowers; // In pool unit.
-        LogarithmicBuckets.BucketList p2pBorrowers; // In peer-to-peer unit.
+        LogarithmicBuckets.Buckets poolSuppliers; // In pool unit.
+        LogarithmicBuckets.Buckets p2pSuppliers; // In peer-to-peer unit.
+        LogarithmicBuckets.Buckets poolBorrowers; // In pool unit.
+        LogarithmicBuckets.Buckets p2pBorrowers; // In peer-to-peer unit.
         mapping(address => uint256) collateral; // In pool unit.
     }
 
