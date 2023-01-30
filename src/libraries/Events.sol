@@ -126,6 +126,8 @@ library Events {
 
     event IsDeprecatedSet(address indexed underlying, bool isDeprecated);
 
+    event EModeSet(uint8 categoryId);
+
     event IndexesUpdated(
         address indexed underlying,
         uint256 poolSupplyIndex,
