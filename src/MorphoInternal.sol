@@ -60,6 +60,12 @@ abstract contract MorphoInternal is MorphoStorage {
 
         if (market.isCreated()) revert Errors.MarketAlreadyCreated();
 
+        market.underlying = underlying;
+        market.aToken = reserveData.aTokenAddress;
+        market.variableDebtToken = reserveData.variableDebtTokenAddress;
+
+        _marketsCreated.push(underlying);
+
         emit Events.MarketCreated(underlying);
 
         Types.Indexes256 memory indexes;
@@ -70,12 +76,6 @@ abstract contract MorphoInternal is MorphoStorage {
         market.setIndexes(indexes);
         market.setReserveFactor(reserveFactor);
         market.setP2PIndexCursor(p2pIndexCursor);
-
-        market.underlying = underlying;
-        market.aToken = reserveData.aTokenAddress;
-        market.variableDebtToken = reserveData.variableDebtTokenAddress;
-
-        _marketsCreated.push(underlying);
 
         ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
     }
