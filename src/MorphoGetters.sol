@@ -37,6 +37,11 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _DOMAIN_SEPARATOR;
     }
 
+    /// @notice Returns the e-mode category ID of Morpho on the Aave protocol.
+    function E_MODE_CATEGORY_ID() external view returns (uint256) {
+        return _E_MODE_CATEGORY_ID;
+    }
+
     /// @notice Returns the market data.
     function market(address underlying) external view returns (Types.Market memory) {
         return _market[underlying];
