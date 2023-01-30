@@ -6,6 +6,8 @@ import {IMorphoGetters} from "./interfaces/IMorpho.sol";
 import {Types} from "./libraries/Types.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
+import {BucketDLL} from "@morpho-data-structures/BucketDLL.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -18,6 +20,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
+    using BucketDLL for BucketDLL.List;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     /// STORAGE ///
@@ -153,5 +156,40 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         returns (Types.LiquidityData memory)
     {
         return _liquidityData(underlying, user, amountWithdrawn, amountBorrowed);
+    }
+
+    function _getBuckets(address underlying, Types.Position position)
+        internal
+        view
+        returns (LogarithmicBuckets.Buckets storage)
+    {
+        if (position == Types.Position.POOL_SUPPLIER) {
+            return _marketBalances[underlying].poolSuppliers;
+        } else if (position == Types.Position.P2P_SUPPLIER) {
+            return _marketBalances[underlying].p2pSuppliers;
+        } else if (position == Types.Position.POOL_BORROWER) {
+            return _marketBalances[underlying].poolBorrowers;
+        } else {
+            return _marketBalances[underlying].p2pBorrowers;
+        }
+    }
+
+    /// @notice Returns the account after `_id` in the same bucket of the corresponding market side.
+    /// @param underlying The address of the underlying asset.
+    /// @param position The position type, either pool or peer-to-peer and either supply or borrow.
+    function getNext(address underlying, Types.Position position, address _id) external view returns (address) {
+        LogarithmicBuckets.Buckets storage buckets = _getBuckets(underlying, position);
+        uint256 userBalance = buckets.valueOf[_id];
+        uint256 userBucket = LogarithmicBuckets.computeBucket(userBalance);
+
+        return buckets.buckets[userBucket].getNext(_id);
+    }
+
+    /// @notice Returns the buckets mask of the corresponding market side.
+    /// @param underlying The address of the underlying asset.
+    /// @param position The position type, either pool or peer-to-peer and either supply or borrow.
+    function getBucketsMask(address underlying, Types.Position position) external view returns (uint256) {
+        LogarithmicBuckets.Buckets storage buckets = _getBuckets(underlying, position);
+        return buckets.bucketsMask;
     }
 }
