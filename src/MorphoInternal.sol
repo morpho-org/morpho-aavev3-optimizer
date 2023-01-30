@@ -74,7 +74,10 @@ abstract contract MorphoInternal is MorphoStorage {
         market.setIndexes(indexes);
         market.setReserveFactor(reserveFactor);
         market.setP2PIndexCursor(p2pIndexCursor);
-        market.setAssets(underlying, reserveData.aTokenAddress, reserveData.variableDebtTokenAddress);
+
+        market.underlying = underlying;
+        market.aToken = reserveData.aTokenAddress;
+        market.variableDebtToken = reserveData.variableDebtTokenAddress;
 
         _marketsCreated.push(underlying);
 
