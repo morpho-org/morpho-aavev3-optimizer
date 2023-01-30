@@ -71,10 +71,12 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256)
     {
+        Types.Market storage market = _validateSupplyCollateral(underlying, amount, onBehalf);
+
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
         // The following check requires storage indexes to be up-to-date.
-        _validateSupplyCollateral(underlying, amount, onBehalf, indexes);
+        _authorizeSupplyCollateral(underlying, amount, market, indexes);
 
         ERC20(underlying).transferFrom2(from, address(this), amount);
 
@@ -96,11 +98,12 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         external
         returns (uint256)
     {
+        Types.Market storage market = _validateBorrow(underlying, amount, borrower, receiver);
+
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        // The following checks requires storage indexes to be up-to-date.
-        Types.Market storage market = _validateBorrow(underlying, amount, borrower, receiver, indexes);
-        _authorizeBorrow(underlying, amount, borrower);
+        // The following check requires storage indexes to be up-to-date.
+        _authorizeBorrow(underlying, amount, borrower, market, indexes);
 
         Types.BorrowWithdrawVars memory vars =
             _executeBorrow(underlying, amount, borrower, receiver, maxIterations, indexes);

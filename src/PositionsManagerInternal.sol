@@ -80,15 +80,22 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Validates a supply collateral action.
-    function _validateSupplyCollateral(
-        address underlying,
-        uint256 amount,
-        address user,
-        Types.Indexes256 memory indexes
-    ) internal view returns (Types.Market storage market) {
+    function _validateSupplyCollateral(address underlying, uint256 amount, address user)
+        internal
+        view
+        returns (Types.Market storage market)
+    {
         market = _validateInput(underlying, amount, user);
         if (market.isSupplyCollateralPaused()) revert Errors.SupplyCollateralIsPaused();
+    }
 
+    /// @dev Authorizes a supply collateral action.
+    function _authorizeSupplyCollateral(
+        address underlying,
+        uint256 amount,
+        Types.Market storage market,
+        Types.Indexes256 memory indexes
+    ) internal view {
         Types.MarketSideDelta memory delta = _market[underlying].deltas.supply;
         uint256 totalP2P = delta.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
             delta.scaledDeltaPool.rayMul(indexes.supply.poolIndex)
@@ -103,16 +110,23 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Validates a borrow action.
-    function _validateBorrow(
+    function _validateBorrow(address underlying, uint256 amount, address borrower, address receiver)
+        internal
+        view
+        returns (Types.Market storage market)
+    {
+        market = _validateManagerInput(underlying, amount, borrower, receiver);
+        if (market.isBorrowPaused()) revert Errors.BorrowIsPaused();
+    }
+
+    /// @dev Authorizes a borrow action.
+    function _authorizeBorrow(
         address underlying,
         uint256 amount,
         address borrower,
-        address receiver,
+        Types.Market storage market,
         Types.Indexes256 memory indexes
-    ) internal view returns (Types.Market storage market) {
-        market = _validateManagerInput(underlying, amount, borrower, receiver);
-        if (market.isBorrowPaused()) revert Errors.BorrowIsPaused();
-
+    ) internal view {
         DataTypes.ReserveData memory reserve = _POOL.getReserveData(underlying);
         DataTypes.ReserveConfigurationMap memory config = reserve.configuration;
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
@@ -131,10 +145,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // The total P2P amount on Morpho plus the total borrow on Aave must not exceed the borrow cap.
         if (amount + totalP2P + totalDebt > borrowCap) revert Errors.ExceedsBorrowCap();
-    }
 
-    /// @dev Authorizes a borrow action.
-    function _authorizeBorrow(address underlying, uint256 amount, address borrower) internal view {
         Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
         if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
     }
