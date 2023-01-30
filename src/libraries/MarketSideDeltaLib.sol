@@ -53,7 +53,7 @@ library MarketSideDeltaLib {
         bool borrowSide
     ) internal returns (uint256, uint256) {
         uint256 scaledDeltaPool = delta.scaledDeltaPool;
-        if (scaledDeltaPool == 0) return (0, amount);
+        if (scaledDeltaPool == 0) return (amount, 0);
 
         uint256 decreased = Math.min(scaledDeltaPool.rayMulUp(poolIndex), amount); // In underlying.
         uint256 newScaledDeltaPool = scaledDeltaPool.zeroFloorSub(decreased.rayDivDown(poolIndex));

@@ -29,24 +29,6 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         _;
     }
 
-    /// INITIALIZER ///
-
-    /// @notice Initializes the contract.
-    /// @param newPositionsManager The address of the `_positionsManager` to set.
-    /// @param newDefaultMaxIterations The `_defaultMaxIterations` to set.
-    function initialize(address newPositionsManager, Types.MaxIterations memory newDefaultMaxIterations)
-        external
-        initializer
-    {
-        __Ownable_init_unchained();
-
-        _positionsManager = newPositionsManager;
-        _defaultMaxIterations = newDefaultMaxIterations;
-
-        emit Events.DefaultMaxIterationsSet(newDefaultMaxIterations.repay, newDefaultMaxIterations.withdraw);
-        emit Events.PositionsManagerSet(newPositionsManager);
-    }
-
     /// GOVERNANCE UTILS ///
 
     /// @notice Creates a new market for the `underlying` token with a given `reserveFactor` (in bps) and a given `p2pIndexCursor` (in bps).
