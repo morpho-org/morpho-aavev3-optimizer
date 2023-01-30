@@ -80,15 +80,22 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Validates a supply collateral action.
-    function _validateSupplyCollateral(
-        address underlying,
-        uint256 amount,
-        address user,
-        Types.Indexes256 memory indexes
-    ) internal view returns (Types.Market storage market) {
+    function _validateSupplyCollateral(address underlying, uint256 amount, address user)
+        internal
+        view
+        returns (Types.Market storage market)
+    {
         market = _validateInput(underlying, amount, user);
         if (market.isSupplyCollateralPaused()) revert Errors.SupplyCollateralIsPaused();
+    }
 
+    /// @dev Authorizes a supply collateral action.
+    function _authorizeSupplyCollateral(
+        address underlying,
+        uint256 amount,
+        Types.Market storage market,
+        Types.Indexes256 memory indexes
+    ) internal view {
         Types.MarketSideDelta memory delta = _market[underlying].deltas.supply;
         uint256 totalP2P = delta.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
             delta.scaledDeltaPool.rayMul(indexes.supply.poolIndex)
@@ -99,21 +106,29 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 totalSupply = ERC20(market.aToken).totalSupply();
 
         // The total P2P amount on Morpho plus the total supply on Aave must not exceed the supply cap.
-        if (amount + totalP2P + totalSupply > supplyCap) revert Errors.AboveSupplyCap();
+        if (amount + totalP2P + totalSupply > supplyCap) revert Errors.ExceedsSupplyCap();
     }
 
     /// @dev Validates a borrow action.
-    function _validateBorrow(
+    function _validateBorrow(address underlying, uint256 amount, address borrower, address receiver)
+        internal
+        view
+        returns (Types.Market storage market)
+    {
+        market = _validateManagerInput(underlying, amount, borrower, receiver);
+        if (market.isBorrowPaused()) revert Errors.BorrowIsPaused();
+    }
+
+    /// @dev Authorizes a borrow action.
+    function _authorizeBorrow(
         address underlying,
         uint256 amount,
         address borrower,
-        address receiver,
+        Types.Market storage market,
         Types.Indexes256 memory indexes
-    ) internal view returns (Types.Market storage market) {
-        market = _validateManagerInput(underlying, amount, borrower, receiver);
-        if (market.isBorrowPaused()) revert Errors.BorrowIsPaused();
-
-        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+    ) internal view {
+        DataTypes.ReserveData memory reserve = _POOL.getReserveData(underlying);
+        DataTypes.ReserveConfigurationMap memory config = reserve.configuration;
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
             revert Errors.InconsistentEMode();
@@ -128,11 +143,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 totalDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
 
         // The total P2P amount on Morpho plus the total borrow on Aave must not exceed the borrow cap.
-        if (amount + totalP2P + totalDebt > borrowCap) revert Errors.AboveBorrowCap();
-    }
+        if (amount + totalP2P + totalDebt > borrowCap) revert Errors.ExceedsBorrowCap();
 
-    /// @dev Authorizes a borrow action.
-    function _authorizeBorrow(address underlying, uint256 amount, address borrower) internal view {
         Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
         if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
     }
