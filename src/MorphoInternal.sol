@@ -38,7 +38,7 @@ abstract contract MorphoInternal is MorphoStorage {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
-    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
+    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
     using UserConfiguration for DataTypes.UserConfigurationMap;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using SafeTransferLib for ERC20;
@@ -59,10 +59,6 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.Market storage market = _market[underlying];
 
         if (market.isCreated()) revert Errors.MarketAlreadyCreated();
-
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != reserveData.configuration.getEModeCategory()) {
-            revert Errors.InconsistentEMode();
-        }
 
         emit Events.MarketCreated(underlying);
 
@@ -183,6 +179,25 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.poolIndex)
             + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.p2pIndex);
+    }
+
+    /// @dev Returns the buckets of a particular side of a market.
+    /// @param underlying The address of the underlying asset.
+    /// @param position The side of the market.
+    function _getBuckets(address underlying, Types.Position position)
+        internal
+        view
+        returns (LogarithmicBuckets.Buckets storage)
+    {
+        if (position == Types.Position.POOL_SUPPLIER) {
+            return _marketBalances[underlying].poolSuppliers;
+        } else if (position == Types.Position.P2P_SUPPLIER) {
+            return _marketBalances[underlying].p2pSuppliers;
+        } else if (position == Types.Position.POOL_BORROWER) {
+            return _marketBalances[underlying].poolBorrowers;
+        } else {
+            return _marketBalances[underlying].p2pBorrowers;
+        }
     }
 
     /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
@@ -317,30 +332,28 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
         DataTypes.ReserveConfigurationMap memory configuration = reserveData.configuration;
-        ltv = configuration.getLtv();
-        liquidationThreshold = configuration.getLiquidationThreshold();
-        tokenUnit = configuration.getDecimals();
+        tokenUnit = 10 ** configuration.getDecimals();
 
-        unchecked {
-            tokenUnit = 10 ** tokenUnit;
-        }
-
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == configuration.getEModeCategory()) {
-            uint256 eModeUnderlyingPrice;
-            if (vars.eModeCategory.priceSource != address(0)) {
-                eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
-            }
+        // If this instance of Morpho isn't in eMode, then vars.eModeCategory is not initalized.
+        // Thus in this case `vars.eModeCategory.priceSource` == `address(0)`.
+        if (vars.eModeCategory.priceSource != address(0) && _E_MODE_CATEGORY_ID == configuration.getEModeCategory()) {
+            uint256 eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
             underlyingPrice = eModeUnderlyingPrice != 0 ? eModeUnderlyingPrice : vars.oracle.getAssetPrice(underlying);
-
-            if (ltv != 0) ltv = vars.eModeCategory.ltv;
-            liquidationThreshold = vars.eModeCategory.liquidationThreshold;
         } else {
             underlyingPrice = vars.oracle.getAssetPrice(underlying);
         }
 
         // If a LTV has been reduced to 0 on Aave v3, the other assets of the collateral are frozen.
         // In response, Morpho disables the asset as collateral and sets its liquidation threshold to 0.
-        if (ltv == 0) liquidationThreshold = 0;
+        if (configuration.getLtv() == 0) return (underlyingPrice, 0, 0, tokenUnit);
+
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == configuration.getEModeCategory()) {
+            ltv = vars.eModeCategory.ltv;
+            liquidationThreshold = vars.eModeCategory.liquidationThreshold;
+        } else {
+            ltv = configuration.getLtv();
+            liquidationThreshold = configuration.getLiquidationThreshold();
+        }
     }
 
     /// @dev Updates a `user`'s position in the data structure.
@@ -354,14 +367,14 @@ abstract contract MorphoInternal is MorphoStorage {
     function _updateInDS(
         address poolToken,
         address user,
-        LogarithmicBuckets.BucketList storage poolBuckets,
-        LogarithmicBuckets.BucketList storage p2pBuckets,
+        LogarithmicBuckets.Buckets storage poolBuckets,
+        LogarithmicBuckets.Buckets storage p2pBuckets,
         uint256 onPool,
         uint256 inP2P,
         bool demoting
     ) internal {
-        uint256 formerOnPool = poolBuckets.getValueOf(user);
-        uint256 formerInP2P = p2pBuckets.getValueOf(user);
+        uint256 formerOnPool = poolBuckets.valueOf[user];
+        uint256 formerInP2P = p2pBuckets.valueOf[user];
 
         if (onPool != formerOnPool) {
             IRewardsManager rewardsManager = _rewardsManager;
@@ -423,14 +436,14 @@ abstract contract MorphoInternal is MorphoStorage {
     function _setPauseStatus(address underlying, bool isPaused) internal {
         Types.Market storage market = _market[underlying];
 
-        market.setIsSupplyPaused(underlying, isPaused);
-        market.setIsSupplyCollateralPaused(underlying, isPaused);
-        market.setIsRepayPaused(underlying, isPaused);
-        market.setIsWithdrawPaused(underlying, isPaused);
-        market.setIsWithdrawCollateralPaused(underlying, isPaused);
-        market.setIsLiquidateCollateralPaused(underlying, isPaused);
-        market.setIsLiquidateBorrowPaused(underlying, isPaused);
-        if (!market.pauseStatuses.isDeprecated) market.setIsBorrowPaused(underlying, isPaused);
+        market.setIsSupplyPaused(isPaused);
+        market.setIsSupplyCollateralPaused(isPaused);
+        market.setIsRepayPaused(isPaused);
+        market.setIsWithdrawPaused(isPaused);
+        market.setIsWithdrawCollateralPaused(isPaused);
+        market.setIsLiquidateCollateralPaused(isPaused);
+        market.setIsLiquidateBorrowPaused(isPaused);
+        if (!market.isDeprecated()) market.setIsBorrowPaused(isPaused);
     }
 
     /// @dev Updates the indexes of the `underlying` market and returns them.

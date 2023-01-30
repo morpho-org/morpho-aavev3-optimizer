@@ -22,7 +22,7 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
     using SafeTransferLib for ERC20;
-    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
+    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
 

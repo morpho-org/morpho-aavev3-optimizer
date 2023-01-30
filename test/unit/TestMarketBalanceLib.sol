@@ -9,7 +9,7 @@ import {Test} from "@forge-std/Test.sol";
 
 contract TestUnitMarketBalanceLib is Test {
     using MarketBalanceLib for Types.MarketBalances;
-    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
+    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
 
     bool internal constant IS_LIFO = true;
 
