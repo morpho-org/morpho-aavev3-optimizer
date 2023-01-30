@@ -42,6 +42,6 @@ library Errors {
     error InvalidNonce();
     error SignatureExpired();
 
-    error AboveSupplyCap();
-    error AboveBorrowCap();
+    error ExceedsSupplyCap();
+    error ExceedsBorrowCap();
 }

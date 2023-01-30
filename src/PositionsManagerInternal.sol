@@ -99,7 +99,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 totalSupply = ERC20(market.aToken).totalSupply();
 
         // The total P2P amount on Morpho plus the total supply on Aave must not exceed the supply cap.
-        if (amount + totalP2P + totalSupply > supplyCap) revert Errors.AboveSupplyCap();
+        if (amount + totalP2P + totalSupply > supplyCap) revert Errors.ExceedsSupplyCap();
     }
 
     /// @dev Validates a borrow action.
@@ -130,7 +130,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             ERC20(market.variableDebtToken).totalSupply() + ERC20(reserve.stableDebtTokenAddress).totalSupply();
 
         // The total P2P amount on Morpho plus the total borrow on Aave must not exceed the borrow cap.
-        if (amount + totalP2P + totalDebt > borrowCap) revert Errors.AboveBorrowCap();
+        if (amount + totalP2P + totalDebt > borrowCap) revert Errors.ExceedsBorrowCap();
     }
 
     /// @dev Authorizes a borrow action.
