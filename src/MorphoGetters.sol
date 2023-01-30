@@ -141,6 +141,13 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _isClaimRewardsPaused;
     }
 
+    /// @notice Returns the data at the storage's `slot` location.
+    function getStorageAt(bytes32 slot) external view returns (bytes32 data) {
+        assembly {
+            data := sload(slot)
+        }
+    }
+
     /// @notice Returns the updated indexes (peer-to-peer and pool).
     function updatedIndexes(address underlying) external view returns (Types.Indexes256 memory indexes) {
         (, indexes) = _computeIndexes(underlying);
