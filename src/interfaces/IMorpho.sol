@@ -7,6 +7,7 @@ interface IMorphoGetters {
     function POOL() external view returns (address);
     function ADDRESSES_PROVIDER() external view returns (address);
     function DOMAIN_SEPARATOR() external view returns (bytes32);
+    function E_MODE_CATEGORY_ID() external view returns (uint256);
 
     function market(address underlying) external view returns (Types.Market memory);
     function marketsCreated() external view returns (address[] memory);

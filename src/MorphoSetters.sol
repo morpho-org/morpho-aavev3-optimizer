@@ -20,22 +20,13 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     using MarketLib for Types.Market;
 
-    /// INITIALIZER ///
+    /// MODIFIERS ///
 
-    /// @notice Initializes the contract.
-    /// @param newPositionsManager The address of the `_positionsManager` to set.
-    /// @param newDefaultMaxIterations The `_defaultMaxIterations` to set.
-    function initialize(address newPositionsManager, Types.MaxIterations memory newDefaultMaxIterations)
-        external
-        initializer
-    {
-        __Ownable_init_unchained();
-
-        _positionsManager = newPositionsManager;
-        _defaultMaxIterations = newDefaultMaxIterations;
-
-        emit Events.DefaultMaxIterationsSet(newDefaultMaxIterations.repay, newDefaultMaxIterations.withdraw);
-        emit Events.PositionsManagerSet(newPositionsManager);
+    /// @notice Prevents to update a market not created yet.
+    /// @param underlying The address of the underlying market.
+    modifier isMarketCreated(address underlying) {
+        if (!_market[underlying].isCreated()) revert Errors.MarketNotCreated();
+        _;
     }
 
     /// GOVERNANCE UTILS ///
@@ -46,6 +37,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     /// @notice Claims the fee for the `underlyings` and send it to the `_treasuryVault`.
+    /// @dev Claiming on a market where there are some rewards might steal users' rewards.
     function claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) external onlyOwner {
         _claimToTreasury(underlyings, amounts);
     }

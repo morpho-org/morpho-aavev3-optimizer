@@ -166,15 +166,22 @@ library MarketLib {
         market.indexes.borrow.poolIndex = indexes.borrow.poolIndex.toUint128();
         market.indexes.borrow.p2pIndex = indexes.borrow.p2pIndex.toUint128();
         market.lastUpdateTimestamp = uint32(block.timestamp);
+        emit Events.IndexesUpdated(
+            market.underlying,
+            indexes.supply.p2pIndex,
+            indexes.borrow.p2pIndex,
+            indexes.supply.poolIndex,
+            indexes.borrow.poolIndex
+            );
     }
 
-    /// @dev Adds to idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
+    /// @dev Increases the idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to repay. (by supplying on pool)
     /// @param configuration The reserve configuration for the market.
     /// @return toSupply The new amount to supply.
-    function supplyIdle(
+    function increaseIdle(
         Types.Market storage market,
         address underlying,
         uint256 amount,
@@ -193,22 +200,19 @@ library MarketLib {
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
     }
 
-    /// @dev Borrows idle supply and returns an updated p2p balance.
+    /// @dev Decreases the idle supply.
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to borrow.
-    /// @param inP2P The user's amount in p2p.
-    /// @param p2pBorrowIndex The current p2p borrow index.
-    /// @return The amount left to process, and the updated p2p amount of the user.
-    function borrowIdle(
-        Types.Market storage market,
-        address underlying,
-        uint256 amount,
-        uint256 inP2P,
-        uint256 p2pBorrowIndex
-    ) internal returns (uint256, uint256) {
+    /// @return The amount left to process, and the processed amount.
+    function decreaseIdle(Types.Market storage market, address underlying, uint256 amount)
+        internal
+        returns (uint256, uint256)
+    {
+        if (amount == 0) return (0, 0);
+
         uint256 idleSupply = market.idleSupply;
-        if (idleSupply == 0) return (amount, inP2P);
+        if (idleSupply == 0) return (amount, 0);
 
         uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
         uint256 newIdleSupply = idleSupply.zeroFloorSub(matchedIdle);
@@ -216,26 +220,6 @@ library MarketLib {
 
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
 
-        return (amount - matchedIdle, inP2P + matchedIdle.rayDivDown(p2pBorrowIndex));
-    }
-
-    /// @dev Withdraws idle supply.
-    /// @param market The market storage.
-    /// @param underlying The underlying address.
-    /// @param amount The amount to withdraw.
-    /// @return The amount left to process.
-    function withdrawIdle(Types.Market storage market, address underlying, uint256 amount) internal returns (uint256) {
-        if (amount == 0) return 0;
-
-        uint256 idleSupply = market.idleSupply;
-        if (idleSupply == 0) return amount;
-
-        uint256 matchedIdle = Math.min(idleSupply, amount); // In underlying.
-        uint256 newIdleSupply = idleSupply.zeroFloorSub(matchedIdle);
-        market.idleSupply = newIdleSupply;
-
-        emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
-
-        return amount - matchedIdle;
+        return (amount - matchedIdle, matchedIdle);
     }
 }
