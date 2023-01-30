@@ -96,7 +96,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Market storage market,
         Types.Indexes256 memory indexes
     ) internal view {
-        Types.MarketSideDelta memory delta = _market[underlying].deltas.supply;
+        Types.MarketSideDelta memory delta = market.deltas.supply;
         uint256 totalP2P = delta.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
             delta.scaledDeltaPool.rayMul(indexes.supply.poolIndex)
         );
