@@ -339,7 +339,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Pool withdraw ///
 
         // Withdraw supply on pool.
-        (amount, vars.toWithdraw, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.supply.poolIndex);
+        (vars.toWithdraw, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.supply.poolIndex);
 
         Types.Market storage market = _market[underlying];
 
