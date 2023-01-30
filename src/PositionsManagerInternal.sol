@@ -127,8 +127,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Market storage market,
         Types.Indexes256 memory indexes
     ) internal view {
-        DataTypes.ReserveData memory reserve = _POOL.getReserveData(underlying);
-        DataTypes.ReserveConfigurationMap memory config = reserve.configuration;
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
             revert Errors.InconsistentEMode();
