@@ -428,12 +428,12 @@ abstract contract MorphoInternal is MorphoStorage {
 
         market.setIsSupplyPaused(isPaused);
         market.setIsSupplyCollateralPaused(isPaused);
-        market.setIsBorrowPaused(isPaused);
         market.setIsRepayPaused(isPaused);
         market.setIsWithdrawPaused(isPaused);
         market.setIsWithdrawCollateralPaused(isPaused);
         market.setIsLiquidateCollateralPaused(isPaused);
-        if (!market.isDeprecated()) market.setIsLiquidateBorrowPaused(isPaused);
+        market.setIsLiquidateBorrowPaused(isPaused);
+        if (!market.isDeprecated()) market.setIsBorrowPaused(isPaused);
     }
 
     /// @dev Updates the indexes of the `underlying` market and returns them.
