@@ -38,7 +38,7 @@ abstract contract MorphoInternal is MorphoStorage {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
-    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
+    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
     using UserConfiguration for DataTypes.UserConfigurationMap;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using SafeTransferLib for ERC20;
@@ -351,14 +351,14 @@ abstract contract MorphoInternal is MorphoStorage {
     function _updateInDS(
         address poolToken,
         address user,
-        LogarithmicBuckets.BucketList storage poolBuckets,
-        LogarithmicBuckets.BucketList storage p2pBuckets,
+        LogarithmicBuckets.Buckets storage poolBuckets,
+        LogarithmicBuckets.Buckets storage p2pBuckets,
         uint256 onPool,
         uint256 inP2P,
         bool demoting
     ) internal {
-        uint256 formerOnPool = poolBuckets.getValueOf(user);
-        uint256 formerInP2P = p2pBuckets.getValueOf(user);
+        uint256 formerOnPool = poolBuckets.valueOf[user];
+        uint256 formerInP2P = p2pBuckets.valueOf[user];
 
         if (onPool != formerOnPool) {
             IRewardsManager rewardsManager = _rewardsManager;

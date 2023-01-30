@@ -35,7 +35,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using MarketSideDeltaLib for Types.MarketSideDelta;
     using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
-    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
+    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /// @dev Validates the manager's permission.
