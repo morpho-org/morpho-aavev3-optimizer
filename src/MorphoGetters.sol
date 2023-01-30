@@ -158,22 +158,21 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _liquidityData(underlying, user, amountWithdrawn, amountBorrowed);
     }
 
-    /// @notice Returns the account after `_id` in the same bucket of the corresponding market side.
+    /// @notice Returns the account after `user` in the same bucket of the corresponding market side.
     /// @param underlying The address of the underlying asset.
     /// @param position The position type, either pool or peer-to-peer and either supply or borrow.
-    function getNext(address underlying, Types.Position position, address _id) external view returns (address) {
+    function getNext(address underlying, Types.Position position, address user) external view returns (address) {
         LogarithmicBuckets.Buckets storage buckets = _getBuckets(underlying, position);
-        uint256 userBalance = buckets.valueOf[_id];
+        uint256 userBalance = buckets.valueOf[user];
         uint256 userBucket = LogarithmicBuckets.computeBucket(userBalance);
 
-        return buckets.buckets[userBucket].getNext(_id);
+        return buckets.buckets[userBucket].getNext(user);
     }
 
     /// @notice Returns the buckets mask of the corresponding market side.
     /// @param underlying The address of the underlying asset.
     /// @param position The position type, either pool or peer-to-peer and either supply or borrow.
     function getBucketsMask(address underlying, Types.Position position) external view returns (uint256) {
-        LogarithmicBuckets.Buckets storage buckets = _getBuckets(underlying, position);
-        return buckets.bucketsMask;
+        return _getBuckets(underlying, position).bucketsMask;
     }
 }
