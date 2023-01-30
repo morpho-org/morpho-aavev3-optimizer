@@ -20,7 +20,7 @@ library MarketSideDeltaLib {
     /// @param amount The amount to supply/borrow (in underlying).
     /// @param indexes The current indexes.
     /// @param borrowSide Whether the market side is borrow.
-    function increase(
+    function increaseDelta(
         Types.MarketSideDelta storage delta,
         address underlying,
         uint256 amount,
@@ -44,8 +44,8 @@ library MarketSideDeltaLib {
     /// @param amount The amount to supply/borrow (in underlying).
     /// @param poolIndex The current pool index.
     /// @param borrowSide Whether the market side is borrow.
-    /// @return The amount to repay/withdraw and the amount left to process.
-    function decrease(
+    /// @return The amount left to process and the amount to repay/withdraw.
+    function decreaseDelta(
         Types.MarketSideDelta storage delta,
         address underlying,
         uint256 amount,
@@ -53,7 +53,7 @@ library MarketSideDeltaLib {
         bool borrowSide
     ) internal returns (uint256, uint256) {
         uint256 scaledDeltaPool = delta.scaledDeltaPool;
-        if (scaledDeltaPool == 0) return (0, amount);
+        if (scaledDeltaPool == 0) return (amount, 0);
 
         uint256 decreased = Math.min(scaledDeltaPool.rayMulUp(poolIndex), amount); // In underlying.
         uint256 newScaledDeltaPool = scaledDeltaPool.zeroFloorSub(decreased.rayDivDown(poolIndex));
@@ -63,6 +63,6 @@ library MarketSideDeltaLib {
         if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, newScaledDeltaPool);
         else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledDeltaPool);
 
-        return (decreased, amount - decreased);
+        return (amount - decreased, decreased);
     }
 }

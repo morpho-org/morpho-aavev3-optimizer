@@ -12,7 +12,7 @@ contract UserMock {
     IMorpho internal morpho;
     IPool internal pool;
 
-    uint256 internal constant DEFAULT_MAX_LOOPS = 10;
+    uint256 internal constant DEFAULT_MAX_ITERATIONS = 10;
 
     constructor(address _morpho) {
         morpho = IMorpho(_morpho);
@@ -33,16 +33,19 @@ contract UserMock {
         ERC20(token).safeApprove(spender, amount);
     }
 
-    function supply(address underlying, uint256 amount, address onBehalf, uint256 maxLoops) public returns (uint256) {
-        return morpho.supply(underlying, amount, onBehalf, maxLoops);
+    function supply(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
+        public
+        returns (uint256)
+    {
+        return morpho.supply(underlying, amount, onBehalf, maxIterations);
     }
 
     function supply(address underlying, uint256 amount, address onBehalf) public returns (uint256) {
-        return supply(underlying, amount, onBehalf, DEFAULT_MAX_LOOPS);
+        return supply(underlying, amount, onBehalf, DEFAULT_MAX_ITERATIONS);
     }
 
-    function supply(address underlying, uint256 amount, uint256 maxLoops) public returns (uint256) {
-        return supply(underlying, amount, address(this), maxLoops);
+    function supply(address underlying, uint256 amount, uint256 maxIterations) public returns (uint256) {
+        return supply(underlying, amount, address(this), maxIterations);
     }
 
     function supply(address underlying, uint256 amount) public returns (uint256) {
@@ -57,27 +60,30 @@ contract UserMock {
         return supplyCollateral(underlying, amount, address(this));
     }
 
-    function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
+    function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         public
         returns (uint256)
     {
-        return morpho.borrow(underlying, amount, onBehalf, receiver, maxLoops);
+        return morpho.borrow(underlying, amount, onBehalf, receiver, maxIterations);
     }
 
     function borrow(address underlying, uint256 amount, address onBehalf, address receiver) public returns (uint256) {
-        return borrow(underlying, amount, onBehalf, receiver, DEFAULT_MAX_LOOPS);
+        return borrow(underlying, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
     }
 
-    function borrow(address underlying, uint256 amount, address onBehalf, uint256 maxLoops) public returns (uint256) {
-        return borrow(underlying, amount, onBehalf, address(this), maxLoops);
+    function borrow(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
+        public
+        returns (uint256)
+    {
+        return borrow(underlying, amount, onBehalf, address(this), maxIterations);
     }
 
     function borrow(address underlying, uint256 amount, address onBehalf) public returns (uint256) {
         return borrow(underlying, amount, onBehalf, address(this));
     }
 
-    function borrow(address underlying, uint256 amount, uint256 maxLoops) public returns (uint256) {
-        return borrow(underlying, amount, address(this), address(this), maxLoops);
+    function borrow(address underlying, uint256 amount, uint256 maxIterations) public returns (uint256) {
+        return borrow(underlying, amount, address(this), address(this), maxIterations);
     }
 
     function borrow(address underlying, uint256 amount) public returns (uint256) {

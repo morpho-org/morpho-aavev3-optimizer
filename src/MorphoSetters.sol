@@ -20,19 +20,13 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     using MarketLib for Types.Market;
 
-    /// INITIALIZER ///
+    /// MODIFIERS ///
 
-    /// @notice Initializes the contract.
-    /// @param newPositionsManager The address of the `_positionsManager` to set.
-    /// @param newDefaultMaxLoops The `_defaultMaxLoops` to set.
-    function initialize(address newPositionsManager, Types.MaxLoops memory newDefaultMaxLoops) external initializer {
-        __Ownable_init_unchained();
-
-        _positionsManager = newPositionsManager;
-        _defaultMaxLoops = newDefaultMaxLoops;
-
-        emit Events.DefaultMaxLoopsSet(newDefaultMaxLoops.repay, newDefaultMaxLoops.withdraw);
-        emit Events.PositionsManagerSet(newPositionsManager);
+    /// @notice Prevents to update a market not created yet.
+    /// @param underlying The address of the underlying market.
+    modifier isMarketCreated(address underlying) {
+        if (!_market[underlying].isCreated()) revert Errors.MarketNotCreated();
+        _;
     }
 
     /// GOVERNANCE UTILS ///
@@ -43,6 +37,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     /// @notice Claims the fee for the `underlyings` and send it to the `_treasuryVault`.
+    /// @dev Claiming on a market where there are some rewards might steal users' rewards.
     function claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) external onlyOwner {
         _claimToTreasury(underlyings, amounts);
     }
@@ -54,10 +49,10 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
     /// SETTERS ///
 
-    /// @notice Sets `_defaultMaxLoops` to `defaultMaxLoops`.
-    function setDefaultMaxLoops(Types.MaxLoops calldata defaultMaxLoops) external onlyOwner {
-        _defaultMaxLoops = defaultMaxLoops;
-        emit Events.DefaultMaxLoopsSet(defaultMaxLoops.repay, defaultMaxLoops.withdraw);
+    /// @notice Sets `_defaultMaxIterations` to `defaultMaxIterations`.
+    function setDefaultMaxIterations(Types.MaxIterations calldata defaultMaxIterations) external onlyOwner {
+        _defaultMaxIterations = defaultMaxIterations;
+        emit Events.DefaultMaxIterationsSet(defaultMaxIterations.repay, defaultMaxIterations.withdraw);
     }
 
     /// @notice Sets `_positionsManager` to `positionsManager`.
@@ -107,7 +102,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
     /// @notice Sets the supply pause status to `isPaused` on the `underlying` market.
     function setIsSupplyPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
-        _market[underlying].setIsSupplyPaused(underlying, isPaused);
+        _market[underlying].setIsSupplyPaused(isPaused);
     }
 
     /// @notice Sets the supply collateral pause status to `isPaused` on the `underlying` market.
@@ -116,7 +111,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         onlyOwner
         isMarketCreated(underlying)
     {
-        _market[underlying].setIsSupplyCollateralPaused(underlying, isPaused);
+        _market[underlying].setIsSupplyCollateralPaused(isPaused);
     }
 
     /// @notice Sets the borrow pause status to `isPaused` on the `underlying` market.
@@ -124,17 +119,17 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         Types.Market storage market = _market[underlying];
         if (!isPaused && market.isDeprecated()) revert Errors.MarketIsDeprecated();
 
-        market.setIsBorrowPaused(underlying, isPaused);
+        market.setIsBorrowPaused(isPaused);
     }
 
     /// @notice Sets the repay pause status to `isPaused` on the `underlying` market.
     function setIsRepayPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
-        _market[underlying].setIsRepayPaused(underlying, isPaused);
+        _market[underlying].setIsRepayPaused(isPaused);
     }
 
     /// @notice Sets the withdraw pause status to `isPaused` on the `underlying` market.
     function setIsWithdrawPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
-        _market[underlying].setIsWithdrawPaused(underlying, isPaused);
+        _market[underlying].setIsWithdrawPaused(isPaused);
     }
 
     /// @notice Sets the withdraw collateral pause status to `isPaused` on the `underlying` market.
@@ -143,7 +138,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         onlyOwner
         isMarketCreated(underlying)
     {
-        _market[underlying].setIsWithdrawCollateralPaused(underlying, isPaused);
+        _market[underlying].setIsWithdrawCollateralPaused(isPaused);
     }
 
     /// @notice Sets the liquidate collateral pause status to `isPaused` on the `underlying` market.
@@ -152,7 +147,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         onlyOwner
         isMarketCreated(underlying)
     {
-        _market[underlying].setIsLiquidateCollateralPaused(underlying, isPaused);
+        _market[underlying].setIsLiquidateCollateralPaused(isPaused);
     }
 
     /// @notice Sets the liquidate borrow pause status to `isPaused` on the `underlying` market.
@@ -161,7 +156,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         onlyOwner
         isMarketCreated(underlying)
     {
-        _market[underlying].setIsLiquidateBorrowPaused(underlying, isPaused);
+        _market[underlying].setIsLiquidateBorrowPaused(isPaused);
     }
 
     /// @notice Sets globally the pause status to `isPaused` on the `underlying` market.
@@ -179,7 +174,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
     /// @notice Sets the peer-to-peer disable status to `isP2PDisabled` on the `underlying` market.
     function setIsP2PDisabled(address underlying, bool isP2PDisabled) external onlyOwner isMarketCreated(underlying) {
-        _market[underlying].setIsP2PDisabled(underlying, isP2PDisabled);
+        _market[underlying].setIsP2PDisabled(isP2PDisabled);
     }
 
     /// @notice Sets the deprecation status to `isDeprecated` on the `underlying` market.
@@ -187,6 +182,6 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         Types.Market storage market = _market[underlying];
         if (!market.isBorrowPaused()) revert Errors.BorrowNotPaused();
 
-        market.setIsDeprecated(underlying, isDeprecated);
+        market.setIsDeprecated(isDeprecated);
     }
 }

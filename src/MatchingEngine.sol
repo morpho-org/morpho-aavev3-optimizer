@@ -18,7 +18,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 /// @notice Abstract contract with functions to promote or demote users to/from peer-to-peer.
 abstract contract MatchingEngine is MorphoInternal {
     using MarketLib for Types.Market;
-    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
+    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
 
     using Math for uint256;
     using WadRayMath for uint256;
@@ -26,20 +26,19 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @dev Demotes suppliers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to promote suppliers.
     /// @param amount The amount of `underlying` to promote.
-    /// @param maxLoops The maximum number of loops allowed during the matching process.
-    function _promoteSuppliers(address underlying, uint256 amount, uint256 maxLoops)
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
+    function _promoteSuppliers(address underlying, uint256 amount, uint256 maxIterations)
         internal
-        returns (uint256 promoted, uint256 loopsDone)
+        returns (uint256 promoted, uint256 iterationsDone)
     {
-        Types.Market storage market = _market[underlying];
         return _promoteOrDemote(
             _marketBalances[underlying].poolSuppliers,
             _marketBalances[underlying].p2pSuppliers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                indexes: market.getSupplyIndexes(),
+                indexes: _market[underlying].getSupplyIndexes(),
                 amount: amount,
-                maxLoops: maxLoops,
+                maxIterations: maxIterations,
                 borrow: false,
                 updateDS: _updateSupplierInDS,
                 demoting: false,
@@ -51,20 +50,19 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @dev Promotes borrowers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to promote borrowers.
     /// @param amount The amount of `underlying` to promote.
-    /// @param maxLoops The maximum number of loops allowed during the matching process.
-    function _promoteBorrowers(address underlying, uint256 amount, uint256 maxLoops)
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
+    function _promoteBorrowers(address underlying, uint256 amount, uint256 maxIterations)
         internal
-        returns (uint256 promoted, uint256 loopsDone)
+        returns (uint256 promoted, uint256 iterationsDone)
     {
-        Types.Market storage market = _market[underlying];
         return _promoteOrDemote(
             _marketBalances[underlying].poolBorrowers,
             _marketBalances[underlying].p2pBorrowers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                indexes: market.getBorrowIndexes(),
+                indexes: _market[underlying].getBorrowIndexes(),
                 amount: amount,
-                maxLoops: maxLoops,
+                maxIterations: maxIterations,
                 borrow: true,
                 updateDS: _updateBorrowerInDS,
                 demoting: false,
@@ -76,20 +74,19 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @dev Demotes suppliers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to demote suppliers.
     /// @param amount The amount of `underlying` to demote.
-    /// @param maxLoops The maximum number of loops allowed during the matching process.
-    function _demoteSuppliers(address underlying, uint256 amount, uint256 maxLoops)
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
+    function _demoteSuppliers(address underlying, uint256 amount, uint256 maxIterations)
         internal
         returns (uint256 demoted)
     {
-        Types.Market storage market = _market[underlying];
         (demoted,) = _promoteOrDemote(
             _marketBalances[underlying].poolSuppliers,
             _marketBalances[underlying].p2pSuppliers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                indexes: market.getSupplyIndexes(),
+                indexes: _market[underlying].getSupplyIndexes(),
                 amount: amount,
-                maxLoops: maxLoops,
+                maxIterations: maxIterations,
                 borrow: false,
                 updateDS: _updateSupplierInDS,
                 demoting: true,
@@ -101,20 +98,19 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @dev Demotes borrowers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to demote borrowers.
     /// @param amount The amount of `underlying` to demote.
-    /// @param maxLoops The maximum number of loops allowed during the matching process.
-    function _demoteBorrowers(address underlying, uint256 amount, uint256 maxLoops)
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
+    function _demoteBorrowers(address underlying, uint256 amount, uint256 maxIterations)
         internal
         returns (uint256 demoted)
     {
-        Types.Market storage market = _market[underlying];
         (demoted,) = _promoteOrDemote(
             _marketBalances[underlying].poolBorrowers,
             _marketBalances[underlying].p2pBorrowers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                indexes: market.getBorrowIndexes(),
+                indexes: _market[underlying].getBorrowIndexes(),
                 amount: amount,
-                maxLoops: maxLoops,
+                maxIterations: maxIterations,
                 borrow: true,
                 updateDS: _updateBorrowerInDS,
                 demoting: true,
@@ -128,16 +124,16 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @param poolBuckets The peer-to-peer buckets.
     /// @param vars The required matching engine variables to perform the matching process.
     function _promoteOrDemote(
-        LogarithmicBuckets.BucketList storage poolBuckets,
-        LogarithmicBuckets.BucketList storage p2pBuckets,
+        LogarithmicBuckets.Buckets storage poolBuckets,
+        LogarithmicBuckets.Buckets storage p2pBuckets,
         Types.MatchingEngineVars memory vars
-    ) internal returns (uint256 processed, uint256 loopsDone) {
-        if (vars.maxLoops == 0) return (0, 0);
+    ) internal returns (uint256 processed, uint256 iterationsDone) {
+        if (vars.maxIterations == 0) return (0, 0);
 
         uint256 remaining = vars.amount;
-        LogarithmicBuckets.BucketList storage workingBuckets = vars.demoting ? p2pBuckets : poolBuckets;
+        LogarithmicBuckets.Buckets storage workingBuckets = vars.demoting ? p2pBuckets : poolBuckets;
 
-        for (; loopsDone < vars.maxLoops && remaining != 0; ++loopsDone) {
+        for (; iterationsDone < vars.maxIterations && remaining != 0; ++iterationsDone) {
             address firstUser = workingBuckets.getMatch(remaining);
             if (firstUser == address(0)) break;
 
@@ -145,7 +141,7 @@ abstract contract MatchingEngine is MorphoInternal {
             uint256 inP2P;
 
             (onPool, inP2P, remaining) =
-                vars.step(poolBuckets.getValueOf(firstUser), p2pBuckets.getValueOf(firstUser), vars.indexes, remaining);
+                vars.step(poolBuckets.valueOf[firstUser], p2pBuckets.valueOf[firstUser], vars.indexes, remaining);
 
             vars.updateDS(vars.underlying, firstUser, onPool, inP2P, vars.demoting);
 

@@ -31,4 +31,4 @@
 [submodule "lib/morpho-data-structures"]
 	path = lib/morpho-data-structures
 	url = git@github.com:morpho-labs/morpho-data-structures-private.git
-	branch = feat/log-buckets
+	branch = dev
