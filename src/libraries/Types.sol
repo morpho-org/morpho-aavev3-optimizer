@@ -20,6 +20,7 @@ library Types {
         POOL_BORROWER,
         P2P_BORROWER
     }
+
     /// NESTED STRUCTS ///
 
     struct MarketSideDelta {

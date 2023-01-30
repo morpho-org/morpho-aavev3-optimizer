@@ -201,6 +201,25 @@ abstract contract MorphoInternal is MorphoStorage {
         );
     }
 
+    /// @dev Returns the buckets of a particular side of a market.
+    /// @param underlying The address of the underlying asset.
+    /// @param position The side of the market.
+    function _getBuckets(address underlying, Types.Position position)
+        internal
+        view
+        returns (LogarithmicBuckets.Buckets storage)
+    {
+        if (position == Types.Position.POOL_SUPPLIER) {
+            return _marketBalances[underlying].poolSuppliers;
+        } else if (position == Types.Position.P2P_SUPPLIER) {
+            return _marketBalances[underlying].p2pSuppliers;
+        } else if (position == Types.Position.POOL_BORROWER) {
+            return _marketBalances[underlying].poolBorrowers;
+        } else {
+            return _marketBalances[underlying].p2pBorrowers;
+        }
+    }
+
     /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
     function _getUserCollateralBalanceFromIndex(address underlying, address user, uint256 poolSupplyIndex)
         internal

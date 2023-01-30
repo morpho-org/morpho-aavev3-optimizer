@@ -32,6 +32,8 @@ interface IMorphoGetters {
         external
         view
         returns (Types.LiquidityData memory);
+    function getNext(address underlying, Types.Position position, address _id) external view returns (address);
+    function getBucketsMask(address underlying, Types.Position position) external view returns (uint256);
 }
 
 interface IMorphoSetters {
