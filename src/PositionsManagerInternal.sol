@@ -220,6 +220,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Performs the accounting of a borrow action.
+    ///      Note: the borrower's set of borrowed market is updated in `_updateBorrowerInDS`.
     function _accountBorrow(
         address underlying,
         uint256 amount,
@@ -259,6 +260,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Performs the accounting of a repay action.
+    ///      Note: the borrower's set of borrowed market is updated in `_updateBorrowerInDS`.
     function _accountRepay(
         address underlying,
         uint256 amount,
