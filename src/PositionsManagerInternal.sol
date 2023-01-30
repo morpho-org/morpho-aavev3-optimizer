@@ -193,16 +193,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
-        Types.Deltas storage deltas = _market[underlying].deltas;
+        Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         vars.onPool = marketBalances.scaledPoolSupplyBalance(onBehalf);
         vars.inP2P = marketBalances.scaledP2PSupplyBalance(onBehalf);
 
         /// Peer-to-peer supply ///
 
-        if (!_market[underlying].isP2PDisabled()) {
+        if (!market.isP2PDisabled()) {
             // Decrease the peer-to-peer borrow delta.
-            (amount, vars.toRepay) = deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
+            (amount, vars.toRepay) =
+                market.deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
 
             // Promote pool borrowers.
             uint256 promoted;
@@ -210,7 +211,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             vars.toRepay += promoted;
 
             // Update the peer-to-peer totals.
-            vars.inP2P += deltas.increaseP2P(underlying, promoted, vars.toRepay, indexes, true);
+            vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toRepay, indexes, true);
         }
 
         /// Pool supply ///
