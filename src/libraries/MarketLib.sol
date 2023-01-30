@@ -153,10 +153,10 @@ library MarketLib {
         market.lastUpdateTimestamp = uint32(block.timestamp);
         emit Events.IndexesUpdated(
             market.underlying,
-            indexes.supply.p2pIndex,
-            indexes.borrow.p2pIndex,
             indexes.supply.poolIndex,
-            indexes.borrow.poolIndex
+            indexes.supply.p2pIndex,
+            indexes.borrow.poolIndex,
+            indexes.borrow.p2pIndex
             );
     }
 
