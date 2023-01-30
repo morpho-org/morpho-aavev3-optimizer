@@ -19,14 +19,6 @@ library PoolLib {
         pool.supply(underlying, amount, address(this), Constants.NO_REFERRAL_CODE);
     }
 
-    function withdrawFromPool(IPool pool, address underlying, address aToken, uint256 amount) internal {
-        if (amount == 0) return;
-
-        // Withdraw only what is possible. The remaining dust is taken from the contract balance.
-        amount = Math.min(IAToken(aToken).balanceOf(address(this)), amount);
-        pool.withdraw(underlying, amount, address(this));
-    }
-
     function borrowFromPool(IPool pool, address underlying, uint256 amount) internal {
         if (amount == 0) return;
 
@@ -37,6 +29,14 @@ library PoolLib {
         if (amount == 0 || IVariableDebtToken(variableDebtToken).scaledBalanceOf(address(this)) == 0) return;
 
         pool.repay(underlying, amount, Constants.VARIABLE_INTEREST_MODE, address(this)); // Reverts if debt is 0.
+    }
+
+    function withdrawFromPool(IPool pool, address underlying, address aToken, uint256 amount) internal {
+        if (amount == 0) return;
+
+        // Withdraw only what is possible. The remaining dust is taken from the contract balance.
+        amount = Math.min(IAToken(aToken).balanceOf(address(this)), amount);
+        pool.withdraw(underlying, amount, address(this));
     }
 
     function getCurrentPoolIndexes(IPool pool, address underlying)
