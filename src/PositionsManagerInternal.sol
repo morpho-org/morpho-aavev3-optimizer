@@ -236,7 +236,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Peer-to-peer borrow ///
 
-        if (!_market[underlying].isP2PDisabled()) {
+        if (!market.isP2PDisabled()) {
             // Decrease the peer-to-peer idle supply.
             uint256 matchedIdle;
             (amount, matchedIdle) = market.decreaseIdle(underlying, amount);
@@ -299,7 +299,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Transfer repay ///
 
-        if (!_market[underlying].isP2PDisabled()) {
+        if (!market.isP2PDisabled()) {
             // Promote pool borrowers.
             (vars.toSupply, toRepayStep, maxIterations) =
                 _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
@@ -362,7 +362,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Transfer withdraw ///
 
-        if (!_market[underlying].isP2PDisabled()) {
+        if (!market.isP2PDisabled()) {
             // Promote pool suppliers.
             (vars.toBorrow, toWithdrawStep, maxIterations) =
                 _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
