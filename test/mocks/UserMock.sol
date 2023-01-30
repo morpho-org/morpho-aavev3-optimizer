@@ -6,7 +6,7 @@ import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-contract TestUser {
+contract UserMock {
     using SafeTransferLib for ERC20;
 
     IMorpho internal morpho;

@@ -3,6 +3,9 @@ pragma solidity ^0.8.0;
 
 import {IAToken} from "src/interfaces/aave/IAToken.sol";
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
+import {IACLManager} from "@aave-v3-core/interfaces/IACLManager.sol";
+import {IPoolConfigurator} from "@aave-v3-core/interfaces/IPoolConfigurator.sol";
+import {IPoolDataProvider} from "@aave-v3-core/interfaces/IPoolDataProvider.sol";
 import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
@@ -13,12 +16,14 @@ import {Errors} from "src/libraries/Errors.sol";
 import {TestConfig, TestConfigLib} from "../helpers/TestConfigLib.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 
-import {AaveOracleMock} from "../mocks/AaveOracleMock.sol";
-
+import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
+import {PoolAdminMock} from "test/mocks/PoolAdminMock.sol";
 import "./BaseTest.sol";
 
 contract ForkTest is BaseTest {
     using TestConfigLib for TestConfig;
+
+    address internal constant POOL_ADMIN = address(0xB055);
 
     string internal network;
     uint256 internal forkId;
@@ -40,8 +45,14 @@ contract ForkTest is BaseTest {
     address[] internal testMarkets;
 
     IPool internal pool;
-    AaveOracleMock internal oracle;
+    IACLManager internal aclManager;
+    IPoolConfigurator internal poolConfigurator;
+    IPoolDataProvider internal poolDataProvider;
     IPoolAddressesProvider internal addressesProvider;
+
+    address internal aclAdmin;
+    AaveOracleMock internal oracle;
+    PoolAdminMock internal poolAdmin;
 
     uint256 snapshotId = type(uint256).max;
 
@@ -50,6 +61,7 @@ contract ForkTest is BaseTest {
         _loadConfig();
 
         _mockOracle();
+        _mockPoolAdmin();
 
         _setBalances(address(this), type(uint256).max);
     }
@@ -78,6 +90,11 @@ contract ForkTest is BaseTest {
         addressesProvider = IPoolAddressesProvider(config.getAddress("addressesProvider"));
         pool = IPool(addressesProvider.getPool());
 
+        aclAdmin = addressesProvider.getACLAdmin();
+        aclManager = IACLManager(addressesProvider.getACLManager());
+        poolConfigurator = IPoolConfigurator(addressesProvider.getPoolConfigurator());
+        poolDataProvider = IPoolDataProvider(addressesProvider.getPoolDataProvider());
+
         dai = config.getAddress("DAI");
         frax = config.getAddress("FRAX");
         mai = config.getAddress("MAI");
@@ -100,10 +117,10 @@ contract ForkTest is BaseTest {
         vm.label(address(oracle), "PriceOracle");
         vm.label(address(addressesProvider), "AddressesProvider");
 
-        vm.label(addressesProvider.getACLAdmin(), "ACLAdmin");
-        vm.label(addressesProvider.getACLManager(), "ACLManager");
-        vm.label(addressesProvider.getPoolDataProvider(), "PoolDataProvider");
-        vm.label(addressesProvider.getPoolConfigurator(), "PoolConfigurator");
+        vm.label(aclAdmin, "ACLAdmin");
+        vm.label(address(aclManager), "ACLManager");
+        vm.label(address(poolConfigurator), "PoolConfigurator");
+        vm.label(address(poolDataProvider), "PoolDataProvider");
 
         vm.label(dai, "DAI");
         vm.label(frax, "FRAX");
@@ -128,6 +145,16 @@ contract ForkTest is BaseTest {
             keccak256(abi.encode(bytes32("PRICE_ORACLE"), 2)),
             bytes32(uint256(uint160(address(oracle))))
         );
+    }
+
+    function _mockPoolAdmin() internal {
+        poolAdmin = new PoolAdminMock(poolConfigurator);
+
+        vm.startPrank(aclAdmin);
+        aclManager.addPoolAdmin(address(poolAdmin));
+        aclManager.addEmergencyAdmin(address(poolAdmin));
+        aclManager.addRiskAdmin(address(poolAdmin));
+        vm.stopPrank();
     }
 
     function _setBalances(address user, uint256 balance) internal {

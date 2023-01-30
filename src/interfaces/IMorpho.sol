@@ -18,6 +18,13 @@ interface IMorphoGetters {
     function scaledPoolBorrowBalance(address underlying, address user) external view returns (uint256);
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256);
 
+    function supplyBalance(address underlying, address user) external view returns (uint256);
+    function borrowBalance(address underlying, address user) external view returns (uint256);
+    function collateralBalance(address underlying, address user) external view returns (uint256);
+
+    function userCollaterals(address user) external view returns (address[] memory);
+    function userBorrows(address user) external view returns (address[] memory);
+
     function isManaging(address delegator, address manager) external view returns (bool);
     function userNonce(address user) external view returns (uint256);
 
