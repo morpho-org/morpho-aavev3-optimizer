@@ -330,7 +330,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Pool withdraw ///
 
         // Withdraw supply on pool.
-        (vars.toWithdraw, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.supply.poolIndex);
+        (amount, vars.toWithdraw, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.supply.poolIndex);
 
         Types.Market storage market = _market[underlying];
 
@@ -497,7 +497,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     /// @param amount The amount to repay/withdraw.
     /// @param onPool The current user's scaled on pool balance.
     /// @param poolIndex The current pool index.
-    /// @return The amount to repay/withdraw, the amount left to process, and the new on pool amount.
+    /// @return The amount left to process, the amount to repay/withdraw, and the new on pool amount.
     function _subFromPool(uint256 amount, uint256 onPool, uint256 poolIndex)
         internal
         pure
@@ -508,8 +508,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 toProcess = Math.min(onPool.rayMul(poolIndex), amount);
 
         return (
-            toProcess,
             amount - toProcess,
+            toProcess,
             onPool.zeroFloorSub(toProcess.rayDivUp(poolIndex)) // In scaled balance.
         );
     }
