@@ -28,6 +28,8 @@ interface IMorphoGetters {
 
     function isClaimRewardsPaused() external view returns (bool);
 
+    function getStorageAt(bytes32 slot) external view returns (bytes32 data);
+
     function updatedIndexes(address underlying) external view returns (Types.Indexes256 memory);
     function liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
         external
