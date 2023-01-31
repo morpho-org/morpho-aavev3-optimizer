@@ -86,6 +86,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Authorizes a supply collateral action.
+    ///      Note: Requires storage indexes to be up-to-date.
     function _authorizeSupplyCollateral(address underlying, uint256 amount, Types.Indexes256 memory indexes)
         internal
         view
@@ -115,6 +116,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Authorizes a borrow action.
+    ///      Note: Requires storage indexes to be up-to-date.
     function _authorizeBorrow(address underlying, uint256 amount, address borrower, Types.Indexes256 memory indexes)
         internal
         view

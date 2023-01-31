@@ -191,6 +191,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         // The following check requires storage indexes to be up-to-date.
         _authorizeWithdrawCollateral(underlying, amount, supplier);
+
         _executeWithdrawCollateral(underlying, amount, supplier, receiver, poolSupplyIndex);
 
         _POOL.withdrawFromPool(underlying, market.aToken, amount);
