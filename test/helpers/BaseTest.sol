@@ -40,4 +40,9 @@ contract BaseTest is Test {
     function _boundBlocks(uint256 blocks) internal view returns (uint256) {
         return bound(blocks, 1, type(uint32).max / 4);
     }
+
+    /// @dev Bounds the fuzzing input to a non-zero address.
+    function _boundAddressNotZero(address onBehalf) internal view returns (address) {
+        return address(uint160(bound(uint256(uint160(onBehalf)), 1, type(uint160).max)));
+    }
 }
