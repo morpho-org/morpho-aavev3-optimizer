@@ -7,6 +7,7 @@ interface IMorphoGetters {
     function POOL() external view returns (address);
     function ADDRESSES_PROVIDER() external view returns (address);
     function DOMAIN_SEPARATOR() external view returns (bytes32);
+    function E_MODE_CATEGORY_ID() external view returns (uint256);
 
     function market(address underlying) external view returns (Types.Market memory);
     function marketsCreated() external view returns (address[] memory);
@@ -17,10 +18,17 @@ interface IMorphoGetters {
     function scaledPoolBorrowBalance(address underlying, address user) external view returns (uint256);
     function scaledPoolSupplyBalance(address underlying, address user) external view returns (uint256);
 
+    function supplyBalance(address underlying, address user) external view returns (uint256);
+    function borrowBalance(address underlying, address user) external view returns (uint256);
+    function collateralBalance(address underlying, address user) external view returns (uint256);
+
+    function userCollaterals(address user) external view returns (address[] memory);
+    function userBorrows(address user) external view returns (address[] memory);
+
     function isManaging(address delegator, address manager) external view returns (bool);
     function userNonce(address user) external view returns (uint256);
 
-    function defaultMaxLoops() external view returns (Types.MaxLoops memory);
+    function defaultMaxIterations() external view returns (Types.MaxIterations memory);
     function positionsManager() external view returns (address);
     function rewardsManager() external view returns (address);
     function treasuryVault() external view returns (address);
@@ -32,11 +40,11 @@ interface IMorphoGetters {
         external
         view
         returns (Types.LiquidityData memory);
+    function getNext(address underlying, Types.Position position, address user) external view returns (address);
+    function getBucketsMask(address underlying, Types.Position position) external view returns (uint256);
 }
 
 interface IMorphoSetters {
-    function initialize(address newPositionsManager, Types.MaxLoops memory newDefaultMaxLoops) external;
-
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external;
     function increaseP2PDeltas(address underlying, uint256 amount) external;
     function claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) external;
@@ -44,7 +52,7 @@ interface IMorphoSetters {
     function setPositionsManager(address positionsManager) external;
     function setRewardsManager(address rewardsManager) external;
     function setTreasuryVault(address treasuryVault) external;
-    function setDefaultMaxLoops(Types.MaxLoops memory defaultMaxLoops) external;
+    function setDefaultMaxIterations(Types.MaxIterations memory defaultMaxIterations) external;
     function setP2PIndexCursor(address underlying, uint16 p2pIndexCursor) external;
     function setReserveFactor(address underlying, uint16 newReserveFactor) external;
 
@@ -63,14 +71,16 @@ interface IMorphoSetters {
 }
 
 interface IMorpho is IMorphoGetters, IMorphoSetters {
-    function supply(address underlying, uint256 amount, address onBehalf, uint256 maxLoops)
+    function initialize(address newPositionsManager, Types.MaxIterations memory newDefaultMaxIterations) external;
+
+    function supply(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
         external
         returns (uint256 supplied);
     function supplyWithPermit(
         address underlying,
         uint256 amount,
         address onBehalf,
-        uint256 maxLoops,
+        uint256 maxIterations,
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256 supplied);
@@ -85,7 +95,7 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
         Types.Signature calldata signature
     ) external returns (uint256 supplied);
 
-    function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxLoops)
+    function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
         returns (uint256 borrowed);
 

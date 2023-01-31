@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
 import {Errors} from "src/libraries/Errors.sol";
 import {MorphoStorage} from "src/MorphoStorage.sol";
@@ -7,7 +7,7 @@ import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
 
 import "test/helpers/InternalTest.sol";
 
-contract TestPositionsManager is InternalTest, PositionsManagerInternal {
+contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerInternal {
     function testValidatePermission(address owner, address manager) public {
         _validatePermission(owner, owner);
 

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.17;
+pragma solidity ^0.8.0;
 
 import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 
 import {PoolLib} from "src/libraries/PoolLib.sol";
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 
 import "test/helpers/ForkTest.sol";
 
@@ -26,7 +26,7 @@ contract TestPoolLib is ForkTest {
     }
 }
 
-contract TestPoolLibSupply is TestPoolLib {
+contract TestIntegrationPoolLibSupply is TestPoolLib {
     using PoolLib for IPool;
 
     function testSupplyToPool(uint256 amount) public {
@@ -42,7 +42,7 @@ contract TestPoolLibSupply is TestPoolLib {
     }
 }
 
-contract TestPoolLibBorrow is TestPoolLib {
+contract TestIntegrationPoolLibBorrow is TestPoolLib {
     using PoolLib for IPool;
 
     function setUp() public virtual override {
@@ -63,7 +63,7 @@ contract TestPoolLibBorrow is TestPoolLib {
     }
 }
 
-contract TestPoolLibRepay is TestPoolLib {
+contract TestIntegrationPoolLibRepay is TestPoolLib {
     using PoolLib for IPool;
 
     function setUp() public virtual override {
@@ -71,8 +71,7 @@ contract TestPoolLibRepay is TestPoolLib {
         pool.supplyToPool(dai, MAX_AMOUNT);
         pool.borrowFromPool(dai, MAX_AMOUNT / 2);
 
-        vm.roll(block.number + 1);
-        vm.warp(block.timestamp + 1);
+        _forward(1);
     }
 
     function testRepayToPool(uint256 amount) public {
@@ -88,7 +87,7 @@ contract TestPoolLibRepay is TestPoolLib {
     }
 }
 
-contract TestPoolLibWithdraw is TestPoolLib {
+contract TestIntegrationPoolLibWithdraw is TestPoolLib {
     using PoolLib for IPool;
 
     function setUp() public virtual override {
