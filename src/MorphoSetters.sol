@@ -61,18 +61,20 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     /// @notice Sets `_rewardsManager` to `rewardsManager`.
+    /// @dev Note that it is possible to set the address zero. In this case, the pool rewards are not accounted.
     function setRewardsManager(address rewardsManager) external onlyOwner {
         _rewardsManager = IRewardsManager(rewardsManager);
         emit Events.RewardsManagerSet(rewardsManager);
     }
 
     /// @notice Sets `_treasuryVault` to `treasuryVault`.
+    /// @dev Note that it is possible to set the address zero. In this case, it is not possible to claim the fee.
     function setTreasuryVault(address treasuryVault) external onlyOwner {
         _treasuryVault = treasuryVault;
         emit Events.TreasuryVaultSet(treasuryVault);
     }
 
-    /// @notice Sets the `underlying`'s reserve factor to newReserveFactor (in bps).
+    /// @notice Sets the `underlying`'s reserve factor to `newReserveFactor` (in bps).
     function setReserveFactor(address underlying, uint16 newReserveFactor)
         external
         onlyOwner

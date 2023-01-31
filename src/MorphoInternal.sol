@@ -103,6 +103,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Increases the peer-to-peer delta of `amount` on the `underlying` market.
+    /// @dev Note that this can fail if the amount is too big. In this case, consider splitting in multiple calls/txs.
     function _increaseP2PDeltas(address underlying, uint256 amount) internal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
