@@ -85,26 +85,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.isSupplyCollateralPaused()) revert Errors.SupplyCollateralIsPaused();
     }
 
-    /// @dev Authorizes a supply collateral action.
-    ///      Note: Requires indexes to be up-to-date.
-    function _authorizeSupplyCollateral(address underlying, uint256 amount, Types.Indexes256 memory indexes)
-        internal
-        view
-    {
-        Types.Market storage market = _market[underlying];
-        Types.MarketSideDelta memory delta = market.deltas.supply;
-        uint256 totalP2P = delta.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-            delta.scaledDeltaPool.rayMul(indexes.supply.poolIndex)
-        );
-
-        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
-        uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
-        uint256 totalSupply = ERC20(market.aToken).totalSupply();
-
-        // The total P2P amount on Morpho plus the total supply on Aave must not exceed the supply cap.
-        if (amount + totalP2P + totalSupply > supplyCap) revert Errors.ExceedsSupplyCap();
-    }
-
     /// @dev Validates a borrow action.
     function _validateBorrow(address underlying, uint256 amount, address borrower, address receiver)
         internal
@@ -136,7 +116,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
         uint256 totalDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
 
-        // The total P2P amount on Morpho plus the total borrow on Aave must not exceed the borrow cap.
+        // The `amount` plus the total P2P amount on Morpho plus the total borrow on Aave must not exceed the borrow cap.
         if (amount + totalP2P + totalDebt > borrowCap) revert Errors.ExceedsBorrowCap();
 
         Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);

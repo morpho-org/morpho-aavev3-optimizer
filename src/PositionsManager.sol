@@ -62,6 +62,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     }
 
     /// @notice Implements the supply collateral logic.
+    /// @dev Relies on Aave to check the supply cap when supplying collateral.
     /// @param underlying The address of the underlying asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param from The address to transfer the underlying from.
@@ -74,9 +75,6 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         _validateSupplyCollateral(underlying, amount, onBehalf);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-
-        // The following check requires indexes to be up-to-date.
-        _authorizeSupplyCollateral(underlying, amount, indexes);
 
         ERC20(underlying).transferFrom2(from, address(this), amount);
 
