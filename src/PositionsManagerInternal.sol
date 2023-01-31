@@ -96,7 +96,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Authorizes a borrow action.
-    ///      Note: Requires indexes to be up-to-date.
     function _authorizeBorrow(address underlying, uint256 amount, address borrower, Types.Indexes256 memory indexes)
         internal
         view
@@ -116,7 +115,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
         uint256 totalDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
 
-        // The `amount` plus the total P2P amount on Morpho plus the total borrow on Aave must not exceed the borrow cap.
         if (amount + totalP2P + totalDebt > borrowCap) revert Errors.ExceedsBorrowCap();
 
         Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
@@ -425,6 +423,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Executes a supply action.
+
     function _executeSupply(
         address underlying,
         uint256 amount,
