@@ -80,12 +80,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Validates a supply collateral action.
-    function _validateSupplyCollateral(address underlying, uint256 amount, address user)
-        internal
-        view
-        returns (Types.Market storage market)
-    {
-        market = _validateInput(underlying, amount, user);
+    function _validateSupplyCollateral(address underlying, uint256 amount, address user) internal view {
+        Types.Market storage market = _validateInput(underlying, amount, user);
         if (market.isSupplyCollateralPaused()) revert Errors.SupplyCollateralIsPaused();
     }
 
@@ -97,16 +93,30 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     {
         market = _validateManagerInput(underlying, amount, borrower, receiver);
         if (market.isBorrowPaused()) revert Errors.BorrowIsPaused();
+    }
 
+    /// @dev Authorizes a borrow action.
+    function _authorizeBorrow(address underlying, uint256 amount, address borrower, Types.Indexes256 memory indexes)
+        internal
+        view
+    {
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
             revert Errors.InconsistentEMode();
         }
-    }
 
-    /// @dev Authorizes a borrow action.
-    function _authorizeBorrow(address underlying, uint256 amount, address borrower) internal view {
+        Types.Market storage market = _market[underlying];
+        Types.MarketSideDelta memory delta = market.deltas.borrow;
+        uint256 totalP2P = delta.scaledTotalP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+            delta.scaledDeltaPool.rayMul(indexes.borrow.poolIndex)
+        );
+
+        uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
+        uint256 totalDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
+
+        if (amount + totalP2P + totalDebt > borrowCap) revert Errors.ExceedsBorrowCap();
+
         Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
         if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
     }
@@ -413,6 +423,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Executes a supply action.
+
     function _executeSupply(
         address underlying,
         uint256 amount,

@@ -62,6 +62,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     }
 
     /// @notice Implements the supply collateral logic.
+    /// @dev Relies on Aave to check the supply cap when supplying collateral.
     /// @param underlying The address of the underlying asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param from The address to transfer the underlying from.
@@ -99,8 +100,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        // The following check requires storage indexes to be up-to-date.
-        _authorizeBorrow(underlying, amount, borrower);
+        // The following check requires indexes to be up-to-date.
+        _authorizeBorrow(underlying, amount, borrower, indexes);
 
         Types.BorrowWithdrawVars memory vars =
             _executeBorrow(underlying, amount, borrower, receiver, maxIterations, indexes);
@@ -188,6 +189,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         // The following check requires storage indexes to be up-to-date.
         _authorizeWithdrawCollateral(underlying, amount, supplier);
+
         _executeWithdrawCollateral(underlying, amount, supplier, receiver, poolSupplyIndex);
 
         _POOL.withdrawFromPool(underlying, market.aToken, amount);

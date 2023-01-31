@@ -75,6 +75,8 @@ library Types {
         // SLOT 8
         address aToken; // 160 bits
         // SLOT 9
+        address stableDebtToken; // 160 bits
+        // SLOT 10
         uint256 idleSupply; // 256 bits
     }
 
