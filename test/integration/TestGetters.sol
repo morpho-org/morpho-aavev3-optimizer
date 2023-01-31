@@ -14,7 +14,7 @@ contract TestIntegrationGetters is IntegrationTest {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
-            TestMarket memory market = markets[marketIndex];
+            TestMarket storage market = testMarkets[markets[marketIndex]];
             Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
 
             assertEq(
@@ -37,7 +37,7 @@ contract TestIntegrationGetters is IntegrationTest {
     //     for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
     //         _revert();
 
-    //         TestMarket memory market = markets[marketIndex];
+    //         TestMarket storage market = testMarkets[markets[marketIndex]];
 
     //         (, amount) = _borrowUpTo(market, market, amount, 100_00);
     //         amount /= 2; // 50% peer-to-peer.

@@ -15,7 +15,6 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         uint256 scaledP2PSupply;
         uint256 scaledPoolSupply;
         uint256 scaledCollateral;
-        TestMarket market;
         Types.Indexes256 indexes;
         Types.Market morphoMarket;
     }
@@ -26,23 +25,23 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
-            test.market = markets[marketIndex];
+            TestMarket storage market = testMarkets[markets[marketIndex]];
 
-            amount = _boundSupply(test.market, amount);
+            amount = _boundSupply(market, amount);
 
-            uint256 balanceBefore = user1.balanceOf(test.market.underlying);
+            uint256 balanceBefore = user1.balanceOf(market.underlying);
 
-            user1.approve(test.market.underlying, amount);
+            user1.approve(market.underlying, amount);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.CollateralSupplied(address(user1), onBehalf, test.market.underlying, 0, 0);
+            emit Events.CollateralSupplied(address(user1), onBehalf, market.underlying, 0, 0);
 
-            test.supplied = user1.supplyCollateral(test.market.underlying, amount, onBehalf);
+            test.supplied = user1.supplyCollateral(market.underlying, amount, onBehalf);
 
-            test.indexes = morpho.updatedIndexes(test.market.underlying);
-            test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(test.market.underlying, onBehalf);
-            test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(test.market.underlying, onBehalf);
-            test.scaledCollateral = morpho.scaledCollateralBalance(test.market.underlying, onBehalf);
+            test.indexes = morpho.updatedIndexes(market.underlying);
+            test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
+            test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
+            test.scaledCollateral = morpho.scaledCollateralBalance(market.underlying, onBehalf);
             uint256 collateral = test.scaledCollateral.rayMul(test.indexes.supply.poolIndex);
 
             // Assert balances on Morpho.
@@ -52,28 +51,24 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
             assertApproxLeAbs(collateral, amount, 1, "collateral != amount");
 
             // Assert Morpho getters.
-            assertEq(morpho.supplyBalance(test.market.underlying, onBehalf), 0, "supplyBalance != 0");
+            assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supplyBalance != 0");
             assertEq(
-                morpho.collateralBalance(test.market.underlying, onBehalf),
-                test.supplied,
-                "collateralBalance != supplied"
+                morpho.collateralBalance(market.underlying, onBehalf), test.supplied, "collateralBalance != supplied"
             );
 
             // Assert Morpho's position on pool.
             assertApproxEqAbs(
-                ERC20(test.market.aToken).balanceOf(address(morpho)), test.supplied, 1, "morphoSupply != supplied"
+                ERC20(market.aToken).balanceOf(address(morpho)), test.supplied, 1, "morphoSupply != supplied"
             );
-            assertEq(ERC20(test.market.debtToken).balanceOf(address(morpho)), 0, "morphoBorrow != 0");
+            assertEq(ERC20(market.debtToken).balanceOf(address(morpho)), 0, "morphoBorrow != 0");
 
             // Assert user's underlying balance.
             assertEq(
-                balanceBefore - user1.balanceOf(test.market.underlying),
-                amount,
-                "balanceBefore - balanceAfter != amount"
+                balanceBefore - user1.balanceOf(market.underlying), amount, "balanceBefore - balanceAfter != amount"
             );
 
             // Assert Morpho's market state.
-            test.morphoMarket = morpho.market(test.market.underlying);
+            test.morphoMarket = morpho.market(market.underlying);
             assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
             assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
             assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
@@ -82,13 +77,15 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         }
     }
 
+    // TODO: should not supply collateral when supply cap reached
+
     function testShouldUpdateIndexesAfterSupplyCollateral(uint256 amount, address onBehalf) public {
         onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
-            TestMarket memory market = markets[marketIndex];
+            TestMarket storage market = testMarkets[markets[marketIndex]];
 
             amount = _boundSupply(market, amount);
 
@@ -131,7 +128,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user1.supplyCollateral(markets[marketIndex].underlying, 0, onBehalf);
+            user1.supplyCollateral(testMarkets[markets[marketIndex]].underlying, 0, onBehalf);
         }
     }
 
@@ -140,7 +137,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.supplyCollateral(markets[marketIndex].underlying, amount, address(0));
+            user1.supplyCollateral(testMarkets[markets[marketIndex]].underlying, amount, address(0));
         }
     }
 
@@ -159,7 +156,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
-            TestMarket memory market = markets[marketIndex];
+            TestMarket storage market = testMarkets[markets[marketIndex]];
 
             morpho.setIsSupplyCollateralPaused(market.underlying, true);
 
@@ -177,7 +174,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
-            TestMarket memory market = markets[marketIndex];
+            TestMarket storage market = testMarkets[markets[marketIndex]];
 
             amount = _boundSupply(market, amount);
 

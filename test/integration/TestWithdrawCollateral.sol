@@ -33,7 +33,6 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         uint256 scaledP2PSupply;
         uint256 scaledPoolSupply;
         uint256 scaledCollateral;
-        TestMarket market;
         Types.Indexes256 indexes;
         Types.Market morphoMarket;
     }
@@ -50,26 +49,24 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
-            test.market = markets[marketIndex];
+            TestMarket storage market = testMarkets[markets[marketIndex]];
 
-            test.supplied = _boundSupply(test.market, amount);
+            test.supplied = _boundSupply(market, amount);
             amount = bound(amount, test.supplied + 1, type(uint256).max);
 
-            user1.approve(test.market.underlying, test.supplied);
-            user1.supplyCollateral(test.market.underlying, test.supplied, onBehalf);
+            user1.approve(market.underlying, test.supplied);
+            user1.supplyCollateral(market.underlying, test.supplied, onBehalf);
 
-            uint256 balanceBefore = ERC20(test.market.underlying).balanceOf(receiver);
+            uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.CollateralWithdrawn(
-                address(user1), onBehalf, receiver, test.market.underlying, test.supplied, 0
-                );
+            emit Events.CollateralWithdrawn(address(user1), onBehalf, receiver, market.underlying, test.supplied, 0);
 
-            test.withdrawn = user1.withdrawCollateral(test.market.underlying, amount, onBehalf, receiver);
+            test.withdrawn = user1.withdrawCollateral(market.underlying, amount, onBehalf, receiver);
 
-            test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(test.market.underlying, onBehalf);
-            test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(test.market.underlying, onBehalf);
-            test.scaledCollateral = morpho.scaledCollateralBalance(test.market.underlying, onBehalf);
+            test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
+            test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
+            test.scaledCollateral = morpho.scaledCollateralBalance(market.underlying, onBehalf);
 
             // Assert balances on Morpho.
             assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
@@ -78,23 +75,23 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             assertApproxLeAbs(test.withdrawn, test.supplied, 2, "withdrawn != supplied");
 
             // Assert Morpho getters.
-            assertEq(morpho.supplyBalance(test.market.underlying, onBehalf), 0, "supply != 0");
-            assertEq(morpho.collateralBalance(test.market.underlying, onBehalf), 0, "collateral != 0");
+            assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supply != 0");
+            assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
 
             // Assert Morpho's position on pool.
-            assertApproxGeAbs(ERC20(test.market.aToken).balanceOf(address(morpho)), 0, 1, "morphoSupply != 0");
-            assertEq(ERC20(test.market.debtToken).balanceOf(address(morpho)), 0, "morphoBorrow != 0");
+            assertApproxGeAbs(ERC20(market.aToken).balanceOf(address(morpho)), 0, 1, "morphoSupply != 0");
+            assertEq(ERC20(market.debtToken).balanceOf(address(morpho)), 0, "morphoBorrow != 0");
 
             // Assert receiver's underlying balance.
             assertApproxLeAbs(
-                ERC20(test.market.underlying).balanceOf(receiver),
+                ERC20(market.underlying).balanceOf(receiver),
                 balanceBefore + test.withdrawn,
                 2,
                 "balanceAfter != expectedBalance"
             );
 
             // Assert Morpho's market state.
-            test.morphoMarket = morpho.market(test.market.underlying);
+            test.morphoMarket = morpho.market(market.underlying);
             assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
             assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
             assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
@@ -102,6 +99,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
         }
     }
+
+    // TODO: should not withdraw collateral when low health factor
 
     function testShouldNotWithdrawWhenNoCollateral(uint256 amount, address onBehalf, address receiver) public {
         amount = _boundAmount(amount);
@@ -113,7 +112,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
-            TestMarket memory market = markets[marketIndex];
+            TestMarket storage market = testMarkets[markets[marketIndex]];
 
             uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
@@ -132,7 +131,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user1.withdrawCollateral(markets[marketIndex].underlying, 0, onBehalf, receiver);
+            user1.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, 0, onBehalf, receiver);
         }
     }
 
@@ -142,7 +141,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.withdrawCollateral(markets[marketIndex].underlying, amount, address(0), receiver);
+            user1.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, amount, address(0), receiver);
         }
     }
 
@@ -154,7 +153,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.withdrawCollateral(markets[marketIndex].underlying, amount, onBehalf, address(0));
+            user1.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, amount, onBehalf, address(0));
         }
     }
 
@@ -185,7 +184,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
-            TestMarket memory market = markets[marketIndex];
+            TestMarket storage market = testMarkets[markets[marketIndex]];
 
             morpho.setIsWithdrawCollateralPaused(market.underlying, true);
 
@@ -204,7 +203,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);
-            user1.withdrawCollateral(markets[marketIndex].underlying, amount, onBehalf);
+            user1.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, amount, onBehalf);
         }
     }
 
@@ -220,7 +219,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             _revert();
 
-            TestMarket memory market = markets[marketIndex];
+            TestMarket storage market = testMarkets[markets[marketIndex]];
 
             amount = _boundSupply(market, amount);
 

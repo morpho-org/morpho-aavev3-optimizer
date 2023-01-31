@@ -165,8 +165,10 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.MarketSideIndexes256 memory indexes
     ) internal view returns (uint256) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return marketBalances.scaledPoolSupplyBalance(user).rayMulDown(indexes.poolIndex)
-            + marketBalances.scaledP2PSupplyBalance(user).rayMulDown(indexes.p2pIndex);
+
+        // Rounding methods used here should be identical to those used in `_promote` & `_demote`.
+        return marketBalances.scaledPoolSupplyBalance(user).rayMul(indexes.poolIndex)
+            + marketBalances.scaledP2PSupplyBalance(user).rayMul(indexes.p2pIndex);
     }
 
     /// @dev Returns the total borrow balance of `user` on the `underlying` market given `indexes`.
@@ -180,8 +182,10 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.MarketSideIndexes256 memory indexes
     ) internal view returns (uint256) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.poolIndex)
-            + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.p2pIndex);
+
+        // Rounding methods used here should be identical to those used in `_promote` & `_demote`.
+        return marketBalances.scaledPoolBorrowBalance(user).rayMul(indexes.poolIndex)
+            + marketBalances.scaledP2PBorrowBalance(user).rayMul(indexes.p2pIndex);
     }
 
     /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
