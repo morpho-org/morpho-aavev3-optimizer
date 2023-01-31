@@ -9,8 +9,6 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 
-import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
-
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 /// @title MorphoSetters
@@ -80,11 +78,8 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         onlyOwner
         isMarketCreated(underlying)
     {
-        if (newReserveFactor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
         _updateIndexes(underlying);
-
-        _market[underlying].reserveFactor = newReserveFactor;
-        emit Events.ReserveFactorSet(underlying, newReserveFactor);
+        _market[underlying].setReserveFactor(newReserveFactor);
     }
 
     /// @notice Sets the `underlying`'s peer-to-peer index cursor to `p2pIndexCursor` (in bps).
@@ -93,11 +88,8 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         onlyOwner
         isMarketCreated(underlying)
     {
-        if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
         _updateIndexes(underlying);
-
-        _market[underlying].p2pIndexCursor = p2pIndexCursor;
-        emit Events.P2PIndexCursorSet(underlying, p2pIndexCursor);
+        _market[underlying].setP2PIndexCursor(p2pIndexCursor);
     }
 
     /// @notice Sets the supply pause status to `isPaused` on the `underlying` market.

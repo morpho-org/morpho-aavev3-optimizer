@@ -6,6 +6,8 @@ import {IMorphoGetters} from "./interfaces/IMorpho.sol";
 import {Types} from "./libraries/Types.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
+import {BucketDLL} from "@morpho-data-structures/BucketDLL.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -18,6 +20,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
+    using BucketDLL for BucketDLL.List;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     /// STORAGE ///
@@ -158,5 +161,23 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         returns (Types.LiquidityData memory)
     {
         return _liquidityData(underlying, user, amountWithdrawn, amountBorrowed);
+    }
+
+    /// @notice Returns the account after `user` in the same bucket of the corresponding market side.
+    /// @param underlying The address of the underlying asset.
+    /// @param position The position type, either pool or peer-to-peer and either supply or borrow.
+    function getNext(address underlying, Types.Position position, address user) external view returns (address) {
+        LogarithmicBuckets.Buckets storage buckets = _getBuckets(underlying, position);
+        uint256 userBalance = buckets.valueOf[user];
+        uint256 userBucket = LogarithmicBuckets.computeBucket(userBalance);
+
+        return buckets.buckets[userBucket].getNext(user);
+    }
+
+    /// @notice Returns the buckets mask of the corresponding market side.
+    /// @param underlying The address of the underlying asset.
+    /// @param position The position type, either pool or peer-to-peer and either supply or borrow.
+    function getBucketsMask(address underlying, Types.Position position) external view returns (uint256) {
+        return _getBuckets(underlying, position).bucketsMask;
     }
 }

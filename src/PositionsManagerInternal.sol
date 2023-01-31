@@ -193,23 +193,26 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 maxIterations,
         Types.Indexes256 memory indexes
     ) internal returns (Types.SupplyRepayVars memory vars) {
-        Types.Deltas storage deltas = _market[underlying].deltas;
+        Types.Market storage market = _market[underlying];
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         vars.onPool = marketBalances.scaledPoolSupplyBalance(onBehalf);
         vars.inP2P = marketBalances.scaledP2PSupplyBalance(onBehalf);
 
         /// Peer-to-peer supply ///
 
-        // Decrease the peer-to-peer borrow delta.
-        (amount, vars.toRepay) = deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
+        if (!market.isP2PDisabled()) {
+            // Decrease the peer-to-peer borrow delta.
+            (amount, vars.toRepay) =
+                market.deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
 
-        // Promote pool borrowers.
-        uint256 promoted;
-        (promoted, amount,) = _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
-        vars.toRepay += promoted;
+            // Promote pool borrowers.
+            uint256 promoted;
+            (amount, promoted,) = _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
+            vars.toRepay += promoted;
 
-        // Update the peer-to-peer totals.
-        vars.inP2P += deltas.increaseP2P(underlying, promoted, vars.toRepay, indexes, true);
+            // Update the peer-to-peer totals.
+            vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toRepay, indexes, true);
+        }
 
         /// Pool supply ///
 
@@ -235,21 +238,23 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Peer-to-peer borrow ///
 
-        // Decrease the peer-to-peer idle supply.
-        uint256 matchedIdle;
-        (amount, matchedIdle) = market.decreaseIdle(underlying, amount);
+        if (!market.isP2PDisabled()) {
+            // Decrease the peer-to-peer idle supply.
+            uint256 matchedIdle;
+            (amount, matchedIdle) = market.decreaseIdle(underlying, amount);
 
-        // Decrease the peer-to-peer supply delta.
-        (amount, vars.toWithdraw) =
-            market.deltas.supply.decreaseDelta(underlying, amount, indexes.supply.poolIndex, false);
+            // Decrease the peer-to-peer supply delta.
+            (amount, vars.toWithdraw) =
+                market.deltas.supply.decreaseDelta(underlying, amount, indexes.supply.poolIndex, false);
 
-        // Promote pool suppliers.
-        uint256 promoted;
-        (promoted, amount,) = _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
-        vars.toWithdraw += promoted;
+            // Promote pool suppliers.
+            uint256 promoted;
+            (amount, promoted,) = _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
+            vars.toWithdraw += promoted;
 
-        // Update the peer-to-peer totals.
-        vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toWithdraw + matchedIdle, indexes, false);
+            // Update the peer-to-peer totals.
+            vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toWithdraw + matchedIdle, indexes, false);
+        }
 
         /// Pool borrow ///
 
@@ -297,10 +302,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Transfer repay ///
 
-        // Promote pool borrowers.
-        (toRepayStep, vars.toSupply, maxIterations) =
-            _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
-        vars.toRepay += toRepayStep;
+        if (!market.isP2PDisabled()) {
+            // Promote pool borrowers.
+            (vars.toSupply, toRepayStep, maxIterations) =
+                _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
+            vars.toRepay += toRepayStep;
+        } else {
+            vars.toSupply = amount;
+        }
 
         /// Breaking repay ///
 
@@ -356,10 +365,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Transfer withdraw ///
 
-        // Promote pool suppliers.
-        (toWithdrawStep, vars.toBorrow, maxIterations) =
-            _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
-        vars.toWithdraw += toWithdrawStep;
+        if (!market.isP2PDisabled()) {
+            // Promote pool suppliers.
+            (vars.toBorrow, toWithdrawStep, maxIterations) =
+                _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
+            vars.toWithdraw += toWithdrawStep;
+        } else {
+            vars.toBorrow = amount;
+        }
 
         /// Breaking withdraw ///
 
@@ -499,7 +512,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     /// @param amount The amount to repay/withdraw.
     /// @param onPool The current user's scaled on pool balance.
     /// @param poolIndex The current pool index.
-    /// @return The amount to repay/withdraw, the amount left to process, and the new on pool amount.
+    /// @return The amount left to process, the amount to repay/withdraw, and the new on pool amount.
     function _subFromPool(uint256 amount, uint256 onPool, uint256 poolIndex)
         internal
         pure
@@ -510,8 +523,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 toProcess = Math.min(onPool.rayMul(poolIndex), amount);
 
         return (
-            toProcess,
             amount - toProcess,
+            toProcess,
             onPool.zeroFloorSub(toProcess.rayDivUp(poolIndex)) // In scaled balance.
         );
     }
@@ -522,19 +535,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     /// @param amount The amount to supply/borrow.
     /// @param maxIterations The maximum number of iterations to run.
     /// @param promote The promote function.
-    /// @return The amount to repay/withdraw from promote, the amount left to process, and the number of iterations left.
+    /// @return The amount left to process, the amount to repay/withdraw from promote, and the number of iterations left.
     function _promoteRoutine(
         address underlying,
         uint256 amount,
         uint256 maxIterations,
         function(address, uint256, uint256) returns (uint256, uint256) promote
     ) internal returns (uint256, uint256, uint256) {
-        if (amount == 0 || _market[underlying].isP2PDisabled()) {
-            return (0, amount, maxIterations);
-        }
+        if (amount == 0) return (amount, 0, maxIterations);
 
         (uint256 promoted, uint256 iterationsDone) = promote(underlying, amount, maxIterations); // In underlying.
 
-        return (promoted, amount - promoted, maxIterations - iterationsDone);
+        return (amount - promoted, promoted, maxIterations - iterationsDone);
     }
 }

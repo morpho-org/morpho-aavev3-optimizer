@@ -52,9 +52,6 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @dev Creates a new market for the `underlying` token with a given `reserveFactor` (in bps) and a given `p2pIndexCursor` (in bps).
     function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         if (underlying == address(0)) revert Errors.AddressIsZero();
-        if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR || reserveFactor > PercentageMath.PERCENTAGE_FACTOR) {
-            revert Errors.ExceedsMaxBasisPoints();
-        }
 
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
         if (!reserveData.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
@@ -63,24 +60,24 @@ abstract contract MorphoInternal is MorphoStorage {
 
         if (market.isCreated()) revert Errors.MarketAlreadyCreated();
 
+        market.underlying = underlying;
+        market.aToken = reserveData.aTokenAddress;
+        market.variableDebtToken = reserveData.variableDebtTokenAddress;
+
+        _marketsCreated.push(underlying);
+
+        emit Events.MarketCreated(underlying);
+
         Types.Indexes256 memory indexes;
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
         indexes.supply.p2pIndex = WadRayMath.RAY;
         indexes.borrow.p2pIndex = WadRayMath.RAY;
 
         market.setIndexes(indexes);
-
-        market.underlying = underlying;
-        market.aToken = reserveData.aTokenAddress;
-        market.variableDebtToken = reserveData.variableDebtTokenAddress;
-        market.reserveFactor = reserveFactor;
-        market.p2pIndexCursor = p2pIndexCursor;
-
-        _marketsCreated.push(underlying);
+        market.setReserveFactor(reserveFactor);
+        market.setP2PIndexCursor(p2pIndexCursor);
 
         ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
-
-        emit Events.MarketCreated(underlying, reserveFactor, p2pIndexCursor);
     }
 
     /// @dev Claims the fee for the `underlyings` and send it to the `_treasuryVault`.
@@ -182,6 +179,25 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
         return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.poolIndex)
             + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.p2pIndex);
+    }
+
+    /// @dev Returns the buckets of a particular side of a market.
+    /// @param underlying The address of the underlying asset.
+    /// @param position The side of the market.
+    function _getBuckets(address underlying, Types.Position position)
+        internal
+        view
+        returns (LogarithmicBuckets.Buckets storage)
+    {
+        if (position == Types.Position.POOL_SUPPLIER) {
+            return _marketBalances[underlying].poolSuppliers;
+        } else if (position == Types.Position.P2P_SUPPLIER) {
+            return _marketBalances[underlying].p2pSuppliers;
+        } else if (position == Types.Position.POOL_BORROWER) {
+            return _marketBalances[underlying].poolBorrowers;
+        } else {
+            return _marketBalances[underlying].p2pBorrowers;
+        }
     }
 
     /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
