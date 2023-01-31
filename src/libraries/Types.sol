@@ -12,6 +12,15 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 /// @custom:contact security@morpho.xyz
 /// @notice Library exposing all Types used in Morpho.
 library Types {
+    /// ENUMS ///
+
+    enum Position {
+        POOL_SUPPLIER,
+        P2P_SUPPLIER,
+        POOL_BORROWER,
+        P2P_BORROWER
+    }
+
     /// NESTED STRUCTS ///
 
     struct MarketSideDelta {
@@ -73,10 +82,10 @@ library Types {
 
     // Contains storage-only dynamic arrays and mappings.
     struct MarketBalances {
-        LogarithmicBuckets.BucketList poolSuppliers; // In pool unit.
-        LogarithmicBuckets.BucketList p2pSuppliers; // In peer-to-peer unit.
-        LogarithmicBuckets.BucketList poolBorrowers; // In pool unit.
-        LogarithmicBuckets.BucketList p2pBorrowers; // In peer-to-peer unit.
+        LogarithmicBuckets.Buckets poolSuppliers; // In pool unit.
+        LogarithmicBuckets.Buckets p2pSuppliers; // In peer-to-peer unit.
+        LogarithmicBuckets.Buckets poolBorrowers; // In pool unit.
+        LogarithmicBuckets.Buckets p2pBorrowers; // In peer-to-peer unit.
         mapping(address => uint256) collateral; // In pool unit.
     }
 
@@ -88,7 +97,6 @@ library Types {
     /// STACK AND RETURN STRUCTS ///
 
     struct LiquidityData {
-        uint256 collateral; // The collateral value (in base currency).
         uint256 borrowable; // The maximum debt value allowed to borrow (in base currency).
         uint256 maxDebt; // The maximum debt value allowed before being liquidatable (in base currency).
         uint256 debt; // The debt value (in base currency).

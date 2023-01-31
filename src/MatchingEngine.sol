@@ -18,7 +18,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 /// @notice Abstract contract with functions to promote or demote users to/from peer-to-peer.
 abstract contract MatchingEngine is MorphoInternal {
     using MarketLib for Types.Market;
-    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
+    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
 
     using Math for uint256;
     using WadRayMath for uint256;
@@ -31,13 +31,12 @@ abstract contract MatchingEngine is MorphoInternal {
         internal
         returns (uint256 promoted, uint256 iterationsDone)
     {
-        Types.Market storage market = _market[underlying];
         return _promoteOrDemote(
             _marketBalances[underlying].poolSuppliers,
             _marketBalances[underlying].p2pSuppliers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                indexes: market.getSupplyIndexes(),
+                indexes: _market[underlying].getSupplyIndexes(),
                 amount: amount,
                 maxIterations: maxIterations,
                 borrow: false,
@@ -56,13 +55,12 @@ abstract contract MatchingEngine is MorphoInternal {
         internal
         returns (uint256 promoted, uint256 iterationsDone)
     {
-        Types.Market storage market = _market[underlying];
         return _promoteOrDemote(
             _marketBalances[underlying].poolBorrowers,
             _marketBalances[underlying].p2pBorrowers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                indexes: market.getBorrowIndexes(),
+                indexes: _market[underlying].getBorrowIndexes(),
                 amount: amount,
                 maxIterations: maxIterations,
                 borrow: true,
@@ -81,13 +79,12 @@ abstract contract MatchingEngine is MorphoInternal {
         internal
         returns (uint256 demoted)
     {
-        Types.Market storage market = _market[underlying];
         (demoted,) = _promoteOrDemote(
             _marketBalances[underlying].poolSuppliers,
             _marketBalances[underlying].p2pSuppliers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                indexes: market.getSupplyIndexes(),
+                indexes: _market[underlying].getSupplyIndexes(),
                 amount: amount,
                 maxIterations: maxIterations,
                 borrow: false,
@@ -106,13 +103,12 @@ abstract contract MatchingEngine is MorphoInternal {
         internal
         returns (uint256 demoted)
     {
-        Types.Market storage market = _market[underlying];
         (demoted,) = _promoteOrDemote(
             _marketBalances[underlying].poolBorrowers,
             _marketBalances[underlying].p2pBorrowers,
             Types.MatchingEngineVars({
                 underlying: underlying,
-                indexes: market.getBorrowIndexes(),
+                indexes: _market[underlying].getBorrowIndexes(),
                 amount: amount,
                 maxIterations: maxIterations,
                 borrow: true,
@@ -128,14 +124,14 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @param poolBuckets The peer-to-peer buckets.
     /// @param vars The required matching engine variables to perform the matching process.
     function _promoteOrDemote(
-        LogarithmicBuckets.BucketList storage poolBuckets,
-        LogarithmicBuckets.BucketList storage p2pBuckets,
+        LogarithmicBuckets.Buckets storage poolBuckets,
+        LogarithmicBuckets.Buckets storage p2pBuckets,
         Types.MatchingEngineVars memory vars
     ) internal returns (uint256 processed, uint256 iterationsDone) {
         if (vars.maxIterations == 0) return (0, 0);
 
         uint256 remaining = vars.amount;
-        LogarithmicBuckets.BucketList storage workingBuckets = vars.demoting ? p2pBuckets : poolBuckets;
+        LogarithmicBuckets.Buckets storage workingBuckets = vars.demoting ? p2pBuckets : poolBuckets;
 
         for (; iterationsDone < vars.maxIterations && remaining != 0; ++iterationsDone) {
             address firstUser = workingBuckets.getMatch(remaining);
@@ -145,7 +141,7 @@ abstract contract MatchingEngine is MorphoInternal {
             uint256 inP2P;
 
             (onPool, inP2P, remaining) =
-                vars.step(poolBuckets.getValueOf(firstUser), p2pBuckets.getValueOf(firstUser), vars.indexes, remaining);
+                vars.step(poolBuckets.valueOf[firstUser], p2pBuckets.valueOf[firstUser], vars.indexes, remaining);
 
             vars.updateDS(vars.underlying, firstUser, onPool, inP2P, vars.demoting);
 

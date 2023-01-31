@@ -7,6 +7,7 @@ interface IMorphoGetters {
     function POOL() external view returns (address);
     function ADDRESSES_PROVIDER() external view returns (address);
     function DOMAIN_SEPARATOR() external view returns (bytes32);
+    function E_MODE_CATEGORY_ID() external view returns (uint256);
 
     function market(address underlying) external view returns (Types.Market memory);
     function marketsCreated() external view returns (address[] memory);
@@ -32,6 +33,8 @@ interface IMorphoGetters {
         external
         view
         returns (Types.LiquidityData memory);
+    function getNext(address underlying, Types.Position position, address user) external view returns (address);
+    function getBucketsMask(address underlying, Types.Position position) external view returns (uint256);
 }
 
 interface IMorphoSetters {
