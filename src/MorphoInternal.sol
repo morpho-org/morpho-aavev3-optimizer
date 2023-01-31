@@ -188,6 +188,15 @@ abstract contract MorphoInternal is MorphoStorage {
             + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.borrow.p2pIndex);
     }
 
+    /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
+    function _getUserCollateralBalanceFromIndex(address underlying, address user, uint256 poolSupplyIndex)
+        internal
+        view
+        returns (uint256)
+    {
+        return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
+    }
+
     /// @dev Returns the buckets of a particular side of a market.
     /// @param underlying The address of the underlying asset.
     /// @param position The side of the market.
@@ -205,15 +214,6 @@ abstract contract MorphoInternal is MorphoStorage {
         } else {
             return _marketBalances[underlying].p2pBorrowers;
         }
-    }
-
-    /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
-    function _getUserCollateralBalanceFromIndex(address underlying, address user, uint256 poolSupplyIndex)
-        internal
-        view
-        returns (uint256)
-    {
-        return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
     }
 
     /// @notice Returns the liquidity data about the position of `user`.
