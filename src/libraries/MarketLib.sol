@@ -5,9 +5,11 @@ import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {Types} from "./Types.sol";
 import {Events} from "./Events.sol";
+import {Errors} from "./Errors.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
+import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
@@ -129,6 +131,35 @@ library MarketLib {
         emit Events.IsP2PDisabledSet(market.underlying, p2pDisabled);
     }
 
+    function setReserveFactor(Types.Market storage market, uint16 reserveFactor) internal {
+        if (reserveFactor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
+        market.reserveFactor = reserveFactor;
+
+        emit Events.ReserveFactorSet(market.underlying, reserveFactor);
+    }
+
+    function setP2PIndexCursor(Types.Market storage market, uint16 p2pIndexCursor) internal {
+        if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
+        market.p2pIndexCursor = p2pIndexCursor;
+
+        emit Events.P2PIndexCursorSet(market.underlying, p2pIndexCursor);
+    }
+
+    function setIndexes(Types.Market storage market, Types.Indexes256 memory indexes) internal {
+        market.indexes.supply.poolIndex = indexes.supply.poolIndex.toUint128();
+        market.indexes.supply.p2pIndex = indexes.supply.p2pIndex.toUint128();
+        market.indexes.borrow.poolIndex = indexes.borrow.poolIndex.toUint128();
+        market.indexes.borrow.p2pIndex = indexes.borrow.p2pIndex.toUint128();
+        market.lastUpdateTimestamp = uint32(block.timestamp);
+        emit Events.IndexesUpdated(
+            market.underlying,
+            indexes.supply.poolIndex,
+            indexes.supply.p2pIndex,
+            indexes.borrow.poolIndex,
+            indexes.borrow.p2pIndex
+            );
+    }
+
     function getSupplyIndexes(Types.Market storage market)
         internal
         view
@@ -158,21 +189,6 @@ library MarketLib {
 
         uint256 totalP2PSupplied = market.deltas.supply.scaledTotalP2P.rayMul(market.indexes.supply.p2pIndex);
         return idleSupply.rayDivUp(totalP2PSupplied);
-    }
-
-    function setIndexes(Types.Market storage market, Types.Indexes256 memory indexes) internal {
-        market.indexes.supply.poolIndex = indexes.supply.poolIndex.toUint128();
-        market.indexes.supply.p2pIndex = indexes.supply.p2pIndex.toUint128();
-        market.indexes.borrow.poolIndex = indexes.borrow.poolIndex.toUint128();
-        market.indexes.borrow.p2pIndex = indexes.borrow.p2pIndex.toUint128();
-        market.lastUpdateTimestamp = uint32(block.timestamp);
-        emit Events.IndexesUpdated(
-            market.underlying,
-            indexes.supply.p2pIndex,
-            indexes.borrow.p2pIndex,
-            indexes.supply.poolIndex,
-            indexes.borrow.poolIndex
-            );
     }
 
     /// @dev Increases the idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
