@@ -12,6 +12,15 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 /// @custom:contact security@morpho.xyz
 /// @notice Library exposing all Types used in Morpho.
 library Types {
+    /// ENUMS ///
+
+    enum Position {
+        POOL_SUPPLIER,
+        P2P_SUPPLIER,
+        POOL_BORROWER,
+        P2P_BORROWER
+    }
+
     /// NESTED STRUCTS ///
 
     struct MarketSideDelta {
@@ -66,19 +75,21 @@ library Types {
         // SLOT 8
         address aToken; // 160 bits
         // SLOT 9
+        address stableDebtToken; // 160 bits
+        // SLOT 10
         uint256 idleSupply; // 256 bits
     }
 
     // Contains storage-only dynamic arrays and mappings.
     struct MarketBalances {
-        LogarithmicBuckets.BucketList p2pSuppliers; // In peer-to-peer unit.
-        LogarithmicBuckets.BucketList poolSuppliers; // In pool unit.
-        LogarithmicBuckets.BucketList p2pBorrowers; // In peer-to-peer unit.
-        LogarithmicBuckets.BucketList poolBorrowers; // In pool unit.
+        LogarithmicBuckets.Buckets poolSuppliers; // In pool unit.
+        LogarithmicBuckets.Buckets p2pSuppliers; // In peer-to-peer unit.
+        LogarithmicBuckets.Buckets poolBorrowers; // In pool unit.
+        LogarithmicBuckets.Buckets p2pBorrowers; // In peer-to-peer unit.
         mapping(address => uint256) collateral; // In pool unit.
     }
 
-    struct MaxLoops {
+    struct MaxIterations {
         uint64 repay;
         uint64 withdraw;
     }
@@ -86,10 +97,9 @@ library Types {
     /// STACK AND RETURN STRUCTS ///
 
     struct LiquidityData {
-        uint256 collateral; // The collateral value (in base currency, 8 decimals).
-        uint256 borrowable; // The maximum debt value allowed to borrow (in base currency, 8 decimals).
-        uint256 maxDebt; // The maximum debt value allowed before being liquidatable (in base currency, 8 decimals).
-        uint256 debt; // The debt value (in base currency, 8 decimals).
+        uint256 borrowable; // The maximum debt value allowed to borrow (in base currency).
+        uint256 maxDebt; // The maximum debt value allowed before being liquidatable (in base currency).
+        uint256 debt; // The debt value (in base currency).
     }
 
     struct IndexesParams {
@@ -105,8 +115,8 @@ library Types {
 
     struct GrowthFactors {
         uint256 poolSupplyGrowthFactor; // The pool's supply index growth factor (in ray).
-        uint256 poolBorrowGrowthFactor; // The pool's borrow index growth factor (in ray).
         uint256 p2pSupplyGrowthFactor; // Peer-to-peer supply index growth factor (in ray).
+        uint256 poolBorrowGrowthFactor; // The pool's borrow index growth factor (in ray).
         uint256 p2pBorrowGrowthFactor; // Peer-to-peer borrow index growth factor (in ray).
     }
 
@@ -130,7 +140,7 @@ library Types {
         address underlying;
         MarketSideIndexes256 indexes;
         uint256 amount;
-        uint256 maxLoops;
+        uint256 maxIterations;
         bool borrow;
         function (address, address, uint256, uint256, bool) updateDS; // This function will be used to update the data-structure.
         bool demoting; // True for demote, False for promote.
@@ -142,14 +152,13 @@ library Types {
         address user;
         IAaveOracle oracle;
         DataTypes.EModeCategory eModeCategory;
-        DataTypes.UserConfigurationMap morphoPoolConfig;
     }
 
     struct PromoteVars {
         address underlying;
         uint256 amount;
         uint256 p2pIndex;
-        uint256 maxLoops;
+        uint256 maxIterations;
         function(address, uint256, uint256) returns (uint256, uint256) promote;
     }
 
