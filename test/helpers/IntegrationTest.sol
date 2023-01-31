@@ -192,7 +192,7 @@ contract IntegrationTest is ForkTest {
             market.supplyCap > 0 ? market.supplyCap.zeroFloorSub(ERC20(market.aToken).totalSupply()) : type(uint256).max;
     }
 
-    /// @dev Calculates the underlying amount that can be supplied on the given market, reaching the borrow cap.
+    /// @dev Calculates the underlying amount that can be borrowed on the given market, reaching the borrow cap.
     function _borrowGap(TestMarket memory market) internal view returns (uint256) {
         return market.borrowCap > 0
             ? market.borrowCap.zeroFloorSub(ERC20(market.debtToken).totalSupply())
