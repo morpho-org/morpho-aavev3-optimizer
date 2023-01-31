@@ -23,7 +23,7 @@ contract TestUnitMarketSideDeltaLib is Test {
         marketSideIndex = Types.MarketSideIndexes256(WadRayMath.RAY, WadRayMath.RAY);
     }
 
-    function testIncreaseZeroAmount(
+    function testIncreaseDeltaZeroAmount(
         address underlying,
         uint256 scaledDeltaPool,
         uint256 scaledTotalP2P,
@@ -35,13 +35,13 @@ contract TestUnitMarketSideDeltaLib is Test {
         delta.scaledDeltaPool = scaledDeltaPool;
         delta.scaledTotalP2P = scaledTotalP2P;
 
-        delta.increase(underlying, 0, marketSideIndex, borrowSide);
+        delta.increaseDelta(underlying, 0, marketSideIndex, borrowSide);
 
         assertEq(delta.scaledDeltaPool, scaledDeltaPool);
         assertEq(delta.scaledTotalP2P, scaledTotalP2P);
     }
 
-    function testIncrease(
+    function testIncreaseDelta(
         address underlying,
         uint256 amount,
         uint256 scaledDeltaPool,
@@ -60,27 +60,30 @@ contract TestUnitMarketSideDeltaLib is Test {
         vm.expectEmit(true, false, false, true);
         if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, expectedDeltaPool);
         else emit Events.P2PSupplyDeltaUpdated(underlying, expectedDeltaPool);
-        delta.increase(underlying, amount, marketSideIndex, borrowSide);
+        delta.increaseDelta(underlying, amount, marketSideIndex, borrowSide);
 
         assertEq(delta.scaledDeltaPool, expectedDeltaPool);
         assertEq(delta.scaledTotalP2P, scaledTotalP2P);
     }
 
-    function testDecreaseWhenDeltaIsZero(address underlying, uint256 amount, uint256 scaledTotalP2P, bool borrowSide)
-        public
-    {
+    function testDecreaseDeltaWhenDeltaIsZero(
+        address underlying,
+        uint256 amount,
+        uint256 scaledTotalP2P,
+        bool borrowSide
+    ) public {
         amount = bound(amount, 0, MAX_AMOUNT);
         scaledTotalP2P = bound(scaledTotalP2P, 0, MAX_AMOUNT);
 
         delta.scaledTotalP2P = scaledTotalP2P;
 
-        delta.decrease(underlying, 0, marketSideIndex.poolIndex, borrowSide);
+        delta.decreaseDelta(underlying, 0, marketSideIndex.poolIndex, borrowSide);
 
         assertEq(delta.scaledDeltaPool, 0);
         assertEq(delta.scaledTotalP2P, scaledTotalP2P);
     }
 
-    function testDecrease(
+    function testDecreaseDelta(
         address underlying,
         uint256 amount,
         uint256 scaledDeltaPool,
@@ -103,11 +106,11 @@ contract TestUnitMarketSideDeltaLib is Test {
         if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, expectedDeltaPool);
         else emit Events.P2PSupplyDeltaUpdated(underlying, expectedDeltaPool);
 
-        (uint256 toRepayOrWithdraw, uint256 toProcess) =
-            delta.decrease(underlying, amount, marketSideIndex.poolIndex, borrowSide);
+        (uint256 toProcess, uint256 toRepayOrWithdraw) =
+            delta.decreaseDelta(underlying, amount, marketSideIndex.poolIndex, borrowSide);
 
-        assertEq(toRepayOrWithdraw, expectedDecreased);
         assertEq(toProcess, expectedToProcess);
+        assertEq(toRepayOrWithdraw, expectedDecreased);
         assertEq(delta.scaledDeltaPool, expectedDeltaPool);
         assertEq(delta.scaledTotalP2P, scaledTotalP2P);
     }
