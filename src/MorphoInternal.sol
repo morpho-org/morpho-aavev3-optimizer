@@ -166,34 +166,26 @@ abstract contract MorphoInternal is MorphoStorage {
         emit Events.ManagerApproval(delegator, manager, isAllowed);
     }
 
-    /// @dev Returns the total supply balance of `user` on the `underlying` market given `indexes`.
-    /// @param underlying The address of the underlying asset.
-    /// @param user The address of the user.
-    /// @param indexes pool & peer-to-peer borrow.
-    /// @return The total supply balance of `user` on the `underlying` market (in underlying).
-    function _getUserSupplyBalanceFromIndexes(
-        address underlying,
-        address user,
-        Types.MarketSideIndexes256 memory indexes
-    ) internal view returns (uint256) {
+    /// @dev Returns the total supply balance of `user` on the `underlying` market given `indexes` (in underlying).
+    function _getUserSupplyBalanceFromIndexes(address underlying, address user, Types.Indexes256 memory indexes)
+        internal
+        view
+        returns (uint256)
+    {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return marketBalances.scaledPoolSupplyBalance(user).rayMulDown(indexes.poolIndex)
-            + marketBalances.scaledP2PSupplyBalance(user).rayMulDown(indexes.p2pIndex);
+        return marketBalances.scaledPoolSupplyBalance(user).rayMulDown(indexes.supply.poolIndex)
+            + marketBalances.scaledP2PSupplyBalance(user).rayMulDown(indexes.supply.p2pIndex);
     }
 
-    /// @dev Returns the total borrow balance of `user` on the `underlying` market given `indexes`.
-    /// @param underlying The address of the underlying asset.
-    /// @param user The address of the user.
-    /// @param indexes pool & peer-to-peer borrow.
-    /// @return The total borrow balance of `user` on the `underlying` market (in underlying).
-    function _getUserBorrowBalanceFromIndexes(
-        address underlying,
-        address user,
-        Types.MarketSideIndexes256 memory indexes
-    ) internal view returns (uint256) {
+    /// @dev Returns the total borrow balance of `user` on the `underlying` market given `indexes` (in underlying).
+    function _getUserBorrowBalanceFromIndexes(address underlying, address user, Types.Indexes256 memory indexes)
+        internal
+        view
+        returns (uint256)
+    {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.poolIndex)
-            + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.p2pIndex);
+        return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.borrow.poolIndex)
+            + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.borrow.p2pIndex);
     }
 
     /// @dev Returns the buckets of a particular side of a market.
@@ -300,7 +292,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
         debtValue =
-            (_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes.borrow) * underlyingPrice).divUp(tokenUnit);
+            (_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes) * underlyingPrice).divUp(tokenUnit);
     }
 
     /// @dev Returns the liquidity data for a given set of inputs.
