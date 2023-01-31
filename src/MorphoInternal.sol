@@ -166,7 +166,6 @@ abstract contract MorphoInternal is MorphoStorage {
     ) internal view returns (uint256) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
 
-        // Rounding methods used here should be identical to those used in `_promote` & `_demote`.
         return marketBalances.scaledPoolSupplyBalance(user).rayMul(indexes.poolIndex)
             + marketBalances.scaledP2PSupplyBalance(user).rayMul(indexes.p2pIndex);
     }
@@ -183,9 +182,8 @@ abstract contract MorphoInternal is MorphoStorage {
     ) internal view returns (uint256) {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
 
-        // Rounding methods used here should be identical to those used in `_promote` & `_demote`.
-        return marketBalances.scaledPoolBorrowBalance(user).rayMul(indexes.poolIndex)
-            + marketBalances.scaledP2PBorrowBalance(user).rayMul(indexes.p2pIndex);
+        return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.poolIndex)
+            + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.p2pIndex);
     }
 
     /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
@@ -194,7 +192,7 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256)
     {
-        return _marketBalances[underlying].scaledCollateralBalance(user).rayMul(poolSupplyIndex);
+        return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
     }
 
     /// @notice Returns the hypothetical liquidity data of `user`.
@@ -361,6 +359,9 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 inP2P,
         bool demoting
     ) internal {
+        if (onPool <= Constants.DUST_THRESHOLD) onPool = 0;
+        if (inP2P <= Constants.DUST_THRESHOLD) inP2P = 0;
+
         uint256 formerOnPool = poolBuckets.valueOf[user];
         uint256 formerInP2P = p2pBuckets.valueOf[user];
 

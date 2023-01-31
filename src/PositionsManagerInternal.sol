@@ -278,8 +278,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         (vars.toRepay, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
         // Repay borrow peer-to-peer.
-        // The protocol is giving 1 wei of dust to the user because of rayDivUp.
-        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
+        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDiv(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
 
         _updateBorrowerInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
 
@@ -338,8 +337,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Market storage market = _market[underlying];
 
         // Withdraw supply peer-to-peer.
-        // The protocol is giving 1 wei of dust to the user because of rayDivUp.
-        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
+        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDiv(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
         _updateSupplierInDS(underlying, supplier, vars.onPool, vars.inP2P, false);
 
@@ -395,7 +393,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
 
-        // The protocol is giving 1 wei of dust to the user because of rayDivUp.
         collateralBalance = marketBalances.collateral[onBehalf].zeroFloorSub(amount.rayDivUp(poolSupplyIndex));
         marketBalances.collateral[onBehalf] = collateralBalance;
 

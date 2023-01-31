@@ -66,7 +66,6 @@ library DeltasLib {
         Types.MarketSideIndexes256 memory demotedIndexes = borrowSide ? indexes.borrow : indexes.supply;
         Types.MarketSideIndexes256 memory counterIndexes = borrowSide ? indexes.supply : indexes.borrow;
 
-        // zeroFloorSub as the last decimal might flip.
         demotedDelta.scaledTotalP2P = demotedDelta.scaledTotalP2P.zeroFloorSub(demoted.rayDiv(demotedIndexes.p2pIndex));
         counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P.zeroFloorSub(amount.rayDiv(counterIndexes.p2pIndex));
 
@@ -95,7 +94,7 @@ library DeltasLib {
         if (feeToRepay == 0) return amount;
 
         feeToRepay = Math.min(feeToRepay, amount);
-        deltas.borrow.scaledTotalP2P = scaledTotalBorrowP2P.zeroFloorSub(feeToRepay.rayDivDown(indexes.borrow.p2pIndex));
+        deltas.borrow.scaledTotalP2P = scaledTotalBorrowP2P.zeroFloorSub(feeToRepay.rayDiv(indexes.borrow.p2pIndex));
 
         return amount - feeToRepay;
     }

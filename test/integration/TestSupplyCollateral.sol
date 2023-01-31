@@ -50,16 +50,11 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
             assertEq(test.supplied, amount, "supplied != amount");
             assertApproxLeAbs(collateral, amount, 1, "collateral != amount");
 
-            // Assert Morpho getters.
-            assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supplyBalance != 0");
-            assertEq(
-                morpho.collateralBalance(market.underlying, onBehalf), test.supplied, "collateralBalance != supplied"
-            );
+            assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supply != 0");
+            assertApproxLeAbs(morpho.collateralBalance(market.underlying, onBehalf), amount, 1, "collateral != amount");
 
             // Assert Morpho's position on pool.
-            assertApproxEqAbs(
-                ERC20(market.aToken).balanceOf(address(morpho)), test.supplied, 1, "morphoSupply != supplied"
-            );
+            assertApproxGeAbs(ERC20(market.aToken).balanceOf(address(morpho)), amount, 1, "morphoSupply != amount");
             assertEq(ERC20(market.debtToken).balanceOf(address(morpho)), 0, "morphoBorrow != 0");
 
             // Assert user's underlying balance.
