@@ -46,14 +46,12 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     uint256 constant MAX_AMOUNT = type(uint96).max / 2;
 
     IPriceOracleGetter internal priceOracle;
-    address internal poolConfigurator;
     address internal poolOwner;
 
     function setUp() public virtual override {
-        poolConfigurator = addressesProvider.getPoolConfigurator();
         poolOwner = Ownable(address(addressesProvider)).owner();
 
-        _defaultMaxLoops = Types.MaxLoops(10, 10);
+        _defaultMaxIterations = Types.MaxIterations(10, 10);
 
         _createMarket(dai, 0, 3_333);
         _createMarket(wbtc, 0, 3_333);
@@ -144,18 +142,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.validateBorrow(dai, 1, address(this), address(this));
     }
 
-    function testValidateBorrowShouldRevertIfBorrowingNotEnabled() public {
-        DataTypes.ReserveConfigurationMap memory reserveConfig = _POOL.getConfiguration(dai);
-        reserveConfig.setBorrowingEnabled(false);
-        assertFalse(reserveConfig.getBorrowingEnabled());
-
-        vm.prank(poolConfigurator);
-        _POOL.setConfiguration(dai, reserveConfig);
-
-        vm.expectRevert(abi.encodeWithSelector(Errors.BorrowingNotEnabled.selector));
-        this.validateBorrow(dai, 1, address(this), address(this));
-    }
-
     function testValidateBorrow(uint256 onPool, uint256 inP2P) public {
         onPool = bound(onPool, MIN_AMOUNT, MAX_AMOUNT);
         inP2P = bound(inP2P, MIN_AMOUNT, MAX_AMOUNT);
@@ -168,17 +154,37 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(dai);
         config.setEModeCategory(1);
-        vm.prank(poolConfigurator);
+        vm.prank(address(poolConfigurator));
         _POOL.setConfiguration(dai, config);
 
         this.validateBorrow(dai, onPool / 4, address(this), address(this));
     }
 
     function authorizeBorrow(address underlying, uint256 onPool, address borrower) public view {
-        _authorizeBorrow(underlying, onPool, borrower);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        _authorizeBorrow(underlying, onPool, borrower, indexes);
+    }
+
+    function testAuthorizeBorrowShouldRevertIfBorrowingNotEnabled() public {
+        DataTypes.ReserveConfigurationMap memory reserveConfig = _POOL.getConfiguration(dai);
+        reserveConfig.setBorrowingEnabled(false);
+        assertFalse(reserveConfig.getBorrowingEnabled());
+
+        vm.prank(address(poolConfigurator));
+        _POOL.setConfiguration(dai, reserveConfig);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.BorrowingNotEnabled.selector));
+        this.authorizeBorrow(dai, 1, address(this));
     }
 
     function testAuthorizeBorrowShouldFailIfDebtTooHigh(uint256 onPool) public {
+        DataTypes.ReserveConfigurationMap memory reserveConfig = _POOL.getConfiguration(dai);
+        reserveConfig.setBorrowCap(0);
+        assertEq(reserveConfig.getBorrowCap(), 0);
+
+        vm.prank(address(poolConfigurator));
+        _POOL.setConfiguration(dai, reserveConfig);
+
         onPool = bound(onPool, MIN_AMOUNT, MAX_AMOUNT);
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
