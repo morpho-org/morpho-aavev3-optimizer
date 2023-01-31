@@ -10,30 +10,20 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 /// @custom:contact security@morpho.xyz
 /// @notice Library used to ease market balance reads.
 library MarketBalanceLib {
-    using LogarithmicBuckets for LogarithmicBuckets.BucketList;
+    function scaledPoolSupplyBalance(Types.MarketBalances storage marketBalances, address user)
+        internal
+        view
+        returns (uint256)
+    {
+        return marketBalances.poolSuppliers.valueOf[user];
+    }
 
     function scaledP2PSupplyBalance(Types.MarketBalances storage marketBalances, address user)
         internal
         view
         returns (uint256)
     {
-        return marketBalances.p2pSuppliers.getValueOf(user);
-    }
-
-    function scaledPoolSupplyBalance(Types.MarketBalances storage marketBalances, address user)
-        internal
-        view
-        returns (uint256)
-    {
-        return marketBalances.poolSuppliers.getValueOf(user);
-    }
-
-    function scaledP2PBorrowBalance(Types.MarketBalances storage marketBalances, address user)
-        internal
-        view
-        returns (uint256)
-    {
-        return marketBalances.p2pBorrowers.getValueOf(user);
+        return marketBalances.p2pSuppliers.valueOf[user];
     }
 
     function scaledPoolBorrowBalance(Types.MarketBalances storage marketBalances, address user)
@@ -41,7 +31,15 @@ library MarketBalanceLib {
         view
         returns (uint256)
     {
-        return marketBalances.poolBorrowers.getValueOf(user);
+        return marketBalances.poolBorrowers.valueOf[user];
+    }
+
+    function scaledP2PBorrowBalance(Types.MarketBalances storage marketBalances, address user)
+        internal
+        view
+        returns (uint256)
+    {
+        return marketBalances.p2pBorrowers.valueOf[user];
     }
 
     function scaledCollateralBalance(Types.MarketBalances storage marketBalances, address user)

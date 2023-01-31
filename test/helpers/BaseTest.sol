@@ -16,7 +16,7 @@ import {console} from "@forge-std/console.sol";
 import {Test} from "@forge-std/Test.sol";
 
 contract BaseTest is Test {
-    uint256 internal constant DEFAULT_MAX_LOOPS = 10;
+    uint256 internal constant DEFAULT_MAX_ITERATIONS = 10;
 
     /// @dev Asserts a is approximately less than or equal to b, with a maximum absolute difference of maxDelta.
     function assertApproxLeAbs(uint256 a, uint256 b, uint256 maxDelta, string memory err) internal {
@@ -39,5 +39,10 @@ contract BaseTest is Test {
     /// @dev Bounds the fuzzing input to a realistic number of blocks.
     function _boundBlocks(uint256 blocks) internal view returns (uint256) {
         return bound(blocks, 1, type(uint32).max / 4);
+    }
+
+    /// @dev Bounds the fuzzing input to a non-zero address.
+    function _boundAddressNotZero(address onBehalf) internal view returns (address) {
+        return address(uint160(bound(uint256(uint160(onBehalf)), 1, type(uint160).max)));
     }
 }

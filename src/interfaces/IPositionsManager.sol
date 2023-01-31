@@ -2,7 +2,7 @@
 pragma solidity >=0.5.0;
 
 interface IPositionsManager {
-    function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxLoops)
+    function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxIterations)
         external
         returns (uint256 supplied);
 
@@ -10,7 +10,7 @@ interface IPositionsManager {
         external
         returns (uint256 supplied);
 
-    function borrowLogic(address underlying, uint256 amount, address borrower, address receiver, uint256 maxLoops)
+    function borrowLogic(address underlying, uint256 amount, address borrower, address receiver, uint256 maxIterations)
         external
         returns (uint256 borrowed);
 
