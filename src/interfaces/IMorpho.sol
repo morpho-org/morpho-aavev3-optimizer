@@ -43,8 +43,6 @@ interface IMorphoGetters {
 }
 
 interface IMorphoSetters {
-    function initialize(address newPositionsManager, Types.MaxIterations memory newDefaultMaxIterations) external;
-
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external;
     function increaseP2PDeltas(address underlying, uint256 amount) external;
     function claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) external;
@@ -71,6 +69,8 @@ interface IMorphoSetters {
 }
 
 interface IMorpho is IMorphoGetters, IMorphoSetters {
+    function initialize(address newPositionsManager, Types.MaxIterations memory newDefaultMaxIterations) external;
+
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
         external
         returns (uint256 supplied);
