@@ -358,10 +358,13 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         onPool = bound(onPool, 0, MAX_AMOUNT);
         poolIndex = bound(poolIndex, WadRayMath.RAY, WadRayMath.RAY * 10);
 
-        (uint256 newAmount, uint256 newAmountLeft, uint256 newOnPool) = _subFromPool(amount, onPool, poolIndex);
-        assertEq(newAmount, Math.min(onPool.rayMul(poolIndex), amount));
-        assertEq(newAmountLeft, amount - newAmount);
-        assertEq(newOnPool, onPool - Math.min(onPool, newAmount.rayDivUp(poolIndex)));
+        (uint256 toProcess, uint256 toRepayOrWithdraw, uint256 newOnPool) = _subFromPool(amount, onPool, poolIndex);
+
+        uint256 expectedToRepayOrWithdraw = Math.min(amount, onPool.rayMul(poolIndex));
+
+        assertEq(toProcess, amount - expectedToRepayOrWithdraw);
+        assertEq(toRepayOrWithdraw, expectedToRepayOrWithdraw);
+        assertEq(newOnPool, onPool.zeroFloorSub(expectedToRepayOrWithdraw.rayDivUp(poolIndex)));
     }
 
     function testPromoteSuppliersRoutine(uint256 amount, uint256 maxLoops) public {
@@ -374,17 +377,16 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
             _updateSupplierInDS(dai, vm.addr(i + 1), uint256(1 ether).rayDiv(indexes.supply.poolIndex), 0, true);
         }
 
-        (uint256 toProcess, uint256 amountLeft, uint256 maxLoopsLeft) =
+        (uint256 toProcess, uint256 toSupplyOrRepay, uint256 maxLoopsLeft) =
             _promoteRoutine(dai, amount, maxLoops, _promoteSuppliers);
 
         uint256 maxExpectedLoops = Math.min(maxLoops, 10);
         uint256 expectedLoops = amount > 1 ether * maxExpectedLoops ? maxExpectedLoops : amount.divUp(1 ether);
 
         uint256 expectedToProcess = Math.min(amount, expectedLoops * 1 ether);
-        uint256 expectedAmountLeft = amount - expectedToProcess;
         uint256 expectedMaxLoopsLeft = maxLoops - expectedLoops;
-        assertEq(toProcess, expectedToProcess, "toProcess");
-        assertEq(amountLeft, expectedAmountLeft, "amountLeft");
+        assertEq(toProcess, amount - expectedToProcess, "toProcess");
+        assertEq(toSupplyOrRepay, expectedToProcess, "amountLeft");
         assertEq(maxLoopsLeft, expectedMaxLoopsLeft, "maxLoopsLeft");
     }
 
@@ -398,17 +400,16 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
             _updateBorrowerInDS(dai, vm.addr(i + 1), uint256(1 ether).rayDiv(indexes.borrow.poolIndex), 0, true);
         }
 
-        (uint256 toProcess, uint256 amountLeft, uint256 maxLoopsLeft) =
+        (uint256 toProcess, uint256 toRepayOrWithdraw, uint256 maxLoopsLeft) =
             _promoteRoutine(dai, amount, maxLoops, _promoteBorrowers);
 
         uint256 maxExpectedLoops = Math.min(maxLoops, 10);
         uint256 expectedLoops = amount > 1 ether * maxExpectedLoops ? maxExpectedLoops : amount.divUp(1 ether);
 
         uint256 expectedToProcess = Math.min(amount, maxExpectedLoops * 1 ether);
-        uint256 expectedAmountLeft = amount - expectedToProcess;
         uint256 expectedMaxLoopsLeft = maxLoops - expectedLoops;
-        assertEq(toProcess, expectedToProcess, "toProcess");
-        assertEq(amountLeft, expectedAmountLeft, "amountLeft");
+        assertEq(toProcess, amount - expectedToProcess, "toProcess");
+        assertEq(toRepayOrWithdraw, expectedToProcess, "amountLeft");
         assertEq(maxLoopsLeft, expectedMaxLoopsLeft, "maxLoopsLeft");
     }
 
