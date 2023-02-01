@@ -337,9 +337,8 @@ abstract contract MorphoInternal is MorphoStorage {
         // If this instance of Morpho isn't in eMode, then vars.eModeCategory is not initalized.
         // Thus in this case `vars.eModeCategory.priceSource` == `address(0)`.
         if (vars.eModeCategory.priceSource != address(0) && _E_MODE_CATEGORY_ID == configuration.getEModeCategory()) {
-            underlyingPrice = vars.eModeCategory.priceSource != address(0)
-                ? IAaveOracle(vars.eModeCategory.priceSource).getAssetPrice(underlying)
-                : vars.oracle.getAssetPrice(underlying);
+            uint256 eModeUnderlyingPrice = IAaveOracle(vars.eModeCategory.priceSource).getAssetPrice(underlying);
+            underlyingPrice = eModeUnderlyingPrice != 0 ? eModeUnderlyingPrice : vars.oracle.getAssetPrice(underlying);
         } else {
             underlyingPrice = vars.oracle.getAssetPrice(underlying);
         }
