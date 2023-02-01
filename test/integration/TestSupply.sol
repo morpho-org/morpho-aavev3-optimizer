@@ -168,6 +168,10 @@ contract TestIntegrationSupply is IntegrationTest {
 
     // TODO: should supply p2p when borrow delta
 
+    // TODO: should supply pool only when p2p disabled
+
+    // TODO: should not supply p2p when p2p disabled & borrow delta
+
     function testShouldUpdateIndexesAfterSupply(uint256 amount, address onBehalf) public {
         onBehalf = _boundAddressNotZero(onBehalf);
 
