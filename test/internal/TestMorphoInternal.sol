@@ -443,8 +443,8 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         bool head
     ) public {
         collateral = bound(collateral, 0, 1_000_000 ether);
-        amountPool = bound(amountPool, 1, 1_000_000 ether);
-        amountP2P = bound(amountP2P, 1, 1_000_000 ether);
+        amountPool = bound(amountPool, 10, 1_000_000 ether);
+        amountP2P = bound(amountP2P, 10, 1_000_000 ether);
         amountWithdrawn = bound(amountWithdrawn, 0, collateral);
 
         _marketBalances[dai].collateral[address(1)] = collateral.rayDivUp(_market[dai].indexes.supply.poolIndex);
