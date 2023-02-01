@@ -136,10 +136,10 @@ contract TestUnitDeltasLib is Test {
         assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow.zeroFloorSub(demoted.rayDiv(indexes.borrow.p2pIndex)));
     }
 
-    function testRepayFeeShouldReturnZeroIfAmountIsZero() public {
+    function testRepayFeeShouldReturnZeroIfAmountIsZero(uint256 totalP2PSupply, uint256 totalP2PBorrow) public {
+        totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
+        totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
         uint256 amount = 0;
-        uint256 totalP2PSupply = 1000;
-        uint256 totalP2PBorrow = 1000;
         deltas.supply.scaledTotalP2P = totalP2PSupply;
         deltas.borrow.scaledTotalP2P = totalP2PBorrow;
         uint256 fee = DeltasLib.repayFee(deltas, amount, indexes);
