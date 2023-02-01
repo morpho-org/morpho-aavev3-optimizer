@@ -5,6 +5,7 @@ import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationSupplyCollateral is IntegrationTest {
     using WadRayMath for uint256;
+    using TestMarketLib for TestMarket;
 
     function _boundAmount(uint256 amount) internal view returns (uint256) {
         return bound(amount, 1, type(uint256).max);
@@ -29,14 +30,14 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
             amount = _boundSupply(market, amount);
 
-            uint256 balanceBefore = user1.balanceOf(market.underlying);
+            uint256 balanceBefore = user.balanceOf(market.underlying);
 
-            user1.approve(market.underlying, amount);
+            user.approve(market.underlying, amount);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.CollateralSupplied(address(user1), onBehalf, market.underlying, 0, 0);
+            emit Events.CollateralSupplied(address(user), onBehalf, market.underlying, 0, 0);
 
-            test.supplied = user1.supplyCollateral(market.underlying, amount, onBehalf);
+            test.supplied = user.supplyCollateral(market.underlying, amount, onBehalf);
 
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
@@ -54,12 +55,12 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
             assertApproxLeAbs(morpho.collateralBalance(market.underlying, onBehalf), amount, 1, "collateral != amount");
 
             // Assert Morpho's position on pool.
-            assertApproxGeAbs(ERC20(market.aToken).balanceOf(address(morpho)), amount, 1, "morphoSupply != amount");
-            assertEq(ERC20(market.debtToken).balanceOf(address(morpho)), 0, "morphoBorrow != 0");
+            assertApproxGeAbs(market.supplyOf(address(morpho)), amount, 1, "morphoSupply != amount");
+            assertEq(market.borrowOf(address(morpho)), 0, "morphoBorrow != 0");
 
             // Assert user's underlying balance.
             assertEq(
-                balanceBefore - user1.balanceOf(market.underlying), amount, "balanceBefore - balanceAfter != amount"
+                balanceBefore - user.balanceOf(market.underlying), amount, "balanceBefore - balanceAfter != amount"
             );
 
             // Assert Morpho's market state.
@@ -86,12 +87,12 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
             Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
 
-            user1.approve(market.underlying, amount);
+            user.approve(market.underlying, amount);
 
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
 
-            user1.supplyCollateral(market.underlying, amount, onBehalf);
+            user.supplyCollateral(market.underlying, amount, onBehalf);
 
             Types.Market memory morphoMarket = morpho.market(market.underlying);
             assertEq(
@@ -123,7 +124,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user1.supplyCollateral(testMarkets[markets[marketIndex]].underlying, 0, onBehalf);
+            user.supplyCollateral(testMarkets[markets[marketIndex]].underlying, 0, onBehalf);
         }
     }
 
@@ -132,7 +133,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.supplyCollateral(testMarkets[markets[marketIndex]].underlying, amount, address(0));
+            user.supplyCollateral(testMarkets[markets[marketIndex]].underlying, amount, address(0));
         }
     }
 
@@ -141,7 +142,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         onBehalf = _boundAddressNotZero(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user1.supplyCollateral(sAvax, amount, onBehalf);
+        user.supplyCollateral(sAvax, amount, onBehalf);
     }
 
     function testShouldRevertSupplyCollateralWhenSupplyCollateralPaused(uint256 amount, address onBehalf) public {
@@ -156,7 +157,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
             morpho.setIsSupplyCollateralPaused(market.underlying, true);
 
             vm.expectRevert(Errors.SupplyCollateralIsPaused.selector);
-            user1.supplyCollateral(market.underlying, amount, onBehalf);
+            user.supplyCollateral(market.underlying, amount, onBehalf);
         }
     }
 
@@ -175,8 +176,8 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
             morpho.setIsSupplyCollateralPaused(market.underlying, false);
 
-            user1.approve(market.underlying, amount);
-            user1.supplyCollateral(market.underlying, amount, onBehalf);
+            user.approve(market.underlying, amount);
+            user.supplyCollateral(market.underlying, amount, onBehalf);
         }
     }
 }

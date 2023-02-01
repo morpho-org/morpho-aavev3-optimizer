@@ -42,8 +42,8 @@ contract TestIntegrationGetters is IntegrationTest {
     //         (, amount) = _borrowUpTo(market, market, amount, 100_00);
     //         amount /= 2; // 50% peer-to-peer.
 
-    //         user1.approve(market.underlying, amount);
-    //         user1.supply(market.underlying, amount, onBehalf);
+    //         user.approve(market.underlying, amount);
+    //         user.supply(market.underlying, amount, onBehalf);
 
     //         _forward(blocks);
 

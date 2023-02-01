@@ -210,8 +210,11 @@ library MarketLib {
         if (totalSupply + amount <= supplyCap) return amount;
 
         toSupply = supplyCap.zeroFloorSub(totalSupply);
-        uint256 newIdleSupply = market.idleSupply + amount - toSupply;
+        uint256 idleSupplyIncrease = amount.zeroFloorSub(toSupply);
+        uint256 newIdleSupply = market.idleSupply + idleSupplyIncrease;
+
         market.idleSupply = newIdleSupply;
+        market.deltas.supply.scaledTotalP2P += idleSupplyIncrease.rayDiv(market.indexes.supply.p2pIndex); // No event emitted.
 
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
     }

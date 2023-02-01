@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationWithdrawCollateral is IntegrationTest {
+    using TestMarketLib for TestMarket;
+
     function _boundAmount(uint256 amount) internal view returns (uint256) {
         return bound(amount, 1, type(uint256).max);
     }
@@ -21,9 +23,9 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     }
 
     function _prepareOnBehalf(address onBehalf) internal {
-        if (onBehalf != address(user1)) {
+        if (onBehalf != address(user)) {
             vm.prank(onBehalf);
-            morpho.approveManager(address(user1), true);
+            morpho.approveManager(address(user), true);
         }
     }
 
@@ -54,15 +56,15 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             test.supplied = _boundSupply(market, amount);
             amount = bound(amount, test.supplied + 1, type(uint256).max);
 
-            user1.approve(market.underlying, test.supplied);
-            user1.supplyCollateral(market.underlying, test.supplied, onBehalf);
+            user.approve(market.underlying, test.supplied);
+            user.supplyCollateral(market.underlying, test.supplied, onBehalf);
 
             uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.CollateralWithdrawn(address(user1), onBehalf, receiver, market.underlying, test.supplied, 0);
+            emit Events.CollateralWithdrawn(address(user), onBehalf, receiver, market.underlying, test.supplied, 0);
 
-            test.withdrawn = user1.withdrawCollateral(market.underlying, amount, onBehalf, receiver);
+            test.withdrawn = user.withdrawCollateral(market.underlying, amount, onBehalf, receiver);
 
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
@@ -79,8 +81,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
 
             // Assert Morpho's position on pool.
-            assertApproxGeAbs(ERC20(market.aToken).balanceOf(address(morpho)), 0, 1, "morphoSupply != 0");
-            assertEq(ERC20(market.debtToken).balanceOf(address(morpho)), 0, "morphoBorrow != 0");
+            assertApproxGeAbs(market.supplyOf(address(morpho)), 0, 1, "morphoSupply != 0");
+            assertEq(market.borrowOf(address(morpho)), 0, "morphoBorrow != 0");
 
             // Assert receiver's underlying balance.
             assertApproxLeAbs(
@@ -116,7 +118,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
             uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
-            uint256 withdrawn = user1.withdrawCollateral(market.underlying, amount, onBehalf, receiver);
+            uint256 withdrawn = user.withdrawCollateral(market.underlying, amount, onBehalf, receiver);
 
             uint256 balanceAfter = ERC20(market.underlying).balanceOf(receiver);
 
@@ -131,7 +133,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user1.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, 0, onBehalf, receiver);
+            user.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, 0, onBehalf, receiver);
         }
     }
 
@@ -141,7 +143,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, amount, address(0), receiver);
+            user.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, amount, address(0), receiver);
         }
     }
 
@@ -153,7 +155,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, amount, onBehalf, address(0));
+            user.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, amount, onBehalf, address(0));
         }
     }
 
@@ -167,7 +169,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         _prepareOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user1.withdrawCollateral(sAvax, amount, onBehalf, receiver);
+        user.withdrawCollateral(sAvax, amount, onBehalf, receiver);
     }
 
     function testShouldRevertWithdrawCollateralWhenWithdrawCollateralPaused(
@@ -189,7 +191,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             morpho.setIsWithdrawCollateralPaused(market.underlying, true);
 
             vm.expectRevert(Errors.WithdrawCollateralIsPaused.selector);
-            user1.withdrawCollateral(market.underlying, amount, onBehalf);
+            user.withdrawCollateral(market.underlying, amount, onBehalf);
         }
     }
 
@@ -198,12 +200,12 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
-        vm.assume(onBehalf != address(user1));
+        vm.assume(onBehalf != address(user));
         receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);
-            user1.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, amount, onBehalf);
+            user.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, amount, onBehalf);
         }
     }
 
@@ -223,13 +225,13 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
             amount = _boundSupply(market, amount);
 
-            user1.approve(market.underlying, amount);
-            user1.supplyCollateral(market.underlying, amount);
+            user.approve(market.underlying, amount);
+            user.supplyCollateral(market.underlying, amount);
 
             morpho.setIsPausedForAllMarkets(true);
             morpho.setIsWithdrawCollateralPaused(market.underlying, false);
 
-            user1.withdrawCollateral(market.underlying, amount, onBehalf);
+            user.withdrawCollateral(market.underlying, amount, onBehalf);
         }
     }
 }

@@ -305,10 +305,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Market storage market = _market[underlying];
 
         // Decrease the peer-to-peer borrow delta.
-        uint256 toRepayStep;
-        (amount, toRepayStep) = market.deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
-        vars.toRepay += toRepayStep;
-        uint256 p2pTotalBorrowDecrease = toRepayStep;
+        uint256 matchedBorrowDelta;
+        (amount, matchedBorrowDelta) =
+            market.deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
+        vars.toRepay += matchedBorrowDelta;
 
         // Repay the fee.
         amount = market.deltas.repayFee(amount, indexes);
@@ -317,26 +317,24 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         if (!market.isP2PDisabled()) {
             // Promote pool borrowers.
-            (vars.toSupply, toRepayStep, maxIterations) =
-                _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
-            vars.toRepay += toRepayStep;
-        } else {
-            vars.toSupply = amount;
+            uint256 promoted;
+            (amount, promoted, maxIterations) = _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
+            vars.toRepay += promoted;
         }
 
         /// Breaking repay ///
 
         // Demote peer-to-peer suppliers.
-        uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxIterations);
+        uint256 demoted = _demoteSuppliers(underlying, amount, maxIterations);
 
         // Increase the peer-to-peer supply delta.
-        market.deltas.supply.increaseDelta(underlying, vars.toSupply - demoted, indexes.supply, false);
-
-        // Update the peer-to-peer totals.
-        market.deltas.decreaseP2P(underlying, demoted, vars.toSupply + p2pTotalBorrowDecrease, indexes, false);
+        market.deltas.supply.increaseDelta(underlying, amount.zeroFloorSub(demoted), indexes.supply, false);
 
         // Handle the supply cap.
-        vars.toSupply = market.increaseIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
+        vars.toSupply = market.increaseIdle(underlying, amount, _POOL.getConfiguration(underlying));
+
+        // Update the peer-to-peer totals.
+        market.deltas.decreaseP2P(underlying, demoted, amount + matchedBorrowDelta, indexes, false);
     }
 
     /// @dev Performs the accounting of a withdraw action.
@@ -366,37 +364,37 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (amount == 0) return vars;
 
         // Decrease the peer-to-peer idle supply.
-        uint256 matchedIdle;
-        (amount, matchedIdle) = market.decreaseIdle(underlying, amount);
+        uint256 matchedExcessSupply;
+        (amount, matchedExcessSupply) = market.decreaseIdle(underlying, amount);
 
         // Decrease the peer-to-peer supply delta.
-        uint256 toWithdrawStep;
-        (amount, toWithdrawStep) =
+        uint256 matchedSupplyDelta;
+        (amount, matchedSupplyDelta) =
             market.deltas.supply.decreaseDelta(underlying, amount, indexes.supply.poolIndex, false);
-        vars.toWithdraw += toWithdrawStep;
-        uint256 p2pTotalSupplyDecrease = toWithdrawStep + matchedIdle;
+        vars.toWithdraw += matchedSupplyDelta;
+        matchedExcessSupply += matchedSupplyDelta;
 
         /// Transfer withdraw ///
 
         if (!market.isP2PDisabled()) {
             // Promote pool suppliers.
-            (vars.toBorrow, toWithdrawStep, maxIterations) =
-                _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
-            vars.toWithdraw += toWithdrawStep;
-        } else {
-            vars.toBorrow = amount;
+            uint256 promoted;
+            (amount, promoted, maxIterations) = _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
+            vars.toWithdraw += promoted;
         }
 
         /// Breaking withdraw ///
 
         // Demote peer-to-peer borrowers.
-        uint256 demoted = _demoteBorrowers(underlying, vars.toBorrow, maxIterations);
+        uint256 demoted = _demoteBorrowers(underlying, amount, maxIterations);
 
         // Increase the peer-to-peer borrow delta.
-        market.deltas.borrow.increaseDelta(underlying, vars.toBorrow - demoted, indexes.borrow, true);
+        market.deltas.borrow.increaseDelta(underlying, amount.zeroFloorSub(demoted), indexes.borrow, true);
 
         // Update the peer-to-peer totals.
-        market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow + p2pTotalSupplyDecrease, indexes, true);
+        market.deltas.decreaseP2P(underlying, demoted, amount + matchedExcessSupply, indexes, true);
+
+        vars.toBorrow = amount;
     }
 
     /// @dev Performs the accounting of a supply action.

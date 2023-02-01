@@ -5,6 +5,7 @@ import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationBorrow is IntegrationTest {
     using WadRayMath for uint256;
+    using TestMarketLib for TestMarket;
 
     function _boundAmount(uint256 amount) internal view returns (uint256) {
         return bound(amount, 1, type(uint256).max);
@@ -23,9 +24,9 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function _prepareOnBehalf(address onBehalf) internal {
-        if (onBehalf != address(user1)) {
+        if (onBehalf != address(user)) {
             vm.prank(onBehalf);
-            morpho.approveManager(address(user1), true);
+            morpho.approveManager(address(user), true);
         }
     }
 
@@ -56,10 +57,10 @@ contract TestIntegrationBorrow is IntegrationTest {
             uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.Borrowed(address(user1), onBehalf, receiver, market.underlying, 0, 0, 0);
+            emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
             test.borrowed =
-                _borrowNoCollateral(address(user1), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+                _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
             Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
@@ -74,7 +75,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             assertApproxGeAbs(morpho.borrowBalance(market.underlying, onBehalf), amount, 2, "borrow != amount");
 
             // Assert Morpho's position on pool.
-            assertApproxEqAbs(ERC20(market.debtToken).balanceOf(address(morpho)), amount, 1, "morphoBorrow != amount");
+            assertApproxEqAbs(market.borrowOf(address(morpho)), amount, 1, "morphoBorrow != amount");
 
             // Assert receiver's underlying balance.
             assertEq(
@@ -108,22 +109,22 @@ contract TestIntegrationBorrow is IntegrationTest {
             TestMarket storage market = testMarkets[borrowableMarkets[marketIndex]];
 
             amount = _boundBorrow(market, amount);
-            amount = _promoteBorrow(market, amount); // 100% peer-to-peer.
+            amount = _promoteBorrow(promoter1, market, amount); // 100% peer-to-peer.
 
             uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
-            uint256 morphoBalanceBefore = ERC20(market.debtToken).balanceOf(address(morpho));
+            uint256 morphoBalanceBefore = market.borrowOf(address(morpho));
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.SupplyPositionUpdated(address(promoter), market.underlying, 0, 0);
+            emit Events.SupplyPositionUpdated(address(promoter1), market.underlying, 0, 0);
 
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.P2PTotalsUpdated(market.underlying, 0, 0);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.Borrowed(address(user1), onBehalf, receiver, market.underlying, 0, 0, 0);
+            emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
             test.borrowed =
-                _borrowNoCollateral(address(user1), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+                _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
@@ -135,26 +136,25 @@ contract TestIntegrationBorrow is IntegrationTest {
             assertEq(test.borrowed, amount, "borrowed != amount");
             assertApproxGeAbs(p2pBorrow, amount, 1, "p2pBorrow != amount");
             assertApproxLeAbs(
-                morpho.scaledP2PSupplyBalance(market.underlying, address(promoter)),
+                morpho.scaledP2PSupplyBalance(market.underlying, address(promoter1)),
                 test.scaledP2PBorrow,
                 2,
                 "promoterScaledP2PSupply != scaledP2PBorrow"
             );
             assertEq(
-                morpho.scaledPoolSupplyBalance(market.underlying, address(promoter)), 0, "promoterScaledPoolSupply != 0"
+                morpho.scaledPoolSupplyBalance(market.underlying, address(promoter1)),
+                0,
+                "promoterScaledPoolSupply != 0"
             );
 
             assertApproxGeAbs(morpho.borrowBalance(market.underlying, onBehalf), amount, 2, "borrow != amount");
             assertApproxLeAbs(
-                morpho.supplyBalance(market.underlying, address(promoter)), amount, 2, "promoterSupply != amount"
+                morpho.supplyBalance(market.underlying, address(promoter1)), amount, 2, "promoterSupply != amount"
             );
 
             // Assert Morpho's position on pool.
             assertApproxGeAbs(
-                ERC20(market.debtToken).balanceOf(address(morpho)),
-                morphoBalanceBefore,
-                2,
-                "morphoBalanceAfter != morphoBalanceBefore"
+                market.borrowOf(address(morpho)), morphoBalanceBefore, 2, "morphoBalanceAfter != morphoBalanceBefore"
             );
 
             // Assert receiver's underlying balance.
@@ -212,7 +212,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
 
-            _borrowNoCollateral(address(user1), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS); // 100% pool.
+            _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS); // 100% pool.
 
             Types.Market memory morphoMarket = morpho.market(market.underlying);
             assertEq(
@@ -245,7 +245,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user1.borrow(testMarkets[markets[marketIndex]].underlying, 0, onBehalf, receiver);
+            user.borrow(testMarkets[markets[marketIndex]].underlying, 0, onBehalf, receiver);
         }
     }
 
@@ -255,7 +255,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.borrow(testMarkets[markets[marketIndex]].underlying, amount, address(0), receiver);
+            user.borrow(testMarkets[markets[marketIndex]].underlying, amount, address(0), receiver);
         }
     }
 
@@ -267,7 +267,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user1.borrow(testMarkets[markets[marketIndex]].underlying, amount, onBehalf, address(0));
+            user.borrow(testMarkets[markets[marketIndex]].underlying, amount, onBehalf, address(0));
         }
     }
 
@@ -279,7 +279,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         _prepareOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user1.borrow(sAvax, amount, onBehalf, receiver);
+        user.borrow(sAvax, amount, onBehalf, receiver);
     }
 
     function testShouldRevertBorrowWhenBorrowPaused(uint256 amount, address onBehalf, address receiver) public {
@@ -297,19 +297,19 @@ contract TestIntegrationBorrow is IntegrationTest {
             morpho.setIsBorrowPaused(market.underlying, true);
 
             vm.expectRevert(Errors.BorrowIsPaused.selector);
-            user1.borrow(market.underlying, amount, onBehalf, receiver);
+            user.borrow(market.underlying, amount, onBehalf, receiver);
         }
     }
 
     function testShouldRevertBorrowWhenNotManaging(uint256 amount, address onBehalf, address receiver) public {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
-        vm.assume(onBehalf != address(user1));
+        vm.assume(onBehalf != address(user));
         receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);
-            user1.borrow(testMarkets[markets[marketIndex]].underlying, amount, onBehalf, receiver);
+            user.borrow(testMarkets[markets[marketIndex]].underlying, amount, onBehalf, receiver);
         }
     }
 }

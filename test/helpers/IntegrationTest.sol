@@ -34,9 +34,10 @@ contract IntegrationTest is ForkTest {
     IMorpho internal morphoImpl;
     TransparentUpgradeableProxy internal morphoProxy;
 
-    UserMock internal user1;
-    UserMock internal user2;
-    UserMock internal promoter;
+    UserMock internal user;
+    UserMock internal promoter1;
+    UserMock internal promoter2;
+    UserMock internal hacker;
 
     mapping(address => TestMarket) internal testMarkets;
 
@@ -57,9 +58,10 @@ contract IntegrationTest is ForkTest {
 
         _forward(1); // All markets are outdated in Morpho's storage.
 
-        user1 = _initUser();
-        user2 = _initUser();
-        promoter = _initUser();
+        user = _initUser();
+        promoter1 = _initUser();
+        promoter2 = _initUser();
+        hacker = _initUser();
 
         super.setUp();
     }
@@ -71,9 +73,10 @@ contract IntegrationTest is ForkTest {
         vm.label(address(morphoImpl), "MorphoImpl");
         vm.label(address(positionsManager), "PositionsManager");
 
-        vm.label(address(user1), "User1");
-        vm.label(address(user2), "User2");
-        vm.label(address(promoter), "Promoter");
+        vm.label(address(user), "User");
+        vm.label(address(promoter1), "Promoter1");
+        vm.label(address(promoter2), "Promoter2");
+        vm.label(address(hacker), "Hacker");
     }
 
     function _deploy() internal {
@@ -91,10 +94,10 @@ contract IntegrationTest is ForkTest {
         _deposit(dai, 1e12, address(morpho));
     }
 
-    function _initUser() internal returns (UserMock user) {
-        user = new UserMock(address(morpho));
+    function _initUser() internal returns (UserMock newUser) {
+        newUser = new UserMock(address(morpho));
 
-        _setBalances(address(user), INITIAL_BALANCE);
+        _setBalances(address(newUser), INITIAL_BALANCE);
     }
 
     function _createForkFromEnv() internal {
@@ -147,6 +150,22 @@ contract IntegrationTest is ForkTest {
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
     }
 
+    /// @dev Sets the supply cap of AaveV3 to the given input.
+    function _setSupplyCap(TestMarket storage market, uint256 amount) internal returns (uint256 supplyCap) {
+        supplyCap = amount / (10 ** market.decimals);
+        market.supplyCap = supplyCap > 0 ? supplyCap * 10 ** market.decimals : type(uint256).max;
+
+        poolAdmin.setSupplyCap(market.underlying, supplyCap);
+    }
+
+    /// @dev Sets the borrow cap of AaveV3 to the given input.
+    function _setBorrowCap(TestMarket storage market, uint256 amount) internal returns (uint256 borrowCap) {
+        borrowCap = amount / (10 ** market.decimals);
+        market.borrowCap = borrowCap > 0 ? borrowCap * 10 ** market.decimals : type(uint256).max;
+
+        poolAdmin.setBorrowCap(market.underlying, borrowCap);
+    }
+
     /// @dev Deposits the given amount of tokens on behalf of the given address, on AaveV3.
     function _deposit(address underlying, uint256 amount, address onBehalf) internal {
         deal(underlying, address(this), amount);
@@ -162,15 +181,13 @@ contract IntegrationTest is ForkTest {
     /// @dev Bounds the input between 0 and the maximum borrowable quantity, without exceeding the market's liquidity nor its borrow cap.
     function _boundBorrow(TestMarket storage market, uint256 amount) internal view returns (uint256) {
         return bound(
-            amount,
-            market.minAmount,
-            Math.min(market.maxAmount, Math.min(ERC20(market.underlying).balanceOf(market.aToken), market.borrowGap()))
+            amount, market.minAmount, Math.min(market.maxAmount, Math.min(market.liquidity(), market.borrowGap()))
         );
     }
 
     /// @dev Borrows from `user` on behalf of `onBehalf`, without collateral.
     function _borrowNoCollateral(
-        address user,
+        address borrower,
         TestMarket storage market,
         uint256 amount,
         address onBehalf,
@@ -179,7 +196,7 @@ contract IntegrationTest is ForkTest {
     ) internal returns (uint256 borrowed) {
         oracle.setAssetPrice(market.underlying, 0);
 
-        vm.prank(user);
+        vm.prank(borrower);
         borrowed = morpho.borrow(market.underlying, amount, onBehalf, receiver, maxIterations);
 
         _deposit(dai, testMarkets[dai].minCollateral(market, borrowed), address(morpho)); // Make Morpho solvent with default collateral market, having no supply cap.
@@ -188,8 +205,11 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Promotes the incoming (or already provided) supply, without collateral.
-    function _promoteSupply(TestMarket storage market, uint256 amount) internal returns (uint256 borrowed) {
-        borrowed = bound(amount, 0, Math.min(ERC20(market.underlying).balanceOf(market.aToken), market.borrowGap()));
+    function _promoteSupply(UserMock promoter, TestMarket storage market, uint256 amount)
+        internal
+        returns (uint256 borrowed)
+    {
+        borrowed = bound(amount, 0, Math.min(market.liquidity(), market.borrowGap()));
 
         oracle.setAssetPrice(market.underlying, 0);
 
@@ -204,26 +224,55 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Promotes the incoming (or already provided) borrow.
-    function _promoteBorrow(TestMarket storage market, uint256 amount) internal returns (uint256 supplied) {
+    function _promoteBorrow(UserMock promoter, TestMarket storage market, uint256 amount)
+        internal
+        returns (uint256 supplied)
+    {
         supplied = bound(amount, 0, market.supplyGap());
 
         promoter.approve(market.underlying, supplied);
         promoter.supply(market.underlying, supplied);
     }
 
-    /// @dev Sets the supply cap of AaveV3 to the given input.
-    function _setSupplyCap(TestMarket storage market, uint256 amount) internal returns (uint256 supplyCap) {
-        supplyCap = amount / (10 ** market.decimals);
-        market.supplyCap = supplyCap > 0 ? supplyCap * 10 ** market.decimals : type(uint256).max;
+    /// @dev Adds a given amount of idle supply on the given market.
+    function _increaseIdleSupply(UserMock promoter, TestMarket storage market, uint256 amount)
+        internal
+        returns (uint256)
+    {
+        amount = _boundBorrow(market, amount);
+        amount = _promoteBorrow(promoter, market, amount); // 100% peer-to-peer.
 
-        poolAdmin.setSupplyCap(market.underlying, supplyCap);
+        address onBehalf = address(hacker);
+        _borrowNoCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
+        market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+
+        // Set the supply cap as exceeded.
+        _setSupplyCap(market, market.totalSupply());
+
+        user.approve(market.underlying, amount);
+        user.repay(market.underlying, amount, onBehalf);
+
+        return amount;
     }
 
-    /// @dev Sets the borrow cap of AaveV3 to the given input.
-    function _setBorrowCap(TestMarket storage market, uint256 amount) internal returns (uint256 borrowCap) {
-        borrowCap = amount / (10 ** market.decimals);
-        market.borrowCap = borrowCap > 0 ? borrowCap * 10 ** market.decimals : type(uint256).max;
+    /// @dev Adds a given amount of supply delta on the given market.
+    function _increaseSupplyDelta(UserMock promoter, TestMarket storage market, uint256 amount)
+        internal
+        returns (uint256)
+    {
+        amount = _boundBorrow(market, amount);
+        amount = _promoteBorrow(promoter, market, amount); // 100% peer-to-peer.
 
-        poolAdmin.setBorrowCap(market.underlying, borrowCap);
+        address onBehalf = address(hacker);
+        _borrowNoCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
+        market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+
+        // Set the max iterations to 0 upon repay to skip demotion and fallback to supply delta.
+        morpho.setDefaultMaxIterations(Types.MaxIterations({repay: 0, withdraw: 10}));
+
+        user.approve(market.underlying, amount);
+        user.repay(market.underlying, amount, onBehalf);
+
+        return amount;
     }
 }

@@ -50,12 +50,29 @@ library TestMarketLib {
         _resetPreviousIndex(market.debtToken, user);
     }
 
+    /// @dev Returns the quantity that can be borrowed/withdrawn from the market.
+    function liquidity(TestMarket storage market) internal view returns (uint256) {
+        return ERC20(market.underlying).balanceOf(market.aToken);
+    }
+
+    /// @dev Returns the quantity currently supplied on the market on AaveV3.
     function totalSupply(TestMarket storage market) internal view returns (uint256) {
         return ERC20(market.aToken).totalSupply();
     }
 
+    /// @dev Returns the quantity currently borrowed from the market on AaveV3.
     function totalBorrow(TestMarket storage market) internal view returns (uint256) {
         return ERC20(market.debtToken).totalSupply();
+    }
+
+    /// @dev Returns the quantity currently supplied on behalf of the user, on the market on AaveV3.
+    function supplyOf(TestMarket storage market, address user) internal view returns (uint256) {
+        return ERC20(market.aToken).balanceOf(user);
+    }
+
+    /// @dev Returns the quantity currently borrowed on behalf of the user, on the market on AaveV3.
+    function borrowOf(TestMarket storage market, address user) internal view returns (uint256) {
+        return ERC20(market.debtToken).balanceOf(user);
     }
 
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
