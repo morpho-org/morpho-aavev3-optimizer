@@ -29,7 +29,7 @@ library MarketSideDeltaLib {
     ) internal {
         if (amount == 0) return;
 
-        uint256 newScaledDeltaPool = delta.scaledDeltaPool + amount.rayDiv(indexes.poolIndex);
+        uint256 newScaledDeltaPool = delta.scaledDeltaPool + amount.rayDivDown(indexes.poolIndex);
 
         delta.scaledDeltaPool = newScaledDeltaPool;
 
