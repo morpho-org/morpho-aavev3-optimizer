@@ -318,20 +318,19 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             (amount, promoted, maxIterations) = _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
             vars.toRepay += promoted;
         }
-        vars.toSupply = amount;
 
         /// Breaking repay ///
 
         // Demote peer-to-peer suppliers.
-        uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxIterations);
+        uint256 demoted = _demoteSuppliers(underlying, amount, maxIterations);
 
         // Increase the peer-to-peer supply delta.
-        market.deltas.supply.increaseDelta(underlying, vars.toSupply - demoted, indexes.supply, false);
+        market.deltas.supply.increaseDelta(underlying, amount - demoted, indexes.supply, false);
 
         // Handle the supply cap.
         uint256 idleSupplyIncrease;
         (vars.toSupply, idleSupplyIncrease) =
-            market.increaseIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
+            market.increaseIdle(underlying, amount, _POOL.getConfiguration(underlying));
 
         // Update the peer-to-peer totals.
         market.deltas.decreaseP2P(
@@ -366,26 +365,25 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (amount == 0) return vars;
 
         // Decrease the peer-to-peer idle supply.
-        uint256 matchedIdle;
-        (amount, matchedIdle) = market.decreaseIdle(underlying, amount);
+        uint256 matchedExcessSupply;
+        (amount, matchedExcessSupply) = market.decreaseIdle(underlying, amount);
 
         // Decrease the peer-to-peer supply delta.
-        uint256 toWithdrawStep;
-        (amount, toWithdrawStep) =
+        uint256 matchedSupplyDelta;
+        (amount, matchedSupplyDelta) =
             market.deltas.supply.decreaseDelta(underlying, amount, indexes.supply.poolIndex, false);
-        vars.toWithdraw += toWithdrawStep;
-        uint256 p2pTotalSupplyDecrease = toWithdrawStep + matchedIdle;
+        vars.toWithdraw += matchedSupplyDelta;
+        matchedExcessSupply += matchedSupplyDelta;
 
         /// Transfer withdraw ///
 
         if (!market.isP2PDisabled()) {
             // Promote pool suppliers.
-            (vars.toBorrow, toWithdrawStep, maxIterations) =
-                _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
-            vars.toWithdraw += toWithdrawStep;
-        } else {
-            vars.toBorrow = amount;
+            uint256 promoted;
+            (amount, promoted, maxIterations) = _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
+            vars.toWithdraw += promoted;
         }
+        vars.toBorrow = amount;
 
         /// Breaking withdraw ///
 
@@ -396,7 +394,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         market.deltas.borrow.increaseDelta(underlying, vars.toBorrow - demoted, indexes.borrow, true);
 
         // Update the peer-to-peer totals.
-        market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow + p2pTotalSupplyDecrease, indexes, true);
+        market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow + matchedExcessSupply, indexes, true);
     }
 
     /// @dev Performs the accounting of a supply action.
