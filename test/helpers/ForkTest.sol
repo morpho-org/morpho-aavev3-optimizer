@@ -13,7 +13,7 @@ import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {Types} from "src/libraries/Types.sol";
 import {Events} from "src/libraries/Events.sol";
 import {Errors} from "src/libraries/Errors.sol";
-import {TestConfig, TestConfigLib} from "../helpers/TestConfigLib.sol";
+import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 
 import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
@@ -42,7 +42,7 @@ contract ForkTest is BaseTest {
     address internal wbtc;
     address internal weth;
     address internal wNative;
-    address[] internal testMarkets;
+    address[] internal allTestMarkets;
 
     IPool internal pool;
     IACLManager internal aclManager;
@@ -109,7 +109,7 @@ contract ForkTest is BaseTest {
         weth = config.getAddress("WETH");
         wNative = config.getAddress("wrappedNative");
 
-        testMarkets = config.getTestMarkets();
+        allTestMarkets = config.getTestMarkets();
     }
 
     function _label() internal virtual {

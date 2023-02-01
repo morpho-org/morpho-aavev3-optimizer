@@ -231,7 +231,7 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         amountWithdrawn = bound(
             amountWithdrawn,
             0,
-            _marketBalances[dai].scaledCollateralBalance(address(1)).rayMulDown(_market[dai].indexes.supply.poolIndex)
+            _marketBalances[dai].scaledCollateralBalance(address(1)).rayMul(_market[dai].indexes.supply.poolIndex)
         );
         uint256 expectedCollateralValue = (
             _getUserCollateralBalanceFromIndex(dai, address(1), _market[dai].indexes.supply.poolIndex) - amountWithdrawn
@@ -421,10 +421,10 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
     }
 
     function testSetPauseStatus() public {
-        for (uint256 marketIndex; marketIndex < testMarkets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allTestMarkets.length; ++marketIndex) {
             _revert();
 
-            address underlying = testMarkets[marketIndex];
+            address underlying = allTestMarkets[marketIndex];
 
             Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
 

@@ -19,7 +19,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
         for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user1.supply(markets[marketIndex].underlying, 0, onBehalf);
+            user.supply(testMarkets[markets[marketIndex]].underlying, 0, onBehalf);
         }
     }
 
@@ -28,6 +28,6 @@ contract TestIntegrationSupply is IntegrationTest {
         onBehalf = _boundOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user1.supply(sAvax, amount, onBehalf);
+        user.supply(sAvax, amount, onBehalf);
     }
 }
