@@ -94,7 +94,7 @@ library DeltasLib {
         if (feeToRepay == 0) return amount;
 
         feeToRepay = Math.min(feeToRepay, amount);
-        deltas.borrow.scaledTotalP2P = scaledTotalBorrowP2P.zeroFloorSub(feeToRepay.rayDiv(indexes.borrow.p2pIndex));
+        deltas.borrow.scaledTotalP2P = scaledTotalBorrowP2P.zeroFloorSub(feeToRepay.rayDiv(indexes.borrow.p2pIndex)); // Event emitted in `decreaseP2P`.
 
         return amount - feeToRepay;
     }

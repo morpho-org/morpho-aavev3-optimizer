@@ -214,7 +214,7 @@ library MarketLib {
         uint256 newIdleSupply = market.idleSupply + idleSupplyIncrease;
 
         market.idleSupply = newIdleSupply;
-        market.deltas.supply.scaledTotalP2P += idleSupplyIncrease.rayDiv(market.indexes.supply.p2pIndex); // No event emitted.
+        market.deltas.supply.scaledTotalP2P += idleSupplyIncrease.rayDiv(market.indexes.supply.p2pIndex); // Event emitted in `decreaseP2P`.
 
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
     }
