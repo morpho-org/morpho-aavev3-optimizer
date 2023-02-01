@@ -12,6 +12,15 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 /// @custom:contact security@morpho.xyz
 /// @notice Library exposing all Types used in Morpho.
 library Types {
+    /// ENUMS ///
+
+    enum Position {
+        POOL_SUPPLIER,
+        P2P_SUPPLIER,
+        POOL_BORROWER,
+        P2P_BORROWER
+    }
+
     /// NESTED STRUCTS ///
 
     struct MarketSideDelta {
@@ -66,6 +75,8 @@ library Types {
         // SLOT 8
         address aToken; // 160 bits
         // SLOT 9
+        address stableDebtToken; // 160 bits
+        // SLOT 10
         uint256 idleSupply; // 256 bits
     }
 
