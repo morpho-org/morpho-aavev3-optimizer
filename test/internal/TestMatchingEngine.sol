@@ -88,10 +88,9 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         uint256 totalP2PSupply;
         for (uint256 i; i < numSuppliers; i++) {
             address user = address(vm.addr(i + 1));
-            assertApproxEqAbs(
+            assertApproxEqDust(
                 marketBalances.scaledPoolSupplyBalance(user) + marketBalances.scaledP2PSupplyBalance(user),
                 USER_AMOUNT,
-                1,
                 "user supply"
             );
             totalP2PSupply += marketBalances.scaledP2PSupplyBalance(user);
@@ -103,7 +102,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         uint256 expectedIterations = Math.min(expectedPromoted.divUp(USER_AMOUNT), maxIterations);
 
         assertEq(promoted, expectedPromoted, "promoted");
-        assertApproxEqAbs(totalP2PSupply, promoted, 1, "total borrow");
+        assertApproxEqDust(totalP2PSupply, promoted, "total borrow");
         assertEq(iterationsDone, expectedIterations, "iterations");
     }
 
@@ -123,10 +122,9 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         uint256 totalP2PBorrow;
         for (uint256 i; i < numBorrowers; i++) {
             address user = vm.addr(i + 1);
-            assertApproxEqAbs(
+            assertApproxEqDust(
                 marketBalances.scaledPoolBorrowBalance(user) + marketBalances.scaledP2PBorrowBalance(user),
                 USER_AMOUNT,
-                1,
                 "user borrow"
             );
             totalP2PBorrow += marketBalances.scaledP2PBorrowBalance(user);
@@ -138,7 +136,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         uint256 expectedIterations = Math.min(expectedPromoted.divUp(USER_AMOUNT), maxIterations);
 
         assertEq(promoted, expectedPromoted, "promoted");
-        assertApproxEqAbs(totalP2PBorrow, promoted, 1, "total borrow");
+        assertApproxEqDust(totalP2PBorrow, promoted, "total borrow");
         assertEq(iterationsDone, expectedIterations, "iterations");
     }
 
@@ -158,10 +156,9 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         uint256 totalP2PSupply;
         for (uint256 i; i < numSuppliers; i++) {
             address user = vm.addr(i + 1);
-            assertApproxEqAbs(
+            assertApproxEqDust(
                 marketBalances.scaledPoolSupplyBalance(user) + marketBalances.scaledP2PSupplyBalance(user),
                 USER_AMOUNT,
-                1,
                 "user supply"
             );
             totalP2PSupply += marketBalances.scaledP2PSupplyBalance(user);
@@ -190,10 +187,9 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         uint256 totalP2PBorrow;
         for (uint256 i; i < numBorrowers; i++) {
             address user = vm.addr(i + 1);
-            assertApproxEqAbs(
+            assertApproxEqDust(
                 marketBalances.scaledPoolBorrowBalance(user) + marketBalances.scaledP2PBorrowBalance(user),
                 USER_AMOUNT,
-                1,
                 "user borrow"
             );
             totalP2PBorrow += marketBalances.scaledP2PBorrowBalance(user);
