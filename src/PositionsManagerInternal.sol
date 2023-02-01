@@ -113,9 +113,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         );
 
         uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
-        uint256 totalDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
 
-        if (amount + totalP2P + totalDebt > borrowCap) revert Errors.ExceedsBorrowCap();
+        if (
+            borrowCap != 0
+                && amount + totalP2P + ERC20(market.variableDebtToken).totalSupply()
+                    + ERC20(market.stableDebtToken).totalSupply() > borrowCap
+        ) revert Errors.ExceedsBorrowCap();
 
         Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
         if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
