@@ -373,6 +373,9 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 inP2P,
         bool demoting
     ) internal {
+        if (onPool <= Constants.DUST_THRESHOLD) onPool = 0;
+        if (inP2P <= Constants.DUST_THRESHOLD) inP2P = 0;
+
         uint256 formerOnPool = poolBuckets.valueOf[user];
         uint256 formerInP2P = p2pBuckets.valueOf[user];
 
