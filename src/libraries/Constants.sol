@@ -20,8 +20,6 @@ library Constants {
     string internal constant EIP712_MSG_PREFIX = "\x19\x01";
     string internal constant EIP712_NAME = "Morpho-AaveV3";
     string internal constant EIP712_VERSION = "0";
-    bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
-        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"); // The EIP-712 typehash for the contract's domain.
     bytes32 internal constant APPROVE_MANAGER_TYPEHASH =
         keccak256("ApproveManager(address delegator,address manager,bool isAllowed,uint256 nonce,uint256 deadline)"); // The EIP-712 typehash for approveManagerBySig Authorization.
 
