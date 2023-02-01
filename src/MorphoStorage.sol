@@ -11,17 +11,17 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2StepUpgradeable.sol";
+import {EIP712Upgradeable} from "@openzeppelin-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 
 /// @title MorphoStorage
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
 /// @notice The storage shared by Morpho's contracts.
-abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
+abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable, EIP712Upgradeable {
     /// IMMUTABLES ///
 
     IPool internal immutable _POOL; // The address of the pool.
     IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER; // The address of the pool addresses provider.
-    bytes32 internal immutable _DOMAIN_SEPARATOR; // The domain separator as part of the EIP712.
     uint8 internal immutable _E_MODE_CATEGORY_ID; // The e-mode category of the deployed Morpho.
 
     /// STORAGE ///
@@ -50,16 +50,6 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
 
         _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
         _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
-
-        _DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                Constants.EIP712_DOMAIN_TYPEHASH,
-                keccak256(bytes(Constants.EIP712_NAME)),
-                keccak256(bytes(Constants.EIP712_VERSION)),
-                block.chainid,
-                address(this)
-            )
-        );
 
         _E_MODE_CATEGORY_ID = eModeCategoryId;
     }

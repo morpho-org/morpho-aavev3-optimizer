@@ -44,6 +44,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         initializer
     {
         __Ownable_init_unchained();
+        __EIP712_init_unchained("Morpho AAVE V3", "");
 
         _positionsManager = newPositionsManager;
         _defaultMaxIterations = newDefaultMaxIterations;
@@ -228,10 +229,9 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         // v ∈ {27, 28} (source: https://ethereum.github.io/yellowpaper/paper.pdf #308)
         if (signature.v != 27 && signature.v != 28) revert Errors.InvalidValueV();
 
-        bytes32 structHash = keccak256(
-            abi.encode(Constants.EIP712_AUTHORIZATION_TYPEHASH, delegator, manager, isAllowed, nonce, deadline)
-        );
-        bytes32 digest = _hashEIP712TypedData(structHash);
+        bytes32 structHash =
+            keccak256(abi.encode(Constants.APPROVE_MANAGER_TYPEHASH, delegator, manager, isAllowed, nonce, deadline));
+        bytes32 digest = _hashTypedDataV4(structHash);
         address signatory = ecrecover(digest, signature.v, signature.r, signature.s);
 
         if (signatory == address(0) || delegator != signatory) revert Errors.InvalidSignatory();

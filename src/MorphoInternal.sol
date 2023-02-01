@@ -138,11 +138,6 @@ abstract contract MorphoInternal is MorphoStorage {
         emit Events.P2PDeltasIncreased(underlying, amount);
     }
 
-    /// @dev Returns the hash of the EIP712 typed data.
-    function _hashEIP712TypedData(bytes32 structHash) internal view returns (bytes32) {
-        return keccak256(abi.encodePacked(Constants.EIP712_MSG_PREFIX, _DOMAIN_SEPARATOR, structHash));
-    }
-
     /// @notice Approves a `manager` to borrow/withdraw on behalf of the sender.
     /// @param manager The address of the manager.
     /// @param isAllowed Whether `manager` is allowed to manage `delegator`'s position or not.
