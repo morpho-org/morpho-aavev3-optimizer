@@ -316,12 +316,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         if (!market.isP2PDisabled()) {
             // Promote pool borrowers.
-            (vars.toSupply, toRepayStep, maxIterations) =
-                _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
-            vars.toRepay += toRepayStep;
-        } else {
-            vars.toSupply = amount;
+            uint256 promoted;
+            (amount, promoted, maxIterations) = _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
+            vars.toRepay += promoted;
         }
+        vars.toSupply = amount;
 
         /// Breaking repay ///
 
@@ -331,11 +330,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Increase the peer-to-peer supply delta.
         market.deltas.supply.increaseDelta(underlying, vars.toSupply - demoted, indexes.supply, false);
 
-        // Update the peer-to-peer totals.
-        market.deltas.decreaseP2P(underlying, demoted, vars.toSupply + p2pTotalBorrowDecrease, indexes, false);
-
         // Handle the supply cap.
         vars.toSupply = market.increaseIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
+
+        // Update the peer-to-peer totals.
+        market.deltas.decreaseP2P(underlying, demoted, amount + p2pTotalBorrowDecrease, indexes, false);
     }
 
     /// @dev Performs the accounting of a withdraw action.
