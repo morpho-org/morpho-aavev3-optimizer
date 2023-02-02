@@ -47,10 +47,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable, EIP71
     /// @param addressesProvider The address of the pool addresses provider.
     /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
     constructor(address addressesProvider, uint8 eModeCategoryId)
-        EIP712(
-            Constants.EIP712_NAME,
-            string(abi.encodePacked(Constants.EIP712_VERSION, ".", Strings.toString(eModeCategoryId)))
-        )
+        EIP712(Constants.EIP712_NAME, string.concat(Constants.EIP712_VERSION, ".", Strings.toString(eModeCategoryId)))
     {
         _disableInitializers();
 
