@@ -12,6 +12,7 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @title MorphoStorage
 /// @author Morpho Labs
@@ -46,7 +47,10 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable, EIP71
     /// @param addressesProvider The address of the pool addresses provider.
     /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
     constructor(address addressesProvider, uint8 eModeCategoryId)
-        EIP712(Constants.EIP712_NAME, Constants.EIP712_VERSION)
+        EIP712(
+            Constants.EIP712_NAME,
+            string(abi.encodePacked(Constants.EIP712_VERSION, ".", Strings.toString(eModeCategoryId)))
+        )
     {
         _disableInitializers();
 
