@@ -42,7 +42,7 @@ contract ForkTest is BaseTest {
     address internal wbtc;
     address internal weth;
     address internal wNative;
-    address[] internal allTestMarkets;
+    address[] internal allUnderlyings;
 
     IPool internal pool;
     IACLManager internal aclManager;
@@ -109,7 +109,7 @@ contract ForkTest is BaseTest {
         weth = config.getAddress("WETH");
         wNative = config.getAddress("wrappedNative");
 
-        allTestMarkets = config.getTestMarkets();
+        allUnderlyings = config.getTestMarkets();
     }
 
     function _label() internal virtual {
