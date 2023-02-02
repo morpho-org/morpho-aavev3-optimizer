@@ -48,10 +48,10 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[markets[marketIndex]];
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             test.supplied = _boundSupply(market, amount);
             amount = bound(amount, test.supplied + 1, type(uint256).max);
@@ -111,10 +111,10 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[markets[marketIndex]];
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
@@ -131,9 +131,9 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, 0, onBehalf, receiver);
+            user.withdrawCollateral(testMarkets[underlyings[marketIndex]].underlying, 0, onBehalf, receiver);
         }
     }
 
@@ -141,9 +141,9 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         amount = _boundAmount(amount);
         receiver = _boundReceiver(receiver);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, amount, address(0), receiver);
+            user.withdrawCollateral(testMarkets[underlyings[marketIndex]].underlying, amount, address(0), receiver);
         }
     }
 
@@ -153,9 +153,9 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, amount, onBehalf, address(0));
+            user.withdrawCollateral(testMarkets[underlyings[marketIndex]].underlying, amount, onBehalf, address(0));
         }
     }
 
@@ -183,10 +183,10 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[markets[marketIndex]];
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             morpho.setIsWithdrawCollateralPaused(market.underlying, true);
 
@@ -203,9 +203,9 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         vm.assume(onBehalf != address(user));
         receiver = _boundReceiver(receiver);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);
-            user.withdrawCollateral(testMarkets[markets[marketIndex]].underlying, amount, onBehalf);
+            user.withdrawCollateral(testMarkets[underlyings[marketIndex]].underlying, amount, onBehalf);
         }
     }
 
@@ -218,10 +218,10 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[markets[marketIndex]];
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             amount = _boundSupply(market, amount);
 

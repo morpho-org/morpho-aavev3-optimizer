@@ -47,10 +47,10 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[borrowableMarkets[marketIndex]];
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
 
             amount = _boundBorrow(market, amount);
 
@@ -103,10 +103,10 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[borrowableMarkets[marketIndex]];
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
 
             amount = _boundBorrow(market, amount);
             amount = _promoteBorrow(promoter1, market, amount); // 100% peer-to-peer.
@@ -200,10 +200,10 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[borrowableMarkets[marketIndex]];
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
 
             amount = _boundBorrow(market, amount);
 
@@ -243,9 +243,9 @@ contract TestIntegrationBorrow is IntegrationTest {
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user.borrow(testMarkets[markets[marketIndex]].underlying, 0, onBehalf, receiver);
+            user.borrow(testMarkets[underlyings[marketIndex]].underlying, 0, onBehalf, receiver);
         }
     }
 
@@ -253,9 +253,9 @@ contract TestIntegrationBorrow is IntegrationTest {
         amount = _boundAmount(amount);
         receiver = _boundReceiver(receiver);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user.borrow(testMarkets[markets[marketIndex]].underlying, amount, address(0), receiver);
+            user.borrow(testMarkets[underlyings[marketIndex]].underlying, amount, address(0), receiver);
         }
     }
 
@@ -265,9 +265,9 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user.borrow(testMarkets[markets[marketIndex]].underlying, amount, onBehalf, address(0));
+            user.borrow(testMarkets[underlyings[marketIndex]].underlying, amount, onBehalf, address(0));
         }
     }
 
@@ -289,10 +289,10 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[markets[marketIndex]];
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             morpho.setIsBorrowPaused(market.underlying, true);
 
@@ -307,9 +307,9 @@ contract TestIntegrationBorrow is IntegrationTest {
         vm.assume(onBehalf != address(user));
         receiver = _boundReceiver(receiver);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);
-            user.borrow(testMarkets[markets[marketIndex]].underlying, amount, onBehalf, receiver);
+            user.borrow(testMarkets[underlyings[marketIndex]].underlying, amount, onBehalf, receiver);
         }
     }
 }

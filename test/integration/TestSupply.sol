@@ -23,10 +23,10 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldSupplyPoolOnly(uint256 amount, address onBehalf) public returns (SupplyTest memory test) {
         onBehalf = _boundAddressNotZero(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[markets[marketIndex]];
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             amount = _boundSupply(market, amount);
 
@@ -76,10 +76,10 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldSupplyP2POnly(uint256 amount, address onBehalf) public returns (SupplyTest memory test) {
         onBehalf = _boundAddressNotZero(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[borrowableMarkets[marketIndex]];
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
 
             amount = _boundSupply(market, amount);
             amount = _promoteSupply(promoter1, market, amount); // 100% peer-to-peer.
@@ -172,10 +172,10 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldUpdateIndexesAfterSupply(uint256 amount, address onBehalf) public {
         onBehalf = _boundAddressNotZero(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[markets[marketIndex]];
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             amount = _boundSupply(market, amount);
 
@@ -225,9 +225,9 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldRevertSupplyOnBehalfZero(uint256 amount) public {
         amount = _boundAmount(amount);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user.supply(testMarkets[markets[marketIndex]].underlying, amount, address(0));
+            user.supply(testMarkets[underlyings[marketIndex]].underlying, amount, address(0));
         }
     }
 
@@ -243,10 +243,10 @@ contract TestIntegrationSupply is IntegrationTest {
         amount = _boundAmount(amount);
         onBehalf = _boundAddressNotZero(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[markets[marketIndex]];
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             morpho.setIsSupplyPaused(market.underlying, true);
 
@@ -259,10 +259,10 @@ contract TestIntegrationSupply is IntegrationTest {
         amount = _boundAmount(amount);
         onBehalf = _boundAddressNotZero(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[markets[marketIndex]];
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             amount = _boundSupply(market, amount);
             allowance = bound(allowance, 0, amount - 1);
@@ -280,10 +280,10 @@ contract TestIntegrationSupply is IntegrationTest {
 
         morpho.setIsPausedForAllMarkets(true);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[markets[marketIndex]];
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             amount = _boundSupply(market, amount);
 

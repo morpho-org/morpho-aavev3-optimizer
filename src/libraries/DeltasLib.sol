@@ -17,10 +17,10 @@ library DeltasLib {
     /// @notice Increases the peer-to-peer amounts following a promotion.
     /// @param deltas The market deltas to update.
     /// @param underlying The underlying address.
-    /// @param promoted The amount promoted (in underlying).
-    /// @param amount The amount to repay/withdraw (in underlying).
+    /// @param promoted The amount to increase the promoted peer-to-peer total (in underlying). Must be lower than or equal to amount.
+    /// @param amount The amount to increase the opposite peer-to-peer total (in underlying).
     /// @param indexes The current indexes.
-    /// @param borrowSide Whether the promotion was performed on the borrow side.
+    /// @param borrowSide True if this follows borrower promotions. False for supplier promotions.
     /// @return p2pBalanceIncrease The balance amount in peer-to-peer to increase.
     function increaseP2P(
         Types.Deltas storage deltas,
@@ -47,10 +47,10 @@ library DeltasLib {
     /// @notice Decreases the peer-to-peer amounts following a demotion.
     /// @param deltas The market deltas to update.
     /// @param underlying The underlying address.
-    /// @param demoted The amount demoted (in underlying).
-    /// @param amount The amount to supply/borrow (in underlying).
+    /// @param demoted The amount to decrease the demoted peer-to-peer total (in underlying). Must be lower than or equal to amount.
+    /// @param amount The amount to decrease the opposite peer-to-peer total (in underlying).
     /// @param indexes The current indexes.
-    /// @param borrowSide Whether the demotion was performed on the borrow side.
+    /// @param borrowSide True if this follows borrower demotions. False for supplier demotions.
     function decreaseP2P(
         Types.Deltas storage deltas,
         address underlying,
@@ -76,26 +76,26 @@ library DeltasLib {
     /// @dev Should only be called if amount or borrow delta is zero.
     /// @param amount The amount to repay/withdraw.
     /// @param indexes The current indexes.
-    /// @return The new amount left to process.
+    /// @return The new amount left to process, the fee repaid.
     function repayFee(Types.Deltas storage deltas, uint256 amount, Types.Indexes256 memory indexes)
         internal
-        returns (uint256)
+        view
+        returns (uint256, uint256)
     {
-        if (amount == 0) return 0;
+        if (amount == 0) return (0, 0);
 
         uint256 scaledTotalBorrowP2P = deltas.borrow.scaledTotalP2P;
         // Fee = (borrow.totalScaledP2P - borrow.delta) - (supply.totalScaledP2P - supply.delta).
-        uint256 feeToRepay = scaledTotalBorrowP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+        uint256 repaidFee = scaledTotalBorrowP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
             deltas.supply.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
                 deltas.supply.scaledDeltaPool.rayMul(indexes.supply.poolIndex)
             )
         );
 
-        if (feeToRepay == 0) return amount;
+        if (repaidFee == 0) return (amount, 0);
 
-        feeToRepay = Math.min(feeToRepay, amount);
-        deltas.borrow.scaledTotalP2P = scaledTotalBorrowP2P.zeroFloorSub(feeToRepay.rayDiv(indexes.borrow.p2pIndex)); // Event emitted in `decreaseP2P`.
+        repaidFee = Math.min(repaidFee, amount);
 
-        return amount - feeToRepay;
+        return (amount - repaidFee, repaidFee);
     }
 }

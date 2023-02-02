@@ -24,10 +24,10 @@ contract TestIntegrationRepay is IntegrationTest {
     function testShouldRepayPoolOnly(uint256 amount, address onBehalf) public returns (RepayTest memory test) {
         onBehalf = _boundAddressNotZero(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[borrowableMarkets[marketIndex]];
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
 
             test.borrowed = _boundBorrow(market, amount);
             uint256 promoted = _promoteBorrow(promoter1, market, test.borrowed.percentMul(50_00)); // 50% peer-to-peer.
@@ -91,10 +91,10 @@ contract TestIntegrationRepay is IntegrationTest {
     function testShouldRepayAllBorrow(uint256 amount, address onBehalf) public returns (RepayTest memory test) {
         onBehalf = _boundAddressNotZero(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[borrowableMarkets[marketIndex]];
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
 
             test.borrowed = _boundBorrow(market, amount);
             uint256 promoted = _promoteBorrow(promoter1, market, test.borrowed.percentMul(50_00)); // 50% peer-to-peer.
@@ -164,10 +164,10 @@ contract TestIntegrationRepay is IntegrationTest {
     {
         onBehalf = _boundAddressNotZero(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[borrowableMarkets[marketIndex]];
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
 
             test.borrowed = _boundBorrow(market, amount);
             test.borrowed = _promoteBorrow(promoter1, market, test.borrowed); // 100% peer-to-peer.
@@ -251,10 +251,10 @@ contract TestIntegrationRepay is IntegrationTest {
     {
         onBehalf = _boundAddressNotZero(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableMarkets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[borrowableMarkets[marketIndex]];
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
 
             test.borrowed = _boundBorrow(market, amount);
             test.borrowed = _promoteBorrow(promoter1, market, test.borrowed); // 100% peer-to-peer.
@@ -337,18 +337,18 @@ contract TestIntegrationRepay is IntegrationTest {
     function testShouldRevertRepayZero(address onBehalf) public {
         onBehalf = _boundAddressNotZero(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user.repay(testMarkets[markets[marketIndex]].underlying, 0, onBehalf);
+            user.repay(testMarkets[underlyings[marketIndex]].underlying, 0, onBehalf);
         }
     }
 
     function testShouldRevertRepayOnBehalfZero(uint256 amount) public {
         amount = _boundAmount(amount);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user.repay(testMarkets[markets[marketIndex]].underlying, amount, address(0));
+            user.repay(testMarkets[underlyings[marketIndex]].underlying, amount, address(0));
         }
     }
 
@@ -365,10 +365,10 @@ contract TestIntegrationRepay is IntegrationTest {
         onBehalf = _boundAddressNotZero(onBehalf);
         vm.assume(onBehalf != address(user));
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket memory market = testMarkets[markets[marketIndex]];
+            TestMarket memory market = testMarkets[underlyings[marketIndex]];
 
             morpho.setIsRepayPaused(market.underlying, true);
 
