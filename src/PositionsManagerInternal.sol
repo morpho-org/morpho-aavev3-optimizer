@@ -331,10 +331,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         market.deltas.supply.increaseDelta(underlying, vars.toSupply - demoted, indexes.supply, false);
 
         // Handle the supply cap.
-        vars.toSupply = market.increaseIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
+        uint256 idleSupplyIncrease;
+        (vars.toSupply, idleSupplyIncrease) =
+            market.increaseIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
 
         // Update the peer-to-peer totals.
-        market.deltas.decreaseP2P(underlying, demoted, amount + p2pTotalBorrowDecrease, indexes, false);
+        market.deltas.decreaseP2P(
+            underlying, demoted.zeroFloorSub(idleSupplyIncrease), amount + p2pTotalBorrowDecrease, indexes, false
+        );
     }
 
     /// @dev Performs the accounting of a withdraw action.
