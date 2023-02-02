@@ -13,6 +13,7 @@ import {Constants} from "./libraries/Constants.sol";
 import {Permit2Lib} from "./libraries/Permit2Lib.sol";
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 import {MorphoGetters} from "./MorphoGetters.sol";
@@ -224,16 +225,13 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external {
-        if (uint256(signature.s) > Constants.MAX_VALID_ECDSA_S) revert Errors.InvalidValueS();
-        // v ∈ {27, 28} (source: https://ethereum.github.io/yellowpaper/paper.pdf #308)
-        if (signature.v != 27 && signature.v != 28) revert Errors.InvalidValueV();
-
         bytes32 structHash =
             keccak256(abi.encode(Constants.APPROVE_MANAGER_TYPEHASH, delegator, manager, isAllowed, nonce, deadline));
         bytes32 digest = _hashTypedDataV4(structHash);
-        address signatory = ecrecover(digest, signature.v, signature.r, signature.s);
 
-        if (signatory == address(0) || delegator != signatory) revert Errors.InvalidSignatory();
+        address signatory = ECDSA.recover(digest, signature.v, signature.r, signature.s);
+
+        if (delegator != signatory) revert Errors.InvalidSignatory();
         if (block.timestamp >= deadline) revert Errors.SignatureExpired();
 
         uint256 usedNonce = _userNonce[signatory]++;
