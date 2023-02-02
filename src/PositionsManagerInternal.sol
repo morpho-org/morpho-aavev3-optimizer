@@ -112,10 +112,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             delta.scaledDeltaPool.rayMul(indexes.borrow.poolIndex)
         );
 
-        uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
-        uint256 totalDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
-
-        if (amount + totalP2P + totalDebt > borrowCap) revert Errors.ExceedsBorrowCap();
+        if (config.getBorrowCap() != 0) {
+            uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
+            uint256 poolDebt =
+                ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
+            if (amount + totalP2P + poolDebt > borrowCap) revert Errors.ExceedsBorrowCap();
+        }
 
         Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
         if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
