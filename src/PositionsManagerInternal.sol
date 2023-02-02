@@ -290,7 +290,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Pool repay ///
 
         // Repay borrow on pool.
-        (vars.toRepay, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.borrow.poolIndex);
+        (amount, vars.toRepay, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
         // Repay borrow peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
@@ -351,7 +351,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Pool withdraw ///
 
         // Withdraw supply on pool.
-        (vars.toWithdraw, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.supply.poolIndex);
+        (amount, vars.toWithdraw, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.supply.poolIndex);
 
         Types.Market storage market = _market[underlying];
 
@@ -529,7 +529,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         pure
         returns (uint256, uint256, uint256)
     {
-        if (onPool == 0) return (0, amount, onPool);
+        if (onPool == 0) return (amount, 0, onPool);
 
         uint256 toProcess = Math.min(onPool.rayMul(poolIndex), amount);
 
