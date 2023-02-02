@@ -63,6 +63,7 @@ abstract contract MorphoInternal is MorphoStorage {
         market.underlying = underlying;
         market.aToken = reserveData.aTokenAddress;
         market.variableDebtToken = reserveData.variableDebtTokenAddress;
+        market.stableDebtToken = reserveData.stableDebtTokenAddress;
 
         _marketsCreated.push(underlying);
 

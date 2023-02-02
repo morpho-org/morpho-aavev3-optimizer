@@ -164,6 +164,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     }
 
     /// @notice Returns the account after `user` in the same bucket of the corresponding market side.
+    /// @dev Input address zero to get the head of the bucket.
     /// @param underlying The address of the underlying asset.
     /// @param position The position type, either pool or peer-to-peer and either supply or borrow.
     function getNext(address underlying, Types.Position position, address user) external view returns (address) {
