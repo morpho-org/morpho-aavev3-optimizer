@@ -128,7 +128,7 @@ abstract contract MatchingEngine is MorphoInternal {
         LogarithmicBuckets.Buckets storage p2pBuckets,
         Types.MatchingEngineVars memory vars
     ) internal returns (uint256 processed, uint256 iterationsDone) {
-        if (vars.maxIterations == 0) return (0, 0);
+        if (vars.maxIterations == 0 || vars.amount == 0) return (0, 0);
 
         uint256 remaining = vars.amount;
         LogarithmicBuckets.Buckets storage workingBuckets = vars.demoting ? p2pBuckets : poolBuckets;

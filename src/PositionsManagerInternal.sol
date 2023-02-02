@@ -216,8 +216,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
                 market.deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
 
             // Promote pool borrowers.
-            uint256 promoted;
-            (amount, promoted,) = _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
+            (uint256 promoted,) = _promoteBorrowers(underlying, amount, maxIterations);
+            amount -= promoted;
             vars.toRepay += promoted;
 
             // Update the peer-to-peer totals.
@@ -258,8 +258,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
                 market.deltas.supply.decreaseDelta(underlying, amount, indexes.supply.poolIndex, false);
 
             // Promote pool suppliers.
-            uint256 promoted;
-            (amount, promoted,) = _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
+            (uint256 promoted,) = _promoteSuppliers(underlying, amount, maxIterations);
+            amount -= promoted;
             vars.toWithdraw += promoted;
 
             // Update the peer-to-peer totals.
@@ -314,14 +314,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         if (!market.isP2PDisabled()) {
             // Promote pool borrowers.
-            (vars.toSupply, toRepayStep, maxIterations) =
-                _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
-            vars.toRepay += toRepayStep;
-        } else {
-            vars.toSupply = amount;
+            (uint256 promoted, uint256 iterations) = _promoteBorrowers(underlying, amount, maxIterations);
+            amount -= promoted;
+            vars.toRepay += promoted;
+            maxIterations -= iterations;
         }
 
         /// Breaking repay ///
+
+        vars.toSupply = amount;
 
         // Demote peer-to-peer suppliers.
         uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxIterations);
@@ -377,14 +378,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         if (!market.isP2PDisabled()) {
             // Promote pool suppliers.
-            (vars.toBorrow, toWithdrawStep, maxIterations) =
-                _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
-            vars.toWithdraw += toWithdrawStep;
-        } else {
-            vars.toBorrow = amount;
+            (uint256 promoted, uint256 iterations) = _promoteSuppliers(underlying, amount, maxIterations);
+            amount -= promoted;
+            vars.toWithdraw += promoted;
+            maxIterations -= iterations;
         }
 
         /// Breaking withdraw ///
+
+        vars.toBorrow = amount;
 
         // Demote peer-to-peer borrowers.
         uint256 demoted = _demoteBorrowers(underlying, vars.toBorrow, maxIterations);
@@ -538,25 +540,5 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             toProcess,
             onPool.zeroFloorSub(toProcess.rayDivUp(poolIndex)) // In scaled balance.
         );
-    }
-
-    /// @notice Given variables from a market side, promotes users and calculates the amount to repay/withdraw from promote,
-    ///         the amount left to process, and the number of iterations left.
-    /// @param underlying The underlying address.
-    /// @param amount The amount to supply/borrow.
-    /// @param maxIterations The maximum number of iterations to run.
-    /// @param promote The promote function.
-    /// @return The amount left to process, the amount to repay/withdraw from promote, and the number of iterations left.
-    function _promoteRoutine(
-        address underlying,
-        uint256 amount,
-        uint256 maxIterations,
-        function(address, uint256, uint256) returns (uint256, uint256) promote
-    ) internal returns (uint256, uint256, uint256) {
-        if (amount == 0) return (amount, 0, maxIterations);
-
-        (uint256 promoted, uint256 iterationsDone) = promote(underlying, amount, maxIterations); // In underlying.
-
-        return (amount - promoted, promoted, maxIterations - iterationsDone);
     }
 }
