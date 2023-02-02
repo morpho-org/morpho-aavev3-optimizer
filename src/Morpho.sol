@@ -44,7 +44,6 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         initializer
     {
         __Ownable_init_unchained();
-        __EIP712_init_unchained(Constants.EIP712_NAME, Constants.EIP712_VERSION);
 
         _positionsManager = newPositionsManager;
         _defaultMaxIterations = newDefaultMaxIterations;

@@ -11,13 +11,13 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2StepUpgradeable.sol";
-import {EIP712Upgradeable} from "@openzeppelin-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
 /// @title MorphoStorage
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
 /// @notice The storage shared by Morpho's contracts.
-abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable, EIP712Upgradeable {
+abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable, EIP712 {
     /// IMMUTABLES ///
 
     IPool internal immutable _POOL; // The address of the pool.
@@ -45,7 +45,9 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable, EIP71
     /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
     /// @param addressesProvider The address of the pool addresses provider.
     /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
-    constructor(address addressesProvider, uint8 eModeCategoryId) {
+    constructor(address addressesProvider, uint8 eModeCategoryId)
+        EIP712(Constants.EIP712_NAME, Constants.EIP712_VERSION)
+    {
         _disableInitializers();
 
         _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
