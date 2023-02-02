@@ -115,7 +115,8 @@ contract IntegrationTest is ForkTest {
 
         market = testMarkets[underlying];
         market.aToken = reserve.aTokenAddress;
-        market.debtToken = reserve.variableDebtTokenAddress;
+        market.variableDebtToken = reserve.variableDebtTokenAddress;
+        market.stableDebtToken = reserve.stableDebtTokenAddress;
         market.underlying = underlying;
         market.symbol = ERC20(underlying).symbol();
         market.reserveFactor = reserveFactor;
@@ -144,7 +145,7 @@ contract IntegrationTest is ForkTest {
         underlyings.push(underlying);
         if (
             market.ltv > 0 && reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
-                && !reserve.configuration.getBorrowableInIsolation() && market.borrowCap > market.totalBorrow()
+                && !reserve.configuration.getBorrowableInIsolation() && market.borrowGap() > 0
         ) borrowableUnderlyings.push(underlying);
 
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);

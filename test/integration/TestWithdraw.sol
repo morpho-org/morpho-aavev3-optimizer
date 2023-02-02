@@ -87,7 +87,8 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             // Assert Morpho's position on pool.
             assertApproxEqAbs(market.supplyOf(address(morpho)), 0, 1, "morphoSupply != 0");
-            assertApproxEqAbs(market.borrowOf(address(morpho)), 0, 2, "morphoBorrow != 0");
+            assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 2, "morphoVariableBorrow != 0");
+            assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
             // Assert receiver's underlying balance.
             assertApproxEqAbs(
@@ -175,7 +176,8 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             // Assert Morpho's position on pool.
             assertApproxEqAbs(market.supplyOf(address(morpho)), 0, 2, "morphoSupply != 0");
-            assertApproxEqAbs(market.borrowOf(address(morpho)), promoted, 2, "morphoBorrow != promoted");
+            assertApproxEqAbs(market.variableBorrowOf(address(morpho)), promoted, 2, "morphoVariableBorrow != promoted");
+            assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
             // Assert receiver's underlying balance.
             assertApproxLeAbs(
@@ -276,7 +278,10 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             // Assert Morpho's position on pool.
             assertApproxEqAbs(market.supplyOf(address(morpho)), 0, 1, "morphoSupply != 0");
-            assertApproxGeAbs(market.borrowOf(address(morpho)), borrowGapBefore, 1, "morphoBorrow != borrowGapBefore");
+            assertApproxGeAbs(
+                market.variableBorrowOf(address(morpho)), borrowGapBefore, 1, "morphoVariableBorrow != borrowGapBefore"
+            );
+            assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
             assertEq(market.borrowGap(), 0, "borrowGapAfter != 0");
 
             // Assert user's underlying balance.

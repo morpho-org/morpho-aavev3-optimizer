@@ -75,7 +75,8 @@ contract TestIntegrationBorrow is IntegrationTest {
             assertApproxGeAbs(morpho.borrowBalance(market.underlying, onBehalf), amount, 2, "borrow != amount");
 
             // Assert Morpho's position on pool.
-            assertApproxEqAbs(market.borrowOf(address(morpho)), amount, 1, "morphoBorrow != amount");
+            assertApproxEqAbs(market.variableBorrowOf(address(morpho)), amount, 1, "morphoVariableBorrow != amount");
+            assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
             // Assert receiver's underlying balance.
             assertEq(
@@ -112,7 +113,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             amount = _promoteBorrow(promoter1, market, amount); // 100% peer-to-peer.
 
             uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
-            uint256 morphoBalanceBefore = market.borrowOf(address(morpho));
+            uint256 morphoBalanceBefore = market.variableBorrowOf(address(morpho));
 
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.SupplyPositionUpdated(address(promoter1), market.underlying, 0, 0);
@@ -154,7 +155,10 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             // Assert Morpho's position on pool.
             assertApproxGeAbs(
-                market.borrowOf(address(morpho)), morphoBalanceBefore, 2, "morphoBalanceAfter != morphoBalanceBefore"
+                market.variableBorrowOf(address(morpho)),
+                morphoBalanceBefore,
+                2,
+                "morphoBalanceAfter != morphoBalanceBefore"
             );
 
             // Assert receiver's underlying balance.
