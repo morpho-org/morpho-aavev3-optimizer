@@ -112,13 +112,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             delta.scaledDeltaPool.rayMul(indexes.borrow.poolIndex)
         );
 
-        uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
-
-        if (
-            borrowCap != 0
-                && amount + totalP2P + ERC20(market.variableDebtToken).totalSupply()
-                    + ERC20(market.stableDebtToken).totalSupply() > borrowCap
-        ) revert Errors.ExceedsBorrowCap();
+        if (config.getBorrowCap() != 0) {
+            uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
+            uint256 poolDebt =
+                ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
+            if (amount + totalP2P + poolDebt > borrowCap) revert Errors.ExceedsBorrowCap();
+        }
 
         Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
         if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
@@ -293,7 +292,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Pool repay ///
 
         // Repay borrow on pool.
-        (vars.toRepay, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.borrow.poolIndex);
+        (amount, vars.toRepay, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
         // Repay borrow peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
@@ -354,7 +353,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Pool withdraw ///
 
         // Withdraw supply on pool.
-        (vars.toWithdraw, amount, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.supply.poolIndex);
+        (amount, vars.toWithdraw, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.supply.poolIndex);
 
         Types.Market storage market = _market[underlying];
 
@@ -532,7 +531,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         pure
         returns (uint256, uint256, uint256)
     {
-        if (onPool == 0) return (0, amount, onPool);
+        if (onPool == 0) return (amount, 0, onPool);
 
         uint256 toProcess = Math.min(onPool.rayMul(poolIndex), amount);
 

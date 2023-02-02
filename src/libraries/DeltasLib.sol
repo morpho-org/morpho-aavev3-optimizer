@@ -20,7 +20,7 @@ library DeltasLib {
     /// @param promoted The amount promoted (in underlying).
     /// @param amount The amount to repay/withdraw (in underlying).
     /// @param indexes The current indexes.
-    /// @param borrowSide Whether the promotion was performed on the borrow side.
+    /// @param borrowSide True if this follows borrower promotions. False for supplier promotions.
     /// @return p2pBalanceIncrease The balance amount in peer-to-peer to increase.
     function increaseP2P(
         Types.Deltas storage deltas,
@@ -50,7 +50,7 @@ library DeltasLib {
     /// @param demoted The amount demoted (in underlying).
     /// @param amount The amount to supply/borrow (in underlying).
     /// @param indexes The current indexes.
-    /// @param borrowSide Whether the demotion was performed on the borrow side.
+    /// @param borrowSide True if this follows borrower demotions. False for supplier demotions.
     function decreaseP2P(
         Types.Deltas storage deltas,
         address underlying,
