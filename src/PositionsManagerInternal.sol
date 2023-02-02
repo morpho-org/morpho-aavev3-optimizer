@@ -304,10 +304,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Market storage market = _market[underlying];
 
         // Decrease the peer-to-peer borrow delta.
-        uint256 toRepayStep;
-        (amount, toRepayStep) = market.deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
-        vars.toRepay += toRepayStep;
-        uint256 p2pTotalBorrowDecrease = toRepayStep;
+        uint256 matchedBorrowDelta;
+        (amount, matchedBorrowDelta) =
+            market.deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
+        vars.toRepay += matchedBorrowDelta;
 
         // Repay the fee.
         amount = market.deltas.repayFee(amount, indexes);
@@ -337,7 +337,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         // Update the peer-to-peer totals.
         market.deltas.decreaseP2P(
-            underlying, demoted.zeroFloorSub(idleSupplyIncrease), amount + p2pTotalBorrowDecrease, indexes, false
+            underlying, demoted.zeroFloorSub(idleSupplyIncrease), amount + matchedBorrowDelta, indexes, false
         );
     }
 
