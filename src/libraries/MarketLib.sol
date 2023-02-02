@@ -202,19 +202,18 @@ library MarketLib {
         address underlying,
         uint256 amount,
         DataTypes.ReserveConfigurationMap memory configuration
-    ) internal returns (uint256 toSupply) {
+    ) internal returns (uint256 toSupply, uint256 idleSupplyIncrease) {
         uint256 supplyCap = configuration.getSupplyCap() * (10 ** configuration.getDecimals());
-        if (supplyCap == 0) return amount;
+        if (supplyCap == 0) return (amount, 0);
 
         uint256 totalSupply = ERC20(market.aToken).totalSupply();
-        if (totalSupply + amount <= supplyCap) return amount;
+        if (totalSupply + amount <= supplyCap) return (amount, 0);
 
         toSupply = supplyCap.zeroFloorSub(totalSupply);
-        uint256 idleSupplyIncrease = amount - toSupply;
+        idleSupplyIncrease = amount - toSupply;
         uint256 newIdleSupply = market.idleSupply + idleSupplyIncrease;
 
         market.idleSupply = newIdleSupply;
-        market.deltas.supply.scaledTotalP2P += idleSupplyIncrease.rayDiv(market.indexes.supply.p2pIndex); // P2PTotalsUpdated emitted in `decreaseP2P`.
 
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
     }
