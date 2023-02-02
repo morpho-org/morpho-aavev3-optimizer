@@ -3,6 +3,7 @@ names = true
 sizes = true
 libs = ["node_modules", "lib"]
 fs_permissions = [{ access = "read", path = "./config/"}]
+solc_version = '0.8.17'
 
 [fuzz]
 runs = 8
