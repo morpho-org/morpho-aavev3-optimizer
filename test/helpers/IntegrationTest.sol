@@ -41,8 +41,8 @@ contract IntegrationTest is ForkTest {
 
     mapping(address => TestMarket) internal testMarkets;
 
-    address[] internal markets;
-    address[] internal borrowableMarkets;
+    address[] internal underlyings;
+    address[] internal borrowableUnderlyings;
 
     function setUp() public virtual override {
         _deploy();
@@ -141,11 +141,11 @@ contract IntegrationTest is ForkTest {
         (TestMarket storage market, DataTypes.ReserveData memory reserve) =
             _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
-        markets.push(underlying);
+        underlyings.push(underlying);
         if (
             market.ltv > 0 && reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
                 && !reserve.configuration.getBorrowableInIsolation() && market.borrowCap > market.totalBorrow()
-        ) borrowableMarkets.push(underlying);
+        ) borrowableUnderlyings.push(underlying);
 
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
     }

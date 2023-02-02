@@ -216,9 +216,9 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldRevertSupplyZero(address onBehalf) public {
         onBehalf = _boundAddressNotZero(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user.supply(testMarkets[markets[marketIndex]].underlying, 0, onBehalf);
+            user.supply(testMarkets[underlyings[marketIndex]].underlying, 0, onBehalf);
         }
     }
 

@@ -421,10 +421,10 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
     }
 
     function testSetPauseStatus() public {
-        for (uint256 marketIndex; marketIndex < allTestMarkets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            address underlying = allTestMarkets[marketIndex];
+            address underlying = allUnderlyings[marketIndex];
 
             Types.PauseStatuses storage pauseStatuses = _market[underlying].pauseStatuses;
 
