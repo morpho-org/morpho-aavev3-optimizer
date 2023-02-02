@@ -49,6 +49,18 @@ abstract contract MorphoInternal is MorphoStorage {
 
     /// INTERNAL ///
 
+    function _domainSeparator() internal view returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                Constants.EIP712_DOMAIN_TYPEHASH,
+                keccak256(bytes(Constants.EIP712_NAME)),
+                keccak256(bytes(Constants.EIP712_VERSION)),
+                block.chainid,
+                address(this)
+            )
+        );
+    }
+
     /// @dev Creates a new market for the `underlying` token with a given `reserveFactor` (in bps) and a given `p2pIndexCursor` (in bps).
     function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         if (underlying == address(0)) revert Errors.AddressIsZero();
@@ -141,7 +153,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
     /// @dev Returns the hash of the EIP712 typed data.
     function _hashEIP712TypedData(bytes32 structHash) internal view returns (bytes32) {
-        return keccak256(abi.encodePacked(Constants.EIP712_MSG_PREFIX, _DOMAIN_SEPARATOR, structHash));
+        return keccak256(abi.encodePacked(Constants.EIP712_MSG_PREFIX, _domainSeparator(), structHash));
     }
 
     /// @notice Approves a `manager` to borrow/withdraw on behalf of the sender.
