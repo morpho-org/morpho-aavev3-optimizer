@@ -17,8 +17,8 @@ library DeltasLib {
     /// @notice Increases the peer-to-peer amounts following a promotion.
     /// @param deltas The market deltas to update.
     /// @param underlying The underlying address.
-    /// @param promoted The amount to increase the promoted peer-to-peer total (in underlying). Must be lower than or equal to amount.
-    /// @param amount The amount to increase the opposite peer-to-peer total (in underlying).
+    /// @param promoted The amount to increase the promoted side peer-to-peer total (in underlying). Must be lower than or equal to amount.
+    /// @param amount The amount to increase the opposite side peer-to-peer total (in underlying).
     /// @param indexes The current indexes.
     /// @param borrowSide True if this follows borrower promotions. False for supplier promotions.
     /// @return p2pBalanceIncrease The balance amount in peer-to-peer to increase.
@@ -47,8 +47,8 @@ library DeltasLib {
     /// @notice Decreases the peer-to-peer amounts following a demotion.
     /// @param deltas The market deltas to update.
     /// @param underlying The underlying address.
-    /// @param demoted The amount to decrease the demoted peer-to-peer total (in underlying). Must be lower than or equal to amount.
-    /// @param amount The amount to decrease the opposite peer-to-peer total (in underlying).
+    /// @param demoted The amount to decrease the demoted side peer-to-peer total (in underlying). Must be lower than or equal to amount.
+    /// @param amount The amount to decrease the opposite side peer-to-peer total (in underlying).
     /// @param indexes The current indexes.
     /// @param borrowSide True if this follows borrower demotions. False for supplier demotions.
     function decreaseP2P(
