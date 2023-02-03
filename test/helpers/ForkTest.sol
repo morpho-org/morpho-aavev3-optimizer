@@ -15,6 +15,7 @@ import {Events} from "src/libraries/Events.sol";
 import {Errors} from "src/libraries/Errors.sol";
 import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";
 
 import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
 import {PoolAdminMock} from "test/mocks/PoolAdminMock.sol";

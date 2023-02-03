@@ -73,7 +73,28 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         }
     }
 
-    // TODO: should not supply collateral when supply cap reached
+    function testShouldNotSupplyCollateralWhenSupplyCapExceeded(uint256 supplyCap, uint256 amount, address onBehalf)
+        public
+    {
+        onBehalf = _boundAddressNotZero(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+
+            amount = _boundSupply(market, amount);
+
+            // Set the supply cap so that the supply gap is lower than the amount supplied.
+            supplyCap = bound(supplyCap, 10 ** market.decimals, market.totalSupply() + amount);
+            _setSupplyCap(market, supplyCap);
+
+            user.approve(market.underlying, amount);
+
+            vm.expectRevert(bytes(AaveErrors.SUPPLY_CAP_EXCEEDED));
+            user.supplyCollateral(market.underlying, amount, onBehalf);
+        }
+    }
 
     function testShouldUpdateIndexesAfterSupplyCollateral(uint256 amount, address onBehalf) public {
         onBehalf = _boundAddressNotZero(onBehalf);
