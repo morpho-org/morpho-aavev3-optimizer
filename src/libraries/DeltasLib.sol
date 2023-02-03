@@ -76,26 +76,26 @@ library DeltasLib {
     /// @dev Should only be called if amount or borrow delta is zero.
     /// @param amount The amount to repay/withdraw.
     /// @param indexes The current indexes.
-    /// @return The new amount left to process, the fee repaid.
+    /// @return The new amount left to process.
     function repayFee(Types.Deltas storage deltas, uint256 amount, Types.Indexes256 memory indexes)
         internal
-        view
-        returns (uint256, uint256)
+        returns (uint256)
     {
-        if (amount == 0) return (0, 0);
+        if (amount == 0) return 0;
 
         uint256 scaledTotalBorrowP2P = deltas.borrow.scaledTotalP2P;
         // Fee = (borrow.totalScaledP2P - borrow.delta) - (supply.totalScaledP2P - supply.delta).
-        uint256 repaidFee = scaledTotalBorrowP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+        uint256 feeToRepay = scaledTotalBorrowP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
             deltas.supply.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
                 deltas.supply.scaledDeltaPool.rayMul(indexes.supply.poolIndex)
             )
         );
 
-        if (repaidFee == 0) return (amount, 0);
+        if (feeToRepay == 0) return amount;
 
-        repaidFee = Math.min(repaidFee, amount);
+        feeToRepay = Math.min(feeToRepay, amount);
+        deltas.borrow.scaledTotalP2P = scaledTotalBorrowP2P.zeroFloorSub(feeToRepay.rayDivDown(indexes.borrow.p2pIndex)); // P2PTotalsUpdated emitted in `decreaseP2P`.
 
-        return (amount - repaidFee, repaidFee);
+        return amount - feeToRepay;
     }
 }

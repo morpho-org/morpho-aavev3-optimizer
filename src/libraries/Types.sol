@@ -176,13 +176,6 @@ library Types {
         uint256 toRepay;
     }
 
-    struct RepayVars {
-        uint256 matchedBorrowDelta;
-        uint256 idleSupplyIncrease;
-        uint256 repaidFee;
-        uint256 demoted;
-    }
-
     struct LiquidateVars {
         uint256 closeFactor;
         uint256 seized;
