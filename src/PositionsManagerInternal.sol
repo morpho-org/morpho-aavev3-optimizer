@@ -325,9 +325,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Breaking repay ///
 
         // Handle the supply cap.
-        uint256 idleSupplyIncrease;
-        (vars.toSupply, idleSupplyIncrease) =
-            market.increaseIdle(underlying, amount, _POOL.getConfiguration(underlying));
+        vars.toSupply = market.increaseIdle(underlying, amount, _POOL.getConfiguration(underlying));
 
         // Demote peer-to-peer suppliers.
         uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxIterations);
