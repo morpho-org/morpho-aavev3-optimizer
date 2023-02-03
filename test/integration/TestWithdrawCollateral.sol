@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationWithdrawCollateral is IntegrationTest {
+    using Math for uint256;
+    using WadRayMath for uint256;
     using TestMarketLib for TestMarket;
 
     function _boundAmount(uint256 amount) internal view returns (uint256) {
@@ -103,7 +105,44 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         }
     }
 
-    // TODO: should not withdraw collateral when low health factor
+    function testShouldNotWithdrawCollateralWhenLowHealthFactor(
+        uint256 collateral,
+        uint256 borrowed,
+        uint256 withdrawn,
+        address onBehalf,
+        address receiver
+    ) public {
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
+        for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
+            for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+                _revert();
+
+                TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
+                TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
+
+                collateral = _boundSupply(collateralMarket, collateral);
+
+                user.approve(collateralMarket.underlying, collateral);
+                user.supplyCollateral(collateralMarket.underlying, collateral, onBehalf);
+
+                borrowed = _boundCollateralizedBorrow(collateralMarket, collateral, borrowedMarket, borrowed);
+                withdrawn = bound(
+                    withdrawn,
+                    collateral.zeroFloorSub(collateralMarket.minCollateral(borrowedMarket, borrowed)),
+                    type(uint256).max
+                );
+
+                user.borrow(borrowedMarket.underlying, borrowed, onBehalf, receiver);
+
+                vm.expectRevert(Errors.UnauthorizedWithdraw.selector);
+                user.withdrawCollateral(collateralMarket.underlying, withdrawn, onBehalf, receiver);
+            }
+        }
+    }
 
     function testShouldNotWithdrawWhenNoCollateral(uint256 amount, address onBehalf, address receiver) public {
         amount = _boundAmount(amount);

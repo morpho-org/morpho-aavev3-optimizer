@@ -198,6 +198,8 @@ contract TestIntegrationBorrow is IntegrationTest {
 
     // TODO: should not borrow p2p when p2p disabled & idle supply
 
+    // TODO: should not borrow more than ltv allows
+
     function testShouldUpdateIndexesAfterBorrow(uint256 amount, address onBehalf, address receiver) public {
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);

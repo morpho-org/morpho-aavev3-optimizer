@@ -22,9 +22,12 @@ contract IntegrationTest is ForkTest {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using TestMarketLib for TestMarket;
 
+    uint8 internal constant E_MODE = 0;
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
-    uint256 internal constant MIN_USD_AMOUNT = 0.0001e8; // AaveV3 base currency is USD, 8 decimals on all L2s.
-    uint256 internal constant MAX_USD_AMOUNT = 500_000_000e8; // AaveV3 base currency is USD, 8 decimals on all L2s.
+
+    // AaveV3 base currency is USD, 8 decimals on all L2s.
+    uint256 internal constant MIN_USD_AMOUNT = 0.01e8; // 0.01$
+    uint256 internal constant MAX_USD_AMOUNT = 500_000_000e8; // 500m$
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
@@ -42,6 +45,7 @@ contract IntegrationTest is ForkTest {
     mapping(address => TestMarket) internal testMarkets;
 
     address[] internal underlyings;
+    address[] internal collateralUnderlyings;
     address[] internal borrowableUnderlyings;
 
     function setUp() public virtual override {
@@ -80,8 +84,8 @@ contract IntegrationTest is ForkTest {
     }
 
     function _deploy() internal {
-        positionsManager = new PositionsManager(address(addressesProvider), 0);
-        morphoImpl = new Morpho(address(addressesProvider), 0);
+        positionsManager = new PositionsManager(address(addressesProvider), E_MODE);
+        morphoImpl = new Morpho(address(addressesProvider), E_MODE);
 
         proxyAdmin = new ProxyAdmin();
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImpl)), address(proxyAdmin), "");
@@ -135,7 +139,8 @@ contract IntegrationTest is ForkTest {
         market.borrowCap = type(uint256).max;
 
         vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
-        vm.label(reserve.variableDebtTokenAddress, string.concat("d", market.symbol));
+        vm.label(reserve.variableDebtTokenAddress, string.concat("vd", market.symbol));
+        vm.label(reserve.stableDebtTokenAddress, string.concat("sd", market.symbol));
     }
 
     function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
@@ -143,8 +148,11 @@ contract IntegrationTest is ForkTest {
             _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
         underlyings.push(underlying);
+        if (market.ltv > 0 && reserve.configuration.getEModeCategory() == E_MODE) {
+            collateralUnderlyings.push(underlying);
+        }
         if (
-            market.ltv > 0 && reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
+            reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
                 && !reserve.configuration.getBorrowableInIsolation() && market.borrowGap() > 0
         ) borrowableUnderlyings.push(underlying);
 
@@ -179,10 +187,32 @@ contract IntegrationTest is ForkTest {
         return bound(amount, market.minAmount, Math.min(market.maxAmount, market.supplyGap()));
     }
 
-    /// @dev Bounds the input between 0 and the maximum borrowable quantity, without exceeding the market's liquidity nor its borrow cap.
+    /// @dev Bounds the input between the minimum USD amount expected in tests
+    ///      and the maximum borrowable quantity, without exceeding the market's liquidity nor its borrow cap.
     function _boundBorrow(TestMarket storage market, uint256 amount) internal view returns (uint256) {
         return bound(
             amount, market.minAmount, Math.min(market.maxAmount, Math.min(market.liquidity(), market.borrowGap()))
+        );
+    }
+
+    /// @dev Bounds the input between the minimum USD amount expected in tests
+    ///      and the maximum collateralized borrow, without exceeding the market's liquidity nor its borrow cap.
+    function _boundCollateralizedBorrow(
+        TestMarket storage collateralMarket,
+        uint256 collateral,
+        TestMarket storage borrowedMarket,
+        uint256 borrowed
+    ) internal view returns (uint256) {
+        uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral);
+        vm.assume(borrowedMarket.minAmount <= borrowable);
+
+        return bound(
+            borrowed,
+            borrowedMarket.minAmount,
+            Math.min(
+                borrowedMarket.maxAmount,
+                Math.min(borrowable, Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap()))
+            )
         );
     }
 
@@ -200,7 +230,7 @@ contract IntegrationTest is ForkTest {
         vm.prank(borrower);
         borrowed = morpho.borrow(market.underlying, amount, onBehalf, receiver, maxIterations);
 
-        _deposit(dai, testMarkets[dai].minCollateral(market, borrowed), address(morpho)); // Make Morpho solvent with default collateral market, having no supply cap.
+        _deposit(dai, testMarkets[dai].minBorrowCollateral(market, borrowed), address(morpho)); // Make Morpho able to borrow again with dai collateral.
 
         oracle.setAssetPrice(market.underlying, market.price);
     }
@@ -216,7 +246,7 @@ contract IntegrationTest is ForkTest {
 
         try promoter.borrow(market.underlying, borrowed) {
             market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
-            _deposit(dai, testMarkets[dai].minCollateral(market, borrowed), address(morpho)); // Make Morpho solvent with default collateral market, having no supply cap.
+            _deposit(dai, testMarkets[dai].minBorrowCollateral(market, borrowed), address(morpho)); // Make Morpho able to borrow again with dai collateral.
         } catch {
             borrowed = 0;
         }
