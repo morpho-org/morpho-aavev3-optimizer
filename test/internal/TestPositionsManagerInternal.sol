@@ -110,7 +110,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testValidateManagerInput() public {
         vm.expectRevert(abi.encodeWithSelector(Errors.AddressIsZero.selector));
-        _validateManagerInput(dai, 1, address(0), address(1));
+        _validateManagerInput(dai, 1, address(1), address(0));
         _validateManagerInput(dai, 1, address(1), address(2));
     }
 
@@ -142,22 +142,9 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.validateBorrow(dai, 1, address(this), address(this));
     }
 
-    function testValidateBorrow(uint256 onPool, uint256 inP2P) public {
-        onPool = bound(onPool, MIN_AMOUNT, MAX_AMOUNT);
-        inP2P = bound(inP2P, MIN_AMOUNT, MAX_AMOUNT);
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
-
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = onPool.rayDiv(indexes.supply.poolIndex);
-
-        this.validateBorrow(dai, onPool / 4, address(this), address(this));
-
-        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(dai);
-        config.setEModeCategory(1);
-        vm.prank(address(poolConfigurator));
-        _POOL.setConfiguration(dai, config);
-
-        this.validateBorrow(dai, onPool / 4, address(this), address(this));
+    function testValidateBorrow(uint256 amount) public view {
+        vm.assume(amount > 0);
+        this.validateBorrow(dai, amount, address(this), address(this));
     }
 
     function authorizeBorrow(address underlying, uint256 onPool, address borrower) public view {
@@ -327,8 +314,9 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         assertEq(closeFactor, Constants.MAX_CLOSE_FACTOR);
     }
 
-    function testAuthorizeLiquidateShouldReturnDefaultCloseFactorIfAboveMinThreshold() public {
-        uint256 amount = 1e18;
+    function testAuthorizeLiquidateShouldReturnDefaultCloseFactorIfAboveMinThreshold(uint256 amount) public {
+        // Min amount needs to be high enough to have a precise enough price for this test
+        amount = bound(amount, 1e12, MAX_AMOUNT);
         (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
@@ -336,7 +324,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
         _userBorrows[address(this)].add(dai);
         _updateBorrowerInDS(
-            dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 101 / 100), 0, true
+            dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 1001 / 1000), 0, true
         );
 
         uint256 closeFactor = this.authorizeLiquidate(dai, dai, address(this));
