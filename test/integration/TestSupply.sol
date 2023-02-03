@@ -161,8 +161,6 @@ contract TestIntegrationSupply is IntegrationTest {
         }
     }
 
-    // TODO: should not supply pool when supply cap reached
-
     // TODO: should supply p2p when supply cap reached
 
     // TODO: should supply p2p when borrow delta
@@ -170,6 +168,28 @@ contract TestIntegrationSupply is IntegrationTest {
     // TODO: should supply pool only when p2p disabled
 
     // TODO: should not supply p2p when p2p disabled & borrow delta
+
+    function testShouldNotSupplyPoolWhenSupplyCapExceeded(uint256 supplyCap, uint256 amount, address onBehalf) public {
+        onBehalf = _boundAddressNotZero(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+
+            amount = _boundSupply(market, amount);
+            uint256 promoted = _promoteSupply(promoter1, market, bound(amount, 0, amount - 1)); // < 100% peer-to-peer.
+
+            // Set the supply cap so that the supply gap is lower than the amount supplied on pool.
+            supplyCap = bound(supplyCap, 10 ** market.decimals, market.totalSupply() + amount - promoted);
+            _setSupplyCap(market, supplyCap);
+
+            user.approve(market.underlying, amount);
+
+            vm.expectRevert(bytes(AaveErrors.SUPPLY_CAP_EXCEEDED));
+            user.supply(market.underlying, amount, onBehalf);
+        }
+    }
 
     function testShouldUpdateIndexesAfterSupply(uint256 amount, address onBehalf) public {
         onBehalf = _boundAddressNotZero(onBehalf);
