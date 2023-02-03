@@ -18,29 +18,28 @@ contract MorphoWrapper {
         UNDERLYING = underlying;
     }
 
-    function supply(uint256 amount, address onBehalf) external {
-        console2.log("0");
-        MORPHO.supply(UNDERLYING, amount, onBehalf, MAX_ITERATIONS);
+    function supply(uint256 amount) external {
+        MORPHO.supply(UNDERLYING, amount, address(0xdead), MAX_ITERATIONS);
     }
 
-    function supplyCollateral(uint256 amount, address onBehalf) external {
-        MORPHO.supplyCollateral(UNDERLYING, amount, onBehalf);
+    function supplyCollateral(uint256 amount) external {
+        MORPHO.supplyCollateral(UNDERLYING, amount, address(0xdead));
     }
 
-    function borrow(uint256 amount, address onBehalf, address receiver) external {
-        MORPHO.borrow(UNDERLYING, amount, onBehalf, receiver, MAX_ITERATIONS);
+    function borrow(uint256 amount, address receiver) external {
+        MORPHO.borrow(UNDERLYING, amount, address(0xdead), receiver, MAX_ITERATIONS);
     }
 
-    function repay(uint256 amount, address onBehalf) external {
-        MORPHO.repay(UNDERLYING, amount, onBehalf);
+    function repay(uint256 amount) external {
+        MORPHO.repay(UNDERLYING, amount, address(0xdead));
     }
 
-    function withdraw(uint256 amount, address onBehalf, address receiver) external {
-        MORPHO.withdraw(UNDERLYING, amount, onBehalf, receiver);
+    function withdraw(uint256 amount, address receiver) external {
+        MORPHO.withdraw(UNDERLYING, amount, address(0xdead), receiver);
     }
 
-    function withdrawCollateral(uint256 amount, address onBehalf, address receiver) external {
-        MORPHO.withdrawCollateral(UNDERLYING, amount, onBehalf, receiver);
+    function withdrawCollateral(uint256 amount, address receiver) external {
+        MORPHO.withdrawCollateral(UNDERLYING, amount, address(0xdead), receiver);
     }
 
     function liquidate(address user, uint256 amount) external {
@@ -58,10 +57,14 @@ contract MorphoWrapper {
 
 contract TestInvariantTotals is IntegrationTest, InvariantTest {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using SafeTransferLib for ERC20;
     using WadRayMath for uint256;
 
     uint256 constant SUPPLY_CAP = 1;
     uint256 constant BORROW_CAP = 1e8;
+
+    address aDai = 0x82E64f49Ed5EC1bC6e43DAD4FC8Af9bb3A2312EE;
+    address vDai = 0x8619d80FB0141ba7F184CbF22fd724116D9f7ffC;
 
     MorphoWrapper internal morphoWrapper;
 
@@ -72,8 +75,13 @@ contract TestInvariantTotals is IntegrationTest, InvariantTest {
 
         morphoWrapper = new MorphoWrapper(address(morpho), dai);
 
-        // targetContract(address(morphoWrapper));
-        // targetSelector(getSelectors());
+        deal(dai, address(morphoWrapper), type(uint256).max);
+
+        vm.prank(address(morphoWrapper));
+        ERC20(dai).safeApprove(address(morpho), type(uint256).max);
+
+        targetContract(address(morphoWrapper));
+        targetSender(address(0xdead));
     }
 
     function getSelectors() public view returns (InvariantTest.FuzzSelector memory targets) {
@@ -89,9 +97,6 @@ contract TestInvariantTotals is IntegrationTest, InvariantTest {
     }
 
     function invariantTotals() public {
-        targetContract(address(morphoWrapper));
-        targetSelector(getSelectors());
-
         Types.Market memory market = morphoWrapper.market();
         Types.Deltas memory deltas = market.deltas;
         Types.Indexes256 memory indexes = morphoWrapper.updatedIndexes();
@@ -115,6 +120,8 @@ contract TestInvariantTotals is IntegrationTest, InvariantTest {
         reserveConfig = pool.getConfiguration(dai);
 
         // Should obviously not always be equal to 0.
+        assertEq(IVariableDebtToken(vDai).scaledBalanceOf(address(morphoWrapper)), 0);
+        assertEq(IAToken(aDai).balanceOf(address(morphoWrapper)), 0);
         assertEq(deltas.supply.scaledTotalP2P, 0);
         assertEq(
             deltas.supply.scaledTotalP2P.rayMul(indexes.supply.p2pIndex)
