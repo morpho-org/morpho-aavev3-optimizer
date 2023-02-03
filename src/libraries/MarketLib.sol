@@ -196,7 +196,7 @@ library MarketLib {
     /// @param underlying The underlying address.
     /// @param amount The amount to repay. (by supplying on pool)
     /// @param configuration The reserve configuration for the market.
-    /// @return The amount to supply to stay below the supply cap, the amount the idle supply was increased by.
+    /// @return The amount to supply to stay below the supply cap and the amount the idle supply was increased by.
     function increaseIdle(
         Types.Market storage market,
         address underlying,
@@ -206,24 +206,24 @@ library MarketLib {
         uint256 supplyCap = configuration.getSupplyCap() * (10 ** configuration.getDecimals());
         if (supplyCap == 0) return (amount, 0);
 
-        uint256 supplyGap = supplyCap.zeroFloorSub(ERC20(market.aToken).totalSupply());
-        if (amount <= supplyGap) return (amount, 0);
+        uint256 suppliable = supplyCap.zeroFloorSub(ERC20(market.aToken).totalSupply());
+        if (amount <= suppliable) return (amount, 0);
 
-        uint256 idleSupplyIncrease = amount - supplyGap;
+        uint256 idleSupplyIncrease = amount - suppliable;
         uint256 newIdleSupply = market.idleSupply + idleSupplyIncrease;
 
         market.idleSupply = newIdleSupply;
 
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
 
-        return (supplyGap, idleSupplyIncrease);
+        return (suppliable, idleSupplyIncrease);
     }
 
     /// @dev Decreases the idle supply.
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to borrow.
-    /// @return The amount left to process, and the processed amount.
+    /// @return The amount left to process and the processed amount.
     function decreaseIdle(Types.Market storage market, address underlying, uint256 amount)
         internal
         returns (uint256, uint256)
