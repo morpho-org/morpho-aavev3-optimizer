@@ -280,8 +280,8 @@ contract IntegrationTest is ForkTest {
         // Set the supply cap as exceeded.
         _setSupplyCap(market, market.totalSupply());
 
-        user.approve(market.underlying, amount);
-        user.repay(market.underlying, amount, onBehalf);
+        hacker.approve(market.underlying, amount);
+        hacker.repay(market.underlying, amount, onBehalf);
 
         return amount;
     }
@@ -301,8 +301,8 @@ contract IntegrationTest is ForkTest {
         // Set the max iterations to 0 upon repay to skip demotion and fallback to supply delta.
         morpho.setDefaultMaxIterations(Types.MaxIterations({repay: 0, withdraw: 10}));
 
-        user.approve(market.underlying, amount);
-        user.repay(market.underlying, amount, onBehalf);
+        hacker.approve(market.underlying, amount);
+        hacker.repay(market.underlying, amount, onBehalf);
 
         return amount;
     }

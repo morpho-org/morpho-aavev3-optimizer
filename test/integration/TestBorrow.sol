@@ -69,7 +69,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             uint256 poolBorrow = test.scaledPoolBorrow.rayMulUp(test.indexes.borrow.poolIndex);
 
             // Assert balances on Morpho.
-            assertEq(test.scaledP2PBorrow, 0, "p2pBorrow != 0");
+            assertEq(test.scaledP2PBorrow, 0, "scaledP2PBorrow != 0");
             assertEq(test.borrowed, amount, "borrowed != amount");
             assertApproxGeAbs(poolBorrow, amount, 2, "poolBorrow != amount");
 
@@ -186,7 +186,106 @@ contract TestIntegrationBorrow is IntegrationTest {
         }
     }
 
-    // TODO: should borrow p2p idle supply
+    function testShouldBorrowP2PWhenIdleSupply(uint256 amount, address onBehalf, address receiver)
+        public
+        returns (BorrowTest memory test)
+    {
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+
+            amount = _increaseIdleSupply(promoter1, market, amount);
+
+            uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
+
+            vm.expectEmit(true, true, true, true, address(morpho));
+            emit Events.IdleSupplyUpdated(market.underlying, 0);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.P2PTotalsUpdated(market.underlying, 0, 0);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
+
+            test.borrowed =
+                _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+
+            test.morphoMarket = morpho.market(market.underlying);
+            test.indexes = morpho.updatedIndexes(market.underlying);
+            test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
+            test.scaledPoolBorrow = morpho.scaledPoolBorrowBalance(market.underlying, onBehalf);
+            uint256 p2pBorrow = test.scaledP2PBorrow.rayMulUp(test.indexes.borrow.p2pIndex);
+
+            // Assert balances on Morpho.
+            assertEq(test.scaledPoolBorrow, 0, "scaledPoolBorrow != 0");
+            assertEq(test.borrowed, amount, "borrowed != amount");
+            assertApproxGeAbs(p2pBorrow, amount, 1, "p2pBorrow != amount");
+            assertApproxLeAbs(
+                morpho.scaledP2PSupplyBalance(market.underlying, address(promoter1)),
+                test.scaledP2PBorrow,
+                2,
+                "promoterScaledP2PSupply != scaledP2PBorrow"
+            );
+            assertEq(
+                morpho.scaledPoolSupplyBalance(market.underlying, address(promoter1)),
+                0,
+                "promoterScaledPoolSupply != 0"
+            );
+
+            // // Assert Morpho getters.
+            // assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supply != 0");
+            // assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
+            // assertApproxGeAbs(
+            //     morpho.borrowBalance(market.underlying, address(promoter1)),
+            //     test.supplied,
+            //     3,
+            //     "promoter1Borrow != supplied"
+            // );
+            // assertApproxLeAbs(
+            //     morpho.supplyBalance(market.underlying, address(promoter2)),
+            //     test.supplied,
+            //     2,
+            //     "promoter2Supply != supplied"
+            // );
+
+            // // Assert Morpho's position on pool.
+            // assertApproxEqAbs(market.supplyOf(address(morpho)), 0, 1, "morphoSupply != 0");
+            // assertApproxGeAbs(
+            //     market.variableBorrowOf(address(morpho)), borrowGapBefore, 1, "morphoVariableBorrow != borrowGapBefore"
+            // );
+            // assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
+            // assertEq(market.borrowGap(), 0, "borrowGapAfter != 0");
+
+            // // Assert user's underlying balance.
+            // assertApproxLeAbs(
+            //     ERC20(market.underlying).balanceOf(receiver),
+            //     balanceBefore + test.withdrawn,
+            //     2,
+            //     "balanceAfter != balanceBefore + withdrawn"
+            // );
+
+            // // Assert Morpho's market state.
+            // assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
+            // assertEq(
+            //     test.morphoMarket.deltas.supply.scaledTotalP2P.rayMul(test.indexes.supply.p2pIndex),
+            //     test.supplied,
+            //     "scaledTotalSupplyP2P != supplied"
+            // );
+            // assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
+            // assertEq(
+            //     test.morphoMarket.deltas.borrow.scaledTotalP2P.rayMul(test.indexes.borrow.p2pIndex),
+            //     test.supplied,
+            //     "scaledTotalBorrowP2P != supplied"
+            // );
+            // assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
+        }
+    }
 
     // TODO: should borrow p2p when supply delta
 
