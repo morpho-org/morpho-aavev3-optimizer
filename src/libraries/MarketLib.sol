@@ -196,27 +196,26 @@ library MarketLib {
     /// @param underlying The underlying address.
     /// @param amount The amount to repay. (by supplying on pool)
     /// @param configuration The reserve configuration for the market.
-    /// @return The amount to supply to stay below the supply cap and the amount the idle supply was increased by.
+    /// @return The amount to supply to stay below the supply cap.
     function increaseIdle(
         Types.Market storage market,
         address underlying,
         uint256 amount,
         DataTypes.ReserveConfigurationMap memory configuration
-    ) internal returns (uint256, uint256) {
+    ) internal returns (uint256) {
         uint256 supplyCap = configuration.getSupplyCap() * (10 ** configuration.getDecimals());
-        if (supplyCap == 0) return (amount, 0);
+        if (supplyCap == 0) return amount;
 
         uint256 suppliable = supplyCap.zeroFloorSub(ERC20(market.aToken).totalSupply());
-        if (amount <= suppliable) return (amount, 0);
+        if (amount <= suppliable) return amount;
 
-        uint256 idleSupplyIncrease = amount - suppliable;
-        uint256 newIdleSupply = market.idleSupply + idleSupplyIncrease;
+        uint256 newIdleSupply = market.idleSupply + amount - suppliable;
 
         market.idleSupply = newIdleSupply;
 
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
 
-        return (suppliable, idleSupplyIncrease);
+        return suppliable;
     }
 
     /// @dev Decreases the idle supply.
