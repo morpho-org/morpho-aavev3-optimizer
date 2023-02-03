@@ -49,6 +49,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
     /// INTERNAL ///
 
+    /// @dev Dynamically computed to use the root proxy address in a delegate call.
     function _domainSeparator() internal view returns (bytes32) {
         return keccak256(
             abi.encode(
