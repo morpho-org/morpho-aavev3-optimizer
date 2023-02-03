@@ -66,6 +66,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
             test.withdrawn = user.withdrawCollateral(market.underlying, amount, onBehalf, receiver);
 
+            test.morphoMarket = morpho.market(market.underlying);
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
             test.scaledCollateral = morpho.scaledCollateralBalance(market.underlying, onBehalf);
@@ -94,7 +95,6 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             );
 
             // Assert Morpho's market state.
-            test.morphoMarket = morpho.market(market.underlying);
             assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
             assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
             assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");

@@ -69,6 +69,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             test.withdrawn = user.withdraw(market.underlying, amount, onBehalf, receiver);
 
+            test.morphoMarket = morpho.market(market.underlying);
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
@@ -99,7 +100,6 @@ contract TestIntegrationWithdraw is IntegrationTest {
             );
 
             // Assert Morpho's market state.
-            test.morphoMarket = morpho.market(market.underlying);
             assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
             assertEq(
                 test.morphoMarket.deltas.supply.scaledTotalP2P,
@@ -153,6 +153,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             test.withdrawn = user.withdraw(market.underlying, amount, onBehalf, receiver);
 
+            test.morphoMarket = morpho.market(market.underlying);
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
@@ -188,7 +189,6 @@ contract TestIntegrationWithdraw is IntegrationTest {
             );
 
             // Assert Morpho's market state.
-            test.morphoMarket = morpho.market(market.underlying);
             assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
             assertApproxEqAbs(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, 1, "scaledTotalSupplyP2P != 0");
             assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
@@ -240,6 +240,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             test.withdrawn = user.withdraw(market.underlying, amount, onBehalf, receiver);
 
+            test.morphoMarket = morpho.market(market.underlying);
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
@@ -293,7 +294,6 @@ contract TestIntegrationWithdraw is IntegrationTest {
             );
 
             // Assert Morpho's market state.
-            test.morphoMarket = morpho.market(market.underlying);
             assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
             assertEq(
                 test.morphoMarket.deltas.supply.scaledTotalP2P.rayMul(test.indexes.supply.p2pIndex),

@@ -39,6 +39,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
             test.supplied = user.supply(market.underlying, amount, onBehalf); // 100% pool.
 
+            test.morphoMarket = morpho.market(market.underlying);
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
@@ -65,7 +66,6 @@ contract TestIntegrationSupply is IntegrationTest {
             );
 
             // Assert Morpho's market state.
-            test.morphoMarket = morpho.market(market.underlying);
             assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
             assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
             assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
@@ -101,11 +101,12 @@ contract TestIntegrationSupply is IntegrationTest {
 
             test.supplied = user.supply(market.underlying, amount, onBehalf);
 
-            Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
+            test.morphoMarket = morpho.market(market.underlying);
+            test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
             test.scaledCollateral = morpho.scaledCollateralBalance(market.underlying, onBehalf);
-            uint256 p2pSupply = test.scaledP2PSupply.rayMul(indexes.supply.p2pIndex);
+            uint256 p2pSupply = test.scaledP2PSupply.rayMul(test.indexes.supply.p2pIndex);
 
             // Assert balances on Morpho.
             assertApproxEqAbs(test.scaledPoolSupply, 0, 1, "scaledPoolSupply != 0");
@@ -144,7 +145,6 @@ contract TestIntegrationSupply is IntegrationTest {
             );
 
             // Assert Morpho's market state.
-            test.morphoMarket = morpho.market(market.underlying);
             assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
             assertEq(
                 test.morphoMarket.deltas.supply.scaledTotalP2P,

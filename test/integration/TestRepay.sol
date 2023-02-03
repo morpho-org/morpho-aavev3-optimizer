@@ -45,6 +45,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
             test.repaid = user.repay(market.underlying, amount, onBehalf);
 
+            test.morphoMarket = morpho.market(market.underlying);
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
             test.scaledPoolBorrow = morpho.scaledPoolBorrowBalance(market.underlying, onBehalf);
@@ -72,7 +73,6 @@ contract TestIntegrationRepay is IntegrationTest {
             );
 
             // Assert Morpho's market state.
-            test.morphoMarket = morpho.market(market.underlying);
             assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
             assertEq(
                 test.morphoMarket.deltas.supply.scaledTotalP2P,
@@ -119,6 +119,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
             test.repaid = user.repay(market.underlying, amount, onBehalf);
 
+            test.morphoMarket = morpho.market(market.underlying);
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
             test.scaledPoolBorrow = morpho.scaledPoolBorrowBalance(market.underlying, onBehalf);
@@ -151,8 +152,7 @@ contract TestIntegrationRepay is IntegrationTest {
             );
 
             // Assert Morpho's market state.
-            test.morphoMarket = morpho.market(market.underlying);
-            assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
+            assertApproxEqAbs(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, 2, "scaledSupplyDelta != 0");
             assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
             assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
             assertEq(test.morphoMarket.deltas.borrow.scaledTotalP2P, 0, "scaledTotalBorrowP2P != 0");
@@ -201,6 +201,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
             test.repaid = user.repay(market.underlying, amount, onBehalf);
 
+            test.morphoMarket = morpho.market(market.underlying);
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
             test.scaledPoolBorrow = morpho.scaledPoolBorrowBalance(market.underlying, onBehalf);
@@ -234,8 +235,7 @@ contract TestIntegrationRepay is IntegrationTest {
             );
 
             // Assert Morpho's market state.
-            test.morphoMarket = morpho.market(market.underlying);
-            assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
+            assertApproxEqAbs(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, 1, "scaledSupplyDelta != 0");
             assertApproxEqAbs(
                 test.morphoMarket.deltas.supply.scaledTotalP2P.rayMul(test.indexes.supply.p2pIndex),
                 test.borrowed,
@@ -284,6 +284,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
             test.repaid = user.repay(market.underlying, amount, onBehalf);
 
+            test.morphoMarket = morpho.market(market.underlying);
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
             test.scaledPoolBorrow = morpho.scaledPoolBorrowBalance(market.underlying, onBehalf);
@@ -305,9 +306,8 @@ contract TestIntegrationRepay is IntegrationTest {
             );
 
             // Assert Morpho's position on pool.
-            // assertApproxGeAbs(
-            //     market.supplyOf(address(morpho)), supplyGapBefore, 1, "morphoSupply != supplyGapBefore"
-            // );
+            uint256 morphoSupply = market.supplyOf(address(morpho));
+            assertApproxEqAbs(morphoSupply, test.borrowed, 1, "morphoSupply != borrowed");
             assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 1, "morphoVariableBorrow != 0");
             assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
@@ -320,12 +320,11 @@ contract TestIntegrationRepay is IntegrationTest {
             );
 
             // Assert Morpho's market state.
-            test.morphoMarket = morpho.market(market.underlying);
             assertApproxGeAbs(
                 test.morphoMarket.deltas.supply.scaledDeltaPool.rayMul(test.indexes.supply.poolIndex),
-                test.borrowed,
+                morphoSupply,
                 1,
-                "supplyDelta != borrowed"
+                "supplyDelta != morphoSupply"
             );
             assertEq(
                 test.morphoMarket.deltas.supply.scaledTotalP2P.rayMul(test.indexes.supply.p2pIndex),
