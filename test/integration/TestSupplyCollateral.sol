@@ -55,7 +55,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
             assertApproxLeAbs(morpho.collateralBalance(market.underlying, onBehalf), amount, 1, "collateral != amount");
 
             // Assert Morpho's position on pool.
-            assertApproxGeAbs(market.supplyOf(address(morpho)), amount, 1, "morphoSupply != amount");
+            assertApproxEqAbs(market.supplyOf(address(morpho)), amount, 1, "morphoSupply != amount");
             assertEq(market.variableBorrowOf(address(morpho)), 0, "morphoVariableBorrow != 0");
 
             // Assert user's underlying balance.
