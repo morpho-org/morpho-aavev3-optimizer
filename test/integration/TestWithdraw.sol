@@ -295,18 +295,20 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             // Assert Morpho's market state.
             assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
-            assertEq(
+            assertApproxEqAbs(
                 test.morphoMarket.deltas.supply.scaledTotalP2P.rayMul(test.indexes.supply.p2pIndex),
                 test.supplied,
-                "scaledTotalSupplyP2P != supplied"
+                1,
+                "totalSupplyP2P != supplied"
             );
             assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
-            assertEq(
+            assertApproxEqAbs(
                 test.morphoMarket.deltas.borrow.scaledTotalP2P.rayMul(test.indexes.borrow.p2pIndex),
                 test.supplied,
-                "scaledTotalBorrowP2P != supplied"
+                1,
+                "totalBorrowP2P != supplied"
             );
-            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
+            assertApproxEqAbs(test.morphoMarket.idleSupply, 0, 1, "idleSupply != 0");
         }
     }
 

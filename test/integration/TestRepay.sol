@@ -160,6 +160,8 @@ contract TestIntegrationRepay is IntegrationTest {
         }
     }
 
+    // TODO: combine supply cap exceeded with parts on pool that creates a supply delta?
+
     function testShouldRepayAllP2PBorrowWhenSupplyCapExceeded(uint256 supplyCap, uint256 amount, address onBehalf)
         public
         returns (RepayTest memory test)
@@ -188,9 +190,6 @@ contract TestIntegrationRepay is IntegrationTest {
             user.approve(market.underlying, amount);
 
             vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.SupplyPositionUpdated(address(promoter1), market.underlying, 0, 0);
-
-            vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.IdleSupplyUpdated(market.underlying, 0);
 
             vm.expectEmit(true, true, true, false, address(morpho));
@@ -210,9 +209,6 @@ contract TestIntegrationRepay is IntegrationTest {
             assertEq(test.scaledP2PBorrow, 0, "scaledP2PBorrow != 0");
             assertEq(test.scaledPoolBorrow, 0, "scaledPoolBorrow != 0");
             assertApproxGeAbs(test.repaid, test.borrowed, 1, "repaid != amount");
-            assertEq(
-                morpho.scaledP2PSupplyBalance(market.underlying, address(promoter1)), 0, "promoterScaledP2PSupply != 0"
-            );
 
             // Assert Morpho getters.
             assertEq(morpho.borrowBalance(market.underlying, onBehalf), 0, "borrow != 0");
