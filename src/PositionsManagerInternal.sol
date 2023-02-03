@@ -323,22 +323,20 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         /// Breaking repay ///
 
-        // Demote peer-to-peer suppliers.
-        uint256 demoted = _demoteSuppliers(underlying, amount, maxIterations);
-
         // Handle the supply cap.
         uint256 idleSupplyIncrease;
         (vars.toSupply, idleSupplyIncrease) =
             market.increaseIdle(underlying, amount, _POOL.getConfiguration(underlying));
 
+        // Demote peer-to-peer suppliers.
+        uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxIterations);
+
         // Increase the peer-to-peer supply delta.
-        market.deltas.supply.increaseDelta(
-            underlying, (amount - demoted).zeroFloorSub(idleSupplyIncrease), indexes.supply, false
-        );
+        market.deltas.supply.increaseDelta(underlying, vars.toSupply - demoted, indexes.supply, false);
 
         // Update the peer-to-peer totals.
         market.deltas.decreaseP2P(
-            underlying, demoted.zeroFloorSub(idleSupplyIncrease), amount + matchedBorrowDelta, indexes, false
+            underlying, demoted, vars.toSupply + matchedBorrowDelta + idleSupplyIncrease, indexes, false
         );
     }
 
