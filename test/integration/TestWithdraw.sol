@@ -310,7 +310,100 @@ contract TestIntegrationWithdraw is IntegrationTest {
         }
     }
 
-    // TODO: should withdraw when not enough suppliers
+    function testShouldWithdrawAllP2PSupplyWhenDemotedZero(uint256 amount, address onBehalf, address receiver)
+        public
+        returns (WithdrawTest memory test)
+    {
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+
+            test.supplied = _boundSupply(market, amount);
+            test.supplied = _promoteSupply(promoter1, market, test.supplied); // 100% peer-to-peer.
+            amount = bound(amount, test.supplied + 1, type(uint256).max);
+
+            user.approve(market.underlying, test.supplied);
+            user.supply(market.underlying, test.supplied, onBehalf);
+
+            // Set the max iterations to 0 upon withdraw to skip demotion and fallback to borrow delta.
+            morpho.setDefaultMaxIterations(Types.MaxIterations({repay: 10, withdraw: 0}));
+
+            uint256 balanceBefore = ERC20(market.underlying).balanceOf(receiver);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.P2PBorrowDeltaUpdated(market.underlying, 0);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.P2PTotalsUpdated(market.underlying, 0, 0);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.Withdrawn(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
+
+            test.withdrawn = user.withdraw(market.underlying, amount, onBehalf, receiver);
+
+            test.morphoMarket = morpho.market(market.underlying);
+            test.indexes = morpho.updatedIndexes(market.underlying);
+            test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
+            test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
+
+            // Assert balances on Morpho.
+            assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
+            assertEq(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
+            assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
+            assertApproxLeAbs(test.withdrawn, test.supplied, 2, "withdrawn != supplied");
+            assertEq(
+                morpho.scaledPoolBorrowBalance(market.underlying, address(promoter1)),
+                0,
+                "promoter1ScaledP2PBorrow != 0"
+            );
+
+            // Assert Morpho getters.
+            assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supply != 0");
+            assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
+            assertApproxGeAbs(
+                morpho.borrowBalance(market.underlying, address(promoter1)),
+                test.supplied,
+                3,
+                "promoter1Borrow != supplied"
+            );
+
+            // Assert Morpho's position on pool.
+            uint256 morphoVariableBorrow = market.variableBorrowOf(address(morpho));
+            assertApproxEqAbs(market.supplyOf(address(morpho)), 0, 1, "morphoSupply != 0");
+            assertApproxLeAbs(morphoVariableBorrow, test.supplied, 1, "morphoVariableBorrow != supplied");
+            assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
+
+            // Assert user's underlying balance.
+            assertApproxLeAbs(
+                ERC20(market.underlying).balanceOf(receiver),
+                balanceBefore + test.withdrawn,
+                2,
+                "balanceAfter != balanceBefore + withdrawn"
+            );
+
+            // Assert Morpho's market state.
+            assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
+            assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != supplied");
+            assertApproxGeAbs(
+                test.morphoMarket.deltas.borrow.scaledDeltaPool.rayMul(test.indexes.borrow.poolIndex),
+                morphoVariableBorrow,
+                1,
+                "scaledBorrowDelta != morphoVariableBorrow"
+            );
+            assertEq(
+                test.morphoMarket.deltas.borrow.scaledTotalP2P.rayMul(test.indexes.borrow.p2pIndex),
+                test.supplied,
+                "scaledTotalBorrowP2P != supplied"
+            );
+            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
+        }
+    }
 
     function testShouldNotWithdrawWhenNoSupply(uint256 amount, address onBehalf, address receiver) public {
         amount = _boundAmount(amount);

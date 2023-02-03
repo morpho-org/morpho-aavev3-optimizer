@@ -248,7 +248,7 @@ contract TestIntegrationRepay is IntegrationTest {
         }
     }
 
-    function testShouldRepayAllP2PBorrowWhenMaxIterationsZero(uint256 amount, address onBehalf)
+    function testShouldRepayAllP2PBorrowWhenDemotedZero(uint256 amount, address onBehalf)
         public
         returns (RepayTest memory test)
     {
