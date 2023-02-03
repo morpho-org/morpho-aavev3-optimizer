@@ -112,9 +112,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             delta.scaledDeltaPool.rayMul(indexes.borrow.poolIndex)
         );
 
-        uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
-
-        if (borrowCap != 0) {
+        if (config.getBorrowCap() != 0) {
+            uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
             uint256 poolDebt =
                 ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
             if (amount + totalP2P + poolDebt > borrowCap) revert Errors.ExceedsBorrowCap();
@@ -325,7 +324,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Breaking repay ///
 
         // Handle the supply cap.
-        vars.toSupply = market.increaseIdle(underlying, amount, _POOL.getConfiguration(underlying));
+        uint256 idleSupplyIncrease;
+        (vars.toSupply, idleSupplyIncrease) =
+            market.increaseIdle(underlying, amount, _POOL.getConfiguration(underlying));
 
         // Demote peer-to-peer suppliers.
         uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxIterations);
@@ -334,7 +335,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         market.deltas.supply.increaseDelta(underlying, vars.toSupply - demoted, indexes.supply, false);
 
         // Update the peer-to-peer totals.
-        market.deltas.decreaseP2P(underlying, demoted, vars.toSupply + matchedBorrowDelta, indexes, false);
+        market.deltas.decreaseP2P(
+            underlying, demoted, vars.toSupply + matchedBorrowDelta + idleSupplyIncrease, indexes, false
+        );
     }
 
     /// @dev Performs the accounting of a withdraw action.
