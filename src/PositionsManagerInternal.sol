@@ -333,9 +333,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             market.increaseIdle(underlying, vars.toSupply, _POOL.getConfiguration(underlying));
 
         // Increase the peer-to-peer supply delta.
-        market.deltas.supply.increaseDelta(
-            underlying, vars.toSupply - demoted - idleSupplyIncrease, indexes.supply, false
-        );
+        market.deltas.supply.increaseDelta(underlying, amount - demoted - idleSupplyIncrease, indexes.supply, false);
 
         // Update the peer-to-peer totals.
         market.deltas.decreaseP2P(
