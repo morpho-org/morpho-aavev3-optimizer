@@ -195,27 +195,6 @@ contract IntegrationTest is ForkTest {
         );
     }
 
-    /// @dev Bounds the input between the minimum USD amount expected in tests
-    ///      and the maximum collateralized borrow, without exceeding the market's liquidity nor its borrow cap.
-    function _boundCollateralizedBorrow(
-        TestMarket storage collateralMarket,
-        uint256 collateral,
-        TestMarket storage borrowedMarket,
-        uint256 borrowed
-    ) internal view returns (uint256) {
-        uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral);
-        vm.assume(borrowedMarket.minAmount <= borrowable);
-
-        return bound(
-            borrowed,
-            borrowedMarket.minAmount,
-            Math.min(
-                borrowedMarket.maxAmount,
-                Math.min(borrowable, Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap()))
-            )
-        );
-    }
-
     /// @dev Borrows from `user` on behalf of `onBehalf`, without collateral.
     function _borrowNoCollateral(
         address borrower,

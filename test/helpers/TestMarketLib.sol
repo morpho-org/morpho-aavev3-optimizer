@@ -108,7 +108,7 @@ library TestMarketLib {
         returns (uint256)
     {
         return (
-            (collateral * collateralMarket.price * 10 ** borrowedMarket.decimals).percentMul(collateralMarket.ltv - 1)
+            (collateral * collateralMarket.price * 10 ** borrowedMarket.decimals).percentMul(collateralMarket.ltv)
                 / (borrowedMarket.price * 10 ** collateralMarket.decimals)
         );
     }

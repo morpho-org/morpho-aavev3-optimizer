@@ -6,6 +6,7 @@ import "test/helpers/IntegrationTest.sol";
 contract TestIntegrationWithdrawCollateral is IntegrationTest {
     using Math for uint256;
     using WadRayMath for uint256;
+    using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
 
     function _boundAmount(uint256 amount) internal view returns (uint256) {
@@ -125,16 +126,23 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
                 collateral = _boundSupply(collateralMarket, collateral);
-
-                user.approve(collateralMarket.underlying, collateral);
-                user.supplyCollateral(collateralMarket.underlying, collateral, onBehalf);
-
-                borrowed = _boundCollateralizedBorrow(collateralMarket, collateral, borrowedMarket, borrowed);
+                uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral).percentSub(2);
+                borrowed = bound(
+                    borrowed,
+                    1,
+                    Math.min(
+                        borrowedMarket.maxAmount,
+                        Math.min(borrowable, Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap()))
+                    )
+                );
                 withdrawn = bound(
                     withdrawn,
                     collateral.zeroFloorSub(collateralMarket.minCollateral(borrowedMarket, borrowed)),
                     type(uint256).max
                 );
+
+                user.approve(collateralMarket.underlying, collateral);
+                user.supplyCollateral(collateralMarket.underlying, collateral, onBehalf);
 
                 user.borrow(borrowedMarket.underlying, borrowed, onBehalf, receiver);
 
