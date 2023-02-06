@@ -87,23 +87,23 @@ library InterestRatesLib {
     /// @param poolGrowthFactor The pool growth factor.
     /// @param p2pGrowthFactor The P2P growth factor.
     /// @param lastIndexes The last pool & peer-to-peer indexes.
-    /// @param p2pDelta The last P2P delta.
-    /// @param p2pAmount The last P2P amount.
+    /// @param scaledDeltaPool The last scaled pool delta.
+    /// @param scaledTotalP2P The last scaled total P2P amount.
     /// @return newP2PIndex The updated peer-to-peer index (in ray).
     function computeP2PIndex(
         uint256 poolGrowthFactor,
         uint256 p2pGrowthFactor,
         Types.MarketSideIndexes256 memory lastIndexes,
-        uint256 p2pDelta,
-        uint256 p2pAmount,
+        uint256 scaledDeltaPool,
+        uint256 scaledTotalP2P,
         uint256 proportionIdle
     ) internal pure returns (uint256) {
-        if (p2pAmount == 0 || p2pDelta == 0) {
+        if (scaledDeltaPool == 0 || scaledTotalP2P == 0) {
             return lastIndexes.p2pIndex.rayMul(p2pGrowthFactor);
         }
 
         uint256 proportionDelta = Math.min(
-            p2pDelta.rayMul(lastIndexes.poolIndex).rayDivUp(p2pAmount.rayMul(lastIndexes.p2pIndex)),
+            scaledDeltaPool.rayMul(lastIndexes.poolIndex).rayDivUp(scaledTotalP2P.rayMul(lastIndexes.p2pIndex)),
             WadRayMath.RAY - proportionIdle // To avoid proportionDelta + proportionIdle > 1 with rounding errors.
         ); // in ray.
 
