@@ -178,4 +178,18 @@ contract ForkTest is BaseTest {
         if (snapshotId < type(uint256).max) vm.revertTo(snapshotId);
         snapshotId = vm.snapshot();
     }
+
+    function _setSupplyCap(address underlying, uint256 amount) internal {
+        DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(underlying);
+        config.setSupplyCap(amount);
+        vm.prank(address(poolConfigurator));
+        pool.setConfiguration(underlying, config);
+    }
+
+    function _setBorrowCap(address underlying, uint256 amount) internal {
+        DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(underlying);
+        config.setBorrowCap(amount);
+        vm.prank(address(poolConfigurator));
+        pool.setConfiguration(underlying, config);
+    }
 }

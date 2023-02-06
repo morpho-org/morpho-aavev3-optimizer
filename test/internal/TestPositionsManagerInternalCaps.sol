@@ -27,6 +27,8 @@ import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configurati
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
+import {ERC20} from "@solmate/tokens/ERC20.sol";
+
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import "test/helpers/InternalTest.sol";
@@ -44,6 +46,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     uint256 constant MIN_AMOUNT = 1 ether;
     uint256 constant MAX_AMOUNT = type(uint96).max / 2;
+
+    uint256 daiTokenUnit;
 
     IPriceOracleGetter internal priceOracle;
     address internal poolOwner;
@@ -68,9 +72,29 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _POOL.supplyToPool(wNative, 1 ether);
 
         priceOracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
+
+        daiTokenUnit = 10 ** _POOL.getConfiguration(dai).decimals();
     }
 
-    function testAuthorizeBorrowShouldRevertIfExceedsBorrowCap() public {}
+    function testAuthorizeBorrowWithNoBorrowCap(uint256 amount, uint256 totalP2P, uint256 delta) public {}
+
+    function testAuthorizeBorrowShouldRevertIfExceedsBorrowCap(
+        uint256 amount,
+        uint256 totalP2P,
+        uint256 delta,
+        uint256 borrowCap
+    ) public {
+        borrowCap = bound(borrowCap, 1, ReserveConfiguration.MAX_VALID_BORROW_CAP);
+        totalP2P = bound(totalP2P, 0, ReserveConfiguration.MAX_VALID_BORROW_CAP * (10 ** decimals));
+
+        Types.Market memory market = _market[dai];
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
+
+        uint256 poolDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
+        market.deltas.borrow.scaledDeltaPool = delta.rayDiv(indexes.borrow.poolIndex);
+
+        _setBorrowCap(dai, poolDebt + 1);
+    }
 
     function testAccountBorrowShouldDecreaseIdleSupplyIfIdleSupplyExists() public {}
 
