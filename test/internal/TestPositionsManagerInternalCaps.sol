@@ -84,16 +84,22 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         uint256 delta,
         uint256 borrowCap
     ) public {
-        borrowCap = bound(borrowCap, 1, ReserveConfiguration.MAX_VALID_BORROW_CAP);
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(dai);
+
+        uint256 poolDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
+        totalP2P = bound(totalP2P, 0, MAX_AMOUNT);
+        delta = bound(delta, 0, MAX_AMOUNT);
+
+        borrowCap =
+            bound(borrowCap, (poolDebt / daiTokenUnit).zeroFloorSub(1), ReserveConfiguration.MAX_VALID_BORROW_CAP);
         totalP2P = bound(totalP2P, 0, ReserveConfiguration.MAX_VALID_BORROW_CAP * (10 ** decimals));
+
+        _setBorrowCap(dai, borrowCap);
 
         Types.Market memory market = _market[dai];
         Types.Indexes256 memory indexes = _computeIndexes(dai);
 
-        uint256 poolDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
         market.deltas.borrow.scaledDeltaPool = delta.rayDiv(indexes.borrow.poolIndex);
-
-        _setBorrowCap(dai, poolDebt + 1);
     }
 
     function testAccountBorrowShouldDecreaseIdleSupplyIfIdleSupplyExists() public {}
