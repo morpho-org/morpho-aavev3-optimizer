@@ -338,7 +338,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         (uint256 newAmount, uint256 newOnPool) = _addToPool(amount, onPool, poolIndex);
         assertEq(newAmount, amount);
-        assertEq(newOnPool, onPool + amount.rayDivDown(poolIndex));
+        assertEq(newOnPool, onPool + amount.rayDiv(poolIndex));
     }
 
     function testSubFromPool(uint256 amount, uint256 onPool, uint256 poolIndex) public {
@@ -352,7 +352,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         assertEq(toProcess, amount - expectedToRepayOrWithdraw);
         assertEq(toRepayOrWithdraw, expectedToRepayOrWithdraw);
-        assertEq(newOnPool, onPool.zeroFloorSub(expectedToRepayOrWithdraw.rayDivUp(poolIndex)));
+        assertEq(newOnPool, onPool.zeroFloorSub(expectedToRepayOrWithdraw.rayDiv(poolIndex)));
     }
 
     function testPromoteSuppliersRoutine(uint256 amount, uint256 maxLoops) public {

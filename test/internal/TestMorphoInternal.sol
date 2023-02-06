@@ -226,7 +226,7 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         uint256 balance =
             _getUserSupplyBalanceFromIndexes(dai, user, Types.MarketSideIndexes256(poolSupplyIndex, p2pSupplyIndex));
 
-        assertEq(balance, onPool.rayMulDown(poolSupplyIndex) + inP2P.rayMulDown(p2pSupplyIndex));
+        assertEq(balance, onPool.rayMul(poolSupplyIndex) + inP2P.rayMul(p2pSupplyIndex));
     }
 
     function testGetUserBorrowBalanceFromIndexes(
