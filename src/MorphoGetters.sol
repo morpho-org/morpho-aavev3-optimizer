@@ -37,7 +37,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
 
     /// @notice Returns the domain separator of the EIP712.
     function DOMAIN_SEPARATOR() external view returns (bytes32) {
-        return _DOMAIN_SEPARATOR;
+        return _domainSeparator();
     }
 
     /// @notice Returns the e-mode category ID of Morpho on the Aave protocol.
