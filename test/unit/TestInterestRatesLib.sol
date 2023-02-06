@@ -15,7 +15,7 @@ contract TestInterestRatesLib is BaseTest {
     uint256 internal constant MAX_GROWTH_FACTOR = WadRayMath.RAY * 1000;
     uint256 internal constant MAX_P2P_INDEX_CURSOR = PercentageMath.PERCENTAGE_FACTOR;
     uint256 internal constant MAX_RESERVE_FACTOR = PercentageMath.PERCENTAGE_FACTOR;
-    uint256 internal constant MAX_PROPORTION_IDLE = PercentageMath.PERCENTAGE_FACTOR;
+    uint256 internal constant MAX_PROPORTION_IDLE = WadRayMath.RAY;
     uint256 internal constant MAX_DELTA = 1e9 ether;
     uint256 internal constant MAX_TOTAL_P2P = 1e9 ether;
 
