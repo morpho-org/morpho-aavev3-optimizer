@@ -98,7 +98,7 @@ library InterestRatesLib {
         uint256 p2pAmount,
         uint256 proportionIdle
     ) internal pure returns (uint256) {
-        if (p2pAmount == 0 || p2pDelta == 0) {
+        if (p2pAmount == 0 || (p2pDelta == 0 && proportionIdle == 0)) {
             return lastIndexes.p2pIndex.rayMul(p2pGrowthFactor);
         }
 
