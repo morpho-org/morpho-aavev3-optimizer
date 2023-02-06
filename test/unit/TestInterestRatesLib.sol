@@ -1,17 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {Types} from "src/libraries/Types.sol";
 import {InterestRatesLib} from "src/libraries/InterestRatesLib.sol";
-import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
-import {Math} from "@morpho-utils/math/Math.sol";
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
-import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
+import "test/helpers/BaseTest.sol";
 
-import {Test} from "@forge-std/Test.sol";
-
-contract TestInterestRatesLib is Test {
+contract TestInterestRatesLib is BaseTest {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
@@ -190,8 +184,8 @@ contract TestInterestRatesLib is Test {
         uint256 p2pAmount,
         uint256 proportionIdle
     ) public {
-        poolGrowthFactor = bound(poolGrowthFactor, MIN_INDEX, MAX_INDEX);
-        p2pGrowthFactor = bound(p2pGrowthFactor, MIN_INDEX, MAX_INDEX);
+        poolGrowthFactor = bound(poolGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
+        p2pGrowthFactor = bound(p2pGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
         lastPoolIndex = bound(lastPoolIndex, MIN_INDEX, MAX_INDEX);
         lastP2PIndex = bound(lastP2PIndex, MIN_INDEX, MAX_INDEX);
         p2pDelta = bound(p2pDelta, 1, MAX_DELTA);
