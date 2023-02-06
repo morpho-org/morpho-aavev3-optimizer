@@ -21,7 +21,6 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
 
     IPool internal immutable _POOL; // The address of the pool.
     IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER; // The address of the pool addresses provider.
-    bytes32 internal immutable _DOMAIN_SEPARATOR; // The domain separator as part of the EIP712.
     uint8 internal immutable _E_MODE_CATEGORY_ID; // The e-mode category of the deployed Morpho.
 
     /// STORAGE ///
@@ -50,16 +49,6 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
 
         _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
         _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
-
-        _DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                Constants.EIP712_DOMAIN_TYPEHASH,
-                keccak256(bytes(Constants.EIP712_NAME)),
-                keccak256(bytes(Constants.EIP712_VERSION)),
-                block.chainid,
-                address(this)
-            )
-        );
 
         _E_MODE_CATEGORY_ID = eModeCategoryId;
     }
