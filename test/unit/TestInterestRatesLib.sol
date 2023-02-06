@@ -175,7 +175,102 @@ contract TestInterestRatesLib is BaseTest {
         assertGe(actualGrowthFactors.p2pBorrowGrowthFactor, MIN_GROWTH_FACTOR, "too low p2pBorrowGrowthFactor");
     }
 
-    function testComputeP2PIndex(
+    function testComputeP2PIndexZeroDeltaZeroP2P(
+        uint256 poolGrowthFactor,
+        uint256 p2pGrowthFactor,
+        uint256 lastPoolIndex,
+        uint256 lastP2PIndex,
+        uint256 proportionIdle
+    ) public {
+        poolGrowthFactor = bound(poolGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
+        p2pGrowthFactor = bound(p2pGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
+        lastPoolIndex = bound(lastPoolIndex, MIN_INDEX, MAX_INDEX);
+        lastP2PIndex = bound(lastP2PIndex, MIN_INDEX, MAX_INDEX);
+        uint256 p2pDelta = 0;
+        uint256 p2pAmount = 0;
+        proportionIdle = bound(proportionIdle, 0, MAX_PROPORTION_IDLE);
+
+        uint256 expectedP2PIndex = lastP2PIndex.rayMul(p2pGrowthFactor);
+
+        uint256 actualP2PIndex = InterestRatesLib.computeP2PIndex(
+            poolGrowthFactor,
+            p2pGrowthFactor,
+            Types.MarketSideIndexes256(lastPoolIndex, lastP2PIndex),
+            p2pDelta,
+            p2pAmount,
+            proportionIdle
+        );
+
+        assertEq(actualP2PIndex, expectedP2PIndex, "p2pIndex");
+        // Sanity check
+        assertGe(actualP2PIndex, MIN_INDEX, "too low p2pIndex");
+    }
+
+    function testComputeP2PIndexZeroDeltaNonZeroP2P(
+        uint256 poolGrowthFactor,
+        uint256 p2pGrowthFactor,
+        uint256 lastPoolIndex,
+        uint256 lastP2PIndex,
+        uint256 p2pAmount,
+        uint256 proportionIdle
+    ) public {
+        poolGrowthFactor = bound(poolGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
+        p2pGrowthFactor = bound(p2pGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
+        lastPoolIndex = bound(lastPoolIndex, MIN_INDEX, MAX_INDEX);
+        lastP2PIndex = bound(lastP2PIndex, MIN_INDEX, MAX_INDEX);
+        uint256 p2pDelta = 0;
+        p2pAmount = bound(p2pAmount, 1, MAX_TOTAL_P2P);
+        proportionIdle = bound(proportionIdle, 0, MAX_PROPORTION_IDLE);
+
+        uint256 expectedP2PIndex = lastP2PIndex.rayMul(p2pGrowthFactor);
+
+        uint256 actualP2PIndex = InterestRatesLib.computeP2PIndex(
+            poolGrowthFactor,
+            p2pGrowthFactor,
+            Types.MarketSideIndexes256(lastPoolIndex, lastP2PIndex),
+            p2pDelta,
+            p2pAmount,
+            proportionIdle
+        );
+
+        assertEq(actualP2PIndex, expectedP2PIndex, "p2pIndex");
+        // Sanity check
+        assertGe(actualP2PIndex, MIN_INDEX, "too low p2pIndex");
+    }
+
+    function testComputeP2PIndexNonZeroDeltaZeroP2P(
+        uint256 poolGrowthFactor,
+        uint256 p2pGrowthFactor,
+        uint256 lastPoolIndex,
+        uint256 lastP2PIndex,
+        uint256 p2pDelta,
+        uint256 proportionIdle
+    ) public {
+        poolGrowthFactor = bound(poolGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
+        p2pGrowthFactor = bound(p2pGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
+        lastPoolIndex = bound(lastPoolIndex, MIN_INDEX, MAX_INDEX);
+        lastP2PIndex = bound(lastP2PIndex, MIN_INDEX, MAX_INDEX);
+        p2pDelta = bound(p2pDelta, 1, MAX_DELTA);
+        uint256 p2pAmount = 0;
+        proportionIdle = bound(proportionIdle, 0, MAX_PROPORTION_IDLE);
+
+        uint256 expectedP2PIndex = lastP2PIndex.rayMul(p2pGrowthFactor);
+
+        uint256 actualP2PIndex = InterestRatesLib.computeP2PIndex(
+            poolGrowthFactor,
+            p2pGrowthFactor,
+            Types.MarketSideIndexes256(lastPoolIndex, lastP2PIndex),
+            p2pDelta,
+            p2pAmount,
+            proportionIdle
+        );
+
+        assertEq(actualP2PIndex, expectedP2PIndex, "p2pIndex");
+        // Sanity check
+        assertGe(actualP2PIndex, MIN_INDEX, "too low p2pIndex");
+    }
+
+    function testComputeP2PIndexNonZeroDeltaNonZeroP2P(
         uint256 poolGrowthFactor,
         uint256 p2pGrowthFactor,
         uint256 lastPoolIndex,
@@ -195,12 +290,11 @@ contract TestInterestRatesLib is BaseTest {
         uint256 expectedProportionDelta = Math.min(
             p2pDelta.rayMul(lastPoolIndex).rayDivUp(p2pAmount.rayMul(lastP2PIndex)), WadRayMath.RAY - proportionIdle
         );
-        uint256 expectedP2PIndex = (p2pDelta == 0 || p2pAmount == 0)
-            ? lastP2PIndex.rayMul(p2pAmount)
-            : lastP2PIndex.rayMul(
-                p2pGrowthFactor.rayMul(WadRayMath.RAY - expectedProportionDelta - proportionIdle)
-                    + poolGrowthFactor.rayMul(expectedProportionDelta) + proportionIdle
-            );
+
+        uint256 expectedP2PIndex = lastP2PIndex.rayMul(
+            p2pGrowthFactor.rayMul(WadRayMath.RAY - expectedProportionDelta - proportionIdle)
+                + poolGrowthFactor.rayMul(expectedProportionDelta) + proportionIdle
+        );
         uint256 actualP2PIndex = InterestRatesLib.computeP2PIndex(
             poolGrowthFactor,
             p2pGrowthFactor,
@@ -211,6 +305,8 @@ contract TestInterestRatesLib is BaseTest {
         );
 
         assertEq(actualP2PIndex, expectedP2PIndex, "p2pIndex");
+        // Sanity check
+        assertGe(actualP2PIndex, MIN_INDEX, "too low p2pIndex");
     }
 
     function _rng(uint256 seed, string memory salt) internal pure returns (uint256) {
