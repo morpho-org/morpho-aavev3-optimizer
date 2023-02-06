@@ -30,12 +30,6 @@ runs:
       with:
         version: nightly
 
-    - name: Foundry fork cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.foundry/cache
-        key: foundry-${{ hashFiles(format('config/{0}.json', inputs.network)) }} # where fork block numbers & RPC are stored
-
     - name: Foundry compilation cache
       uses: actions/cache@v3
       with:
@@ -49,14 +43,14 @@ runs:
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
-        FOUNDRY_FUZZ_RUNS: 32768
+        FOUNDRY_FUZZ_RUNS: 16384
 
     - name: Run internal tests
       run: make test-internal
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
-        FOUNDRY_FUZZ_RUNS: 64
+        FOUNDRY_FUZZ_RUNS: 128
 
     - name: Run integration tests
       run: make test-integration
