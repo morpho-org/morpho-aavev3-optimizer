@@ -12,7 +12,7 @@ import {TestConfigLib, TestConfig} from "../helpers/TestConfigLib.sol";
 import {PoolLib} from "src/libraries/PoolLib.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
 
-import {MockPriceOracleSentinel} from "../mock/MockPriceOracleSentinel.sol";
+import {MockPriceOracleSentinel} from "../mocks/MockPriceOracleSentinel.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
