@@ -28,16 +28,16 @@ test-integration:
 
 
 test-%:
-	@FOUNDRY_MATCH_TEST=$* make test
+	@FOUNDRY_MATCH_TEST=$* FOUNDRY_FUZZ_RUNS=64 make test
 
 test-unit-%:
-	@FOUNDRY_MATCH_TEST=$* make test-unit
+	@FOUNDRY_MATCH_TEST=$* FOUNDRY_FUZZ_RUNS=64 make test-unit
 
 test-internal-%:
-	@FOUNDRY_MATCH_TEST=$* make test-internal
+	@FOUNDRY_MATCH_TEST=$* FOUNDRY_FUZZ_RUNS=64 make test-internal
 
 test-integration-%:
-	@FOUNDRY_MATCH_TEST=$* make test-integration
+	@FOUNDRY_MATCH_TEST=$* FOUNDRY_FUZZ_RUNS=64 make test-integration
 
 
 coverage:

@@ -56,7 +56,7 @@ contract TestIntegrationSupply is IntegrationTest {
             assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
 
             // Assert Morpho's position on pool.
-            assertApproxEqAbs(market.supplyOf(address(morpho)), amount, 1, "morphoSupply != amount"); // TODO: Morpho may be off 1 wei sometimes.
+            assertApproxEqAbs(market.supplyOf(address(morpho)), amount, 1, "morphoSupply != amount");
             assertEq(market.variableBorrowOf(address(morpho)), 0, "morphoVariableBorrow != 0");
             assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
@@ -74,7 +74,11 @@ contract TestIntegrationSupply is IntegrationTest {
         }
     }
 
-    function testShouldSupplyP2POnly(uint256 amount, address onBehalf) public returns (SupplyTest memory test) {
+    // TODO: failing because supply cap exceeded and p2p supply sometimes end up supplying 1 wei to the pool.
+    function testShouldSupplyP2POnly(uint256 supplyCap, uint256 amount, address onBehalf)
+        public
+        returns (SupplyTest memory test)
+    {
         onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
@@ -84,6 +88,10 @@ contract TestIntegrationSupply is IntegrationTest {
 
             amount = _boundSupply(market, amount);
             amount = _promoteSupply(promoter1, market, amount); // 100% peer-to-peer.
+
+            // Set the supply cap as exceeded.
+            supplyCap = bound(supplyCap, 10 ** market.decimals, market.totalSupply());
+            _setSupplyCap(market, supplyCap);
 
             uint256 balanceBefore = user.balanceOf(market.underlying);
             uint256 morphoSupplyBefore = market.supplyOf(address(morpho));
@@ -161,21 +169,77 @@ contract TestIntegrationSupply is IntegrationTest {
         }
     }
 
-    // TODO: should supply p2p when supply cap reached
-
-    // TODO: should supply p2p when borrow delta
-
-    // TODO: should supply pool only when p2p disabled
-
-    // TODO: should not supply p2p when p2p disabled & borrow delta
-
-    function testShouldNotSupplyPoolWhenSupplyCapExceeded(uint256 supplyCap, uint256 amount, address onBehalf) public {
+    function testShouldSupplyPoolWhenP2PDisabled(uint256 amount, address onBehalf)
+        public
+        returns (SupplyTest memory test)
+    {
         onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
 
             TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+
+            amount = _boundSupply(market, amount);
+            amount = _promoteSupply(promoter1, market, amount); // 100% peer-to-peer.
+
+            morpho.setIsP2PDisabled(market.underlying, true);
+
+            uint256 balanceBefore = user.balanceOf(market.underlying);
+
+            user.approve(market.underlying, amount);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.Supplied(address(user), onBehalf, market.underlying, 0, 0, 0);
+
+            test.supplied = user.supply(market.underlying, amount, onBehalf); // 100% pool.
+
+            test.morphoMarket = morpho.market(market.underlying);
+            test.indexes = morpho.updatedIndexes(market.underlying);
+            test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
+            test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
+            test.scaledCollateral = morpho.scaledCollateralBalance(market.underlying, onBehalf);
+            uint256 poolSupply = test.scaledPoolSupply.rayMul(test.indexes.supply.poolIndex);
+
+            // Assert balances on Morpho.
+            assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
+            assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
+            assertEq(test.supplied, amount, "supplied != amount");
+            assertApproxLeAbs(poolSupply, amount, 1, "poolSupply != amount");
+
+            assertApproxLeAbs(morpho.supplyBalance(market.underlying, onBehalf), amount, 1, "totalSupply != amount");
+            assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
+
+            // Assert Morpho's position on pool.
+            assertApproxEqAbs(market.supplyOf(address(morpho)), amount, 1, "morphoSupply != amount");
+            assertApproxEqAbs(market.variableBorrowOf(address(morpho)), amount, 1, "morphoVariableBorrow != amount");
+            assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
+
+            // Assert user's underlying balance.
+            assertEq(
+                balanceBefore - user.balanceOf(market.underlying), amount, "balanceBefore - balanceAfter != amount"
+            );
+
+            // Assert Morpho's market state.
+            assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
+            assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
+            assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
+            assertEq(test.morphoMarket.deltas.borrow.scaledTotalP2P, 0, "scaledTotalBorrowP2P != 0");
+            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
+        }
+    }
+
+    // TODO: should supply p2p when borrow delta
+
+    // TODO: should not supply p2p when p2p disabled & borrow delta
+
+    function testShouldNotSupplyPoolWhenSupplyCapExceeded(uint256 supplyCap, uint256 amount, address onBehalf) public {
+        onBehalf = _boundAddressNotZero(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             amount = _boundSupply(market, amount);
             uint256 promoted = _promoteSupply(promoter1, market, bound(amount, 0, amount - 1)); // < 100% peer-to-peer.
