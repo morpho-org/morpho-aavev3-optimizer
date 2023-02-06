@@ -67,8 +67,6 @@ contract TestIntegrationGetters is IntegrationTest {
 
             _forward(blocks);
 
-            Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
-
             assertGt(
                 morpho.supplyBalance(market.underlying, address(user)),
                 supplyBalanceBefore,
