@@ -128,6 +128,8 @@ contract IntegrationTest is ForkTest {
         market.price = oracle.getAssetPrice(underlying); // Price is constant, equal to price at fork block number.
 
         (market.ltv, market.lt, market.liquidationBonus, market.decimals,,) = reserve.configuration.getParams();
+        market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
+            && !reserve.configuration.getBorrowableInIsolation() && market.borrowGap() > 0;
 
         market.minAmount = (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price;
         market.maxAmount = (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price;
@@ -151,10 +153,7 @@ contract IntegrationTest is ForkTest {
         if (market.ltv > 0 && reserve.configuration.getEModeCategory() == E_MODE) {
             collateralUnderlyings.push(underlying);
         }
-        if (
-            reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
-                && !reserve.configuration.getBorrowableInIsolation() && market.borrowGap() > 0
-        ) borrowableUnderlyings.push(underlying);
+        if (market.isBorrowable) borrowableUnderlyings.push(underlying);
 
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
     }

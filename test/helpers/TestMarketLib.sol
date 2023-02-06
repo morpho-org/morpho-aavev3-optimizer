@@ -27,6 +27,8 @@ struct TestMarket {
     uint256 price;
     uint256 minAmount;
     uint256 maxAmount;
+    //
+    bool isBorrowable;
 }
 
 library TestMarketLib {

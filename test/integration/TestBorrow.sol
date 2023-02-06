@@ -346,10 +346,11 @@ contract TestIntegrationBorrow is IntegrationTest {
     // TODO: should not borrow p2p when p2p disabled & idle supply
 
     function testShouldNotBorrowWhenBorrowCapExceeded(
-        uint256 borrowCap,
         uint256 amount,
         address onBehalf,
-        address receiver
+        address receiver,
+        uint256 borrowCap,
+        uint256 promoted
     ) public {
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
@@ -362,7 +363,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
 
             amount = _boundBorrow(market, amount);
-            uint256 promoted = _promoteBorrow(promoter1, market, bound(amount, 1, amount)); // <= 100% peer-to-peer.
+            promoted = _promoteBorrow(promoter1, market, bound(promoted, 1, amount)); // <= 100% peer-to-peer.
 
             // Set the borrow cap so that the borrow gap is lower than the amount borrowed on pool.
             borrowCap = bound(borrowCap, 10 ** market.decimals, market.totalBorrow() + amount - promoted);

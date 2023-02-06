@@ -233,7 +233,12 @@ contract TestIntegrationSupply is IntegrationTest {
 
     // TODO: should not supply p2p when p2p disabled & borrow delta
 
-    function testShouldNotSupplyPoolWhenSupplyCapExceeded(uint256 supplyCap, uint256 amount, address onBehalf) public {
+    function testShouldNotSupplyPoolWhenSupplyCapExceeded(
+        uint256 amount,
+        address onBehalf,
+        uint256 supplyCap,
+        uint256 promoted
+    ) public {
         onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
@@ -242,7 +247,7 @@ contract TestIntegrationSupply is IntegrationTest {
             TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             amount = _boundSupply(market, amount);
-            uint256 promoted = _promoteSupply(promoter1, market, bound(amount, 0, amount - 1)); // < 100% peer-to-peer.
+            promoted = _promoteSupply(promoter1, market, bound(promoted, 0, amount - 1)); // < 100% peer-to-peer.
 
             // Set the supply cap so that the supply gap is lower than the amount supplied on pool.
             supplyCap = bound(supplyCap, 10 ** market.decimals, market.totalSupply() + amount - promoted);
