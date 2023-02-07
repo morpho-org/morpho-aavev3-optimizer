@@ -3,12 +3,6 @@
     "rpc": "https://rpc.ankr.com/avalanche",
     "chainId": 43114,
     "testBlock": 24800000,
-    "testMarkets": [
-        "DAI",
-        "USDC",
-        "WBTC",
-        "WETH"
-    ],
     "addressesProvider": "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
     "DAI": "0xd586E7F844cEa2F87f50152665BCbc2C279D8d70",
     "FRAX": "0xD24C2Ad096400B6FBcd2ad8B24E7acBc21A1da64",

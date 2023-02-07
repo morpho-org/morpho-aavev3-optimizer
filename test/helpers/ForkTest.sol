@@ -89,7 +89,7 @@ contract ForkTest is BaseTest {
     function _loadConfig() internal {
         forkId = config.createFork();
 
-        addressesProvider = IPoolAddressesProvider(config.getAddress("addressesProvider"));
+        addressesProvider = IPoolAddressesProvider(config.getAddressesProvider());
         pool = IPool(addressesProvider.getPool());
 
         aclAdmin = addressesProvider.getACLAdmin();
@@ -97,21 +97,32 @@ contract ForkTest is BaseTest {
         poolConfigurator = IPoolConfigurator(addressesProvider.getPoolConfigurator());
         poolDataProvider = IPoolDataProvider(addressesProvider.getPoolDataProvider());
 
-        dai = config.getAddress("DAI");
-        frax = config.getAddress("FRAX");
-        mai = config.getAddress("MAI");
-        usdc = config.getAddress("USDC");
-        usdt = config.getAddress("USDT");
-        aave = config.getAddress("AAVE");
-        btcb = config.getAddress("BTCb");
-        link = config.getAddress("LINK");
-        sAvax = config.getAddress("sAVAX");
-        wavax = config.getAddress("WAVAX");
-        wbtc = config.getAddress("WBTC");
-        weth = config.getAddress("WETH");
-        wNative = config.getAddress("wrappedNative");
+        dai = config.getAddress("$.DAI");
+        frax = config.getAddress("$.FRAX");
+        mai = config.getAddress("$.MAI");
+        usdc = config.getAddress("$.USDC");
+        usdt = config.getAddress("$.USDT");
+        aave = config.getAddress("$.AAVE");
+        btcb = config.getAddress("$.BTCb");
+        link = config.getAddress("$.LINK");
+        sAvax = config.getAddress("$.sAVAX");
+        wavax = config.getAddress("$.WAVAX");
+        wbtc = config.getAddress("$.WBTC");
+        weth = config.getAddress("$.WETH");
+        wNative = config.getAddress("$.wrappedNative");
 
-        allUnderlyings = config.getTestMarkets();
+        allUnderlyings.push(dai);
+        allUnderlyings.push(frax);
+        allUnderlyings.push(mai);
+        allUnderlyings.push(usdc);
+        allUnderlyings.push(usdt);
+        allUnderlyings.push(aave);
+        allUnderlyings.push(btcb);
+        allUnderlyings.push(link);
+        allUnderlyings.push(sAvax);
+        allUnderlyings.push(wavax);
+        allUnderlyings.push(wbtc);
+        allUnderlyings.push(weth);
     }
 
     function _label() internal virtual {
