@@ -33,7 +33,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import "test/helpers/InternalTest.sol";
 
-contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerInternal {
+contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsManagerInternal {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
     using WadRayMath for uint256;
@@ -73,10 +73,27 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         priceOracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
 
-        daiTokenUnit = 10 ** _POOL.getConfiguration(dai).decimals();
+        daiTokenUnit = 10 ** _POOL.getConfiguration(dai).getDecimals();
     }
 
-    function testAuthorizeBorrowWithNoBorrowCap(uint256 amount, uint256 totalP2P, uint256 delta) public {}
+    function testAuthorizeBorrowWithNoBorrowCap(uint256 amount, uint256 totalP2P, uint256 delta) public {
+        Types.Market storage market = _market[dai];
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+
+        totalP2P = bound(totalP2P, 0, MAX_AMOUNT);
+        delta = bound(delta, 0, totalP2P);
+        amount = bound(amount, 1e10, MAX_AMOUNT);
+
+        _setBorrowCap(dai, 0);
+
+        market.deltas.borrow.scaledDeltaPool = delta.rayDiv(indexes.borrow.poolIndex);
+        market.deltas.borrow.scaledTotalP2P = totalP2P.rayDiv(indexes.borrow.p2pIndex);
+
+        _userCollaterals[address(this)].add(dai);
+        _marketBalances[dai].collateral[address(this)] = (amount * 10).rayDiv(indexes.supply.poolIndex);
+
+        this.authorizeBorrow(dai, amount, address(this));
+    }
 
     function testAuthorizeBorrowShouldRevertIfExceedsBorrowCap(
         uint256 amount,
@@ -84,27 +101,141 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         uint256 delta,
         uint256 borrowCap
     ) public {
-        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(dai);
+        Types.Market storage market = _market[dai];
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         uint256 poolDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
-        totalP2P = bound(totalP2P, 0, MAX_AMOUNT);
-        delta = bound(delta, 0, MAX_AMOUNT);
 
-        borrowCap =
-            bound(borrowCap, (poolDebt / daiTokenUnit).zeroFloorSub(1), ReserveConfiguration.MAX_VALID_BORROW_CAP);
-        totalP2P = bound(totalP2P, 0, ReserveConfiguration.MAX_VALID_BORROW_CAP * (10 ** decimals));
+        borrowCap = bound(
+            borrowCap,
+            (poolDebt / daiTokenUnit).zeroFloorSub(1_000),
+            Math.min(ReserveConfiguration.MAX_VALID_BORROW_CAP, MAX_AMOUNT / daiTokenUnit)
+        );
+        totalP2P = bound(totalP2P, 0, ReserveConfiguration.MAX_VALID_BORROW_CAP * daiTokenUnit - poolDebt);
+        delta = bound(delta, 0, totalP2P);
+        amount = bound(
+            amount, (borrowCap * daiTokenUnit).zeroFloorSub(totalP2P - delta).zeroFloorSub(poolDebt) + 1e10, MAX_AMOUNT
+        );
 
         _setBorrowCap(dai, borrowCap);
 
-        Types.Market memory market = _market[dai];
-        Types.Indexes256 memory indexes = _computeIndexes(dai);
-
         market.deltas.borrow.scaledDeltaPool = delta.rayDiv(indexes.borrow.poolIndex);
+        market.deltas.borrow.scaledTotalP2P = totalP2P.rayDiv(indexes.borrow.p2pIndex);
+
+        _userCollaterals[address(this)].add(dai);
+        _marketBalances[dai].collateral[address(this)] = (amount * 10).rayDiv(indexes.supply.poolIndex);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.ExceedsBorrowCap.selector));
+        this.authorizeBorrow(dai, amount, address(this));
     }
 
-    function testAccountBorrowShouldDecreaseIdleSupplyIfIdleSupplyExists() public {}
+    function testAccountBorrowShouldDecreaseIdleSupplyIfIdleSupplyExists(uint256 amount, uint256 idleSupply) public {
+        Types.Market storage market = _market[dai];
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
-    function testAccountRepayShouldIncreaseIdleSupplyIfSupplyCapReached() public {}
+        _setBorrowCap(dai, 0);
 
-    function testAccountWithdrawShouldDecreaseIdleSupplyIfIdleSupplyExists() public {}
+        amount = bound(amount, 1e10, MAX_AMOUNT);
+        idleSupply = bound(idleSupply, 1, MAX_AMOUNT);
+
+        market.idleSupply = idleSupply;
+
+        _userCollaterals[address(this)].add(dai);
+        _marketBalances[dai].collateral[address(this)] = (amount * 10).rayDiv(indexes.supply.poolIndex);
+
+        Types.BorrowWithdrawVars memory vars = this.accountBorrow(dai, amount, address(this), 10);
+        assertEq(market.idleSupply, idleSupply.zeroFloorSub(amount));
+        // TODO: add assert for borrow withdraw vars
+    }
+
+    function testAccountRepayShouldIncreaseIdleSupplyIfSupplyCapReached(uint256 amount, uint256 supplyCap) public {
+        Types.Market storage market = _market[dai];
+
+        uint256 totalPoolSupply = ERC20(market.aToken).totalSupply();
+        supplyCap = bound(
+            supplyCap,
+            (totalPoolSupply / daiTokenUnit).zeroFloorSub(1_000),
+            Math.min(ReserveConfiguration.MAX_VALID_SUPPLY_CAP, MAX_AMOUNT / daiTokenUnit)
+        );
+        amount = bound(amount, (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply) + 1e10, MAX_AMOUNT);
+
+        _updateSupplierInDS(dai, address(1), 0, MAX_AMOUNT, false);
+        _updateBorrowerInDS(dai, address(this), 0, MAX_AMOUNT, false);
+
+        _setSupplyCap(dai, supplyCap);
+
+        Types.SupplyRepayVars memory vars = this.accountRepay(dai, amount, address(this), 10);
+
+        assertEq(market.idleSupply, amount - ((supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply)));
+        // TODO: add assert for supply repay vars
+    }
+
+    function testAccountWithdrawShouldDecreaseIdleSupplyIfIdleSupplyExistsWhenSupplyInP2P(
+        uint256 amount,
+        uint256 idleSupply
+    ) public {
+        Types.Market storage market = _market[dai];
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+
+        amount = bound(amount, 1e10, MAX_AMOUNT);
+        idleSupply = bound(idleSupply, 1, MAX_AMOUNT);
+
+        _updateSupplierInDS(dai, address(this), 0, MAX_AMOUNT, false);
+
+        market.idleSupply = idleSupply;
+
+        _userCollaterals[address(this)].add(dai);
+        _marketBalances[dai].collateral[address(this)] = (amount * 10).rayDiv(indexes.supply.poolIndex);
+
+        Types.BorrowWithdrawVars memory vars = this.accountWithdraw(dai, amount, address(this), 10);
+        assertEq(market.idleSupply, idleSupply.zeroFloorSub(amount));
+        // TODO: add assert for borrow withdraw vars
+    }
+
+    function testAccountWithdrawShouldNotDecreaseIdleSupplyIfIdleSupplyExistsWhenSupplyOnPool(
+        uint256 amount,
+        uint256 idleSupply
+    ) public {
+        Types.Market storage market = _market[dai];
+
+        amount = bound(amount, 1, MAX_AMOUNT);
+        idleSupply = bound(idleSupply, 1, amount);
+
+        _updateSupplierInDS(dai, address(this), MAX_AMOUNT, 0, false);
+
+        market.idleSupply = idleSupply;
+
+        Types.BorrowWithdrawVars memory vars = this.accountWithdraw(dai, amount, address(this), 10);
+        assertEq(market.idleSupply, idleSupply);
+        // TODO: add assert for borrow withdraw vars
+    }
+
+    function authorizeBorrow(address underlying, uint256 onPool, address borrower) external view {
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        _authorizeBorrow(underlying, onPool, borrower, indexes);
+    }
+
+    function accountBorrow(address underlying, uint256 amount, address borrower, uint256 maxIterations)
+        external
+        returns (Types.BorrowWithdrawVars memory vars)
+    {
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        vars = _accountBorrow(underlying, amount, borrower, maxIterations, indexes);
+    }
+
+    function accountRepay(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
+        external
+        returns (Types.SupplyRepayVars memory vars)
+    {
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        vars = _accountRepay(underlying, amount, onBehalf, maxIterations, indexes);
+    }
+
+    function accountWithdraw(address underlying, uint256 amount, address supplier, uint256 maxIterations)
+        external
+        returns (Types.BorrowWithdrawVars memory vars)
+    {
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        vars = _accountWithdraw(underlying, amount, supplier, maxIterations, indexes);
+    }
 }

@@ -15,6 +15,7 @@ import {Events} from "src/libraries/Events.sol";
 import {Errors} from "src/libraries/Errors.sol";
 import {TestConfig, TestConfigLib} from "../helpers/TestConfigLib.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
 import {PoolAdminMock} from "test/mocks/PoolAdminMock.sol";
@@ -22,6 +23,7 @@ import "./BaseTest.sol";
 
 contract ForkTest is BaseTest {
     using TestConfigLib for TestConfig;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     address internal constant POOL_ADMIN = address(0xB055);
 
@@ -180,16 +182,16 @@ contract ForkTest is BaseTest {
     }
 
     function _setSupplyCap(address underlying, uint256 amount) internal {
-        DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(underlying);
-        config.setSupplyCap(amount);
+        DataTypes.ReserveConfigurationMap memory reserveConfig = pool.getConfiguration(underlying);
+        reserveConfig.setSupplyCap(amount);
         vm.prank(address(poolConfigurator));
-        pool.setConfiguration(underlying, config);
+        pool.setConfiguration(underlying, reserveConfig);
     }
 
     function _setBorrowCap(address underlying, uint256 amount) internal {
-        DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(underlying);
-        config.setBorrowCap(amount);
+        DataTypes.ReserveConfigurationMap memory reserveConfig = pool.getConfiguration(underlying);
+        reserveConfig.setBorrowCap(amount);
         vm.prank(address(poolConfigurator));
-        pool.setConfiguration(underlying, config);
+        pool.setConfiguration(underlying, reserveConfig);
     }
 }
