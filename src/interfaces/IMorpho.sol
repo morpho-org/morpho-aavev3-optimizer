@@ -28,7 +28,7 @@ interface IMorphoGetters {
     function isManaging(address delegator, address manager) external view returns (bool);
     function userNonce(address user) external view returns (uint256);
 
-    function defaultMaxIterations() external view returns (Types.MinMaxIterations memory);
+    function defaultMinMaxIterations() external view returns (Types.MinMaxIterations memory);
     function positionsManager() external view returns (address);
     function rewardsManager() external view returns (address);
     function treasuryVault() external view returns (address);
@@ -52,7 +52,7 @@ interface IMorphoSetters {
     function setPositionsManager(address positionsManager) external;
     function setRewardsManager(address rewardsManager) external;
     function setTreasuryVault(address treasuryVault) external;
-    function setDefaultMaxIterations(Types.MinMaxIterations memory defaultMaxIterations) external;
+    function setDefaultMaxIterations(Types.MinMaxIterations memory defaultMinMaxIterations) external;
     function setP2PIndexCursor(address underlying, uint16 p2pIndexCursor) external;
     function setReserveFactor(address underlying, uint16 newReserveFactor) external;
 

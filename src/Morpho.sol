@@ -38,7 +38,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     /// @notice Initializes the contract.
     /// @param newPositionsManager The address of the `_positionsManager` to set.
-    /// @param newDefaultMaxIterations The `_defaultMaxIterations` to set.
+    /// @param newDefaultMaxIterations The `_defaultMinMaxIterations` to set.
     function initialize(address newPositionsManager, Types.MinMaxIterations memory newDefaultMaxIterations)
         external
         initializer
@@ -46,7 +46,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         __Ownable_init_unchained();
 
         _positionsManager = newPositionsManager;
-        _defaultMaxIterations = newDefaultMaxIterations;
+        _defaultMinMaxIterations = newDefaultMaxIterations;
         emit Events.DefaultMaxIterationsSet(newDefaultMaxIterations.repay, newDefaultMaxIterations.withdraw);
         emit Events.PositionsManagerSet(newPositionsManager);
 

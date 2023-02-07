@@ -119,9 +119,9 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _userNonce[user];
     }
 
-    /// @notice Returns the default max iterations.
-    function defaultMaxIterations() external view returns (Types.MinMaxIterations memory) {
-        return _defaultMaxIterations;
+    /// @notice Returns the default min max iterations.
+    function defaultMinMaxIterations() external view returns (Types.MinMaxIterations memory) {
+        return _defaultMinMaxIterations;
     }
 
     /// @notice Returns the address of the positions manager.
