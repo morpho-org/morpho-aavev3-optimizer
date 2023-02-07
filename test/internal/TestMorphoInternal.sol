@@ -472,8 +472,9 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
 
         _marketBalances[dai].collateral[address(1)] = collateralAmount.rayDivUp(indexes.supply.poolIndex);
 
-        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = _POOL.getConfiguration(dai).getParams();
-        if (_E_MODE_CATEGORY_ID != 0) {
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(dai);
+        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = config.getParams();
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == config.getEModeCategory()) {
             vars.liquidationBonus = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID).liquidationBonus;
         }
         (,,, vars.borrowTokenUnit,,) = _POOL.getConfiguration(wbtc).getParams();
