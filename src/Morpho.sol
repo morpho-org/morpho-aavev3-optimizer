@@ -168,12 +168,13 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to withdraw.
     /// @param onBehalf The address whose position will be withdrawn.
     /// @param receiver The address that will receive the withdrawn funds.
+    /// @param maxIterations The maximum number of iterations allowed during matching process.
     /// @return The amount withdrawn.
-    function withdraw(address underlying, uint256 amount, address onBehalf, address receiver)
+    function withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
         returns (uint256)
     {
-        return _withdraw(underlying, amount, onBehalf, receiver);
+        return _withdraw(underlying, amount, onBehalf, receiver, maxIterations);
     }
 
     /// @notice Withdraws `amount` of `underlying` collateral on behalf of `onBehalf`.
@@ -314,12 +315,12 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
-    function _withdraw(address underlying, uint256 amount, address onBehalf, address receiver)
+    function _withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         internal
         returns (uint256 withdrawn)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeCall(IPositionsManager.withdrawLogic, (underlying, amount, onBehalf, receiver))
+            abi.encodeCall(IPositionsManager.withdrawLogic, (underlying, amount, onBehalf, receiver, maxIterations))
         );
 
         return (abi.decode(returnData, (uint256)));

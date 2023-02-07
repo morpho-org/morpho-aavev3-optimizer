@@ -108,7 +108,7 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
         Types.Signature calldata signature
     ) external returns (uint256 repaid);
 
-    function withdraw(address underlying, uint256 amount, address onBehalf, address receiver)
+    function withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
         returns (uint256 withdrawn);
     function withdrawCollateral(address underlying, uint256 amount, address onBehalf, address receiver)

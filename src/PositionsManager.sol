@@ -146,11 +146,15 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param amount The amount of `underlying` to withdraw.
     /// @param supplier The address whose position will be withdrawn.
     /// @param receiver The address that will receive the withdrawn funds.
+    /// @param maxIterations The maximum number of iterations allowed during matching process.
     /// @return The amount withdrawn.
-    function withdrawLogic(address underlying, uint256 amount, address supplier, address receiver)
-        external
-        returns (uint256)
-    {
+    function withdrawLogic(
+        address underlying,
+        uint256 amount,
+        address supplier,
+        address receiver,
+        uint256 maxIterations
+    ) external returns (uint256) {
         Types.Market storage market = _validateWithdraw(underlying, amount, supplier, receiver);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
@@ -158,8 +162,9 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         if (amount == 0) return 0;
 
-        Types.BorrowWithdrawVars memory vars =
-            _executeWithdraw(underlying, amount, supplier, receiver, _defaultMaxIterations.withdraw, indexes);
+        Types.BorrowWithdrawVars memory vars = _executeWithdraw(
+            underlying, amount, supplier, receiver, Math.max(_defaultMaxIterations.withdraw, maxIterations), indexes
+        );
 
         _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
         _POOL.borrowFromPool(underlying, vars.toBorrow);
