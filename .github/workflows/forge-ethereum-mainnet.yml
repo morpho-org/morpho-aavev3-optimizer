@@ -1,0 +1,46 @@
+name: Forge checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - lib/**
+      - config/**/aave-v2/**
+      - src/**
+      - test/**
+      - yarn.lock
+      - foundry.toml
+      - remappings.txt
+      - .github/actions/forge-build/**
+      - .github/actions/forge-test/**
+      - .github/workflows/forge-ethereum-mainnet.yml
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  ethereum-mainnet-compilation:
+    name: Compilation (ethereum-mainnet)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
+
+      - uses: ./.github/actions/forge-build
+
+  ethereum-mainnet-test:
+    name: Tests (ethereum-mainnet)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
+
+      - uses: ./.github/actions/forge-test
+        with:
+          network: ethereum-mainnet

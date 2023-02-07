@@ -2,7 +2,7 @@
 .EXPORT_ALL_VARIABLES:
 MAKEFLAGS += --no-print-directory
 
-NETWORK ?= avalanche-mainnet
+NETWORK ?= ethereum-mainnet
 
 
 install:
@@ -15,7 +15,7 @@ contracts:
 
 
 test:
-	forge test -vvvvv
+	forge test -vvv
 
 test-unit:
 	@FOUNDRY_MATCH_CONTRACT=TestUnit make test
