@@ -61,7 +61,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param underlying The address of the underlying asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the supply position.
-    /// @param maxIterations The maximum number of iterations allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
     /// @return The amount supplied.
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
         external
@@ -75,7 +75,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param underlying The address of the `underlying` asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the supply position.
-    /// @param maxIterations The maximum number of iterations allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
     /// @param deadline The deadline for the permit2 signature.
     /// @param signature The permit2 signature.
     /// @return The amount supplied.
@@ -126,7 +126,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to borrow.
     /// @param onBehalf The address that will receive the debt position.
     /// @param receiver The address that will receive the borrowed funds.
-    /// @param maxIterations The maximum number of iterations allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
     /// @return The amount borrowed.
     function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
@@ -168,7 +168,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to withdraw.
     /// @param onBehalf The address whose position will be withdrawn.
     /// @param receiver The address that will receive the withdrawn funds.
-    /// @param maxIterations The maximum number of iterations allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process. Pass 0 to fallback to the `_defaultMinMaxIterations.withdraw`.
     /// @return The amount withdrawn.
     function withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
