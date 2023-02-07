@@ -15,3 +15,6 @@ test/=test/
 @aave-v3-periphery/=lib/aave-v3-periphery/contracts/
 
 @solmate/=lib/solmate/src/
+solmate/=lib/solmate/
+
+@permit2/=lib/permit2/src/
