@@ -110,9 +110,9 @@ library TestMarketLib {
         returns (uint256)
     {
         return (
-            (collateral * collateralMarket.price * 10 ** borrowedMarket.decimals)
+            (collateral.percentMul(collateralMarket.ltv - 1) * collateralMarket.price * 10 ** borrowedMarket.decimals)
                 / (borrowedMarket.price * 10 ** collateralMarket.decimals)
-        ).percentMul(collateralMarket.ltv);
+        );
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt and still be able to borrow.
