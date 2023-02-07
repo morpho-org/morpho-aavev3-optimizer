@@ -12,7 +12,7 @@ import {TestConfigLib, TestConfig} from "../helpers/TestConfigLib.sol";
 import {PoolLib} from "src/libraries/PoolLib.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
 
-import {MockPriceOracleSentinel} from "../mocks/MockPriceOracleSentinel.sol";
+import {PriceOracleSentinelMock} from "../mocks/PriceOracleSentinelMock.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
@@ -276,7 +276,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
             dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 101 / 100), 0, true
         );
 
-        MockPriceOracleSentinel priceOracleSentinel = new MockPriceOracleSentinel(address(_ADDRESSES_PROVIDER));
+        PriceOracleSentinelMock priceOracleSentinel = new PriceOracleSentinelMock(address(_ADDRESSES_PROVIDER));
         priceOracleSentinel.setLiquidationAllowed(false);
         vm.prank(poolOwner);
         _ADDRESSES_PROVIDER.setPriceOracleSentinel(address(priceOracleSentinel));
