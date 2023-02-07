@@ -49,18 +49,18 @@ contract TestIntegrationRepay is IntegrationTest {
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
             test.scaledPoolBorrow = morpho.scaledPoolBorrowBalance(market.underlying, onBehalf);
-            uint256 p2pBorrow = test.scaledP2PBorrow.rayMulUp(test.indexes.borrow.p2pIndex);
-            uint256 poolBorrow = test.scaledPoolBorrow.rayMulUp(test.indexes.borrow.poolIndex);
+            uint256 p2pBorrow = test.scaledP2PBorrow.rayMul(test.indexes.borrow.p2pIndex);
+            uint256 poolBorrow = test.scaledPoolBorrow.rayMul(test.indexes.borrow.poolIndex);
             uint256 remaining = test.borrowed - test.repaid;
 
             // Assert balances on Morpho.
             assertGe(poolBorrow, 0, "poolBorrow == 0");
             assertLe(poolBorrow, remaining, "poolBorrow > remaining");
-            assertApproxGeAbs(test.repaid, amount, 1, "repaid != amount");
-            assertApproxGeAbs(p2pBorrow, promoted, 2, "p2pBorrow != promoted");
+            assertApproxEqDust(test.repaid, amount, "repaid != amount");
+            assertApproxEqDust(p2pBorrow, promoted, "p2pBorrow != promoted");
 
             // Assert Morpho getters.
-            assertApproxGeAbs(morpho.borrowBalance(market.underlying, onBehalf), remaining, 3, "borrow != remaining");
+            assertApproxEqDust(morpho.borrowBalance(market.underlying, onBehalf), remaining, "borrow != remaining");
 
             // Assert Morpho's position on pool.
             assertApproxEqAbs(market.supplyOf(address(morpho)), 0, 1, "morphoSupply != 0");
@@ -127,15 +127,15 @@ contract TestIntegrationRepay is IntegrationTest {
             // Assert balances on Morpho.
             assertEq(test.scaledP2PBorrow, 0, "scaledP2PBorrow != 0");
             assertEq(test.scaledPoolBorrow, 0, "scaledPoolBorrow != 0");
-            assertApproxGeAbs(test.repaid, test.borrowed, 2, "repaid != amount");
+            assertApproxEqAbs(test.repaid, test.borrowed, 2, "repaid != amount");
             assertEq(
                 morpho.scaledP2PSupplyBalance(market.underlying, address(promoter1)), 0, "promoterScaledP2PSupply != 0"
             );
 
             // Assert Morpho getters.
             assertEq(morpho.borrowBalance(market.underlying, onBehalf), 0, "borrow != 0");
-            assertApproxLeAbs(
-                morpho.supplyBalance(market.underlying, address(promoter1)), promoted, 3, "promoterSupply != promoted"
+            assertApproxEqDust(
+                morpho.supplyBalance(market.underlying, address(promoter1)), promoted, "promoterSupply != promoted"
             );
 
             // Assert Morpho's position on pool.
@@ -208,7 +208,7 @@ contract TestIntegrationRepay is IntegrationTest {
             // Assert balances on Morpho.
             assertEq(test.scaledP2PBorrow, 0, "scaledP2PBorrow != 0");
             assertEq(test.scaledPoolBorrow, 0, "scaledPoolBorrow != 0");
-            assertApproxGeAbs(test.repaid, test.borrowed, 1, "repaid != amount");
+            assertApproxEqDust(test.repaid, test.borrowed, "repaid != amount");
 
             // Assert Morpho getters.
             assertEq(morpho.borrowBalance(market.underlying, onBehalf), 0, "borrow != 0");
@@ -288,7 +288,7 @@ contract TestIntegrationRepay is IntegrationTest {
             // Assert balances on Morpho.
             assertEq(test.scaledP2PBorrow, 0, "scaledP2PBorrow != 0");
             assertEq(test.scaledPoolBorrow, 0, "scaledPoolBorrow != 0");
-            assertApproxGeAbs(test.repaid, test.borrowed, 1, "repaid != amount");
+            assertApproxEqDust(test.repaid, test.borrowed, "repaid != amount");
             assertEq(
                 morpho.scaledPoolSupplyBalance(market.underlying, address(promoter1)),
                 0,

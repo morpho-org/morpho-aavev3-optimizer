@@ -128,8 +128,6 @@ contract IntegrationTest is ForkTest {
         market.price = oracle.getAssetPrice(underlying); // Price is constant, equal to price at fork block number.
 
         (market.ltv, market.lt, market.liquidationBonus, market.decimals,,) = reserve.configuration.getParams();
-        market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
-            && !reserve.configuration.getBorrowableInIsolation() && market.borrowGap() > 0;
 
         market.minAmount = (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price;
         market.maxAmount = (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price;
@@ -139,6 +137,9 @@ contract IntegrationTest is ForkTest {
         poolAdmin.setBorrowCap(underlying, 0);
         market.supplyCap = type(uint256).max;
         market.borrowCap = type(uint256).max;
+
+        market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
+            && !reserve.configuration.getBorrowableInIsolation();
 
         vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
         vm.label(reserve.variableDebtTokenAddress, string.concat("vd", market.symbol));
@@ -184,6 +185,23 @@ contract IntegrationTest is ForkTest {
     /// @dev Bounds the input between the minimum & the maximum USD amount expected in tests, without exceeding the market's supply cap.
     function _boundSupply(TestMarket storage market, uint256 amount) internal view returns (uint256) {
         return bound(amount, market.minAmount, Math.min(market.maxAmount, market.supplyGap()));
+    }
+
+    /// @dev Bounds the input so that the amount returned can collateralize a debt between
+    ///      the minimum & the maximum USD amount expected in tests, without exceeding the market's supply cap.
+    function _boundCollateral(TestMarket storage collateralMarket, uint256 amount, TestMarket storage borrowedMarket)
+        internal
+        view
+        returns (uint256)
+    {
+        return bound(
+            amount,
+            collateralMarket.minBorrowCollateral(borrowedMarket, borrowedMarket.minAmount),
+            Math.min(
+                collateralMarket.minBorrowCollateral(borrowedMarket, borrowedMarket.maxAmount),
+                collateralMarket.supplyGap()
+            )
+        );
     }
 
     /// @dev Bounds the input between the minimum USD amount expected in tests

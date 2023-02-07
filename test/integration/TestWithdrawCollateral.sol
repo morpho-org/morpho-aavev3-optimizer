@@ -85,7 +85,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
 
             // Assert Morpho's position on pool.
-            assertApproxGeAbs(market.supplyOf(address(morpho)), 0, 1, "morphoSupply != 0");
+            assertApproxEqAbs(market.supplyOf(address(morpho)), 0, 1, "morphoSupply != 0");
             assertEq(market.variableBorrowOf(address(morpho)), 0, "morphoVariableBorrow != 0");
             assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
@@ -125,17 +125,12 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                collateral = _boundSupply(collateralMarket, collateral);
-                uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral);
+                collateral = _boundCollateral(collateralMarket, collateral, borrowedMarket);
+                uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral).percentSub(2);
                 borrowed = bound(
                     borrowed,
-                    1,
-                    Math.min(
-                        borrowable,
-                        Math.min(
-                            borrowedMarket.maxAmount, Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap())
-                        )
-                    )
+                    borrowedMarket.minAmount / 2,
+                    Math.min(borrowable, Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap()))
                 );
                 withdrawn = bound(
                     withdrawn,

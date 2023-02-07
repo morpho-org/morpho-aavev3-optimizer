@@ -28,16 +28,16 @@ test-integration:
 
 
 test-%:
-	@FOUNDRY_MATCH_TEST=$* FOUNDRY_FUZZ_RUNS=64 make test
+	@FOUNDRY_MATCH_TEST=$* make test
 
 test-unit-%:
-	@FOUNDRY_MATCH_TEST=$* FOUNDRY_FUZZ_RUNS=64 make test-unit
+	@FOUNDRY_MATCH_TEST=$* make test-unit
 
 test-internal-%:
-	@FOUNDRY_MATCH_TEST=$* FOUNDRY_FUZZ_RUNS=64 make test-internal
+	@FOUNDRY_MATCH_TEST=$* make test-internal
 
 test-integration-%:
-	@FOUNDRY_MATCH_TEST=$* FOUNDRY_FUZZ_RUNS=64 make test-integration
+	@FOUNDRY_MATCH_TEST=$* make test-integration
 
 
 coverage:
@@ -49,7 +49,7 @@ lcov-html:
 	genhtml lcov.info -o coverage
 
 gas-report:
-	forge test --gas-report
+	forge test --match-contract TestIntegration --gas-report
 
 
 .PHONY: contracts test coverage

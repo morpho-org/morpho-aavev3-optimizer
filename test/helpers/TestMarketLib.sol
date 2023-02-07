@@ -103,16 +103,16 @@ library TestMarketLib {
         return market.borrowCap.zeroFloorSub(totalBorrow(market));
     }
 
-    /// @dev Calculates a lower bound of the maximum borrowable quantity collateralized by the given quantity of collateral.
+    /// @dev Calculates the maximum borrowable quantity collateralized by the given quantity of collateral.
     function borrowable(TestMarket storage borrowedMarket, TestMarket storage collateralMarket, uint256 collateral)
         internal
         view
         returns (uint256)
     {
         return (
-            (collateral * collateralMarket.price * 10 ** borrowedMarket.decimals)
+            (collateral.percentMul(collateralMarket.ltv - 1) * collateralMarket.price * 10 ** borrowedMarket.decimals)
                 / (borrowedMarket.price * 10 ** collateralMarket.decimals)
-        ).percentMul(collateralMarket.ltv);
+        );
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt and still be able to borrow.

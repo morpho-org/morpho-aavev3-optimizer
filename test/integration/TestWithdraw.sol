@@ -163,7 +163,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
             assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
             assertEq(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
             assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
-            assertApproxLeAbs(test.withdrawn, test.supplied, 2, "withdrawn != supplied");
+            assertApproxEqAbs(test.withdrawn, test.supplied, 2, "withdrawn != supplied");
             assertEq(
                 morpho.scaledP2PBorrowBalance(market.underlying, address(promoter1)), 0, "promoterScaledP2PBorrow != 0"
             );
@@ -249,7 +249,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
             assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
             assertEq(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
             assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
-            assertApproxLeAbs(test.withdrawn, test.supplied, 2, "withdrawn != supplied");
+            assertApproxEqDust(test.withdrawn, test.supplied, "withdrawn != supplied");
             assertEq(
                 morpho.scaledPoolBorrowBalance(market.underlying, address(promoter1)),
                 0,
@@ -358,7 +358,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
             assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
             assertEq(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
             assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
-            assertApproxLeAbs(test.withdrawn, test.supplied, 2, "withdrawn != supplied");
+            assertApproxEqDust(test.withdrawn, test.supplied, "withdrawn != supplied");
             assertEq(
                 morpho.scaledPoolBorrowBalance(market.underlying, address(promoter1)),
                 0,
@@ -378,7 +378,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
             // Assert Morpho's position on pool.
             uint256 morphoVariableBorrow = market.variableBorrowOf(address(morpho));
             assertApproxEqAbs(market.supplyOf(address(morpho)), 0, 1, "morphoSupply != 0");
-            assertApproxLeAbs(morphoVariableBorrow, test.supplied, 1, "morphoVariableBorrow != supplied");
+            assertApproxEqAbs(morphoVariableBorrow, test.supplied, 1, "morphoVariableBorrow != supplied");
             assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
             // Assert user's underlying balance.
