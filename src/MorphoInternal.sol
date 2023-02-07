@@ -346,7 +346,9 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
         DataTypes.ReserveConfigurationMap memory config = reserveData.configuration;
-        tokenUnit = 10 ** config.getDecimals();
+        unchecked {
+            tokenUnit = 10 ** config.getDecimals();
+        }
 
         // If this instance of Morpho isn't in eMode, then vars.eModeCategory is not initalized.
         // Thus in this case `vars.eModeCategory.priceSource` == `address(0)`.
@@ -525,12 +527,12 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 liquidationBonus = _E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == config.getEModeCategory()
             ? _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID).liquidationBonus
             : config.getLiquidationBonus();
-        uint256 collateralTokenUnit = config.getDecimals();
-        uint256 borrowTokenUnit = _POOL.getConfiguration(underlyingBorrowed).getDecimals();
+        uint256 collateralTokenUnit;
+        uint256 borrowTokenUnit;
 
         unchecked {
-            collateralTokenUnit = 10 ** collateralTokenUnit;
-            borrowTokenUnit = 10 ** borrowTokenUnit;
+            collateralTokenUnit = 10 ** config.getDecimals();
+            borrowTokenUnit = 10 ** _POOL.getConfiguration(underlyingBorrowed).getDecimals();
         }
 
         IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
