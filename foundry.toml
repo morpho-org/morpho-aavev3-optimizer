@@ -3,6 +3,7 @@ names = true
 sizes = true
 libs = ["node_modules", "lib"]
 fs_permissions = [{ access = "read", path = "./config/"}]
+extra_output_files = ["ir", "irOptimized"]
 
 [fuzz]
 runs = 8
