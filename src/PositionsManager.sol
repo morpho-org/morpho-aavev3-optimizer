@@ -12,7 +12,7 @@ import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
-import {Permit2Lib} from "./libraries/Permit2Lib.sol";
+import {Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
