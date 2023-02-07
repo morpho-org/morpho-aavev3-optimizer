@@ -345,12 +345,12 @@ abstract contract MorphoInternal is MorphoStorage {
         returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit)
     {
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
-        DataTypes.ReserveConfigurationMap memory configuration = reserveData.configuration;
-        tokenUnit = 10 ** configuration.getDecimals();
+        DataTypes.ReserveConfigurationMap memory config = reserveData.configuration;
+        tokenUnit = 10 ** config.getDecimals();
 
         // If this instance of Morpho isn't in eMode, then vars.eModeCategory is not initalized.
         // Thus in this case `vars.eModeCategory.priceSource` == `address(0)`.
-        if (vars.eModeCategory.priceSource != address(0) && _E_MODE_CATEGORY_ID == configuration.getEModeCategory()) {
+        if (vars.eModeCategory.priceSource != address(0) && _E_MODE_CATEGORY_ID == config.getEModeCategory()) {
             uint256 eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
             underlyingPrice = eModeUnderlyingPrice != 0 ? eModeUnderlyingPrice : vars.oracle.getAssetPrice(underlying);
         } else {
@@ -359,14 +359,14 @@ abstract contract MorphoInternal is MorphoStorage {
 
         // If a LTV has been reduced to 0 on Aave v3, the other assets of the collateral are frozen.
         // In response, Morpho disables the asset as collateral and sets its liquidation threshold to 0.
-        if (configuration.getLtv() == 0) return (underlyingPrice, 0, 0, tokenUnit);
+        if (config.getLtv() == 0) return (underlyingPrice, 0, 0, tokenUnit);
 
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == configuration.getEModeCategory()) {
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == config.getEModeCategory()) {
             ltv = vars.eModeCategory.ltv;
             liquidationThreshold = vars.eModeCategory.liquidationThreshold;
         } else {
-            ltv = configuration.getLtv();
-            liquidationThreshold = configuration.getLiquidationThreshold();
+            ltv = config.getLtv();
+            liquidationThreshold = config.getLiquidationThreshold();
         }
     }
 

@@ -195,15 +195,15 @@ library MarketLib {
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to repay. (by supplying on pool)
-    /// @param configuration The reserve configuration for the market.
+    /// @param config The reserve config for the market.
     /// @return toSupply The new amount to supply.
     function increaseIdle(
         Types.Market storage market,
         address underlying,
         uint256 amount,
-        DataTypes.ReserveConfigurationMap memory configuration
+        DataTypes.ReserveConfigurationMap memory config
     ) internal returns (uint256 toSupply) {
-        uint256 supplyCap = configuration.getSupplyCap() * (10 ** configuration.getDecimals());
+        uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
         if (supplyCap == 0) return amount;
 
         uint256 totalSupply = ERC20(market.aToken).totalSupply();
