@@ -45,5 +45,5 @@ library Errors {
     error ExceedsSupplyCap();
     error ExceedsBorrowCap();
 
-    error InvalidMaxIterations();
+    error InvalidIterations();
 }

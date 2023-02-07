@@ -133,7 +133,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         ERC20(underlying).transferFrom2(repayer, address(this), amount);
 
         Types.SupplyRepayVars memory vars =
-            _executeRepay(underlying, amount, repayer, onBehalf, _defaultMinMaxIterations.repay, indexes);
+            _executeRepay(underlying, amount, repayer, onBehalf, _defaultIterations.repay, indexes);
 
         _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
         _POOL.supplyToPool(underlying, vars.toSupply);
@@ -163,7 +163,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         if (amount == 0) return 0;
 
         Types.BorrowWithdrawVars memory vars = _executeWithdraw(
-            underlying, amount, supplier, receiver, Math.max(_defaultMinMaxIterations.withdraw, maxIterations), indexes
+            underlying, amount, supplier, receiver, Math.max(_defaultIterations.withdraw, maxIterations), indexes
         );
 
         _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);

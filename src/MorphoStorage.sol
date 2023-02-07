@@ -33,7 +33,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     mapping(address => mapping(address => bool)) internal _isManaging; // Whether a user is allowed to borrow or withdraw on behalf of another user. delegator => manager => bool
     mapping(address => uint256) internal _userNonce; // The nonce of a user. Used to prevent replay attacks.
 
-    Types.MinMaxIterations internal _defaultMinMaxIterations; // The default min max iterations values to use in the matching process.
+    Types.Iterations internal _defaultIterations; // The default iterations values to use in the matching process.
 
     address internal _positionsManager; // The address of the positions manager on which calls are delegated to.
     IRewardsManager internal _rewardsManager; // The address of the rewards manager to track pool rewards for users.

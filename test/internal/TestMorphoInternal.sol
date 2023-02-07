@@ -29,7 +29,7 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
     function setUp() public virtual override {
         super.setUp();
 
-        _defaultMinMaxIterations = Types.MinMaxIterations(10, 10);
+        _defaultIterations = Types.Iterations(10, 10);
 
         createTestMarket(dai, 0, 3_333);
         createTestMarket(wbtc, 0, 3_333);

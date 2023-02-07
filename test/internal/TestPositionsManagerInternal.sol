@@ -51,7 +51,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     function setUp() public virtual override {
         poolOwner = Ownable(address(addressesProvider)).owner();
 
-        _defaultMinMaxIterations = Types.MinMaxIterations(10, 10);
+        _defaultIterations = Types.Iterations(10, 10);
 
         _createMarket(dai, 0, 3_333);
         _createMarket(wbtc, 0, 3_333);

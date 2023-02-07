@@ -38,16 +38,16 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     /// @notice Initializes the contract.
     /// @param newPositionsManager The address of the `_positionsManager` to set.
-    /// @param newDefaultMaxIterations The `_defaultMinMaxIterations` to set.
-    function initialize(address newPositionsManager, Types.MinMaxIterations memory newDefaultMaxIterations)
+    /// @param newDefaultIterations The `_defaultIterations` to set.
+    function initialize(address newPositionsManager, Types.Iterations memory newDefaultIterations)
         external
         initializer
     {
         __Ownable_init_unchained();
 
         _positionsManager = newPositionsManager;
-        _defaultMinMaxIterations = newDefaultMaxIterations;
-        emit Events.DefaultMaxIterationsSet(newDefaultMaxIterations.repay, newDefaultMaxIterations.withdraw);
+        _defaultIterations = newDefaultIterations;
+        emit Events.DefaultIterationsSet(newDefaultIterations.repay, newDefaultIterations.withdraw);
         emit Events.PositionsManagerSet(newPositionsManager);
 
         _POOL.setUserEMode(_E_MODE_CATEGORY_ID);
@@ -168,7 +168,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to withdraw.
     /// @param onBehalf The address whose position will be withdrawn.
     /// @param receiver The address that will receive the withdrawn funds.
-    /// @param maxIterations The maximum number of iterations allowed during the matching process. Pass 0 to fallback to the `_defaultMinMaxIterations.withdraw`.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process. Pass 0 to fallback to the `_defaultIterations.withdraw`.
     /// @return The amount withdrawn.
     function withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external

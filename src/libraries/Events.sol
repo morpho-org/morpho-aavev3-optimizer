@@ -110,7 +110,7 @@ library Events {
 
     event MarketCreated(address indexed underlying);
 
-    event DefaultMaxIterationsSet(uint64 repay, uint64 withdraw);
+    event DefaultIterationsSet(uint64 repay, uint64 withdraw);
 
     event PositionsManagerSet(address indexed positionsManager);
 
