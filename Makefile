@@ -11,7 +11,7 @@ install:
 	forge install
 
 contracts:
-	FOUNDRY_TEST=/dev/null forge build --via-ir --sizes
+	FOUNDRY_TEST=/dev/null forge build --via-ir --extra-output-files irOptimized --sizes --force
 
 
 test:

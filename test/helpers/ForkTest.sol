@@ -17,6 +17,7 @@ import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";
 
+import {PriceOracleSentinelMock} from "test/mocks/PriceOracleSentinelMock.sol";
 import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
 import {PoolAdminMock} from "test/mocks/PoolAdminMock.sol";
 import "./BaseTest.sol";
@@ -54,6 +55,7 @@ contract ForkTest is BaseTest {
     address internal aclAdmin;
     AaveOracleMock internal oracle;
     PoolAdminMock internal poolAdmin;
+    PriceOracleSentinelMock oracleSentinel;
 
     uint256 snapshotId = type(uint256).max;
 
@@ -61,8 +63,9 @@ contract ForkTest is BaseTest {
         _initConfig();
         _loadConfig();
 
-        _mockOracle();
         _mockPoolAdmin();
+        _mockOracle();
+        _mockOracleSentinel();
 
         _setBalances(address(this), type(uint256).max);
     }
@@ -138,24 +141,28 @@ contract ForkTest is BaseTest {
         vm.label(wNative, "wNative");
     }
 
-    function _mockOracle() internal {
-        oracle = new AaveOracleMock(IAaveOracle(addressesProvider.getPriceOracle()), pool.getReservesList());
-
-        vm.store(
-            address(addressesProvider),
-            keccak256(abi.encode(bytes32("PRICE_ORACLE"), 2)),
-            bytes32(uint256(uint160(address(oracle))))
-        );
-    }
-
     function _mockPoolAdmin() internal {
         poolAdmin = new PoolAdminMock(poolConfigurator);
 
         vm.startPrank(aclAdmin);
         aclManager.addPoolAdmin(address(poolAdmin));
-        aclManager.addEmergencyAdmin(address(poolAdmin));
         aclManager.addRiskAdmin(address(poolAdmin));
+        aclManager.addEmergencyAdmin(address(poolAdmin));
         vm.stopPrank();
+    }
+
+    function _mockOracle() internal {
+        oracle = new AaveOracleMock(IAaveOracle(addressesProvider.getPriceOracle()), pool.getReservesList());
+
+        vm.prank(aclAdmin);
+        addressesProvider.setPriceOracle(address(oracle));
+    }
+
+    function _mockOracleSentinel() internal {
+        oracleSentinel = new PriceOracleSentinelMock(address(addressesProvider));
+
+        vm.prank(aclAdmin);
+        addressesProvider.setPriceOracleSentinel(address(oracleSentinel));
     }
 
     function _setBalances(address user, uint256 balance) internal {
