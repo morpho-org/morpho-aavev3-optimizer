@@ -10,12 +10,10 @@ import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol"
 import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 
-import {Types} from "src/libraries/Types.sol";
-import {Events} from "src/libraries/Events.sol";
-import {Errors} from "src/libraries/Errors.sol";
 import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";
+import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {PriceOracleSentinelMock} from "test/mocks/PriceOracleSentinelMock.sol";
 import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";

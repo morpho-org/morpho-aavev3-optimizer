@@ -1,31 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {Errors} from "src/libraries/Errors.sol";
-import {MorphoStorage} from "src/MorphoStorage.sol";
-import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
-
-import {Types} from "src/libraries/Types.sol";
-import {Constants} from "src/libraries/Constants.sol";
-
-import {TestConfigLib, TestConfig} from "../helpers/TestConfigLib.sol";
 import {PoolLib} from "src/libraries/PoolLib.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
-
-import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
-
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
-import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
-
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
-import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
-
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
+import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
 import "test/helpers/InternalTest.sol";
 
 contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerInternal {
