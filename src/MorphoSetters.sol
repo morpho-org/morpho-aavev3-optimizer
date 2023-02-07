@@ -48,7 +48,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     /// SETTERS ///
 
     /// @notice Sets `_defaultMaxIterations` to `defaultMaxIterations`.
-    function setDefaultMaxIterations(Types.MaxIterations calldata defaultMaxIterations) external onlyOwner {
+    function setDefaultMaxIterations(Types.MinMaxIterations calldata defaultMaxIterations) external onlyOwner {
         _defaultMaxIterations = defaultMaxIterations;
         emit Events.DefaultMaxIterationsSet(defaultMaxIterations.repay, defaultMaxIterations.withdraw);
     }

@@ -39,7 +39,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @notice Initializes the contract.
     /// @param newPositionsManager The address of the `_positionsManager` to set.
     /// @param newDefaultMaxIterations The `_defaultMaxIterations` to set.
-    function initialize(address newPositionsManager, Types.MaxIterations memory newDefaultMaxIterations)
+    function initialize(address newPositionsManager, Types.MinMaxIterations memory newDefaultMaxIterations)
         external
         initializer
     {

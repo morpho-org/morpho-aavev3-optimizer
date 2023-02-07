@@ -120,7 +120,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     }
 
     /// @notice Returns the default max iterations.
-    function defaultMaxIterations() external view returns (Types.MaxIterations memory) {
+    function defaultMaxIterations() external view returns (Types.MinMaxIterations memory) {
         return _defaultMaxIterations;
     }
 

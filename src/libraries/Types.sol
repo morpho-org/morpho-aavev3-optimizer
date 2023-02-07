@@ -89,7 +89,7 @@ library Types {
         mapping(address => uint256) collateral; // In pool unit.
     }
 
-    struct MaxIterations {
+    struct MinMaxIterations {
         uint64 repay;
         uint64 withdraw;
     }
