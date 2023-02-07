@@ -126,7 +126,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
                 collateral = _boundSupply(collateralMarket, collateral);
-                uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral).percentSub(1);
+                uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral);
                 borrowed = bound(
                     borrowed,
                     1,
