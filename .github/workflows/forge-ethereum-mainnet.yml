@@ -32,3 +32,4 @@ jobs:
       - uses: ./.github/actions/forge-test
         with:
           network: ethereum-mainnet
+          alchemyKey: ${{ secrets.ALCHEMY_KEY }}
