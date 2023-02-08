@@ -541,7 +541,16 @@ contract TestIntegrationBorrow is IntegrationTest {
         }
     }
 
-    function testShouldRevertBorrowWhenMarketNotCreated(uint256 amount, address onBehalf, address receiver) public {
+    function testShouldRevertBorrowWhenMarketNotCreated(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        address receiver
+    ) public {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.assume(underlying != allUnderlyings[i]);
+        }
+
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
@@ -549,7 +558,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         _prepareOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user.borrow(sAvax, amount, onBehalf, receiver);
+        user.borrow(underlying, amount, onBehalf, receiver);
     }
 
     function testShouldRevertBorrowWhenBorrowPaused(uint256 amount, address onBehalf, address receiver) public {

@@ -8,20 +8,18 @@ on:
   pull_request:
     paths:
       - lib/**
-      - config/**
       - src/**
-      - test/**
       - foundry.toml
       - remappings.txt
-      - .github/actions/forge-test/**
-      - .github/workflows/forge-avalanche-mainnet.yml
+      - .github/actions/forge-build/**
+      - .github/workflows/forge-compilation.yml
 
 env:
   FOUNDRY_PROFILE: ci
 
 jobs:
-  avalanche-mainnet-test:
-    name: Tests (avalanche-mainnet)
+  compilation:
+    name: Compilation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -29,6 +27,4 @@ jobs:
           submodules: recursive
           ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
 
-      - uses: ./.github/actions/forge-test
-        with:
-          network: avalanche-mainnet
+      - uses: ./.github/actions/forge-build

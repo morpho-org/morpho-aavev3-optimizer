@@ -158,12 +158,18 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         }
     }
 
-    function testShouldRevertSupplyCollateralWhenMarketNotCreated(uint256 amount, address onBehalf) public {
+    function testShouldRevertSupplyCollateralWhenMarketNotCreated(address underlying, uint256 amount, address onBehalf)
+        public
+    {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.assume(underlying != allUnderlyings[i]);
+        }
+
         amount = _boundAmount(amount);
         onBehalf = _boundAddressNotZero(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user.supplyCollateral(sAvax, amount, onBehalf);
+        user.supplyCollateral(underlying, amount, onBehalf);
     }
 
     function testShouldRevertSupplyCollateralWhenSupplyCollateralPaused(uint256 amount, address onBehalf) public {

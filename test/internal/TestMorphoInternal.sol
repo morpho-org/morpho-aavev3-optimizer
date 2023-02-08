@@ -36,19 +36,16 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         createTestMarket(dai, 0, 3_333);
         createTestMarket(wbtc, 0, 3_333);
         createTestMarket(usdc, 0, 3_333);
-        createTestMarket(usdt, 0, 3_333);
         createTestMarket(wNative, 0, 3_333);
 
         ERC20(dai).approve(address(_POOL), type(uint256).max);
         ERC20(wbtc).approve(address(_POOL), type(uint256).max);
         ERC20(usdc).approve(address(_POOL), type(uint256).max);
-        ERC20(usdt).approve(address(_POOL), type(uint256).max);
         ERC20(wNative).approve(address(_POOL), type(uint256).max);
 
         _POOL.supplyToPool(dai, 100 ether);
         _POOL.supplyToPool(wbtc, 1e8);
         _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(usdt, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
     }
 

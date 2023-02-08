@@ -204,9 +204,16 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         }
     }
 
-    function testShouldRevertWithdrawCollateralWhenMarketNotCreated(uint256 amount, address onBehalf, address receiver)
-        public
-    {
+    function testShouldRevertWithdrawCollateralWhenMarketNotCreated(
+        address underlying,
+        uint256 amount,
+        address onBehalf,
+        address receiver
+    ) public {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.assume(underlying != allUnderlyings[i]);
+        }
+
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
@@ -214,7 +221,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         _prepareOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user.withdrawCollateral(sAvax, amount, onBehalf, receiver);
+        user.withdrawCollateral(underlying, amount, onBehalf, receiver);
     }
 
     function testShouldRevertWithdrawCollateralWhenWithdrawCollateralPaused(

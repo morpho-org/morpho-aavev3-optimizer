@@ -22,7 +22,7 @@ contract IntegrationTest is ForkTest {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using TestMarketLib for TestMarket;
 
-    uint8 internal constant E_MODE = 0;
+    uint8 internal constant E_MODE_CATEGORY_ID = 0;
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
 
     // AaveV3 base currency is USD, 8 decimals on all L2s.
@@ -51,14 +51,9 @@ contract IntegrationTest is ForkTest {
     function setUp() public virtual override {
         _deploy();
 
-        _createMarket(weth, 0, 33_33);
-        _createMarket(dai, 0, 33_33);
-        _createMarket(usdc, 0, 33_33);
-        _createMarket(usdt, 0, 33_33);
-        _createMarket(wbtc, 0, 33_33);
-        _createMarket(aave, 0, 33_33);
-        _createMarket(link, 0, 33_33);
-        _createMarket(wavax, 0, 33_33);
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            _createMarket(allUnderlyings[i], 0, 33_33);
+        }
 
         _forward(1); // All markets are outdated in Morpho's storage.
 
@@ -84,8 +79,8 @@ contract IntegrationTest is ForkTest {
     }
 
     function _deploy() internal {
-        positionsManager = new PositionsManager(address(addressesProvider), E_MODE);
-        morphoImpl = new Morpho(address(addressesProvider), E_MODE);
+        positionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID);
+        morphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID);
 
         proxyAdmin = new ProxyAdmin();
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImpl)), address(proxyAdmin), "");
@@ -139,7 +134,8 @@ contract IntegrationTest is ForkTest {
         market.borrowCap = type(uint256).max;
 
         market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
-            && !reserve.configuration.getBorrowableInIsolation();
+            && !reserve.configuration.getBorrowableInIsolation()
+            && (E_MODE_CATEGORY_ID == 0 || E_MODE_CATEGORY_ID == reserve.configuration.getEModeCategory());
 
         vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
         vm.label(reserve.variableDebtTokenAddress, string.concat("vd", market.symbol));
@@ -147,13 +143,10 @@ contract IntegrationTest is ForkTest {
     }
 
     function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
-        (TestMarket storage market, DataTypes.ReserveData memory reserve) =
-            _initMarket(underlying, reserveFactor, p2pIndexCursor);
+        (TestMarket storage market,) = _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
         underlyings.push(underlying);
-        if (market.ltv > 0 && reserve.configuration.getEModeCategory() == E_MODE) {
-            collateralUnderlyings.push(underlying);
-        }
+        if (market.ltv > 0) collateralUnderlyings.push(underlying);
         if (market.isBorrowable) borrowableUnderlyings.push(underlying);
 
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
