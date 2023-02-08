@@ -15,11 +15,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
     using WadRayMath for uint256;
-    using PercentageMath for uint256;
-    using TestConfigLib for TestConfig;
     using PoolLib for IPool;
-    using MarketLib for Types.Market;
-    using SafeTransferLib for ERC20;
     using Math for uint256;
 
     uint256 constant MIN_AMOUNT = 1e10;
@@ -110,7 +106,6 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
     function testAccountBorrowShouldDecreaseIdleSupplyIfIdleSupplyExists(uint256 amount, uint256 idleSupply) public {
         Types.Market storage market = _market[dai];
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         poolAdmin.setBorrowCap(dai, 0);
 

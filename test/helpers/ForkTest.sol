@@ -22,7 +22,6 @@ import "./BaseTest.sol";
 
 contract ForkTest is BaseTest {
     using TestConfigLib for TestConfig;
-    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     address internal constant POOL_ADMIN = address(0xB055);
 
