@@ -9,7 +9,7 @@ runs = 8
 
 [rpc_endpoints]
 mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"
-avalanche_fuji = "https://rpc.ankr.com/avalanche"
+avalanche = "https://rpc.ankr.com/avalanche"
 
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
