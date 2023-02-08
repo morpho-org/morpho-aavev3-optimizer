@@ -1,35 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {Errors} from "src/libraries/Errors.sol";
-import {MorphoStorage} from "src/MorphoStorage.sol";
-import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
+import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
 
-import {Types} from "src/libraries/Types.sol";
-import {Constants} from "src/libraries/Constants.sol";
-
-import {TestConfigLib, TestConfig} from "../helpers/TestConfigLib.sol";
 import {PoolLib} from "src/libraries/PoolLib.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
-
-import {MockPriceOracleSentinel} from "../mock/MockPriceOracleSentinel.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
-import {IPriceOracleSentinel} from "@aave-v3-core/interfaces/IPriceOracleSentinel.sol";
-import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
-
-import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
-
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
-import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
-
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
-import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
-
-import {ERC20} from "@solmate/tokens/ERC20.sol";
-
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
 
 import "test/helpers/InternalTest.sol";
 
@@ -44,17 +22,14 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
     using SafeTransferLib for ERC20;
     using Math for uint256;
 
-    uint256 constant MIN_AMOUNT = 1 ether;
+    uint256 constant MIN_AMOUNT = 1e10;
     uint256 constant MAX_AMOUNT = type(uint96).max / 2;
 
     uint256 daiTokenUnit;
 
     IPriceOracleGetter internal priceOracle;
-    address internal poolOwner;
 
     function setUp() public virtual override {
-        poolOwner = Ownable(address(addressesProvider)).owner();
-
         _defaultMaxIterations = Types.MaxIterations(10, 10);
 
         _createMarket(dai, 0, 3_333);
@@ -82,9 +57,9 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         totalP2P = bound(totalP2P, 0, MAX_AMOUNT);
         delta = bound(delta, 0, totalP2P);
-        amount = bound(amount, 1e10, MAX_AMOUNT);
+        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
 
-        _setBorrowCap(dai, 0);
+        poolAdmin.setBorrowCap(dai, 0);
 
         market.deltas.borrow.scaledDeltaPool = delta.rayDiv(indexes.borrow.poolIndex);
         market.deltas.borrow.scaledTotalP2P = totalP2P.rayDiv(indexes.borrow.p2pIndex);
@@ -106,6 +81,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         uint256 poolDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
 
+        // Borrow cap should be exceeded.
         borrowCap = bound(
             borrowCap,
             (poolDebt / daiTokenUnit).zeroFloorSub(1_000),
@@ -113,11 +89,14 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         );
         totalP2P = bound(totalP2P, 0, ReserveConfiguration.MAX_VALID_BORROW_CAP * daiTokenUnit - poolDebt);
         delta = bound(delta, 0, totalP2P);
+        // Amount should make this test exceed the borrow cap
         amount = bound(
-            amount, (borrowCap * daiTokenUnit).zeroFloorSub(totalP2P - delta).zeroFloorSub(poolDebt) + 1e10, MAX_AMOUNT
+            amount,
+            (borrowCap * daiTokenUnit).zeroFloorSub(totalP2P - delta).zeroFloorSub(poolDebt) + MIN_AMOUNT,
+            MAX_AMOUNT
         );
 
-        _setBorrowCap(dai, borrowCap);
+        poolAdmin.setBorrowCap(dai, borrowCap);
 
         market.deltas.borrow.scaledDeltaPool = delta.rayDiv(indexes.borrow.poolIndex);
         market.deltas.borrow.scaledTotalP2P = totalP2P.rayDiv(indexes.borrow.p2pIndex);
@@ -133,19 +112,15 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         Types.Market storage market = _market[dai];
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
-        _setBorrowCap(dai, 0);
+        poolAdmin.setBorrowCap(dai, 0);
 
-        amount = bound(amount, 1e10, MAX_AMOUNT);
+        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
         idleSupply = bound(idleSupply, 1, MAX_AMOUNT);
 
         market.idleSupply = idleSupply;
 
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = (amount * 10).rayDiv(indexes.supply.poolIndex);
-
         Types.BorrowWithdrawVars memory vars = this.accountBorrow(dai, amount, address(this), 10);
         assertEq(market.idleSupply, idleSupply.zeroFloorSub(amount));
-        // TODO: add assert for borrow withdraw vars
         assertEq(vars.toBorrow, amount.zeroFloorSub(idleSupply));
         assertEq(vars.toWithdraw, 0);
     }
@@ -161,12 +136,12 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
             Math.min(ReserveConfiguration.MAX_VALID_SUPPLY_CAP, MAX_AMOUNT / daiTokenUnit)
         );
         // We are testing the case the supply cap is reached, so the min should be greater than the amount needed to reach the supply cap.
-        amount = bound(amount, (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply) + 1e10, MAX_AMOUNT);
+        amount = bound(amount, (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply) + MIN_AMOUNT, MAX_AMOUNT);
 
         _updateSupplierInDS(dai, address(1), 0, MAX_AMOUNT, false);
         _updateBorrowerInDS(dai, address(this), 0, MAX_AMOUNT, false);
 
-        _setSupplyCap(dai, supplyCap);
+        poolAdmin.setSupplyCap(dai, supplyCap);
 
         Types.SupplyRepayVars memory vars = this.accountRepay(dai, amount, address(this), 10);
 
@@ -180,17 +155,13 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         uint256 idleSupply
     ) public {
         Types.Market storage market = _market[dai];
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
-        amount = bound(amount, 1e10, MAX_AMOUNT);
+        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
         idleSupply = bound(idleSupply, 1, MAX_AMOUNT);
 
         _updateSupplierInDS(dai, address(this), 0, MAX_AMOUNT, false);
 
         market.idleSupply = idleSupply;
-
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = (amount * 10).rayDiv(indexes.supply.poolIndex);
 
         Types.BorrowWithdrawVars memory vars = this.accountWithdraw(dai, amount, address(this), 10);
         assertEq(market.idleSupply, idleSupply.zeroFloorSub(amount));

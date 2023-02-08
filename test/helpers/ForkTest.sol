@@ -10,13 +10,12 @@ import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol"
 import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 
-import {Types} from "src/libraries/Types.sol";
-import {Events} from "src/libraries/Events.sol";
-import {Errors} from "src/libraries/Errors.sol";
-import {TestConfig, TestConfigLib} from "../helpers/TestConfigLib.sol";
+import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
+import {PriceOracleSentinelMock} from "test/mocks/PriceOracleSentinelMock.sol";
 import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
 import {PoolAdminMock} from "test/mocks/PoolAdminMock.sol";
 import "./BaseTest.sol";
@@ -44,7 +43,7 @@ contract ForkTest is BaseTest {
     address internal wbtc;
     address internal weth;
     address internal wNative;
-    address[] internal testMarkets;
+    address[] internal allUnderlyings;
 
     IPool internal pool;
     IACLManager internal aclManager;
@@ -55,6 +54,7 @@ contract ForkTest is BaseTest {
     address internal aclAdmin;
     AaveOracleMock internal oracle;
     PoolAdminMock internal poolAdmin;
+    PriceOracleSentinelMock oracleSentinel;
 
     uint256 snapshotId = type(uint256).max;
 
@@ -62,8 +62,9 @@ contract ForkTest is BaseTest {
         _initConfig();
         _loadConfig();
 
-        _mockOracle();
         _mockPoolAdmin();
+        _mockOracle();
+        _mockOracleSentinel();
 
         _setBalances(address(this), type(uint256).max);
     }
@@ -89,7 +90,7 @@ contract ForkTest is BaseTest {
     function _loadConfig() internal {
         forkId = config.createFork();
 
-        addressesProvider = IPoolAddressesProvider(config.getAddress("addressesProvider"));
+        addressesProvider = IPoolAddressesProvider(config.getAddressesProvider());
         pool = IPool(addressesProvider.getPool());
 
         aclAdmin = addressesProvider.getACLAdmin();
@@ -97,21 +98,32 @@ contract ForkTest is BaseTest {
         poolConfigurator = IPoolConfigurator(addressesProvider.getPoolConfigurator());
         poolDataProvider = IPoolDataProvider(addressesProvider.getPoolDataProvider());
 
-        dai = config.getAddress("DAI");
-        frax = config.getAddress("FRAX");
-        mai = config.getAddress("MAI");
-        usdc = config.getAddress("USDC");
-        usdt = config.getAddress("USDT");
-        aave = config.getAddress("AAVE");
-        btcb = config.getAddress("BTCb");
-        link = config.getAddress("LINK");
-        sAvax = config.getAddress("sAVAX");
-        wavax = config.getAddress("WAVAX");
-        wbtc = config.getAddress("WBTC");
-        weth = config.getAddress("WETH");
-        wNative = config.getAddress("wrappedNative");
+        dai = config.getAddress("$.DAI");
+        frax = config.getAddress("$.FRAX");
+        mai = config.getAddress("$.MAI");
+        usdc = config.getAddress("$.USDC");
+        usdt = config.getAddress("$.USDT");
+        aave = config.getAddress("$.AAVE");
+        btcb = config.getAddress("$.BTCb");
+        link = config.getAddress("$.LINK");
+        sAvax = config.getAddress("$.sAVAX");
+        wavax = config.getAddress("$.WAVAX");
+        wbtc = config.getAddress("$.WBTC");
+        weth = config.getAddress("$.WETH");
+        wNative = config.getAddress("$.wrappedNative");
 
-        testMarkets = config.getTestMarkets();
+        allUnderlyings.push(dai);
+        allUnderlyings.push(frax);
+        allUnderlyings.push(mai);
+        allUnderlyings.push(usdc);
+        allUnderlyings.push(usdt);
+        allUnderlyings.push(aave);
+        allUnderlyings.push(btcb);
+        allUnderlyings.push(link);
+        allUnderlyings.push(sAvax);
+        allUnderlyings.push(wavax);
+        allUnderlyings.push(wbtc);
+        allUnderlyings.push(weth);
     }
 
     function _label() internal virtual {
@@ -139,24 +151,28 @@ contract ForkTest is BaseTest {
         vm.label(wNative, "wNative");
     }
 
-    function _mockOracle() internal {
-        oracle = new AaveOracleMock(IAaveOracle(addressesProvider.getPriceOracle()), pool.getReservesList());
-
-        vm.store(
-            address(addressesProvider),
-            keccak256(abi.encode(bytes32("PRICE_ORACLE"), 2)),
-            bytes32(uint256(uint160(address(oracle))))
-        );
-    }
-
     function _mockPoolAdmin() internal {
         poolAdmin = new PoolAdminMock(poolConfigurator);
 
         vm.startPrank(aclAdmin);
         aclManager.addPoolAdmin(address(poolAdmin));
-        aclManager.addEmergencyAdmin(address(poolAdmin));
         aclManager.addRiskAdmin(address(poolAdmin));
+        aclManager.addEmergencyAdmin(address(poolAdmin));
         vm.stopPrank();
+    }
+
+    function _mockOracle() internal {
+        oracle = new AaveOracleMock(IAaveOracle(addressesProvider.getPriceOracle()), pool.getReservesList());
+
+        vm.prank(aclAdmin);
+        addressesProvider.setPriceOracle(address(oracle));
+    }
+
+    function _mockOracleSentinel() internal {
+        oracleSentinel = new PriceOracleSentinelMock(address(addressesProvider));
+
+        vm.prank(aclAdmin);
+        addressesProvider.setPriceOracleSentinel(address(oracleSentinel));
     }
 
     function _setBalances(address user, uint256 balance) internal {
@@ -179,19 +195,5 @@ contract ForkTest is BaseTest {
     function _revert() internal {
         if (snapshotId < type(uint256).max) vm.revertTo(snapshotId);
         snapshotId = vm.snapshot();
-    }
-
-    function _setSupplyCap(address underlying, uint256 amount) internal {
-        DataTypes.ReserveConfigurationMap memory reserveConfig = pool.getConfiguration(underlying);
-        reserveConfig.setSupplyCap(amount);
-        vm.prank(address(poolConfigurator));
-        pool.setConfiguration(underlying, reserveConfig);
-    }
-
-    function _setBorrowCap(address underlying, uint256 amount) internal {
-        DataTypes.ReserveConfigurationMap memory reserveConfig = pool.getConfiguration(underlying);
-        reserveConfig.setBorrowCap(amount);
-        vm.prank(address(poolConfigurator));
-        pool.setConfiguration(underlying, reserveConfig);
     }
 }

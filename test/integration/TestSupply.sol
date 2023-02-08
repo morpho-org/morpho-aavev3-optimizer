@@ -17,9 +17,9 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldRevertSupplyZero(address onBehalf) public {
         onBehalf = _boundOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user1.supply(markets[marketIndex].underlying, 0, onBehalf);
+            user.supply(testMarkets[underlyings[marketIndex]].underlying, 0, onBehalf);
         }
     }
 
@@ -28,6 +28,6 @@ contract TestIntegrationSupply is IntegrationTest {
         onBehalf = _boundOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
-        user1.supply(sAvax, amount, onBehalf);
+        user.supply(sAvax, amount, onBehalf);
     }
 }
