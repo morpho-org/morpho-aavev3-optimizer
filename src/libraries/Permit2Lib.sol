@@ -73,6 +73,7 @@ library Permit2Lib {
         bytes32 s
     ) internal {
         IAllowanceTransfer.PackedAllowance memory packedAllowance = PERMIT2.allowance(owner, address(token), spender);
+        if (uint160(amount) == packedAllowance.amount) return;
 
         PERMIT2.permit(
             owner,
