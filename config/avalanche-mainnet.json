@@ -1,6 +1,6 @@
 {
     "rpcAlias": "avalanche_fuji",
-    "forkBlockNumber": 16550000,
+    "forkBlockNumber": 24800000,
     "addressesProvider": "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
     "markets": [
         "DAI",
