@@ -23,8 +23,6 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
     uint256 daiTokenUnit;
 
-    IPriceOracleGetter internal priceOracle;
-
     function setUp() public virtual override {
         _defaultMaxIterations = Types.MaxIterations(10, 10);
 
@@ -41,8 +39,6 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         _POOL.supplyToPool(usdc, 1e8);
         _POOL.supplyToPool(usdt, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
-
-        priceOracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
 
         daiTokenUnit = 10 ** _POOL.getConfiguration(dai).getDecimals();
     }
