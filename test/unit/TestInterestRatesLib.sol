@@ -206,7 +206,7 @@ contract TestInterestRatesLib is BaseTest {
         assertGe(actualP2PIndex, MIN_INDEX, "too low p2pIndex");
     }
 
-    function testComputeP2PIndexZeroDeltaNonZeroP2P(
+    function testComputeP2PIndexZeroDeltaZeroProportionIdleNonZeroP2P(
         uint256 poolGrowthFactor,
         uint256 p2pGrowthFactor,
         uint256 lastPoolIndex,
@@ -220,7 +220,7 @@ contract TestInterestRatesLib is BaseTest {
         lastP2PIndex = bound(lastP2PIndex, MIN_INDEX, MAX_INDEX);
         uint256 p2pDelta = 0;
         p2pAmount = bound(p2pAmount, 1, MAX_TOTAL_P2P);
-        proportionIdle = bound(proportionIdle, 0, MAX_PROPORTION_IDLE);
+        proportionIdle = 0;
 
         uint256 expectedP2PIndex = lastP2PIndex.rayMul(p2pGrowthFactor);
 
@@ -238,7 +238,7 @@ contract TestInterestRatesLib is BaseTest {
         assertGe(actualP2PIndex, MIN_INDEX, "too low p2pIndex");
     }
 
-    function testComputeP2PIndexNonZeroDeltaZeroP2P(
+    function testComputeP2PIndexNonZeroDeltaNonZeroProportionIdleZeroP2P(
         uint256 poolGrowthFactor,
         uint256 p2pGrowthFactor,
         uint256 lastPoolIndex,
