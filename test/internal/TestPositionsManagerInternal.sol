@@ -1,34 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {Errors} from "src/libraries/Errors.sol";
-import {MorphoStorage} from "src/MorphoStorage.sol";
-import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
-
-import {Types} from "src/libraries/Types.sol";
-import {Constants} from "src/libraries/Constants.sol";
-
-import {TestConfigLib, TestConfig} from "../helpers/TestConfigLib.sol";
 import {PoolLib} from "src/libraries/PoolLib.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
 
-import {MockPriceOracleSentinel} from "../mock/MockPriceOracleSentinel.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
-import {IPriceOracleSentinel} from "@aave-v3-core/interfaces/IPriceOracleSentinel.sol";
-import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
-
-import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
-
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
-import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
-
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
-import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
-
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
+import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
 import "test/helpers/InternalTest.sol";
 
 contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerInternal {
@@ -45,12 +23,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     uint256 constant MIN_AMOUNT = 1 ether;
     uint256 constant MAX_AMOUNT = type(uint96).max / 2;
 
-    IPriceOracleGetter internal priceOracle;
-    address internal poolOwner;
-
     function setUp() public virtual override {
-        poolOwner = Ownable(address(addressesProvider)).owner();
-
         _defaultMaxIterations = Types.MaxIterations(10, 10);
 
         _createMarket(dai, 0, 3_333);
@@ -66,8 +39,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _POOL.supplyToPool(usdc, 1e8);
         _POOL.supplyToPool(usdt, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
-
-        priceOracle = IPriceOracleGetter(_ADDRESSES_PROVIDER.getPriceOracle());
     }
 
     function testValidatePermission(address owner, address manager) public {
@@ -276,10 +247,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
             dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 101 / 100), 0, true
         );
 
-        MockPriceOracleSentinel priceOracleSentinel = new MockPriceOracleSentinel(address(_ADDRESSES_PROVIDER));
-        priceOracleSentinel.setLiquidationAllowed(false);
-        vm.prank(poolOwner);
-        _ADDRESSES_PROVIDER.setPriceOracleSentinel(address(priceOracleSentinel));
+        oracleSentinel.setLiquidationAllowed(false);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorizedLiquidate.selector));
         this.authorizeLiquidate(dai, dai, address(this));
