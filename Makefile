@@ -40,6 +40,19 @@ test-integration-%:
 	@FOUNDRY_MATCH_TEST=$* make test-integration
 
 
+test/%:
+	@FOUNDRY_MATCH_CONTRACT=$* make test
+
+test-unit/%:
+	@FOUNDRY_MATCH_CONTRACT=TestUnit$* make test
+
+test-internal/%:
+	@FOUNDRY_MATCH_CONTRACT=TestInternal$* make test
+
+test-integration/%:
+	@FOUNDRY_MATCH_CONTRACT=TestIntegration$* make test
+
+
 coverage:
 	forge coverage --report lcov
 	lcov --remove lcov.info -o lcov.info "test/*"
