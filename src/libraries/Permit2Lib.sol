@@ -68,7 +68,7 @@ library Permit2Lib {
         bytes32 r,
         bytes32 s
     ) internal {
-        IAllowanceTransfer.PackedAllowance memory packedAllowance = PERMIT2.allowance(owner, address(token), spender);
+        uint48 nonce = PERMIT2.allowance(owner, address(token), spender).nonce;
 
         PERMIT2.permit(
             owner,
@@ -79,7 +79,7 @@ library Permit2Lib {
                     // Use an unlimited expiration because it most
                     // closely mimics how a standard approval works.
                     expiration: type(uint48).max,
-                    nonce: packedAllowance.nonce
+                    nonce: nonce
                 }),
                 spender: spender,
                 sigDeadline: deadline
