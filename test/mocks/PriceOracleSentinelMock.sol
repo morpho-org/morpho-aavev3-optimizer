@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPoolAddressesProvider.sol";
 
-contract MockPriceOracleSentinel {
+contract PriceOracleSentinelMock {
     bool internal borrowAllowed;
     bool internal liquidationAllowed;
     address internal poolAddressesProvider;
