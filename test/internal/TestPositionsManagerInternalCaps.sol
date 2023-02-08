@@ -146,6 +146,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         Types.BorrowWithdrawVars memory vars = this.accountBorrow(dai, amount, address(this), 10);
         assertEq(market.idleSupply, idleSupply.zeroFloorSub(amount));
         // TODO: add assert for borrow withdraw vars
+        assertEq(vars.toBorrow, amount.zeroFloorSub(idleSupply));
+        assertEq(vars.toWithdraw, 0);
     }
 
     function testAccountRepayShouldIncreaseIdleSupplyIfSupplyCapReached(uint256 amount, uint256 supplyCap) public {
@@ -154,9 +156,11 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         uint256 totalPoolSupply = ERC20(market.aToken).totalSupply();
         supplyCap = bound(
             supplyCap,
-            (totalPoolSupply / daiTokenUnit).zeroFloorSub(1_000),
+            // Should be at least 1, but also cover some cases where supply cap is less than the current supplied.
+            (totalPoolSupply / daiTokenUnit).zeroFloorSub(1_000) + 1,
             Math.min(ReserveConfiguration.MAX_VALID_SUPPLY_CAP, MAX_AMOUNT / daiTokenUnit)
         );
+        // We are testing the case the supply cap is reached, so the min should be greater than the amount needed to reach the supply cap.
         amount = bound(amount, (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply) + 1e10, MAX_AMOUNT);
 
         _updateSupplierInDS(dai, address(1), 0, MAX_AMOUNT, false);
@@ -167,7 +171,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         Types.SupplyRepayVars memory vars = this.accountRepay(dai, amount, address(this), 10);
 
         assertEq(market.idleSupply, amount - ((supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply)));
-        // TODO: add assert for supply repay vars
+        assertEq(vars.toRepay, 0);
+        assertEq(vars.toSupply, amount - market.idleSupply);
     }
 
     function testAccountWithdrawShouldDecreaseIdleSupplyIfIdleSupplyExistsWhenSupplyInP2P(
@@ -189,7 +194,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         Types.BorrowWithdrawVars memory vars = this.accountWithdraw(dai, amount, address(this), 10);
         assertEq(market.idleSupply, idleSupply.zeroFloorSub(amount));
-        // TODO: add assert for borrow withdraw vars
+        assertEq(vars.toBorrow, amount.zeroFloorSub(idleSupply));
+        assertEq(vars.toWithdraw, 0);
     }
 
     function testAccountWithdrawShouldNotDecreaseIdleSupplyIfIdleSupplyExistsWhenSupplyOnPool(
@@ -207,7 +213,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         Types.BorrowWithdrawVars memory vars = this.accountWithdraw(dai, amount, address(this), 10);
         assertEq(market.idleSupply, idleSupply);
-        // TODO: add assert for borrow withdraw vars
+        assertEq(vars.toBorrow, 0);
+        assertEq(vars.toWithdraw, amount);
     }
 
     function authorizeBorrow(address underlying, uint256 onPool, address borrower) external view {
