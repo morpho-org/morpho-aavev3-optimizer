@@ -140,7 +140,7 @@ contract IntegrationTest is ForkTest {
 
         market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
             && !reserve.configuration.getBorrowableInIsolation()
-            && (E_MODE_CATEGORY_ID == 0 || E_MODE_CATEGORY_ID == config.getEModeCategory());
+            && (E_MODE_CATEGORY_ID == 0 || E_MODE_CATEGORY_ID == reserve.configuration.getEModeCategory());
 
         vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
         vm.label(reserve.variableDebtTokenAddress, string.concat("vd", market.symbol));
