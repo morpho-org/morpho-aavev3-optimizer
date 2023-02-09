@@ -223,9 +223,9 @@ abstract contract MorphoInternal is MorphoStorage {
         return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
     }
 
-    /// @notice Returns liquidity data about the position of `user`.
-    /// @param user The address of the user to get liquidity data for.
-    /// @return liquidityData Liquidity data of the user.
+    /// @notice Returns the liquidity data about the position of `user`.
+    /// @param user The address of the user to get the liquidity data for.
+    /// @return liquidityData The liquidity data of the user.
     function _liquidityData(address user) internal view returns (Types.LiquidityData memory liquidityData) {
         Types.LiquidityVars memory vars;
 

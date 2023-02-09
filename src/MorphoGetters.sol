@@ -149,9 +149,9 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         (, indexes) = _computeIndexes(underlying);
     }
 
-    /// @notice Returns liquidity data about the position of `user`.
-    /// @param user The address of the user to get liquidity data for.
-    /// @return Liquidity data of the user.
+    /// @notice Returns the liquidity data about the position of `user`.
+    /// @param user The address of the user to get the liquidity data for.
+    /// @return The liquidity data of the user.
     function liquidityData(address user) external view returns (Types.LiquidityData memory) {
         return _liquidityData(user);
     }
