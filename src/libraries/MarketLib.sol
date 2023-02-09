@@ -195,32 +195,35 @@ library MarketLib {
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to repay. (by supplying on pool)
-    /// @param config The reserve config for the market.
-    /// @return toSupply The new amount to supply.
+    /// @param config The reserve configuration for the market.
+    /// @return The amount to supply to stay below the supply cap and the amount the idle supply was increased by.
     function increaseIdle(
         Types.Market storage market,
         address underlying,
         uint256 amount,
         DataTypes.ReserveConfigurationMap memory config
-    ) internal returns (uint256 toSupply) {
+    ) internal returns (uint256, uint256) {
         uint256 supplyCap = config.getSupplyCap() * (10 ** config.getDecimals());
-        if (supplyCap == 0) return amount;
+        if (supplyCap == 0) return (amount, 0);
 
-        uint256 totalSupply = ERC20(market.aToken).totalSupply();
-        if (totalSupply + amount <= supplyCap) return amount;
+        uint256 suppliable = supplyCap.zeroFloorSub(ERC20(market.aToken).totalSupply());
+        if (amount <= suppliable) return (amount, 0);
 
-        toSupply = supplyCap.zeroFloorSub(totalSupply);
-        uint256 newIdleSupply = market.idleSupply + amount - toSupply;
+        uint256 idleSupplyIncrease = amount - suppliable;
+        uint256 newIdleSupply = market.idleSupply + idleSupplyIncrease;
+
         market.idleSupply = newIdleSupply;
 
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
+
+        return (suppliable, idleSupplyIncrease);
     }
 
     /// @dev Decreases the idle supply.
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to borrow.
-    /// @return The amount left to process, and the processed amount.
+    /// @return The amount left to process and the processed amount.
     function decreaseIdle(Types.Market storage market, address underlying, uint256 amount)
         internal
         returns (uint256, uint256)
