@@ -12,9 +12,6 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 /// @notice Enables efficient transfers and EIP-2612 permits for any token by using Permit2.
 /// @dev Modified version of the Permit2Lib from https://github.com/Uniswap/permit2.
 ///      The original version is licensed under the MIT license and has been modified to AGPL-3.0-only.
-///      The most noticable change is the removal of the call to the permit function on the token
-///      contract in the permit2 function. This is to simplify the library and reduce the operational costs
-///      since now only the Permit2 allowance is updated. Transfers still rely on the token's transfer method, then fallback to Permit2's transfer.
 library Permit2Lib {
     using SafeCast for uint256;
 
@@ -52,8 +49,7 @@ library Permit2Lib {
         if (!success) PERMIT2.transferFrom(from, to, amount.toUint160(), address(token));
     }
 
-    /// @notice Permits a user to spend a given amount of
-    /// another user's tokens via the owner's EIP-712 signature.
+    /// @notice Simple unlimited permit on the Permit2 contract.
     /// @param token The token to permit spending.
     /// @param owner The user to permit spending from.
     /// @param spender The user to permit spending to.
@@ -62,7 +58,7 @@ library Permit2Lib {
     /// @param v Must produce valid secp256k1 signature from the owner along with r and s.
     /// @param r Must produce valid secp256k1 signature from the owner along with v and s.
     /// @param s Must produce valid secp256k1 signature from the owner along with r and v.
-    function permit2(
+    function simplePermit2(
         ERC20 token,
         address owner,
         address spender,
@@ -72,7 +68,7 @@ library Permit2Lib {
         bytes32 r,
         bytes32 s
     ) internal {
-        IAllowanceTransfer.PackedAllowance memory packedAllowance = PERMIT2.allowance(owner, address(token), spender);
+        uint48 nonce = PERMIT2.allowance(owner, address(token), spender).nonce;
 
         PERMIT2.permit(
             owner,
@@ -83,7 +79,7 @@ library Permit2Lib {
                     // Use an unlimited expiration because it most
                     // closely mimics how a standard approval works.
                     expiration: type(uint48).max,
-                    nonce: packedAllowance.nonce
+                    nonce: nonce
                 }),
                 spender: spender,
                 sigDeadline: deadline
