@@ -14,14 +14,14 @@ on:
       - foundry.toml
       - remappings.txt
       - .github/actions/forge-test/**
-      - .github/workflows/forge-avalanche-mainnet.yml
+      - .github/workflows/forge-ethereum-mainnet.yml
 
 env:
   FOUNDRY_PROFILE: ci
 
 jobs:
-  avalanche-mainnet-test:
-    name: Tests (avalanche-mainnet)
+  ethereum-mainnet-test:
+    name: Tests (ethereum-mainnet)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -31,4 +31,5 @@ jobs:
 
       - uses: ./.github/actions/forge-test
         with:
-          network: avalanche-mainnet
+          network: ethereum-mainnet
+          alchemyKey: ${{ secrets.ALCHEMY_KEY }}
