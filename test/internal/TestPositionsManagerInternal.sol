@@ -24,7 +24,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     uint256 constant MAX_AMOUNT = type(uint96).max / 2;
 
     function setUp() public virtual override {
-        _defaultMaxIterations = Types.Iterations(10, 10);
+        _defaultIterations = Types.Iterations(10, 10);
 
         _createMarket(dai, 0, 3_333);
         _createMarket(wbtc, 0, 3_333);
