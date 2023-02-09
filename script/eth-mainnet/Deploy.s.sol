@@ -51,7 +51,7 @@ contract Deploy is Script {
     function _initConfig() internal returns (TestConfig storage) {
         if (bytes(config.json).length == 0) {
             string memory root = vm.projectRoot();
-            string memory path = string.concat(root, "/config/avalanche-mainnet.json");
+            string memory path = string.concat(root, "/config/ethereum-mainnet.json");
 
             config.json = vm.readFile(path);
         }
