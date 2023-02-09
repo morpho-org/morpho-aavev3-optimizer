@@ -180,4 +180,11 @@ library Types {
         uint256 closeFactor;
         uint256 seized;
     }
+
+    struct StableDebtSupplyData {
+        uint256 currPrincipalStableDebt;
+        uint256 currTotalStableDebt;
+        uint256 currAvgStableBorrowRate;
+        uint40 stableDebtLastUpdateTimestamp;
+    }
 }

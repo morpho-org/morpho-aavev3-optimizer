@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IAToken} from "../interfaces/aave/IAToken.sol";
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
+import {IStableDebtToken} from "@aave-v3-core/interfaces/IStableDebtToken.sol";
+import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
 
 import {Types} from "./Types.sol";
 import {Events} from "./Events.sol";
@@ -12,10 +15,12 @@ import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
+import {MathUtils} from "@aave-v3-core/protocol/libraries/math/MathUtils.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
+import {console2} from "@forge-std/console2.sol";
 
 /// @title MarketLib
 /// @author Morpho Labs
@@ -25,6 +30,7 @@ library MarketLib {
     using Math for uint256;
     using SafeCast for uint256;
     using WadRayMath for uint256;
+    using PercentageMath for uint256;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     function isCreated(Types.Market storage market) internal view returns (bool) {
@@ -191,22 +197,62 @@ library MarketLib {
         return idleSupply.rayDivUp(totalP2PSupplied);
     }
 
+    function _accruedToTreasury(DataTypes.ReserveData memory reserve, Types.Indexes256 memory indexes)
+        private
+        view
+        returns (uint256)
+    {
+        Types.StableDebtSupplyData memory vars;
+        (
+            vars.currPrincipalStableDebt,
+            vars.currTotalStableDebt,
+            vars.currAvgStableBorrowRate,
+            vars.stableDebtLastUpdateTimestamp
+        ) = IStableDebtToken(reserve.stableDebtTokenAddress).getSupplyData();
+        uint256 scaledTotalVariableDebt = IVariableDebtToken(reserve.variableDebtTokenAddress).scaledTotalSupply();
+
+        uint256 currTotalVariableDebt = scaledTotalVariableDebt.rayMul(indexes.borrow.poolIndex);
+        uint256 prevTotalVariableDebt = scaledTotalVariableDebt.rayMul(reserve.variableBorrowIndex);
+        uint256 prevTotalStableDebt = vars.currPrincipalStableDebt.rayMul(
+            MathUtils.calculateCompoundedInterest(
+                vars.currAvgStableBorrowRate, vars.stableDebtLastUpdateTimestamp, reserve.lastUpdateTimestamp
+            )
+        );
+
+        uint256 accruedTotalDebt =
+            currTotalVariableDebt + vars.currTotalStableDebt - prevTotalVariableDebt - prevTotalStableDebt;
+        console2.log(reserve.accruedToTreasury, accruedTotalDebt, reserve.configuration.getReserveFactor());
+        if (accruedTotalDebt == 0) return reserve.accruedToTreasury;
+
+        uint256 newAccruedToTreasury =
+            accruedTotalDebt.percentMul(reserve.configuration.getReserveFactor()).rayDiv(indexes.supply.poolIndex);
+
+        console2.log(newAccruedToTreasury);
+
+        return reserve.accruedToTreasury + newAccruedToTreasury;
+    }
+
     /// @dev Increases the idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to repay. (by supplying on pool)
-    /// @param configuration The reserve configuration for the market.
+    /// @param reserve The reserve data for the market.
     /// @return The amount to supply to stay below the supply cap and the amount the idle supply was increased by.
     function increaseIdle(
         Types.Market storage market,
         address underlying,
         uint256 amount,
-        DataTypes.ReserveConfigurationMap memory configuration
+        DataTypes.ReserveData memory reserve,
+        Types.Indexes256 memory indexes
     ) internal returns (uint256, uint256) {
-        uint256 supplyCap = configuration.getSupplyCap() * (10 ** configuration.getDecimals());
+        uint256 supplyCap = reserve.configuration.getSupplyCap() * (10 ** reserve.configuration.getDecimals());
         if (supplyCap == 0) return (amount, 0);
 
-        uint256 suppliable = supplyCap.zeroFloorSub(ERC20(market.aToken).totalSupply());
+        uint256 suppliable = supplyCap.zeroFloorSub(
+            (IAToken(market.aToken).scaledTotalSupply() + _accruedToTreasury(reserve, indexes)).rayMul(
+                indexes.supply.poolIndex
+            )
+        );
         if (amount <= suppliable) return (amount, 0);
 
         uint256 idleSupplyIncrease = amount - suppliable;

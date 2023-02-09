@@ -184,7 +184,7 @@ contract TestIntegrationRepay is IntegrationTest {
             supplyCap = bound(supplyCap, 10 ** market.decimals, market.totalSupply() + test.borrowed);
             _setSupplyCap(market, supplyCap);
 
-            uint256 supplyGapBefore = market.supplyGap();
+            uint256 supplyGapBefore = _supplyGap(market);
             uint256 balanceBefore = user.balanceOf(market.underlying);
 
             user.approve(market.underlying, amount);
@@ -220,7 +220,7 @@ contract TestIntegrationRepay is IntegrationTest {
             assertApproxGeAbs(market.supplyOf(address(morpho)), supplyGapBefore, 1, "morphoSupply != supplyGapBefore");
             assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 1, "morphoVariableBorrow != 0");
             assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
-            assertEq(market.supplyGap(), 0, "supplyGapAfter != 0");
+            assertEq(_supplyGap(market), 0, "supplyGapAfter != 0");
 
             // Assert user's underlying balance.
             assertApproxEqAbs(

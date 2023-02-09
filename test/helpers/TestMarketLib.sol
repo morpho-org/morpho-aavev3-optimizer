@@ -93,11 +93,6 @@ library TestMarketLib {
         return ERC20(market.stableDebtToken).balanceOf(user);
     }
 
-    /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
-    function supplyGap(TestMarket storage market) internal view returns (uint256) {
-        return market.supplyCap.zeroFloorSub(totalSupply(market));
-    }
-
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the borrow cap.
     function borrowGap(TestMarket storage market) internal view returns (uint256) {
         return market.borrowCap.zeroFloorSub(totalBorrow(market));
