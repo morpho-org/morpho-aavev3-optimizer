@@ -344,8 +344,7 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit)
     {
-        DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
-        DataTypes.ReserveConfigurationMap memory config = reserveData.configuration;
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         unchecked {
             tokenUnit = 10 ** config.getDecimals();
         }
