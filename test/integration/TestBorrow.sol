@@ -135,10 +135,9 @@ contract TestIntegrationBorrow is IntegrationTest {
         return test;
     }
 
-    function testShouldBorrowPoolOnly(uint256 amount, address onBehalf, address receiver)
-        public
-        returns (BorrowTest memory test)
-    {
+    function testShouldBorrowPoolOnly(uint256 amount, address onBehalf, address receiver) public {
+        BorrowTest memory test;
+
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -170,10 +169,9 @@ contract TestIntegrationBorrow is IntegrationTest {
         }
     }
 
-    function testShouldBorrowP2POnly(uint256 amount, address onBehalf, address receiver)
-        public
-        returns (BorrowTest memory test)
-    {
+    function testShouldBorrowP2POnly(uint256 amount, address onBehalf, address receiver) public {
+        BorrowTest memory test;
+
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -205,10 +203,9 @@ contract TestIntegrationBorrow is IntegrationTest {
         }
     }
 
-    function testShouldBorrowP2PWhenIdleSupply(uint256 amount, address onBehalf, address receiver)
-        public
-        returns (BorrowTest memory test)
-    {
+    function testShouldBorrowP2PWhenIdleSupply(uint256 amount, address onBehalf, address receiver) public {
+        BorrowTest memory test;
+
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -239,10 +236,9 @@ contract TestIntegrationBorrow is IntegrationTest {
         }
     }
 
-    function testShouldBorrowPoolWhenP2PDisabled(uint256 amount, address onBehalf, address receiver)
-        public
-        returns (BorrowTest memory test)
-    {
+    function testShouldBorrowPoolWhenP2PDisabled(uint256 amount, address onBehalf, address receiver) public {
+        BorrowTest memory test;
+
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -277,10 +273,9 @@ contract TestIntegrationBorrow is IntegrationTest {
         }
     }
 
-    function testShouldBorrowP2PWhenSupplyDelta(uint256 amount, address onBehalf, address receiver)
-        public
-        returns (BorrowTest memory test)
-    {
+    function testShouldBorrowP2PWhenSupplyDelta(uint256 amount, address onBehalf, address receiver) public {
+        BorrowTest memory test;
+
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -316,7 +311,9 @@ contract TestIntegrationBorrow is IntegrationTest {
         uint256 amount,
         address onBehalf,
         address receiver
-    ) public returns (BorrowTest memory test) {
+    ) public {
+        BorrowTest memory test;
+
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -363,7 +360,9 @@ contract TestIntegrationBorrow is IntegrationTest {
         uint256 amount,
         address onBehalf,
         address receiver
-    ) public returns (BorrowTest memory test) {
+    ) public {
+        BorrowTest memory test;
+
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 

@@ -11,7 +11,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         return bound(amount, 1, type(uint256).max);
     }
 
-    struct SupplyTest {
+    struct SupplyCollateralTest {
         uint256 supplied;
         uint256 balanceBefore;
         uint256 morphoSupplyBefore;
@@ -22,7 +22,9 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         Types.Market morphoMarket;
     }
 
-    function testShouldSupplyCollateral(uint256 amount, address onBehalf) public returns (SupplyTest memory test) {
+    function testShouldSupplyCollateral(uint256 amount, address onBehalf) public {
+        SupplyCollateralTest memory test;
+
         onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {

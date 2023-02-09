@@ -15,13 +15,17 @@ contract TestIntegrationRepay is IntegrationTest {
     struct RepayTest {
         uint256 borrowed;
         uint256 repaid;
+        uint256 balanceBefore;
+        uint256 morphoSupplyBefore;
         uint256 scaledP2PBorrow;
         uint256 scaledPoolBorrow;
         Types.Indexes256 indexes;
         Types.Market morphoMarket;
     }
 
-    function testShouldRepayPoolOnly(uint256 amount, address onBehalf) public returns (RepayTest memory test) {
+    function testShouldRepayPoolOnly(uint256 amount, address onBehalf) public {
+        RepayTest memory test;
+
         onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
@@ -36,7 +40,8 @@ contract TestIntegrationRepay is IntegrationTest {
             _borrowNoCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
             market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
-            uint256 balanceBefore = user.balanceOf(market.underlying);
+            test.balanceBefore = user.balanceOf(market.underlying);
+            test.morphoSupplyBefore = market.supplyOf(address(morpho));
 
             user.approve(market.underlying, amount);
 
@@ -63,13 +68,18 @@ contract TestIntegrationRepay is IntegrationTest {
             assertApproxEqDust(morpho.borrowBalance(market.underlying, onBehalf), remaining, "borrow != remaining");
 
             // Assert Morpho's position on pool.
-            assertApproxEqAbs(market.supplyOf(address(morpho)), 0, 1, "morphoSupply != 0");
+            assertApproxEqAbs(
+                market.supplyOf(address(morpho)), test.morphoSupplyBefore, 1, "morphoSupply != morphoSupplyBefore"
+            );
             assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 1, "morphoVariableBorrow != 0");
             assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
             // Assert user's underlying balance.
             assertApproxEqAbs(
-                balanceBefore - user.balanceOf(market.underlying), amount, 1, "balanceBefore - balanceAfter != amount"
+                test.balanceBefore - user.balanceOf(market.underlying),
+                amount,
+                1,
+                "balanceBefore - balanceAfter != amount"
             );
 
             // Assert Morpho's market state.
@@ -89,7 +99,9 @@ contract TestIntegrationRepay is IntegrationTest {
         }
     }
 
-    function testShouldRepayAllBorrow(uint256 amount, address onBehalf) public returns (RepayTest memory test) {
+    function testShouldRepayAllBorrow(uint256 amount, address onBehalf) public {
+        RepayTest memory test;
+
         onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
@@ -104,7 +116,8 @@ contract TestIntegrationRepay is IntegrationTest {
             _borrowNoCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
             market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
-            uint256 balanceBefore = user.balanceOf(market.underlying);
+            test.balanceBefore = user.balanceOf(market.underlying);
+            test.morphoSupplyBefore = market.supplyOf(address(morpho));
 
             user.approve(market.underlying, amount);
 
@@ -139,13 +152,18 @@ contract TestIntegrationRepay is IntegrationTest {
             );
 
             // Assert Morpho's position on pool.
-            assertApproxGeAbs(market.supplyOf(address(morpho)), promoted, 2, "morphoSupply != promoted");
+            assertApproxEqAbs(
+                market.supplyOf(address(morpho)),
+                test.morphoSupplyBefore + promoted,
+                2,
+                "morphoSupply != morphoSupplyBefore + promoted"
+            );
             assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 2, "morphoVariableBorrow != 0");
             assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
             // Assert user's underlying balance.
             assertApproxLeAbs(
-                balanceBefore,
+                test.balanceBefore,
                 user.balanceOf(market.underlying) + test.repaid,
                 2,
                 "balanceBefore != balanceAfter + repaid"
@@ -164,8 +182,9 @@ contract TestIntegrationRepay is IntegrationTest {
 
     function testShouldRepayAllP2PBorrowWhenSupplyCapExceeded(uint256 supplyCap, uint256 amount, address onBehalf)
         public
-        returns (RepayTest memory test)
     {
+        RepayTest memory test;
+
         onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
@@ -184,7 +203,8 @@ contract TestIntegrationRepay is IntegrationTest {
             _setSupplyCap(market, supplyCap);
 
             uint256 supplyGapBefore = _supplyGap(market);
-            uint256 balanceBefore = user.balanceOf(market.underlying);
+            test.balanceBefore = user.balanceOf(market.underlying);
+            test.morphoSupplyBefore = market.supplyOf(address(morpho));
 
             user.approve(market.underlying, amount);
 
@@ -216,14 +236,19 @@ contract TestIntegrationRepay is IntegrationTest {
             );
 
             // Assert Morpho's position on pool.
-            assertApproxGeAbs(market.supplyOf(address(morpho)), supplyGapBefore, 1, "morphoSupply != supplyGapBefore");
+            assertApproxGeAbs(
+                market.supplyOf(address(morpho)),
+                test.morphoSupplyBefore + supplyGapBefore,
+                1,
+                "morphoSupply != morphoSupplyBefore + supplyGapBefore"
+            );
             assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 1, "morphoVariableBorrow != 0");
             assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
             assertEq(_supplyGap(market), 0, "supplyGapAfter != 0");
 
             // Assert user's underlying balance.
             assertApproxEqAbs(
-                balanceBefore,
+                test.balanceBefore,
                 user.balanceOf(market.underlying) + test.repaid,
                 1,
                 "balanceBefore != balanceAfter + repaid"
@@ -243,10 +268,9 @@ contract TestIntegrationRepay is IntegrationTest {
         }
     }
 
-    function testShouldRepayAllP2PBorrowWhenDemotedZero(uint256 amount, address onBehalf)
-        public
-        returns (RepayTest memory test)
-    {
+    function testShouldRepayAllP2PBorrowWhenDemotedZero(uint256 amount, address onBehalf) public {
+        RepayTest memory test;
+
         onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
@@ -264,7 +288,8 @@ contract TestIntegrationRepay is IntegrationTest {
             // Set the max iterations to 0 upon repay to skip demotion and fallback to supply delta.
             morpho.setDefaultMaxIterations(Types.MaxIterations({repay: 0, withdraw: 10}));
 
-            uint256 balanceBefore = user.balanceOf(market.underlying);
+            test.balanceBefore = user.balanceOf(market.underlying);
+            test.morphoSupplyBefore = market.supplyOf(address(morpho));
 
             user.approve(market.underlying, amount);
 
@@ -302,13 +327,18 @@ contract TestIntegrationRepay is IntegrationTest {
 
             // Assert Morpho's position on pool.
             uint256 morphoSupply = market.supplyOf(address(morpho));
-            assertApproxEqAbs(morphoSupply, test.borrowed, 1, "morphoSupply != borrowed");
+            assertApproxEqAbs(
+                morphoSupply,
+                test.morphoSupplyBefore + test.borrowed,
+                2,
+                "morphoSupply != morphoSupplyBefore + borrowed"
+            );
             assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 1, "morphoVariableBorrow != 0");
             assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
             // Assert user's underlying balance.
             assertApproxEqAbs(
-                balanceBefore,
+                test.balanceBefore,
                 user.balanceOf(market.underlying) + test.repaid,
                 1,
                 "balanceBefore != balanceAfter + repaid"
@@ -317,9 +347,9 @@ contract TestIntegrationRepay is IntegrationTest {
             // Assert Morpho's market state.
             assertApproxGeAbs(
                 test.morphoMarket.deltas.supply.scaledDeltaPool.rayMul(test.indexes.supply.poolIndex),
-                morphoSupply,
+                test.borrowed,
                 1,
-                "supplyDelta != morphoSupply"
+                "supplyDelta != borrowed"
             );
             assertEq(
                 test.morphoMarket.deltas.supply.scaledTotalP2P.rayMul(test.indexes.supply.p2pIndex),

@@ -122,7 +122,9 @@ contract TestIntegrationSupply is IntegrationTest {
         assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
     }
 
-    function testShouldSupplyPoolOnly(uint256 amount, address onBehalf) public returns (SupplyTest memory test) {
+    function testShouldSupplyPoolOnly(uint256 amount, address onBehalf) public {
+        SupplyTest memory test;
+
         onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
@@ -149,10 +151,9 @@ contract TestIntegrationSupply is IntegrationTest {
     }
 
     // TODO: failing because supply cap exceeded and p2p supply sometimes end up supplying 1 wei to the pool.
-    function testShouldSupplyP2POnly(uint256 supplyCap, uint256 amount, address onBehalf)
-        public
-        returns (SupplyTest memory test)
-    {
+    function testShouldSupplyP2POnly(uint256 supplyCap, uint256 amount, address onBehalf) public {
+        SupplyTest memory test;
+
         onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
@@ -186,10 +187,9 @@ contract TestIntegrationSupply is IntegrationTest {
         }
     }
 
-    function testShouldSupplyPoolWhenP2PDisabled(uint256 amount, address onBehalf)
-        public
-        returns (SupplyTest memory test)
-    {
+    function testShouldSupplyPoolWhenP2PDisabled(uint256 amount, address onBehalf) public {
+        SupplyTest memory test;
+
         onBehalf = _boundAddressNotZero(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
