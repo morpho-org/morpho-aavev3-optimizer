@@ -9,6 +9,8 @@ import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 contract WETHGateway {
     using SafeTransferLib for ERC20;
 
+    error OnlyWETH();
+
     address internal constant _WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
     IMorpho internal immutable _morpho;
@@ -57,5 +59,9 @@ contract WETHGateway {
         _morpho.withdrawCollateral(_WETH, amount, msg.sender);
         IWETH(_WETH).withdraw(amount);
         SafeTransferLib.safeTransferETH(msg.sender, amount);
+    }
+
+    receive() external payable {
+        if (msg.sender != _WETH) revert OnlyWETH();
     }
 }
