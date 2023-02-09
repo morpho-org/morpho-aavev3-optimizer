@@ -204,8 +204,6 @@ contract ForkTest is BaseTest {
         uint256 newAccruedToTreasury =
             accruedTotalDebt.percentMul(reserve.configuration.getReserveFactor()).rayDiv(poolSupplyIndex);
 
-        console2.log("_accruedToTreasury", reserve.accruedToTreasury, accruedTotalDebt, newAccruedToTreasury);
-
         return (reserve.accruedToTreasury + newAccruedToTreasury).rayMul(poolSupplyIndex);
     }
 }

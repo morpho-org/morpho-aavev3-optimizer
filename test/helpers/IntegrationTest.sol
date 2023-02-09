@@ -154,8 +154,6 @@ contract IntegrationTest is ForkTest {
 
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
     function _supplyGap(TestMarket storage market) internal view returns (uint256) {
-        console2.log("_supplyGap", market.totalSupply(), _accruedToTreasury(market.underlying));
-
         return market.supplyCap.zeroFloorSub(market.totalSupply() + _accruedToTreasury(market.underlying));
     }
 

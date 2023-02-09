@@ -20,7 +20,6 @@ import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {console2} from "@forge-std/console2.sol";
 
 /// @title MarketLib
 /// @author Morpho Labs
@@ -221,13 +220,10 @@ library MarketLib {
 
         uint256 accruedTotalDebt =
             currTotalVariableDebt + vars.currTotalStableDebt - prevTotalVariableDebt - prevTotalStableDebt;
-        console2.log(reserve.accruedToTreasury, accruedTotalDebt, reserve.configuration.getReserveFactor());
         if (accruedTotalDebt == 0) return reserve.accruedToTreasury;
 
         uint256 newAccruedToTreasury =
             accruedTotalDebt.percentMul(reserve.configuration.getReserveFactor()).rayDiv(indexes.supply.poolIndex);
-
-        console2.log(newAccruedToTreasury);
 
         return reserve.accruedToTreasury + newAccruedToTreasury;
     }

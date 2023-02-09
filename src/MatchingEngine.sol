@@ -23,7 +23,7 @@ abstract contract MatchingEngine is MorphoInternal {
     using Math for uint256;
     using WadRayMath for uint256;
 
-    /// @dev Demotes suppliers on the `underlying` market.
+    /// @dev Promotes suppliers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to promote suppliers.
     /// @param amount The amount of `underlying` to promote.
     /// @param maxIterations The maximum number of iterations allowed during the matching process.
