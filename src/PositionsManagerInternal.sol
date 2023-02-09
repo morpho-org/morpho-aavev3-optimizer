@@ -116,6 +116,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
             uint256 poolDebt =
                 ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
+
             if (amount + totalP2P + poolDebt > borrowCap) revert Errors.ExceedsBorrowCap();
         }
 
@@ -326,7 +327,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Handle the supply cap.
         uint256 idleSupplyIncrease;
         (vars.toSupply, idleSupplyIncrease) =
-            market.increaseIdle(underlying, amount, _POOL.getConfiguration(underlying));
+            market.increaseIdle(underlying, amount, _POOL.getReserveData(underlying), indexes);
 
         // Demote peer-to-peer suppliers.
         uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxIterations);
