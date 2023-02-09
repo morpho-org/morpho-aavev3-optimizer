@@ -40,13 +40,13 @@ contract WETHGateway {
 
     /// @notice Wraps `msg.value` of ETH to WETH and supplies it to the Morpho on behalf of `onBehalf`.
     function supplyETH(address onBehalf, uint256 maxIterations) external payable {
-        IWETH(_WETH).deposit{value: msg.value}();
+        _wrapETH(msg.value);
         _morpho.supply(_WETH, msg.value, onBehalf, maxIterations);
     }
 
     /// @notice Wraps `msg.value` of ETH to WETH and supplies it as collateral to the Morpho on behalf of `onBehalf`.
     function supplyCollateralETH(address onBehalf) external payable {
-        IWETH(_WETH).deposit{value: msg.value}();
+        _wrapETH(msg.value);
         _morpho.supplyCollateral(_WETH, msg.value, onBehalf);
     }
 
@@ -54,13 +54,12 @@ contract WETHGateway {
     ///         Note: `msg.sender` must have approved this contract to be its manager.
     function borrowETH(uint256 amount, uint256 maxIterations) external {
         amount = _morpho.borrow(_WETH, amount, msg.sender, maxIterations);
-        IWETH(_WETH).withdraw(amount);
-        SafeTransferLib.safeTransferETH(msg.sender, amount);
+        _unwrapAndTransferETH(amount);
     }
 
     /// @notice Wraps `msg.value` of ETH to WETH and repays `onBehalf`'s debt on Morpho.
     function repayETH(address onBehalf) external payable {
-        IWETH(_WETH).deposit{value: msg.value}();
+        _wrapETH(msg.value);
         _morpho.repay(_WETH, msg.value, onBehalf);
     }
 
@@ -68,20 +67,31 @@ contract WETHGateway {
     ///         Note: `msg.sender` must have approved this contract to be its manager.
     function withdrawETH(uint256 amount) external {
         amount = _morpho.withdraw(_WETH, amount, msg.sender);
-        IWETH(_WETH).withdraw(amount);
-        SafeTransferLib.safeTransferETH(msg.sender, amount);
+        _unwrapAndTransferETH(amount);
     }
 
     /// @notice Withdraws WETH as collateral up to `amount` on behalf of `msg.sender`, unwraps it to WETH and sends it to `msg.sender`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
     function withdrawCollateralETH(uint256 amount) external {
         amount = _morpho.withdrawCollateral(_WETH, amount, msg.sender);
-        IWETH(_WETH).withdraw(amount);
-        SafeTransferLib.safeTransferETH(msg.sender, amount);
+        _unwrapAndTransferETH(amount);
     }
 
     /// @dev Only the WETH contract is allowed to transfer ETH to this contracts.
     receive() external payable {
         if (msg.sender != _WETH) revert OnlyWETH();
+    }
+
+    /// INTERNAL ///
+
+    /// @dev Wraps `amount` of ETH to WETH.
+    function _wrapETH(uint256 amount) internal {
+        IWETH(_WETH).deposit{value: amount}();
+    }
+
+    /// @dev Unwraps `amount` of WETH to ETH and transfers it to `msg.sender`.
+    function _unwrapAndTransferETH(uint256 amount) internal {
+        IWETH(_WETH).withdraw(amount);
+        SafeTransferLib.safeTransferETH(msg.sender, amount);
     }
 }
