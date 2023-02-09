@@ -87,8 +87,8 @@ library InterestRatesLib {
     /// @param poolGrowthFactor The pool growth factor.
     /// @param p2pGrowthFactor The P2P growth factor.
     /// @param lastIndexes The last pool & peer-to-peer indexes.
-    /// @param scaledDeltaPool The last scaled pool delta.
-    /// @param scaledTotalP2P The last scaled total P2P amount.
+    /// @param scaledDeltaPool The last scaled p2p delta (pool unit).
+    /// @param scaledTotalP2P The last scaled total P2P amount (P2P unit).
     /// @return newP2PIndex The updated peer-to-peer index (in ray).
     function computeP2PIndex(
         uint256 poolGrowthFactor,
