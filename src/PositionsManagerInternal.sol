@@ -96,10 +96,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Authorizes a borrow action.
-    function _authorizeBorrow(address underlying, uint256 amount, address borrower, Types.Indexes256 memory indexes)
-        internal
-        view
-    {
+    function _authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) internal view {
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
@@ -119,9 +116,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             if (amount + totalP2P + poolDebt > borrowCap) revert Errors.ExceedsBorrowCap();
         }
-
-        Types.LiquidityData memory values = _liquidityData(borrower);
-        if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
     }
 
     /// @dev Validates a repay action.
@@ -152,13 +146,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     {
         market = _validateManagerInput(underlying, amount, supplier, receiver);
         if (market.isWithdrawCollateralPaused()) revert Errors.WithdrawCollateralIsPaused();
-    }
-
-    /// @dev Authorizes a withdraw collateral action.
-    function _authorizeWithdrawCollateral(address supplier) internal view {
-        if (_getUserHealthFactor(supplier) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
-            revert Errors.UnauthorizedWithdraw();
-        }
     }
 
     /// @dev Authorizes a liquidate action.
