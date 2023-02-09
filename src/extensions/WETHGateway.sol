@@ -36,8 +36,26 @@ contract WETHGateway {
         _morpho.supplyCollateral(_WETH, msg.value, onBehalf);
     }
 
+    function borrowETH(uint256 amount, uint256 maxIterations) external {
+        _morpho.borrow(_WETH, amount, msg.sender, maxIterations);
+        IWETH(_WETH).withdraw(amount);
+        SafeTransferLib.safeTransferETH(msg.sender, amount);
+    }
+
     function repayETH(address onBehalf) external payable {
         IWETH(_WETH).deposit{value: msg.value}();
         _morpho.repay(_WETH, msg.value, onBehalf);
+    }
+
+    function withdrawETH(uint256 amount) external {
+        _morpho.withdraw(_WETH, amount, msg.sender);
+        IWETH(_WETH).withdraw(amount);
+        SafeTransferLib.safeTransferETH(msg.sender, amount);
+    }
+
+    function withdrawCollateralETH(uint256 amount) external {
+        _morpho.withdrawCollateral(_WETH, amount, msg.sender);
+        IWETH(_WETH).withdraw(amount);
+        SafeTransferLib.safeTransferETH(msg.sender, amount);
     }
 }
