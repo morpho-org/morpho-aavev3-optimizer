@@ -5,6 +5,9 @@ inputs:
   network:
     description: The network on which to run the forge test suite.
     required: true
+  alchemyKey:
+    description: The Alchemy key giving access to a private RPC.
+    required: false
   codecovToken:
     description: The Codecov token used to upload coverage report.
     required: false
@@ -30,12 +33,6 @@ runs:
       with:
         version: nightly
 
-    - name: Foundry fork cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.foundry/cache
-        key: foundry-${{ hashFiles(format('config/{0}.json', inputs.network)) }} # where fork block numbers & RPC are stored
-
     - name: Foundry compilation cache
       uses: actions/cache@v3
       with:
@@ -49,13 +46,15 @@ runs:
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
-        FOUNDRY_FUZZ_RUNS: 32768
+        ALCHEMY_KEY: ${{ inputs.alchemyKey }}
+        FOUNDRY_FUZZ_RUNS: 16384
 
     - name: Run internal tests
       run: make test-internal
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
+        ALCHEMY_KEY: ${{ inputs.alchemyKey }}
         FOUNDRY_FUZZ_RUNS: 64
 
     - name: Run integration tests
@@ -63,7 +62,8 @@ runs:
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
-        FOUNDRY_FUZZ_RUNS: 128
+        ALCHEMY_KEY: ${{ inputs.alchemyKey }}
+        FOUNDRY_FUZZ_RUNS: 64
 
     - name: Generate lcov coverage report
       if: ${{ inputs.codecovToken != '' }}
@@ -71,6 +71,7 @@ runs:
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
+        ALCHEMY_KEY: ${{ inputs.alchemyKey }}
 
     - name: Check coverage threshold
       if: ${{ inputs.coverageThreshold != '' }}

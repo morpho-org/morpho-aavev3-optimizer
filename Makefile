@@ -2,7 +2,7 @@
 .EXPORT_ALL_VARIABLES:
 MAKEFLAGS += --no-print-directory
 
-NETWORK ?= avalanche-mainnet
+NETWORK ?= ethereum-mainnet
 
 
 install:
@@ -11,7 +11,7 @@ install:
 	forge install
 
 contracts:
-	FOUNDRY_TEST=/dev/null forge build --via-ir --sizes --force
+	FOUNDRY_TEST=/dev/null forge build --via-ir --extra-output-files irOptimized --sizes --force
 
 
 test:

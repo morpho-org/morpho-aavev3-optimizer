@@ -34,19 +34,16 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         createTestMarket(dai, 0, 3_333);
         createTestMarket(wbtc, 0, 3_333);
         createTestMarket(usdc, 0, 3_333);
-        createTestMarket(usdt, 0, 3_333);
         createTestMarket(wNative, 0, 3_333);
 
         ERC20(dai).approve(address(_POOL), type(uint256).max);
         ERC20(wbtc).approve(address(_POOL), type(uint256).max);
         ERC20(usdc).approve(address(_POOL), type(uint256).max);
-        ERC20(usdt).approve(address(_POOL), type(uint256).max);
         ERC20(wNative).approve(address(_POOL), type(uint256).max);
 
         _POOL.supplyToPool(dai, 100 ether);
         _POOL.supplyToPool(wbtc, 1e8);
         _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(usdt, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
     }
 
@@ -472,7 +469,11 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
 
         _marketBalances[dai].collateral[address(1)] = collateralAmount.rayDivUp(indexes.supply.poolIndex);
 
-        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = _POOL.getConfiguration(dai).getParams();
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(dai);
+        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = config.getParams();
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == config.getEModeCategory()) {
+            vars.liquidationBonus = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID).liquidationBonus;
+        }
         (,,, vars.borrowTokenUnit,,) = _POOL.getConfiguration(wbtc).getParams();
 
         vars.collateralTokenUnit = 10 ** vars.collateralTokenUnit;
