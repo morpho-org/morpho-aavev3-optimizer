@@ -51,14 +51,9 @@ contract IntegrationTest is ForkTest {
     function setUp() public virtual override {
         _deploy();
 
-        _createMarket(weth, 0, 33_33);
-        _createMarket(dai, 0, 33_33);
-        _createMarket(usdc, 0, 33_33);
-        _createMarket(usdt, 0, 33_33);
-        _createMarket(wbtc, 0, 33_33);
-        _createMarket(aave, 0, 33_33);
-        _createMarket(link, 0, 33_33);
-        _createMarket(wavax, 0, 33_33);
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            _createMarket(allUnderlyings[i], 0, 33_33);
+        }
 
         _forward(1); // All markets are outdated in Morpho's storage.
 

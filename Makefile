@@ -2,7 +2,7 @@
 .EXPORT_ALL_VARIABLES:
 MAKEFLAGS += --no-print-directory
 
-NETWORK ?= avalanche-mainnet
+NETWORK ?= ethereum-mainnet
 
 
 install:
