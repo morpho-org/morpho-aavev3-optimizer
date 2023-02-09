@@ -85,9 +85,13 @@ contract Deploy is Script {
         morphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID);
 
         proxyAdmin = new ProxyAdmin();
-        morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImpl)), address(proxyAdmin), "");
+        morphoProxy = new TransparentUpgradeableProxy(
+            payable(address(morphoImpl)), 
+            address(proxyAdmin), 
+            abi.encodeWithSelector(
+                morphoImpl.initialize.selector, 
+                address(positionsManager), 
+                Types.MaxIterations({repay: 10, withdraw: 10})));
         morpho = Morpho(payable(address(morphoProxy)));
-
-        morpho.initialize(address(positionsManager), Types.MaxIterations({repay: 10, withdraw: 10}));
     }
 }
