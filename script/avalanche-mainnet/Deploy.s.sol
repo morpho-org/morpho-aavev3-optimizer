@@ -50,34 +50,31 @@ contract Deploy is Script {
         _initConfig();
         _loadConfig();
 
-        vm.startBroadcast();
+        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         _deploy();
         morpho.createMarket(dai, 3_333, 3_333);
         morpho.createMarket(usdc, 3_333, 3_333);
-        morpho.createMarket(btcb, 3_333, 3_333);
+        morpho.createMarket(wbtc, 3_333, 3_333);
         vm.stopBroadcast();
     }
 
     function _initConfig() internal returns (TestConfig storage) {
-        return config.load("avalanche-mainnet");
+        if (bytes(config.json).length == 0) {
+            string memory root = vm.projectRoot();
+            string memory path = string.concat(root, "/config/avalanche-mainnet.json");
+
+            config.json = vm.readFile(path);
+        }
+
+        return config;
     }
 
     function _loadConfig() internal {
         addressesProvider = IPoolAddressesProvider(config.getAddressesProvider());
 
-        dai = config.getAddress("$.DAI");
-        frax = config.getAddress("$.FRAX");
-        mai = config.getAddress("$.MAI");
-        usdc = config.getAddress("$.USDC");
-        usdt = config.getAddress("$.USDT");
-        aave = config.getAddress("$.AAVE");
-        btcb = config.getAddress("$.BTCb");
-        link = config.getAddress("$.LINK");
-        sAvax = config.getAddress("$.sAVAX");
-        wavax = config.getAddress("$.WAVAX");
-        wbtc = config.getAddress("$.WBTC");
-        weth = config.getAddress("$.WETH");
-        wNative = config.getAddress("$.wrappedNative");
+        dai = config.getAddress("DAI");
+        usdc = config.getAddress("USDC");
+        wbtc = config.getAddress("WBTC");
     }
 
     function _deploy() internal {
