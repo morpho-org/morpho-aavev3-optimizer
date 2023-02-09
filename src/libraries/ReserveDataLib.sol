@@ -22,6 +22,11 @@ library ReserveDataLib {
     using PercentageMath for uint256;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
+    /// @notice Calculates the scaled quantity of reserve dedicated to AaveV3's treasury, taking into account interests accrued.
+    /// @dev Reference: https://github.com/aave/aave-v3-core/blob/a00f28e3ad7c0e4a369d8e06e0ac9fd0acabcab7/contracts/protocol/libraries/logic/ReserveLogic.sol#L230-L282.
+    /// @param reserve The reserve data of a given market.
+    /// @param indexes The updated pool & p2p indexes of the associated market.
+    /// @return The reserve's dedicated treasury, in pool unit.
     function getAccruedToTreasury(DataTypes.ReserveData memory reserve, Types.Indexes256 memory indexes)
         internal
         view
