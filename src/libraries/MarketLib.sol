@@ -3,23 +3,19 @@ pragma solidity ^0.8.17;
 
 import {IAToken} from "../interfaces/aave/IAToken.sol";
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
-import {IStableDebtToken} from "@aave-v3-core/interfaces/IStableDebtToken.sol";
-import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
 
 import {Types} from "./Types.sol";
 import {Events} from "./Events.sol";
 import {Errors} from "./Errors.sol";
+import {ReserveDataLib} from "./ReserveDataLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-import {MathUtils} from "@aave-v3-core/protocol/libraries/math/MathUtils.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
-
-import {ERC20} from "@solmate/tokens/ERC20.sol";
 
 /// @title MarketLib
 /// @author Morpho Labs
@@ -29,7 +25,7 @@ library MarketLib {
     using Math for uint256;
     using SafeCast for uint256;
     using WadRayMath for uint256;
-    using PercentageMath for uint256;
+    using ReserveDataLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     function isCreated(Types.Market storage market) internal view returns (bool) {
@@ -196,39 +192,6 @@ library MarketLib {
         return idleSupply.rayDivUp(totalP2PSupplied);
     }
 
-    function _accruedToTreasury(DataTypes.ReserveData memory reserve, Types.Indexes256 memory indexes)
-        private
-        view
-        returns (uint256)
-    {
-        uint256 reserveFactor = reserve.configuration.getReserveFactor();
-        if (reserveFactor == 0) return reserve.accruedToTreasury;
-
-        (
-            uint256 currPrincipalStableDebt,
-            uint256 currTotalStableDebt,
-            uint256 currAvgStableBorrowRate,
-            uint40 stableDebtLastUpdateTimestamp
-        ) = IStableDebtToken(reserve.stableDebtTokenAddress).getSupplyData();
-        uint256 scaledTotalVariableDebt = IVariableDebtToken(reserve.variableDebtTokenAddress).scaledTotalSupply();
-
-        uint256 currTotalVariableDebt = scaledTotalVariableDebt.rayMul(indexes.borrow.poolIndex);
-        uint256 prevTotalVariableDebt = scaledTotalVariableDebt.rayMul(reserve.variableBorrowIndex);
-        uint256 prevTotalStableDebt = currPrincipalStableDebt.rayMul(
-            MathUtils.calculateCompoundedInterest(
-                currAvgStableBorrowRate, stableDebtLastUpdateTimestamp, reserve.lastUpdateTimestamp
-            )
-        );
-
-        uint256 accruedTotalDebt =
-            currTotalVariableDebt + currTotalStableDebt - prevTotalVariableDebt - prevTotalStableDebt;
-        if (accruedTotalDebt == 0) return reserve.accruedToTreasury;
-
-        uint256 newAccruedToTreasury = accruedTotalDebt.percentMul(reserveFactor).rayDiv(indexes.supply.poolIndex);
-
-        return reserve.accruedToTreasury + newAccruedToTreasury;
-    }
-
     /// @dev Increases the idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
     /// @param market The market storage.
     /// @param underlying The underlying address.
@@ -246,7 +209,7 @@ library MarketLib {
         if (supplyCap == 0) return (amount, 0);
 
         uint256 suppliable = supplyCap.zeroFloorSub(
-            (IAToken(market.aToken).scaledTotalSupply() + _accruedToTreasury(reserve, indexes)).rayMul(
+            (IAToken(market.aToken).scaledTotalSupply() + reserve.getAccruedToTreasury(indexes)).rayMul(
                 indexes.supply.poolIndex
             )
         );
