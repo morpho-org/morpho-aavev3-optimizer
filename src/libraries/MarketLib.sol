@@ -201,29 +201,30 @@ library MarketLib {
         view
         returns (uint256)
     {
-        Types.StableDebtSupplyData memory vars;
+        uint256 reserveFactor = reserve.configuration.getReserveFactor();
+        if (reserveFactor == 0) return reserve.accruedToTreasury;
+
         (
-            vars.currPrincipalStableDebt,
-            vars.currTotalStableDebt,
-            vars.currAvgStableBorrowRate,
-            vars.stableDebtLastUpdateTimestamp
+            uint256 currPrincipalStableDebt,
+            uint256 currTotalStableDebt,
+            uint256 currAvgStableBorrowRate,
+            uint40 stableDebtLastUpdateTimestamp
         ) = IStableDebtToken(reserve.stableDebtTokenAddress).getSupplyData();
         uint256 scaledTotalVariableDebt = IVariableDebtToken(reserve.variableDebtTokenAddress).scaledTotalSupply();
 
         uint256 currTotalVariableDebt = scaledTotalVariableDebt.rayMul(indexes.borrow.poolIndex);
         uint256 prevTotalVariableDebt = scaledTotalVariableDebt.rayMul(reserve.variableBorrowIndex);
-        uint256 prevTotalStableDebt = vars.currPrincipalStableDebt.rayMul(
+        uint256 prevTotalStableDebt = currPrincipalStableDebt.rayMul(
             MathUtils.calculateCompoundedInterest(
-                vars.currAvgStableBorrowRate, vars.stableDebtLastUpdateTimestamp, reserve.lastUpdateTimestamp
+                currAvgStableBorrowRate, stableDebtLastUpdateTimestamp, reserve.lastUpdateTimestamp
             )
         );
 
         uint256 accruedTotalDebt =
-            currTotalVariableDebt + vars.currTotalStableDebt - prevTotalVariableDebt - prevTotalStableDebt;
+            currTotalVariableDebt + currTotalStableDebt - prevTotalVariableDebt - prevTotalStableDebt;
         if (accruedTotalDebt == 0) return reserve.accruedToTreasury;
 
-        uint256 newAccruedToTreasury =
-            accruedTotalDebt.percentMul(reserve.configuration.getReserveFactor()).rayDiv(indexes.supply.poolIndex);
+        uint256 newAccruedToTreasury = accruedTotalDebt.percentMul(reserveFactor).rayDiv(indexes.supply.poolIndex);
 
         return reserve.accruedToTreasury + newAccruedToTreasury;
     }
