@@ -421,7 +421,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             promoted = _promoteBorrow(promoter1, market, bound(promoted, 1, amount)); // <= 100% peer-to-peer.
 
             // Set the borrow cap so that the borrow gap is lower than the amount borrowed on pool.
-            borrowCap = bound(borrowCap, 10 ** market.decimals, market.totalBorrow() + amount - promoted);
+            borrowCap = _boundBorrowCapExceeded(market, amount - promoted, borrowCap);
             _setBorrowCap(market, borrowCap);
 
             vm.expectRevert(Errors.ExceedsBorrowCap.selector);

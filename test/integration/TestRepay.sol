@@ -180,8 +180,7 @@ contract TestIntegrationRepay is IntegrationTest {
             _borrowNoCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
             market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
-            // Set the supply cap so that the supply gap is lower than the amount repaid.
-            supplyCap = bound(supplyCap, 10 ** market.decimals, market.totalSupply() + test.borrowed);
+            supplyCap = _boundSupplyCapExceeded(market, test.borrowed, supplyCap);
             _setSupplyCap(market, supplyCap);
 
             uint256 supplyGapBefore = _supplyGap(market);

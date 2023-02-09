@@ -222,8 +222,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             _increaseIdleSupply(promoter2, market, test.supplied);
 
-            // Set the borrow cap so that the borrow gap is lower than the amount withdrawn.
-            borrowCap = bound(borrowCap, 10 ** market.decimals, market.totalBorrow() + test.supplied);
+            borrowCap = _boundBorrowCapExceeded(market, test.supplied, borrowCap);
             _setBorrowCap(market, borrowCap);
 
             uint256 borrowGapBefore = market.borrowGap();

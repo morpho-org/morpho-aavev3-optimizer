@@ -93,8 +93,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
             amount = _boundSupply(market, amount);
 
-            // Set the supply cap so that the supply gap is lower than the amount supplied.
-            supplyCap = bound(supplyCap, 10 ** market.decimals, market.totalSupply() + amount);
+            supplyCap = _boundSupplyCapExceeded(market, amount, supplyCap);
             _setSupplyCap(market, supplyCap);
 
             user.approve(market.underlying, amount);

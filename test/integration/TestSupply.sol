@@ -163,8 +163,7 @@ contract TestIntegrationSupply is IntegrationTest {
             amount = _boundSupply(market, amount);
             amount = _promoteSupply(promoter1, market, amount); // 100% peer-to-peer.
 
-            // Set the supply cap as exceeded.
-            supplyCap = bound(supplyCap, 10 ** market.decimals, market.totalSupply());
+            supplyCap = _boundSupplyCapExceeded(market, 0, supplyCap);
             _setSupplyCap(market, supplyCap);
 
             test.balanceBefore = user.balanceOf(market.underlying);
@@ -240,7 +239,7 @@ contract TestIntegrationSupply is IntegrationTest {
             promoted = _promoteSupply(promoter1, market, bound(promoted, 0, amount - 1)); // < 100% peer-to-peer.
 
             // Set the supply cap so that the supply gap is lower than the amount supplied on pool.
-            supplyCap = bound(supplyCap, 10 ** market.decimals, market.totalSupply() + amount - promoted);
+            supplyCap = _boundSupplyCapExceeded(market, amount - promoted, supplyCap);
             _setSupplyCap(market, supplyCap);
 
             user.approve(market.underlying, amount);

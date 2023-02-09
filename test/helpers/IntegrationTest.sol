@@ -158,16 +158,14 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Sets the supply cap of AaveV3 to the given input.
-    function _setSupplyCap(TestMarket storage market, uint256 amount) internal returns (uint256 supplyCap) {
-        supplyCap = amount.divUp(10 ** market.decimals);
+    function _setSupplyCap(TestMarket storage market, uint256 supplyCap) internal {
         market.supplyCap = supplyCap > 0 ? supplyCap * 10 ** market.decimals : type(uint256).max;
 
         poolAdmin.setSupplyCap(market.underlying, supplyCap);
     }
 
     /// @dev Sets the borrow cap of AaveV3 to the given input.
-    function _setBorrowCap(TestMarket storage market, uint256 amount) internal returns (uint256 borrowCap) {
-        borrowCap = amount.divUp(10 ** market.decimals);
+    function _setBorrowCap(TestMarket storage market, uint256 borrowCap) internal {
         market.borrowCap = borrowCap > 0 ? borrowCap * 10 ** market.decimals : type(uint256).max;
 
         poolAdmin.setBorrowCap(market.underlying, borrowCap);
@@ -180,7 +178,7 @@ contract IntegrationTest is ForkTest {
 
         _;
 
-        if (disableSupplyCap) _setSupplyCap(market, supplyCapBefore + amount);
+        if (disableSupplyCap) _setSupplyCap(market, (supplyCapBefore + amount).divUp(10 ** market.decimals));
     }
 
     /// @dev Deposits the given amount of tokens on behalf of the given address, on AaveV3, increasing the supply cap if necessary.
@@ -191,6 +189,24 @@ contract IntegrationTest is ForkTest {
         deal(market.underlying, address(this), amount);
         ERC20(market.underlying).approve(address(pool), amount);
         pool.deposit(market.underlying, amount, onBehalf, 0);
+    }
+
+    /// @dev Bounds the input supply cap of AaveV3 so that it is exceeded after having deposited a given amount
+    function _boundSupplyCapExceeded(TestMarket storage market, uint256 amount, uint256 supplyCap)
+        internal
+        view
+        returns (uint256)
+    {
+        return bound(supplyCap, 1, (market.totalSupply() + amount) / (10 ** market.decimals));
+    }
+
+    /// @dev Bounds the input borrow cap of AaveV3 so that it is exceeded after having deposited a given amount
+    function _boundBorrowCapExceeded(TestMarket storage market, uint256 amount, uint256 borrowCap)
+        internal
+        view
+        returns (uint256)
+    {
+        return bound(borrowCap, 1, (market.totalBorrow() + amount) / (10 ** market.decimals));
     }
 
     /// @dev Bounds the input between the minimum & the maximum USD amount expected in tests, without exceeding the market's supply cap.
@@ -246,7 +262,9 @@ contract IntegrationTest is ForkTest {
     function _promoteSupply(UserMock promoter, TestMarket storage market, uint256 amount) internal returns (uint256) {
         uint256 liquidity = market.liquidity();
         if (amount > liquidity) _deposit(market, amount - liquidity, address(0xdead));
-        if (amount > market.borrowGap()) _setBorrowCap(market, market.totalBorrow() + amount);
+        if (amount > market.borrowGap()) {
+            _setBorrowCap(market, (market.totalBorrow() + amount).divUp(10 ** market.decimals));
+        }
 
         oracle.setAssetPrice(market.underlying, 0);
 
@@ -287,7 +305,7 @@ contract IntegrationTest is ForkTest {
         market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
         // Set the supply cap as exceeded.
-        _setSupplyCap(market, market.totalSupply());
+        _setSupplyCap(market, market.totalSupply() / (10 ** market.decimals));
 
         hacker.approve(market.underlying, amount);
         hacker.repay(market.underlying, amount, onBehalf);
