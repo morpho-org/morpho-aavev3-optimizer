@@ -39,7 +39,7 @@ contract WETHGateway {
     }
 
     function borrowETH(uint256 amount, uint256 maxIterations) external {
-        _morpho.borrow(_WETH, amount, msg.sender, maxIterations);
+        amount = _morpho.borrow(_WETH, amount, msg.sender, maxIterations);
         IWETH(_WETH).withdraw(amount);
         SafeTransferLib.safeTransferETH(msg.sender, amount);
     }
@@ -50,13 +50,13 @@ contract WETHGateway {
     }
 
     function withdrawETH(uint256 amount) external {
-        _morpho.withdraw(_WETH, amount, msg.sender);
+        amount = _morpho.withdraw(_WETH, amount, msg.sender);
         IWETH(_WETH).withdraw(amount);
         SafeTransferLib.safeTransferETH(msg.sender, amount);
     }
 
     function withdrawCollateralETH(uint256 amount) external {
-        _morpho.withdrawCollateral(_WETH, amount, msg.sender);
+        amount = _morpho.withdrawCollateral(_WETH, amount, msg.sender);
         IWETH(_WETH).withdraw(amount);
         SafeTransferLib.safeTransferETH(msg.sender, amount);
     }
