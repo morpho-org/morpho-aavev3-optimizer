@@ -161,13 +161,11 @@ contract ForkTest is BaseTest {
     }
 
     function _setBalances(address user, uint256 balance) internal {
-        deal(dai, user, balance);
-        deal(usdc, user, balance / 1e6);
-        deal(aave, user, balance);
-        deal(link, user, balance);
-        deal(wbtc, user, balance / 1e8);
-        deal(weth, user, balance);
-        deal(wNative, user, balance);
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            address underlying = allUnderlyings[i];
+
+            deal(underlying, user, balance / (10 ** (18 - ERC20(underlying).decimals())));
+        }
     }
 
     /// @dev Reverts the fork to its initial fork state.
