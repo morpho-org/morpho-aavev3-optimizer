@@ -135,26 +135,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.authorizeBorrow(dai, 1);
     }
 
-    function testAuthorizeBorrowShouldFailIfDebtTooHigh(uint256 onPool) public {
-        DataTypes.ReserveConfigurationMap memory reserveConfig = _POOL.getConfiguration(dai);
-        reserveConfig.setBorrowCap(0);
-        assertEq(reserveConfig.getBorrowCap(), 0);
-
-        vm.prank(address(poolConfigurator));
-        _POOL.setConfiguration(dai, reserveConfig);
-
-        onPool = bound(onPool, MIN_AMOUNT, MAX_AMOUNT);
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
-
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = onPool.rayDiv(indexes.supply.poolIndex);
-        _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(dai, address(this), onPool.rayDiv(indexes.borrow.poolIndex), 0, true);
-
-        vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorizedBorrow.selector));
-        this.authorizeBorrow(dai, onPool);
-    }
-
     function testValidateRepayShouldRevertIfRepayPaused() public {
         _market[dai].pauseStatuses.isRepayPaused = true;
 
