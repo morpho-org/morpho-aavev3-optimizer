@@ -143,8 +143,7 @@ contract IntegrationTest is ForkTest {
     }
 
     function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
-        (TestMarket storage market, DataTypes.ReserveData memory reserve) =
-            _initMarket(underlying, reserveFactor, p2pIndexCursor);
+        (TestMarket storage market,) = _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
         underlyings.push(underlying);
         if (market.ltv > 0) collateralUnderlyings.push(underlying);
