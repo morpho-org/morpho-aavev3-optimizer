@@ -12,6 +12,7 @@ import {Constants} from "./libraries/Constants.sol";
 
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 import {Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
+import {ERC20 as Permit2ERC20} from "solmate/src/tokens/ERC20.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
@@ -23,9 +24,9 @@ import {MorphoSetters} from "./MorphoSetters.sol";
 /// @custom:contact security@morpho.xyz
 /// @notice The main Morpho contract exposing all user entry points.
 contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
-    using Permit2Lib for ERC20;
     using DelegateCall for address;
     using SafeTransferLib for ERC20;
+    using Permit2Lib for Permit2ERC20;
 
     /// CONSTRUCTOR ///
 
@@ -87,7 +88,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256) {
-        ERC20(underlying).simplePermit2(
+        Permit2ERC20(underlying).simplePermit2(
             msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
         );
         return _supply(underlying, amount, msg.sender, onBehalf, maxIterations);
@@ -118,7 +119,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256) {
-        ERC20(underlying).simplePermit2(
+        Permit2ERC20(underlying).simplePermit2(
             msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
         );
         return _supplyCollateral(underlying, amount, msg.sender, onBehalf);
@@ -163,7 +164,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256) {
-        ERC20(underlying).simplePermit2(
+        Permit2ERC20(underlying).simplePermit2(
             msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
         );
         return _repay(underlying, amount, msg.sender, onBehalf);
