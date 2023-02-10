@@ -58,7 +58,7 @@ runs:
         FOUNDRY_FUZZ_RUNS: 64
 
     - name: Run integration tests & create gas report
-      run: make gas-report > gasreport.ansi
+      run: set -o pipefail && make gas-report | tee ${{ inputs.network }}.gasreport.ansi
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
