@@ -1,7 +1,6 @@
 [profile.default]
 names = true
 sizes = true
-via_ir = true
 libs = ["node_modules", "lib"]
 fs_permissions = [{ access = "read", path = "./config/"}]
 
