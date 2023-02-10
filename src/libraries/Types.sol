@@ -60,23 +60,24 @@ library Types {
 
     // This market struct is able to be passed into memory.
     struct Market {
-        // SLOT 0-1
-        Indexes indexes;
-        // SLOT 2-5
-        Deltas deltas; // 1024 bits
-        // SLOT 6
+        // SLOT 0
         address underlying; // 160 bits
-        PauseStatuses pauseStatuses; // 80 bits
-        // SLOT 7
+        // SLOT 1
+        address aToken; // 160 bits
+        // SLOT 2
         address variableDebtToken; // 160 bits
-        uint32 lastUpdateTimestamp; // 32 bits
+        // SLOT 3
+        address stableDebtToken; // 160 bits
+        // SLOT 4-5
+        Indexes indexes; // 512 bits
+        // SLOT 6-9
+        Deltas deltas; // 1024 bits
+        // SLOT 10
         uint16 reserveFactor; // 16 bits
         uint16 p2pIndexCursor; // 16 bits
-        // SLOT 8
-        address aToken; // 160 bits
-        // SLOT 9
-        address stableDebtToken; // 160 bits
-        // SLOT 10
+        uint32 lastUpdateTimestamp; // 32 bits
+        PauseStatuses pauseStatuses; // 80 bits
+        // SLOT 11
         uint256 idleSupply; // 256 bits
     }
 
