@@ -182,25 +182,24 @@ contract ForkTest is BaseTest {
         uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
         uint256 poolBorrowIndex = pool.getReserveNormalizedVariableDebt(underlying);
 
-        Types.StableDebtSupplyData memory vars;
         (
-            vars.currPrincipalStableDebt,
-            vars.currTotalStableDebt,
-            vars.currAvgStableBorrowRate,
-            vars.stableDebtLastUpdateTimestamp
+            uint256 currPrincipalStableDebt,
+            uint256 currTotalStableDebt,
+            uint256 currAvgStableBorrowRate,
+            uint40 stableDebtLastUpdateTimestamp
         ) = IStableDebtToken(reserve.stableDebtTokenAddress).getSupplyData();
         uint256 scaledTotalVariableDebt = IVariableDebtToken(reserve.variableDebtTokenAddress).scaledTotalSupply();
 
         uint256 currTotalVariableDebt = scaledTotalVariableDebt.rayMul(poolBorrowIndex);
         uint256 prevTotalVariableDebt = scaledTotalVariableDebt.rayMul(reserve.variableBorrowIndex);
-        uint256 prevTotalStableDebt = vars.currPrincipalStableDebt.rayMul(
+        uint256 prevTotalStableDebt = currPrincipalStableDebt.rayMul(
             MathUtils.calculateCompoundedInterest(
-                vars.currAvgStableBorrowRate, vars.stableDebtLastUpdateTimestamp, reserve.lastUpdateTimestamp
+                currAvgStableBorrowRate, stableDebtLastUpdateTimestamp, reserve.lastUpdateTimestamp
             )
         );
 
         uint256 accruedTotalDebt =
-            currTotalVariableDebt + vars.currTotalStableDebt - prevTotalVariableDebt - prevTotalStableDebt;
+            currTotalVariableDebt + currTotalStableDebt - prevTotalVariableDebt - prevTotalStableDebt;
         uint256 newAccruedToTreasury =
             accruedTotalDebt.percentMul(reserve.configuration.getReserveFactor()).rayDiv(poolSupplyIndex);
 
