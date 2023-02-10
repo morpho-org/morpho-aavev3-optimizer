@@ -72,6 +72,7 @@ runs:
       uses: Rubilmax/foundry-gas-diff@v3.13.3
       id: gas_diff
       with:
+        match: src/Morpho.sol
         report: ${{ inputs.network }}.gasreport.ansi
         header: |
           # Morpho-AaveV3 gas diff (${{ inputs.network }})
