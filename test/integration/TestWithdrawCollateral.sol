@@ -268,7 +268,6 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     function testShouldWithdrawCollateralWhenEverythingElsePaused(uint256 amount, address onBehalf, address receiver)
         public
     {
-        amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 

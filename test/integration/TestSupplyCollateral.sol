@@ -198,7 +198,6 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     }
 
     function testShouldSupplyCollateralWhenEverythingElsePaused(uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
         onBehalf = _boundAddressNotZero(onBehalf);
 
         morpho.setIsPausedForAllMarkets(true);

@@ -566,7 +566,12 @@ contract TestIntegrationWithdraw is IntegrationTest {
         }
     }
 
-    function testShouldWithdrawWhenEverythingElsePaused(uint256 amount, address onBehalf, address receiver) public {
+    function testShouldWithdrawWhenEverythingElsePaused(
+        uint256 supplied,
+        uint256 amount,
+        address onBehalf,
+        address receiver
+    ) public {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
@@ -578,10 +583,10 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
-            amount = _boundSupply(market, amount);
+            supplied = _boundSupply(market, supplied);
 
-            user.approve(market.underlying, amount);
-            user.supply(market.underlying, amount);
+            user.approve(market.underlying, supplied);
+            user.supply(market.underlying, supplied);
 
             morpho.setIsPausedForAllMarkets(true);
             morpho.setIsWithdrawPaused(market.underlying, false);

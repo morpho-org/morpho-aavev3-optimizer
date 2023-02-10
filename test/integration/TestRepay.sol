@@ -395,7 +395,6 @@ contract TestIntegrationRepay is IntegrationTest {
     function testShouldRevertRepayWhenRepayPaused(uint256 amount, address onBehalf) public {
         amount = _boundAmount(amount);
         onBehalf = _boundAddressNotZero(onBehalf);
-        vm.assume(onBehalf != address(user));
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
@@ -405,6 +404,27 @@ contract TestIntegrationRepay is IntegrationTest {
             morpho.setIsRepayPaused(market.underlying, true);
 
             vm.expectRevert(Errors.RepayIsPaused.selector);
+            user.repay(market.underlying, amount, onBehalf);
+        }
+    }
+
+    function testShouldRepayWhenEverythingElsePaused(uint256 borrowed, uint256 amount, address onBehalf) public {
+        amount = _boundAmount(amount);
+        onBehalf = _boundAddressNotZero(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+
+            borrowed = _boundBorrow(market, borrowed);
+
+            _borrowNoCollateral(onBehalf, market, borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
+
+            morpho.setIsPausedForAllMarkets(true);
+            morpho.setIsRepayPaused(market.underlying, false);
+
+            user.approve(market.underlying, amount);
             user.repay(market.underlying, amount, onBehalf);
         }
     }

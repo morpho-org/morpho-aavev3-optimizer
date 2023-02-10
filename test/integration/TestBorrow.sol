@@ -590,4 +590,25 @@ contract TestIntegrationBorrow is IntegrationTest {
             user.borrow(testMarkets[underlyings[marketIndex]].underlying, amount, onBehalf, receiver);
         }
     }
+
+    function testShouldBorrowWhenEverythingElsePaused(uint256 amount, address onBehalf, address receiver) public {
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
+        morpho.setIsPausedForAllMarkets(true);
+
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+
+            amount = _boundBorrow(market, amount);
+
+            morpho.setIsBorrowPaused(market.underlying, false);
+
+            _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+        }
+    }
 }

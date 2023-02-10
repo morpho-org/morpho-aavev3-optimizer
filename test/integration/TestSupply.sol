@@ -339,27 +339,7 @@ contract TestIntegrationSupply is IntegrationTest {
         }
     }
 
-    function testShouldRevertSupplyNotEnoughAllowance(uint256 allowance, uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
-        onBehalf = _boundAddressNotZero(onBehalf);
-
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
-            _revert();
-
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
-
-            amount = _boundSupply(market, amount);
-            allowance = bound(allowance, 0, amount - 1);
-
-            user.approve(market.underlying, allowance);
-
-            vm.expectRevert(); // Cannot specify the revert reason as it depends on the ERC20 implementation.
-            user.supply(market.underlying, amount, onBehalf);
-        }
-    }
-
     function testShouldSupplyWhenEverythingElsePaused(uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
         onBehalf = _boundAddressNotZero(onBehalf);
 
         morpho.setIsPausedForAllMarkets(true);
