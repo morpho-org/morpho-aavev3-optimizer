@@ -9,7 +9,7 @@ import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 /// @title WETHGateway
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
-/// @notice A contract allowing to wrap and unwrap ETH to interact with Morpho.
+/// @notice A contract allowing to wrap and unwrap ETH when interacting with Morpho.
 contract WETHGateway {
     using SafeTransferLib for ERC20;
 
@@ -44,26 +44,26 @@ contract WETHGateway {
         return address(_MORPHO);
     }
 
-    /// @notice Wraps `msg.value` of ETH to WETH and supplies it to the Morpho on behalf of `onBehalf`.
+    /// @notice Wraps `msg.value` ETH in WETH and supplies them to Morpho on behalf of `onBehalf`.
     function supplyETH(address onBehalf, uint256 maxIterations) external payable {
         _wrapETH(msg.value);
         _MORPHO.supply(_WETH, msg.value, onBehalf, maxIterations);
     }
 
-    /// @notice Wraps `msg.value` of ETH to WETH and supplies it as collateral to the Morpho on behalf of `onBehalf`.
+    /// @notice Wraps `msg.value` ETH in WETH and supplies them as collateral to Morpho on behalf of `onBehalf`.
     function supplyCollateralETH(address onBehalf) external payable {
         _wrapETH(msg.value);
         _MORPHO.supplyCollateral(_WETH, msg.value, onBehalf);
     }
 
-    /// @notice Borrows WETH on behalf of `msg.sender`, unwraps it to WETH and sends it to `receiver`.
+    /// @notice Borrows WETH on behalf of `msg.sender`, unwraps the ETH and sends them to `receiver`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
     function borrowETH(uint256 amount, address receiver, uint256 maxIterations) external {
         amount = _MORPHO.borrow(_WETH, amount, msg.sender, address(this), maxIterations);
         _unwrapAndTransferETH(amount, receiver);
     }
 
-    /// @notice Wraps `msg.value` of ETH to WETH and repays `onBehalf`'s debt on Morpho.
+    /// @notice Wraps `msg.value` ETH in WETH and repays `onBehalf`'s debt on Morpho.
     function repayETH(address onBehalf) external payable {
         _wrapETH(msg.value);
         _MORPHO.repay(_WETH, msg.value, onBehalf);
