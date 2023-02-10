@@ -93,11 +93,6 @@ library TestMarketLib {
         return ERC20(market.stableDebtToken).balanceOf(user);
     }
 
-    /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
-    function supplyGap(TestMarket storage market) internal view returns (uint256) {
-        return market.supplyCap.zeroFloorSub(totalSupply(market));
-    }
-
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the borrow cap.
     function borrowGap(TestMarket storage market) internal view returns (uint256) {
         return market.borrowCap.zeroFloorSub(totalBorrow(market));
@@ -124,7 +119,7 @@ library TestMarketLib {
         return (
             (amount * borrowedMarket.price * 10 ** collateralMarket.decimals)
                 / (collateralMarket.price * 10 ** borrowedMarket.decimals)
-        ).percentDiv(collateralMarket.ltv);
+        ).percentDiv(collateralMarket.ltv - 1);
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt,
