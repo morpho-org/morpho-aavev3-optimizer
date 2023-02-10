@@ -18,9 +18,13 @@ interface IPositionsManager {
         external
         returns (uint256 repaid);
 
-    function withdrawLogic(address underlying, uint256 amount, address supplier, address receiver)
-        external
-        returns (uint256 withdrawn);
+    function withdrawLogic(
+        address underlying,
+        uint256 amount,
+        address supplier,
+        address receiver,
+        uint256 maxIterations
+    ) external returns (uint256 withdrawn);
     function withdrawCollateralLogic(address underlying, uint256 amount, address supplier, address receiver)
         external
         returns (uint256 withdrawn);

@@ -89,9 +89,9 @@ library Types {
         mapping(address => uint256) collateral; // In pool unit.
     }
 
-    struct MaxIterations {
-        uint64 repay;
-        uint64 withdraw;
+    struct Iterations {
+        uint128 repay;
+        uint128 withdraw;
     }
 
     /// STACK AND RETURN STRUCTS ///
