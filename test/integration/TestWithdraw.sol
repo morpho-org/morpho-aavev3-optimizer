@@ -335,11 +335,11 @@ contract TestIntegrationWithdraw is IntegrationTest {
             test.supplied = _promoteSupply(promoter1, market, test.supplied); // 100% peer-to-peer.
             amount = bound(amount, test.supplied + 1, type(uint256).max);
 
-            test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
-            test.morphoSupplyBefore = market.supplyOf(address(morpho));
-
             user.approve(market.underlying, test.supplied);
             user.supply(market.underlying, test.supplied, onBehalf);
+
+            test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
+            test.morphoSupplyBefore = market.supplyOf(address(morpho));
 
             // Set the max iterations to 0 upon withdraw to skip demotion and fallback to borrow delta.
             morpho.setDefaultMaxIterations(Types.MaxIterations({repay: 10, withdraw: 0}));
