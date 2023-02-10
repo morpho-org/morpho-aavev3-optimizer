@@ -176,30 +176,38 @@ contract ForkTest is BaseTest {
         snapshotId = vm.snapshot();
     }
 
+    struct StableDebtSupplyData {
+        uint256 currPrincipalStableDebt;
+        uint256 currTotalStableDebt;
+        uint256 currAvgStableBorrowRate;
+        uint40 stableDebtLastUpdateTimestamp;
+    }
+
     /// @dev Calculates the amount accrued to AaveV3's treasury.
     function _accruedToTreasury(address underlying) internal view returns (uint256) {
         DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
         uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
         uint256 poolBorrowIndex = pool.getReserveNormalizedVariableDebt(underlying);
 
+        StableDebtSupplyData memory vars;
         (
-            uint256 currPrincipalStableDebt,
-            uint256 currTotalStableDebt,
-            uint256 currAvgStableBorrowRate,
-            uint40 stableDebtLastUpdateTimestamp
+            vars.currPrincipalStableDebt,
+            vars.currTotalStableDebt,
+            vars.currAvgStableBorrowRate,
+            vars.stableDebtLastUpdateTimestamp
         ) = IStableDebtToken(reserve.stableDebtTokenAddress).getSupplyData();
         uint256 scaledTotalVariableDebt = IVariableDebtToken(reserve.variableDebtTokenAddress).scaledTotalSupply();
 
         uint256 currTotalVariableDebt = scaledTotalVariableDebt.rayMul(poolBorrowIndex);
         uint256 prevTotalVariableDebt = scaledTotalVariableDebt.rayMul(reserve.variableBorrowIndex);
-        uint256 prevTotalStableDebt = currPrincipalStableDebt.rayMul(
+        uint256 prevTotalStableDebt = vars.currPrincipalStableDebt.rayMul(
             MathUtils.calculateCompoundedInterest(
-                currAvgStableBorrowRate, stableDebtLastUpdateTimestamp, reserve.lastUpdateTimestamp
+                vars.currAvgStableBorrowRate, vars.stableDebtLastUpdateTimestamp, reserve.lastUpdateTimestamp
             )
         );
 
         uint256 accruedTotalDebt =
-            currTotalVariableDebt + currTotalStableDebt - prevTotalVariableDebt - prevTotalStableDebt;
+            currTotalVariableDebt + vars.currTotalStableDebt - prevTotalVariableDebt - prevTotalStableDebt;
         uint256 newAccruedToTreasury =
             accruedTotalDebt.percentMul(reserve.configuration.getReserveFactor()).rayDiv(poolSupplyIndex);
 
