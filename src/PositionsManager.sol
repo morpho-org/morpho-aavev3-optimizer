@@ -5,7 +5,9 @@ import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
 
 import {Types} from "./libraries/Types.sol";
+import {Errors} from "./libraries/Errors.sol";
 import {Events} from "./libraries/Events.sol";
+import {Constants} from "./libraries/Constants.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 
@@ -100,11 +102,14 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        // The following check requires indexes to be up-to-date.
-        _authorizeBorrow(underlying, amount, borrower, indexes);
+        _authorizeBorrow(underlying, amount, indexes);
 
         Types.BorrowWithdrawVars memory vars =
             _executeBorrow(underlying, amount, borrower, receiver, maxIterations, indexes);
+
+        // The following check requires accounting to have been performed.
+        Types.LiquidityData memory values = _liquidityData(borrower);
+        if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
 
         _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
         _POOL.borrowFromPool(underlying, vars.toBorrow);
@@ -187,10 +192,12 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         if (amount == 0) return 0;
 
-        // The following check requires storage indexes to be up-to-date.
-        _authorizeWithdrawCollateral(underlying, amount, supplier);
-
         _executeWithdrawCollateral(underlying, amount, supplier, receiver, poolSupplyIndex);
+
+        // The following check requires accounting to have been performed.
+        if (_getUserHealthFactor(supplier) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+            revert Errors.UnauthorizedWithdraw();
+        }
 
         _POOL.withdrawFromPool(underlying, market.aToken, amount);
 
