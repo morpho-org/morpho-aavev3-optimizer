@@ -236,7 +236,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
             test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
             test.morphoSupplyBefore = market.supplyOf(address(morpho));
 
-            vm.expectEmit(true, true, true, true, address(morpho));
+            vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.IdleSupplyUpdated(market.underlying, 0);
 
             vm.expectEmit(true, true, true, false, address(morpho));

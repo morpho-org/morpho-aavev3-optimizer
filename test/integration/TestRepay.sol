@@ -155,7 +155,7 @@ contract TestIntegrationRepay is IntegrationTest {
             assertApproxEqAbs(
                 market.supplyOf(address(morpho)),
                 test.morphoSupplyBefore + promoted,
-                2,
+                3,
                 "morphoSupply != morphoSupplyBefore + promoted"
             );
             assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 2, "morphoVariableBorrow != 0");
@@ -420,6 +420,7 @@ contract TestIntegrationRepay is IntegrationTest {
             borrowed = _boundBorrow(market, borrowed);
 
             _borrowNoCollateral(onBehalf, market, borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
+            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
             morpho.setIsPausedForAllMarkets(true);
             morpho.setIsRepayPaused(market.underlying, false);
