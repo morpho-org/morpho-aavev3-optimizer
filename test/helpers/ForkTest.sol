@@ -30,15 +30,9 @@ contract ForkTest is BaseTest {
     TestConfig internal config;
 
     address internal dai;
-    address internal frax;
-    address internal mai;
     address internal usdc;
-    address internal usdt;
     address internal aave;
-    address internal btcb;
     address internal link;
-    address internal sAvax;
-    address internal wavax;
     address internal wbtc;
     address internal weth;
     address internal wNative;
@@ -76,18 +70,27 @@ contract ForkTest is BaseTest {
         try vm.envString("NETWORK") returns (string memory configNetwork) {
             return configNetwork;
         } catch {
-            return "avalanche-mainnet";
+            return "ethereum-mainnet";
         }
     }
 
     function _initConfig() internal returns (TestConfig storage) {
-        network = _network();
+        if (bytes(config.json).length == 0) {
+            string memory root = vm.projectRoot();
+            string memory path = string.concat(root, "/config/", _network(), ".json");
 
-        return config.load(network);
+            config.json = vm.readFile(path);
+        }
+
+        return config;
     }
 
     function _loadConfig() internal {
-        forkId = config.createFork();
+        string memory rpcAlias = config.getRpcAlias();
+        Chain memory chain = getChain(rpcAlias);
+
+        forkId = vm.createSelectFork(chain.rpcUrl, config.getForkBlockNumber());
+        vm.chainId(chain.chainId);
 
         addressesProvider = IPoolAddressesProvider(config.getAddressesProvider());
         pool = IPool(addressesProvider.getPool());
@@ -97,32 +100,23 @@ contract ForkTest is BaseTest {
         poolConfigurator = IPoolConfigurator(addressesProvider.getPoolConfigurator());
         poolDataProvider = IPoolDataProvider(addressesProvider.getPoolDataProvider());
 
-        dai = config.getAddress("$.DAI");
-        frax = config.getAddress("$.FRAX");
-        mai = config.getAddress("$.MAI");
-        usdc = config.getAddress("$.USDC");
-        usdt = config.getAddress("$.USDT");
-        aave = config.getAddress("$.AAVE");
-        btcb = config.getAddress("$.BTCb");
-        link = config.getAddress("$.LINK");
-        sAvax = config.getAddress("$.sAVAX");
-        wavax = config.getAddress("$.WAVAX");
-        wbtc = config.getAddress("$.WBTC");
-        weth = config.getAddress("$.WETH");
-        wNative = config.getAddress("$.wrappedNative");
+        dai = config.getAddress("DAI");
+        usdc = config.getAddress("USDC");
+        aave = config.getAddress("AAVE");
+        link = config.getAddress("LINK");
+        wbtc = config.getAddress("WBTC");
+        weth = config.getAddress("WETH");
+        wNative = config.getWrappedNative();
 
-        allUnderlyings.push(dai);
-        allUnderlyings.push(frax);
-        allUnderlyings.push(mai);
-        allUnderlyings.push(usdc);
-        allUnderlyings.push(usdt);
-        allUnderlyings.push(aave);
-        allUnderlyings.push(btcb);
-        allUnderlyings.push(link);
-        allUnderlyings.push(sAvax);
-        allUnderlyings.push(wavax);
-        allUnderlyings.push(wbtc);
-        allUnderlyings.push(weth);
+        string[] memory symbols = config.getMarkets(); // TODO: replace this with pool.getReservesList()?
+        for (uint256 i; i < symbols.length; ++i) {
+            string memory symbol = symbols[i];
+            address underlying = config.getAddress(symbol);
+
+            allUnderlyings.push(underlying);
+
+            vm.label(underlying, symbol);
+        }
     }
 
     function _label() internal virtual {
@@ -135,18 +129,6 @@ contract ForkTest is BaseTest {
         vm.label(address(poolConfigurator), "PoolConfigurator");
         vm.label(address(poolDataProvider), "PoolDataProvider");
 
-        vm.label(dai, "DAI");
-        vm.label(frax, "FRAX");
-        vm.label(mai, "MAI");
-        vm.label(usdc, "USDC");
-        vm.label(usdt, "USDT");
-        vm.label(aave, "AAVE");
-        vm.label(btcb, "BTCB");
-        vm.label(link, "LINK");
-        vm.label(sAvax, "sAVAX");
-        vm.label(wavax, "WAVAX");
-        vm.label(wbtc, "WBTC");
-        vm.label(weth, "WETH");
         vm.label(wNative, "wNative");
     }
 
@@ -176,15 +158,9 @@ contract ForkTest is BaseTest {
 
     function _setBalances(address user, uint256 balance) internal {
         deal(dai, user, balance);
-        deal(frax, user, balance);
-        deal(mai, user, balance);
         deal(usdc, user, balance / 1e6);
-        deal(usdt, user, balance / 1e6);
         deal(aave, user, balance);
-        deal(btcb, user, balance / 1e8);
         deal(link, user, balance);
-        deal(sAvax, user, balance);
-        deal(wavax, user, balance);
         deal(wbtc, user, balance / 1e8);
         deal(weth, user, balance);
         deal(wNative, user, balance);

@@ -16,7 +16,7 @@ library InterestRatesLib {
     using PercentageMath for uint256;
 
     function computeP2PIndexes(Types.IndexesParams memory params)
-        external
+        internal
         pure
         returns (uint256 newP2PSupplyIndex, uint256 newP2PBorrowIndex)
     {
@@ -98,7 +98,7 @@ library InterestRatesLib {
         uint256 scaledTotalP2P,
         uint256 proportionIdle
     ) internal pure returns (uint256) {
-        if (scaledDeltaPool == 0 || scaledTotalP2P == 0) {
+        if (scaledTotalP2P == 0 || (scaledDeltaPool == 0 && proportionIdle == 0)) {
             return lastIndexes.p2pIndex.rayMul(p2pGrowthFactor);
         }
 

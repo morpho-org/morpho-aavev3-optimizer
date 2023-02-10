@@ -24,12 +24,11 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     uint256 constant MAX_AMOUNT = type(uint96).max / 2;
 
     function setUp() public virtual override {
-        _defaultMaxIterations = Types.MaxIterations(10, 10);
+        _defaultIterations = Types.Iterations(10, 10);
 
         _createMarket(dai, 0, 3_333);
         _createMarket(wbtc, 0, 3_333);
         _createMarket(usdc, 0, 3_333);
-        _createMarket(usdt, 0, 3_333);
         _createMarket(wNative, 0, 3_333);
 
         _setBalances(address(this), type(uint256).max);
@@ -37,7 +36,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _POOL.supplyToPool(dai, 100 ether);
         _POOL.supplyToPool(wbtc, 1e8);
         _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(usdt, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
     }
 

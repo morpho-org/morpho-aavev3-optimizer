@@ -5,6 +5,9 @@ inputs:
   network:
     description: The network on which to run the forge test suite.
     required: true
+  alchemyKey:
+    description: The Alchemy key giving access to a private RPC.
+    required: false
   codecovToken:
     description: The Codecov token used to upload coverage report.
     required: false
@@ -43,6 +46,7 @@ runs:
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
+        ALCHEMY_KEY: ${{ inputs.alchemyKey }}
         FOUNDRY_FUZZ_RUNS: 16384
 
     - name: Run internal tests
@@ -50,6 +54,7 @@ runs:
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
+        ALCHEMY_KEY: ${{ inputs.alchemyKey }}
         FOUNDRY_FUZZ_RUNS: 64
 
     - name: Run integration tests
@@ -57,6 +62,7 @@ runs:
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
+        ALCHEMY_KEY: ${{ inputs.alchemyKey }}
         FOUNDRY_FUZZ_RUNS: 64
 
     - name: Generate lcov coverage report
@@ -65,6 +71,7 @@ runs:
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
+        ALCHEMY_KEY: ${{ inputs.alchemyKey }}
 
     - name: Check coverage threshold
       if: ${{ inputs.coverageThreshold != '' }}
