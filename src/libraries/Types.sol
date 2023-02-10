@@ -90,8 +90,8 @@ library Types {
     }
 
     struct Iterations {
-        uint64 repay;
-        uint64 withdraw;
+        uint128 repay;
+        uint128 withdraw;
     }
 
     /// STACK AND RETURN STRUCTS ///

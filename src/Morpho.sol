@@ -168,7 +168,9 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to withdraw.
     /// @param onBehalf The address whose position will be withdrawn.
     /// @param receiver The address that will receive the withdrawn funds.
-    /// @param maxIterations The maximum number of iterations allowed during the matching process. Pass 0 to fallback to the `_defaultIterations.withdraw`.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
+    ///                      If it is less than `_defaultIterations.withdraw`, the latter will be used.
+    ///                      Pass 0 to fallback to the `_defaultIterations.withdraw`.
     /// @return The amount withdrawn.
     function withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
