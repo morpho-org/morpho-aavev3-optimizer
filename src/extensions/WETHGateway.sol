@@ -71,8 +71,8 @@ contract WETHGateway {
 
     /// @notice Withdraws WETH up to `amount` on behalf of `msg.sender`, unwraps it to WETH and sends it to `msg.sender`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
-    function withdrawETH(uint256 amount) external {
-        amount = _morpho.withdraw(_WETH, amount, msg.sender, address(this));
+    function withdrawETH(uint256 amount, uint256 maxIterations) external {
+        amount = _morpho.withdraw(_WETH, amount, msg.sender, address(this), maxIterations);
         _unwrapAndTransferETH(amount);
     }
 
