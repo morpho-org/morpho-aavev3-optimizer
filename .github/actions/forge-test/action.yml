@@ -71,6 +71,10 @@ runs:
     - name: Compare gas reports
       uses: Rubilmax/foundry-gas-diff@v3.13.3
       id: gas_diff
+      with:
+        report: ${{ inputs.network }}.gasreport.ansi
+        header: |
+          # Morpho-AaveV3 gas diff (${{ inputs.network }})
 
     - name: Add gas diff to sticky comment
       if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
