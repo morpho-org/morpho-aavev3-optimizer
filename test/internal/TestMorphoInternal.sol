@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
-
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {MorphoInternal, MorphoStorage} from "src/MorphoInternal.sol";
+import {Constants} from "src/libraries/Constants.sol";
+import {PoolLib} from "src/libraries/PoolLib.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
 import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
-import {PoolLib} from "src/libraries/PoolLib.sol";
 
+import {MorphoInternal, MorphoStorage} from "src/MorphoInternal.sol";
 import "test/helpers/InternalTest.sol";
 
 contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
@@ -26,6 +25,9 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    uint256 internal constant MIN_INDEX = WadRayMath.RAY;
+    uint256 internal constant MAX_INDEX = 100 * WadRayMath.RAY;
+
     function setUp() public virtual override {
         super.setUp();
 
@@ -34,19 +36,16 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         createTestMarket(dai, 0, 3_333);
         createTestMarket(wbtc, 0, 3_333);
         createTestMarket(usdc, 0, 3_333);
-        createTestMarket(usdt, 0, 3_333);
         createTestMarket(wNative, 0, 3_333);
 
         ERC20(dai).approve(address(_POOL), type(uint256).max);
         ERC20(wbtc).approve(address(_POOL), type(uint256).max);
         ERC20(usdc).approve(address(_POOL), type(uint256).max);
-        ERC20(usdt).approve(address(_POOL), type(uint256).max);
         ERC20(wNative).approve(address(_POOL), type(uint256).max);
 
         _POOL.supplyToPool(dai, 100 ether);
         _POOL.supplyToPool(wbtc, 1e8);
         _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(usdt, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
     }
 
@@ -117,83 +116,135 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         assertGt(indexes3.borrow.poolIndex, indexes2.borrow.poolIndex);
     }
 
-    function testUpdateInDS(address user, uint96 onPool, uint96 inP2P, bool head) public {
-        vm.assume(user != address(0));
-        vm.assume(onPool != 0);
-        vm.assume(inP2P != 0);
+    function _assertMarketBalances(
+        Types.MarketBalances storage marketBalances,
+        address user,
+        uint256 scaledPoolSupply,
+        uint256 scaledP2PSupply,
+        uint256 scaledPoolBorrow,
+        uint256 scaledP2PBorrow,
+        uint256 scaledCollateral
+    ) internal {
+        assertEq(marketBalances.scaledPoolSupplyBalance(user), scaledPoolSupply, "scaledPoolSupply");
+        assertEq(marketBalances.scaledP2PSupplyBalance(user), scaledP2PSupply, "scaledP2PSupply");
+        assertEq(marketBalances.scaledPoolBorrowBalance(user), scaledPoolBorrow, "scaledPoolBorrow");
+        assertEq(marketBalances.scaledP2PBorrowBalance(user), scaledP2PBorrow, "scaledP2PBorrow");
+        assertEq(marketBalances.scaledCollateralBalance(user), scaledCollateral, "scaledCollateral");
+    }
+
+    function testUpdateInDSWithSuppliers(address user, uint256 onPool, uint256 inP2P, bool head) public {
+        user = _boundAddressNotZero(user);
+        onPool = bound(onPool, Constants.DUST_THRESHOLD + 1, type(uint96).max);
+        inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         _updateInDS(address(0), user, marketBalances.poolSuppliers, marketBalances.p2pSuppliers, onPool, inP2P, head);
-        assertEq(marketBalances.scaledPoolSupplyBalance(user), onPool);
-        assertEq(marketBalances.scaledP2PSupplyBalance(user), inP2P);
-        assertEq(marketBalances.scaledPoolBorrowBalance(user), 0);
-        assertEq(marketBalances.scaledP2PBorrowBalance(user), 0);
-        assertEq(marketBalances.scaledCollateralBalance(user), 0);
+        _assertMarketBalances(marketBalances, user, onPool, inP2P, 0, 0, 0);
     }
 
-    function testUpdateSupplierInDS(address user, uint96 onPool, uint96 inP2P, bool head) public {
-        vm.assume(user != address(0));
-        vm.assume(onPool != 0);
-        vm.assume(inP2P != 0);
+    function testUpdateInDSWithBorrowers(address user, uint256 onPool, uint256 inP2P, bool head) public {
+        user = _boundAddressNotZero(user);
+        onPool = bound(onPool, Constants.DUST_THRESHOLD + 1, type(uint96).max);
+        inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
+
+        Types.MarketBalances storage marketBalances = _marketBalances[dai];
+        _updateInDS(address(0), user, marketBalances.poolBorrowers, marketBalances.p2pBorrowers, onPool, inP2P, head);
+        _assertMarketBalances(marketBalances, user, 0, 0, onPool, inP2P, 0);
+    }
+
+    function testUpdateInDSWithDust(address user, uint256 onPool, uint256 inP2P, bool head) public {
+        user = _boundAddressNotZero(user);
+        onPool = bound(onPool, 0, Constants.DUST_THRESHOLD);
+        inP2P = bound(inP2P, 0, Constants.DUST_THRESHOLD);
+
+        Types.MarketBalances storage marketBalances = _marketBalances[dai];
+        _updateInDS(address(0), user, marketBalances.poolSuppliers, marketBalances.p2pSuppliers, onPool, inP2P, head);
+        _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
+
+        _updateInDS(address(0), user, marketBalances.poolBorrowers, marketBalances.p2pBorrowers, onPool, inP2P, head);
+        _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
+    }
+
+    function testUpdateSupplierInDS(address user, uint256 onPool, uint256 inP2P, bool head) public {
+        user = _boundAddressNotZero(user);
+        onPool = bound(onPool, Constants.DUST_THRESHOLD + 1, type(uint96).max);
+        inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         _updateSupplierInDS(dai, user, onPool, inP2P, head);
-        assertEq(marketBalances.scaledPoolSupplyBalance(user), onPool);
-        assertEq(marketBalances.scaledP2PSupplyBalance(user), inP2P);
-        assertEq(marketBalances.scaledPoolBorrowBalance(user), 0);
-        assertEq(marketBalances.scaledP2PBorrowBalance(user), 0);
-        assertEq(marketBalances.scaledCollateralBalance(user), 0);
+        _assertMarketBalances(marketBalances, user, onPool, inP2P, 0, 0, 0);
     }
 
-    function testUpdateBorrowerInDS(address user, uint96 onPool, uint96 inP2P, bool head) public {
-        vm.assume(user != address(0));
-        vm.assume(onPool != 0);
-        vm.assume(inP2P != 0);
+    function testUpdateSupplierInDSWithDust(address user, uint256 onPool, uint256 inP2P, bool head) public {
+        user = _boundAddressNotZero(user);
+        onPool = bound(onPool, 0, Constants.DUST_THRESHOLD);
+        inP2P = bound(inP2P, 0, Constants.DUST_THRESHOLD);
+
+        Types.MarketBalances storage marketBalances = _marketBalances[dai];
+        _updateSupplierInDS(dai, user, onPool, inP2P, head);
+        _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
+    }
+
+    function testUpdateBorrowerInDS(address user, uint256 onPool, uint256 inP2P, bool head) public {
+        user = _boundAddressNotZero(user);
+        onPool = bound(onPool, Constants.DUST_THRESHOLD + 1, type(uint96).max);
+        inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         _updateBorrowerInDS(dai, user, onPool, inP2P, head);
-        assertEq(marketBalances.scaledPoolSupplyBalance(user), 0);
-        assertEq(marketBalances.scaledP2PSupplyBalance(user), 0);
-        assertEq(marketBalances.scaledPoolBorrowBalance(user), onPool);
-        assertEq(marketBalances.scaledP2PBorrowBalance(user), inP2P);
-        assertEq(marketBalances.scaledCollateralBalance(user), 0);
+        _assertMarketBalances(marketBalances, user, 0, 0, onPool, inP2P, 0);
+    }
+
+    function testUpdateBorrowerInDSWithDust(address user, uint256 onPool, uint256 inP2P, bool head) public {
+        user = _boundAddressNotZero(user);
+        onPool = bound(onPool, 0, Constants.DUST_THRESHOLD);
+        inP2P = bound(inP2P, 0, Constants.DUST_THRESHOLD);
+
+        Types.MarketBalances storage marketBalances = _marketBalances[dai];
+        _updateBorrowerInDS(dai, user, onPool, inP2P, head);
+        _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
     }
 
     function testGetUserSupplyBalanceFromIndexes(
         address user,
-        uint96 onPool,
-        uint96 inP2P,
+        uint256 onPool,
+        uint256 inP2P,
         uint256 poolSupplyIndex,
-        uint256 p2pSupplyIndex
+        uint256 p2pSupplyIndex,
+        bool head
     ) public {
-        vm.assume(user != address(0));
-        poolSupplyIndex = bound(poolSupplyIndex, WadRayMath.RAY, 10 * WadRayMath.RAY);
-        p2pSupplyIndex = bound(p2pSupplyIndex, WadRayMath.RAY, 10 * WadRayMath.RAY);
-        _updateSupplierInDS(dai, user, onPool, inP2P, true);
+        user = _boundAddressNotZero(user);
+        onPool = bound(onPool, Constants.DUST_THRESHOLD + 1, type(uint96).max);
+        inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
+        poolSupplyIndex = bound(poolSupplyIndex, MIN_INDEX, MAX_INDEX);
+        p2pSupplyIndex = bound(p2pSupplyIndex, MIN_INDEX, MAX_INDEX);
+        _updateSupplierInDS(dai, user, onPool, inP2P, head);
 
         uint256 balance =
             _getUserSupplyBalanceFromIndexes(dai, user, Types.MarketSideIndexes256(poolSupplyIndex, p2pSupplyIndex));
 
-        assertEq(balance, uint256(onPool).rayMulDown(poolSupplyIndex) + uint256(inP2P).rayMulDown(p2pSupplyIndex));
+        assertEq(balance, onPool.rayMulDown(poolSupplyIndex) + inP2P.rayMulDown(p2pSupplyIndex));
     }
 
     function testGetUserBorrowBalanceFromIndexes(
         address user,
-        uint96 onPool,
-        uint96 inP2P,
-        bool head,
+        uint256 onPool,
+        uint256 inP2P,
         uint256 poolBorrowIndex,
-        uint256 p2pBorrowIndex
+        uint256 p2pBorrowIndex,
+        bool head
     ) public {
-        vm.assume(user != address(0));
-        poolBorrowIndex = bound(poolBorrowIndex, WadRayMath.RAY, 10 * WadRayMath.RAY);
-        p2pBorrowIndex = bound(p2pBorrowIndex, WadRayMath.RAY, 10 * WadRayMath.RAY);
+        user = _boundAddressNotZero(user);
+        onPool = bound(onPool, Constants.DUST_THRESHOLD + 1, type(uint96).max);
+        inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
+        poolBorrowIndex = bound(poolBorrowIndex, MIN_INDEX, MAX_INDEX);
+        p2pBorrowIndex = bound(p2pBorrowIndex, MIN_INDEX, MAX_INDEX);
         _updateBorrowerInDS(dai, user, onPool, inP2P, head);
 
         uint256 balance =
             _getUserBorrowBalanceFromIndexes(dai, user, Types.MarketSideIndexes256(poolBorrowIndex, p2pBorrowIndex));
 
-        assertEq(balance, uint256(onPool).rayMulUp(poolBorrowIndex) + uint256(inP2P).rayMulUp(p2pBorrowIndex));
+        assertEq(balance, onPool.rayMulUp(poolBorrowIndex) + inP2P.rayMulUp(p2pBorrowIndex));
     }
 
     function testAssetLiquidityData() public {
@@ -389,8 +440,8 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         bool head
     ) public {
         collateral = bound(collateral, 0, 1_000_000 ether);
-        amountPool = bound(amountPool, 1, 1_000_000 ether);
-        amountP2P = bound(amountP2P, 1, 1_000_000 ether);
+        amountPool = bound(amountPool, 10, 1_000_000 ether);
+        amountP2P = bound(amountP2P, 10, 1_000_000 ether);
         amountWithdrawn = bound(amountWithdrawn, 0, collateral);
 
         _marketBalances[dai].collateral[address(1)] = collateral.rayDivUp(_market[dai].indexes.supply.poolIndex);
@@ -472,7 +523,11 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
 
         _marketBalances[dai].collateral[address(1)] = collateralAmount.rayDivUp(indexes.supply.poolIndex);
 
-        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = _POOL.getConfiguration(dai).getParams();
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(dai);
+        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = config.getParams();
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == config.getEModeCategory()) {
+            vars.liquidationBonus = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID).liquidationBonus;
+        }
         (,,, vars.borrowTokenUnit,,) = _POOL.getConfiguration(wbtc).getParams();
 
         vars.collateralTokenUnit = 10 ** vars.collateralTokenUnit;
