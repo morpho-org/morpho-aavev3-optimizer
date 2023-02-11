@@ -21,6 +21,10 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {MorphoStorage} from "./MorphoStorage.sol";
 import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 
+/// @title PositionsManager
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Abstract contract exposing logic functions delegate-called by the `Morpho` contract.
 contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     using PoolLib for IPool;
     using Permit2Lib for ERC20;

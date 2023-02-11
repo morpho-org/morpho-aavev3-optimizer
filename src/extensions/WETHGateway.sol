@@ -9,7 +9,7 @@ import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 /// @title WETHGateway
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
-/// @notice A contract allowing to wrap and unwrap ETH when interacting with Morpho.
+/// @notice A contract allowing to wrap ETH and unwrap WETH when interacting with Morpho.
 contract WETHGateway {
     using SafeTransferLib for ERC20;
 

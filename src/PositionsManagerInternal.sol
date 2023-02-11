@@ -26,6 +26,10 @@ import {MatchingEngine} from "./MatchingEngine.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
+/// @title PositionsManagerInternal
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Abstract contract exposing `PositionsManager`'s internal functions.
 abstract contract PositionsManagerInternal is MatchingEngine {
     using Math for uint256;
     using WadRayMath for uint256;
