@@ -25,6 +25,7 @@ library MarketLib {
     using Math for uint256;
     using SafeCast for uint256;
     using WadRayMath for uint256;
+
     using ReserveDataLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 

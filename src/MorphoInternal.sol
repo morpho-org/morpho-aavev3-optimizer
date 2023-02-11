@@ -37,15 +37,18 @@ abstract contract MorphoInternal is MorphoStorage {
     using PoolLib for IPool;
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
-    using EnumerableSet for EnumerableSet.AddressSet;
-    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
-    using UserConfiguration for DataTypes.UserConfigurationMap;
-    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using SafeTransferLib for ERC20;
 
     using Math for uint256;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
+
+    using SafeTransferLib for ERC20;
+
+    using EnumerableSet for EnumerableSet.AddressSet;
+    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
+
+    using UserConfiguration for DataTypes.UserConfigurationMap;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /* INTERNAL */
 

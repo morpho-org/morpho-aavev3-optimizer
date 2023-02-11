@@ -6,9 +6,9 @@ import {IMorphoGetters} from "./interfaces/IMorpho.sol";
 import {Types} from "./libraries/Types.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
-import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
-import {BucketDLL} from "@morpho-data-structures/BucketDLL.sol";
 
+import {BucketDLL} from "@morpho-data-structures/BucketDLL.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
@@ -20,6 +20,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
+
     using BucketDLL for BucketDLL.List;
     using EnumerableSet for EnumerableSet.AddressSet;
 

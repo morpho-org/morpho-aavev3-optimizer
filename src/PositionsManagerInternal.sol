@@ -31,15 +31,18 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 /// @custom:contact security@morpho.xyz
 /// @notice Abstract contract exposing `PositionsManager`'s internal functions.
 abstract contract PositionsManagerInternal is MatchingEngine {
+    using MarketLib for Types.Market;
+    using DeltasLib for Types.Deltas;
+    using MarketBalanceLib for Types.MarketBalances;
+    using MarketSideDeltaLib for Types.MarketSideDelta;
+
     using Math for uint256;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
-    using MarketLib for Types.Market;
-    using DeltasLib for Types.Deltas;
-    using MarketSideDeltaLib for Types.MarketSideDelta;
-    using MarketBalanceLib for Types.MarketBalances;
+
     using EnumerableSet for EnumerableSet.AddressSet;
     using LogarithmicBuckets for LogarithmicBuckets.Buckets;
+
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /// @dev Validates the manager's permission.
