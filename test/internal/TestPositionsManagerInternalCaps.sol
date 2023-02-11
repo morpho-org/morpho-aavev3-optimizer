@@ -24,12 +24,11 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
     uint256 daiTokenUnit;
 
     function setUp() public virtual override {
-        _defaultMaxIterations = Types.MaxIterations(10, 10);
+        _defaultIterations = Types.Iterations(10, 10);
 
         _createMarket(dai, 0, 3_333);
         _createMarket(wbtc, 0, 3_333);
         _createMarket(usdc, 0, 3_333);
-        _createMarket(usdt, 0, 3_333);
         _createMarket(wNative, 0, 3_333);
 
         _setBalances(address(this), type(uint256).max);
@@ -37,7 +36,6 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         _POOL.supplyToPool(dai, 100 ether);
         _POOL.supplyToPool(wbtc, 1e8);
         _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(usdt, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
 
         daiTokenUnit = 10 ** _POOL.getConfiguration(dai).getDecimals();
@@ -56,10 +54,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         market.deltas.borrow.scaledDeltaPool = delta.rayDiv(indexes.borrow.poolIndex);
         market.deltas.borrow.scaledTotalP2P = totalP2P.rayDiv(indexes.borrow.p2pIndex);
 
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = (amount * 10).rayDiv(indexes.supply.poolIndex);
-
-        this.authorizeBorrow(dai, amount, address(this));
+        this.authorizeBorrow(dai, amount);
     }
 
     function testAuthorizeBorrowShouldRevertIfExceedsBorrowCap(
@@ -93,11 +88,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         market.deltas.borrow.scaledDeltaPool = delta.rayDiv(indexes.borrow.poolIndex);
         market.deltas.borrow.scaledTotalP2P = totalP2P.rayDiv(indexes.borrow.p2pIndex);
 
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = (amount * 10).rayDiv(indexes.supply.poolIndex);
-
         vm.expectRevert(abi.encodeWithSelector(Errors.ExceedsBorrowCap.selector));
-        this.authorizeBorrow(dai, amount, address(this));
+        this.authorizeBorrow(dai, amount);
     }
 
     function testAccountBorrowShouldDecreaseIdleSupplyIfIdleSupplyExists(uint256 amount, uint256 idleSupply) public {
@@ -179,9 +171,9 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         assertEq(vars.toWithdraw, amount);
     }
 
-    function authorizeBorrow(address underlying, uint256 onPool, address borrower) external view {
+    function authorizeBorrow(address underlying, uint256 onPool) external view {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
-        _authorizeBorrow(underlying, onPool, borrower, indexes);
+        _authorizeBorrow(underlying, onPool, indexes);
     }
 
     function accountBorrow(address underlying, uint256 amount, address borrower, uint256 maxIterations)
