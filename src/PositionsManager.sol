@@ -32,11 +32,11 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     using Math for uint256;
     using PercentageMath for uint256;
 
-    /// CONSTRUCTOR ///
+    /* CONSTRUCTOR */
 
     constructor(address addressesProvider, uint8 eModeCategoryId) MorphoStorage(addressesProvider, eModeCategoryId) {}
 
-    /// EXTERNAL ///
+    /* EXTERNAL */
 
     /// @notice Implements the supply logic.
     /// @param underlying The address of the underlying asset to supply.

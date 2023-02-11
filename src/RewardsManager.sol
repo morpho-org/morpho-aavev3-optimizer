@@ -20,7 +20,7 @@ import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable
 contract RewardsManager is IRewardsManager, Initializable {
     using SafeCast for uint256;
 
-    /// STRUCTS ///
+    /* STRUCTS */
 
     struct UserAssetBalance {
         address asset; // The rewarded asset (either aToken or debt token).
@@ -39,17 +39,17 @@ contract RewardsManager is IRewardsManager, Initializable {
         mapping(address => UserData) usersData; // Users data. user -> UserData
     }
 
-    /// IMMUTABLES ///
+    /* IMMUTABLES */
 
     IRewardsController internal immutable _REWARDS_CONTROLLER; // The rewards controller is supposed not to change depending on the asset.
     IMorpho internal immutable _MORPHO; // The address of the main Morpho contract.
     IPool internal immutable _POOL; // The address of the Aave pool.
 
-    /// STORAGE ///
+    /* STORAGE */
 
     mapping(address => mapping(address => RewardData)) internal _localAssetData; // The local data related to a given asset (either aToken or debt token). asset -> reward -> RewardData
 
-    /// EVENTS ///
+    /* EVENTS */
 
     /// @dev Emitted when rewards of an asset are accrued on behalf of a user.
     /// @param asset The address of the incentivized asset.
@@ -61,7 +61,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         address indexed asset, address indexed reward, address indexed user, uint256 assetIndex, uint256 rewardsAccrued
     );
 
-    /// ERRORS ///
+    /* ERRORS */
 
     /// @notice Thrown when only the main Morpho contract can call the function.
     error OnlyMorpho();
@@ -72,7 +72,7 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @notice Thrown when the the zero address is passed as a parameter.
     error AddressIsZero();
 
-    /// MODIFIERS ///
+    /* MODIFIERS */
 
     /// @notice Prevents a user to call function allowed for the main Morpho contract only.
     modifier onlyMorpho() {
@@ -80,7 +80,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         _;
     }
 
-    /// CONSTRUCTOR ///
+    /* CONSTRUCTOR */
 
     /// @notice Initializes immutable variables.
     /// @param _rewardsController The address of the Aave rewards controller.
@@ -95,7 +95,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         _POOL = IPool(_pool);
     }
 
-    /// EXTERNAL ///
+    /* EXTERNAL */
 
     /// @notice Accrues unclaimed rewards for the given assets and returns the total unclaimed rewards.
     /// @param assets The assets for which to accrue rewards (aToken or variable debt token).
@@ -135,7 +135,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         _updateData(user, asset, userBalance, IScaledBalanceToken(asset).scaledTotalSupply());
     }
 
-    /// GETTERS ///
+    /* GETTERS */
 
     function POOL() external view returns (address) {
         return address(_POOL);
@@ -211,7 +211,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         return _localAssetData[asset][reward].usersData[user].index;
     }
 
-    /// INTERNAL ///
+    /* INTERNAL */
 
     /// @dev Updates the state of the distribution for the specified reward.
     /// @param localRewardData The local reward's data.

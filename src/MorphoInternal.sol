@@ -47,7 +47,7 @@ abstract contract MorphoInternal is MorphoStorage {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
-    /// INTERNAL ///
+    /* INTERNAL */
 
     /// @dev Dynamically computed to use the root proxy address in a delegate call.
     function _domainSeparator() internal view returns (bytes32) {

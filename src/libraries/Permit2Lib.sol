@@ -15,12 +15,12 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 library Permit2Lib {
     using SafeCast for uint256;
 
-    /// CONSTANTS ///
+    /* CONSTANTS */
 
     /// @dev The address of the Permit2 contract the library will use.
     IPermit2 internal constant PERMIT2 = IPermit2(address(0x000000000022D473030F116dDEE9F6B43aC78BA3));
 
-    /// INTERNAL ///
+    /* INTERNAL */
 
     /// @notice Transfers a given amount of tokens from one user to another.
     /// @param token The token to transfer.

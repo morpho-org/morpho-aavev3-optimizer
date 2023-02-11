@@ -23,7 +23,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     using BucketDLL for BucketDLL.List;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    /// STORAGE ///
+    /* STORAGE */
 
     /// @notice Returns the pool address.
     function POOL() external view returns (address) {
