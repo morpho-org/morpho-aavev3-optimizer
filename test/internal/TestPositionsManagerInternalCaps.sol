@@ -24,12 +24,11 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
     uint256 daiTokenUnit;
 
     function setUp() public virtual override {
-        _defaultMaxIterations = Types.MaxIterations(10, 10);
+        _defaultIterations = Types.Iterations(10, 10);
 
         _createMarket(dai, 0, 3_333);
         _createMarket(wbtc, 0, 3_333);
         _createMarket(usdc, 0, 3_333);
-        _createMarket(usdt, 0, 3_333);
         _createMarket(wNative, 0, 3_333);
 
         _setBalances(address(this), type(uint256).max);
@@ -37,7 +36,6 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         _POOL.supplyToPool(dai, 100 ether);
         _POOL.supplyToPool(wbtc, 1e8);
         _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(usdt, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
 
         daiTokenUnit = 10 ** _POOL.getConfiguration(dai).getDecimals();
@@ -56,10 +54,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         market.deltas.borrow.scaledDeltaPool = delta.rayDiv(indexes.borrow.poolIndex);
         market.deltas.borrow.scaledTotalP2P = totalP2P.rayDiv(indexes.borrow.p2pIndex);
 
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = (amount * 10).rayDiv(indexes.supply.poolIndex);
-
-        this.authorizeBorrow(dai, amount, address(this));
+        this.authorizeBorrow(dai, amount);
     }
 
     function testAuthorizeBorrowShouldRevertIfExceedsBorrowCap(
@@ -93,11 +88,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         market.deltas.borrow.scaledDeltaPool = delta.rayDiv(indexes.borrow.poolIndex);
         market.deltas.borrow.scaledTotalP2P = totalP2P.rayDiv(indexes.borrow.p2pIndex);
 
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = (amount * 10).rayDiv(indexes.supply.poolIndex);
-
         vm.expectRevert(abi.encodeWithSelector(Errors.ExceedsBorrowCap.selector));
-        this.authorizeBorrow(dai, amount, address(this));
+        this.authorizeBorrow(dai, amount);
     }
 
     function testAccountBorrowShouldDecreaseIdleSupplyIfIdleSupplyExists(uint256 amount, uint256 idleSupply) public {
@@ -127,7 +119,12 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
             Math.min(ReserveConfiguration.MAX_VALID_SUPPLY_CAP, MAX_AMOUNT / daiTokenUnit)
         );
         // We are testing the case the supply cap is reached, so the min should be greater than the amount needed to reach the supply cap.
-        amount = bound(amount, (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply) + MIN_AMOUNT, MAX_AMOUNT);
+        amount = bound(
+            amount,
+            (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply + _accruedToTreasury(market.underlying))
+                + MIN_AMOUNT,
+            MAX_AMOUNT
+        );
 
         _updateSupplierInDS(dai, address(1), 0, MAX_AMOUNT, false);
         _updateBorrowerInDS(dai, address(this), 0, MAX_AMOUNT, false);
@@ -136,7 +133,11 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         Types.SupplyRepayVars memory vars = this.accountRepay(dai, amount, address(this), 10);
 
-        assertEq(market.idleSupply, amount - ((supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply)));
+        assertApproxEqAbs(
+            market.idleSupply,
+            amount - (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply + _accruedToTreasury(market.underlying)),
+            1
+        );
         assertEq(vars.toRepay, 0);
         assertEq(vars.toSupply, amount - market.idleSupply);
     }
@@ -179,9 +180,9 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         assertEq(vars.toWithdraw, amount);
     }
 
-    function authorizeBorrow(address underlying, uint256 onPool, address borrower) external view {
+    function authorizeBorrow(address underlying, uint256 onPool) external view {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
-        _authorizeBorrow(underlying, onPool, borrower, indexes);
+        _authorizeBorrow(underlying, onPool, indexes);
     }
 
     function accountBorrow(address underlying, uint256 amount, address borrower, uint256 maxIterations)
