@@ -108,8 +108,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         assertEq(vars.toWithdraw, 0);
     }
 
-    // TODO: take treasury into account
-    function __testAccountRepayShouldIncreaseIdleSupplyIfSupplyCapReached(uint256 amount, uint256 supplyCap) public {
+    function testAccountRepayShouldIncreaseIdleSupplyIfSupplyCapReached(uint256 amount, uint256 supplyCap) public {
         Types.Market storage market = _market[dai];
 
         uint256 totalPoolSupply = ERC20(market.aToken).totalSupply();
@@ -120,7 +119,12 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
             Math.min(ReserveConfiguration.MAX_VALID_SUPPLY_CAP, MAX_AMOUNT / daiTokenUnit)
         );
         // We are testing the case the supply cap is reached, so the min should be greater than the amount needed to reach the supply cap.
-        amount = bound(amount, (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply) + MIN_AMOUNT, MAX_AMOUNT);
+        amount = bound(
+            amount,
+            (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply + _accruedToTreasury(market.underlying))
+                + MIN_AMOUNT,
+            MAX_AMOUNT
+        );
 
         _updateSupplierInDS(dai, address(1), 0, MAX_AMOUNT, false);
         _updateBorrowerInDS(dai, address(this), 0, MAX_AMOUNT, false);
@@ -129,7 +133,11 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         Types.SupplyRepayVars memory vars = this.accountRepay(dai, amount, address(this), 10);
 
-        assertEq(market.idleSupply, amount - ((supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply)));
+        assertApproxEqAbs(
+            market.idleSupply,
+            amount - (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply + _accruedToTreasury(market.underlying)),
+            1
+        );
         assertEq(vars.toRepay, 0);
         assertEq(vars.toSupply, amount - market.idleSupply);
     }
