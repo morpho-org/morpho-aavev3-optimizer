@@ -29,7 +29,7 @@ library MarketSideDeltaLib {
     ) internal {
         if (amount == 0) return;
 
-        uint256 newscaledP2PDelta = delta.scaledP2PDelta + amount.rayDiv(indexes.poolIndex);
+        uint256 newScaledP2PDelta = delta.scaledP2PDelta + amount.rayDiv(indexes.poolIndex);
 
         delta.scaledP2PDelta = newscaledP2PDelta;
 
