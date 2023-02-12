@@ -31,10 +31,10 @@ library MarketSideDeltaLib {
 
         uint256 newScaledP2PDelta = delta.scaledP2PDelta + amount.rayDiv(indexes.poolIndex);
 
-        delta.scaledP2PDelta = newscaledP2PDelta;
+        delta.scaledP2PDelta = newScaledP2PDelta;
 
-        if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, newscaledP2PDelta);
-        else emit Events.P2PSupplyDeltaUpdated(underlying, newscaledP2PDelta);
+        if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, newScaledP2PDelta);
+        else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledP2PDelta);
     }
 
     /// @notice Given variables from a market side, matches the delta and calculates the amount to supply/borrow from delta.
@@ -56,12 +56,12 @@ library MarketSideDeltaLib {
         if (scaledP2PDelta == 0) return (amount, 0);
 
         uint256 decreased = Math.min(scaledP2PDelta.rayMulUp(poolIndex), amount); // In underlying.
-        uint256 newscaledP2PDelta = scaledP2PDelta.zeroFloorSub(decreased.rayDivDown(poolIndex));
+        uint256 newScaledP2PDelta = scaledP2PDelta.zeroFloorSub(decreased.rayDivDown(poolIndex));
 
-        delta.scaledP2PDelta = newscaledP2PDelta;
+        delta.scaledP2PDelta = newScaledP2PDelta;
 
-        if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, newscaledP2PDelta);
-        else emit Events.P2PSupplyDeltaUpdated(underlying, newscaledP2PDelta);
+        if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, newScaledP2PDelta);
+        else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledP2PDelta);
 
         return (amount - decreased, decreased);
     }
