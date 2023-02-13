@@ -286,7 +286,7 @@ contract TestIntegrationRepay is IntegrationTest {
             market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
             // Set the max iterations to 0 upon repay to skip demotion and fallback to supply delta.
-            morpho.setDefaultMaxIterations(Types.MaxIterations({repay: 0, withdraw: 10}));
+            morpho.setDefaultIterations(Types.Iterations({repay: 0, withdraw: 10}));
 
             test.balanceBefore = user.balanceOf(market.underlying);
             test.morphoSupplyBefore = market.supplyOf(address(morpho));

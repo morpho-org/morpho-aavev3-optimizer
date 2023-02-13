@@ -197,7 +197,11 @@ contract IntegrationTest is ForkTest {
         view
         returns (uint256)
     {
-        return bound(supplyCap, 1, (market.totalSupply() + amount - 1) / (10 ** market.decimals));
+        return bound(
+            supplyCap,
+            1,
+            (market.totalSupply() + _accruedToTreasury(market.underlying) + amount) / (10 ** market.decimals)
+        );
     }
 
     /// @dev Bounds the input borrow cap of AaveV3 so that it is exceeded after having deposited a given amount
@@ -206,7 +210,7 @@ contract IntegrationTest is ForkTest {
         view
         returns (uint256)
     {
-        return bound(borrowCap, 1, (market.totalBorrow() + amount - 1) / (10 ** market.decimals));
+        return bound(borrowCap, 1, (market.totalBorrow() + amount) / (10 ** market.decimals));
     }
 
     /// @dev Bounds the input between the minimum & the maximum USD amount expected in tests, without exceeding the market's supply cap.

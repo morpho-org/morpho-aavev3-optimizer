@@ -342,7 +342,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
             test.morphoSupplyBefore = market.supplyOf(address(morpho));
 
             // Set the max iterations to 0 upon withdraw to skip demotion and fallback to borrow delta.
-            morpho.setDefaultMaxIterations(Types.MaxIterations({repay: 10, withdraw: 0}));
+            morpho.setDefaultIterations(Types.Iterations({repay: 10, withdraw: 0}));
 
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.P2PBorrowDeltaUpdated(market.underlying, 0);
@@ -353,7 +353,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.Withdrawn(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
-            test.withdrawn = user.withdraw(market.underlying, amount, onBehalf, receiver);
+            test.withdrawn = user.withdraw(market.underlying, amount, onBehalf, receiver, 0);
 
             test.morphoMarket = morpho.market(market.underlying);
             test.indexes = morpho.updatedIndexes(market.underlying);
