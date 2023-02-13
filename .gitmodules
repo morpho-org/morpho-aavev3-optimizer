@@ -32,3 +32,7 @@
 	path = lib/morpho-data-structures
 	url = git@github.com:morpho-labs/morpho-data-structures-private.git
 	branch = dev
+[submodule "lib/permit2"]
+	path = lib/permit2
+	url = https://github.com/Uniswap/permit2
+	branch = f3349109ed405970a7fb3bb7e9ac9574c822a90d

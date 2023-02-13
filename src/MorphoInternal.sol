@@ -120,6 +120,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Increases the peer-to-peer delta of `amount` on the `underlying` market.
+    /// @dev Note that this can fail if the amount is too big. In this case, consider splitting in multiple calls/txs.
     function _increaseP2PDeltas(address underlying, uint256 amount) internal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
@@ -168,34 +169,35 @@ abstract contract MorphoInternal is MorphoStorage {
         emit Events.ManagerApproval(delegator, manager, isAllowed);
     }
 
-    /// @dev Returns the total supply balance of `user` on the `underlying` market given `indexes`.
-    /// @param underlying The address of the underlying asset.
-    /// @param user The address of the user.
-    /// @param indexes pool & peer-to-peer borrow.
-    /// @return The total supply balance of `user` on the `underlying` market (in underlying).
-    function _getUserSupplyBalanceFromIndexes(
-        address underlying,
-        address user,
-        Types.MarketSideIndexes256 memory indexes
-    ) internal view returns (uint256) {
+    /// @dev Returns the total supply balance of `user` on the `underlying` market given `indexes` (in underlying).
+    function _getUserSupplyBalanceFromIndexes(address underlying, address user, Types.Indexes256 memory indexes)
+        internal
+        view
+        returns (uint256)
+    {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return marketBalances.scaledPoolSupplyBalance(user).rayMulDown(indexes.poolIndex)
-            + marketBalances.scaledP2PSupplyBalance(user).rayMulDown(indexes.p2pIndex);
+        return marketBalances.scaledPoolSupplyBalance(user).rayMulDown(indexes.supply.poolIndex)
+            + marketBalances.scaledP2PSupplyBalance(user).rayMulDown(indexes.supply.p2pIndex);
     }
 
-    /// @dev Returns the total borrow balance of `user` on the `underlying` market given `indexes`.
-    /// @param underlying The address of the underlying asset.
-    /// @param user The address of the user.
-    /// @param indexes pool & peer-to-peer borrow.
-    /// @return The total borrow balance of `user` on the `underlying` market (in underlying).
-    function _getUserBorrowBalanceFromIndexes(
-        address underlying,
-        address user,
-        Types.MarketSideIndexes256 memory indexes
-    ) internal view returns (uint256) {
+    /// @dev Returns the total borrow balance of `user` on the `underlying` market given `indexes` (in underlying).
+    function _getUserBorrowBalanceFromIndexes(address underlying, address user, Types.Indexes256 memory indexes)
+        internal
+        view
+        returns (uint256)
+    {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.poolIndex)
-            + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.p2pIndex);
+        return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.borrow.poolIndex)
+            + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.borrow.p2pIndex);
+    }
+
+    /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
+    function _getUserCollateralBalanceFromIndex(address underlying, address user, uint256 poolSupplyIndex)
+        internal
+        view
+        returns (uint256)
+    {
+        return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
     }
 
     /// @dev Returns the buckets of a particular side of a market.
@@ -215,15 +217,6 @@ abstract contract MorphoInternal is MorphoStorage {
         } else {
             return _marketBalances[underlying].p2pBorrowers;
         }
-    }
-
-    /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
-    function _getUserCollateralBalanceFromIndex(address underlying, address user, uint256 poolSupplyIndex)
-        internal
-        view
-        returns (uint256)
-    {
-        return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
     }
 
     /// @notice Returns the liquidity data about the position of `user`.
@@ -302,7 +295,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
         debtValue =
-            (_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes.borrow) * underlyingPrice).divUp(tokenUnit);
+            (_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes) * underlyingPrice).divUp(tokenUnit);
     }
 
     /// @dev Returns the liquidity data for a given set of inputs.
