@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IAToken} from "../interfaces/aave/IAToken.sol";
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {Types} from "./Types.sol";
 import {Events} from "./Events.sol";
 import {Errors} from "./Errors.sol";
+import {ReserveDataLib} from "./ReserveDataLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
@@ -15,8 +17,6 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
-import {ERC20} from "@solmate/tokens/ERC20.sol";
-
 /// @title MarketLib
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
@@ -25,6 +25,8 @@ library MarketLib {
     using Math for uint256;
     using SafeCast for uint256;
     using WadRayMath for uint256;
+
+    using ReserveDataLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     function isCreated(Types.Market storage market) internal view returns (bool) {
@@ -187,7 +189,7 @@ library MarketLib {
         uint256 idleSupply = market.idleSupply;
         if (idleSupply == 0) return 0;
 
-        uint256 totalP2PSupplied = market.deltas.supply.scaledTotalP2P.rayMul(market.indexes.supply.p2pIndex);
+        uint256 totalP2PSupplied = market.deltas.supply.scaledP2PTotal.rayMul(market.indexes.supply.p2pIndex);
         return idleSupply.rayDivUp(totalP2PSupplied);
     }
 
@@ -195,18 +197,23 @@ library MarketLib {
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to repay. (by supplying on pool)
-    /// @param configuration The reserve configuration for the market.
+    /// @param reserve The reserve data for the market.
     /// @return The amount to supply to stay below the supply cap and the amount the idle supply was increased by.
     function increaseIdle(
         Types.Market storage market,
         address underlying,
         uint256 amount,
-        DataTypes.ReserveConfigurationMap memory configuration
+        DataTypes.ReserveData memory reserve,
+        Types.Indexes256 memory indexes
     ) internal returns (uint256, uint256) {
-        uint256 supplyCap = configuration.getSupplyCap() * (10 ** configuration.getDecimals());
+        uint256 supplyCap = reserve.configuration.getSupplyCap() * (10 ** reserve.configuration.getDecimals());
         if (supplyCap == 0) return (amount, 0);
 
-        uint256 suppliable = supplyCap.zeroFloorSub(ERC20(market.aToken).totalSupply());
+        uint256 suppliable = supplyCap.zeroFloorSub(
+            (IAToken(market.aToken).scaledTotalSupply() + reserve.getAccruedToTreasury(indexes)).rayMul(
+                indexes.supply.poolIndex
+            )
+        );
         if (amount <= suppliable) return (amount, 0);
 
         uint256 idleSupplyIncrease = amount - suppliable;

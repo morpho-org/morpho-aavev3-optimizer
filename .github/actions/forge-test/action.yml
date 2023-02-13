@@ -5,6 +5,9 @@ inputs:
   network:
     description: The network on which to run the forge test suite.
     required: true
+  alchemyKey:
+    description: The Alchemy key giving access to a private RPC.
+    required: false
   codecovToken:
     description: The Codecov token used to upload coverage report.
     required: false
@@ -43,6 +46,7 @@ runs:
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
+        ALCHEMY_KEY: ${{ inputs.alchemyKey }}
         FOUNDRY_FUZZ_RUNS: 16384
 
     - name: Run internal tests
@@ -50,14 +54,35 @@ runs:
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
+        ALCHEMY_KEY: ${{ inputs.alchemyKey }}
         FOUNDRY_FUZZ_RUNS: 64
 
-    - name: Run integration tests
-      run: make test-integration
+    - name: Run integration tests & create gas report
+      run: set -o pipefail && make gas-report | tee ${{ inputs.network }}.gasreport.ansi
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
+        ALCHEMY_KEY: ${{ inputs.alchemyKey }}
         FOUNDRY_FUZZ_RUNS: 64
+        # make fuzzing semi-deterministic to avoid noisy gas cost estimation
+        # due to non-deterministic fuzzing, but keep it not always deterministic
+        FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
+
+    - name: Compare gas reports
+      uses: Rubilmax/foundry-gas-diff@v3.13.3
+      id: gas_diff
+      with:
+        match: src/Morpho.sol
+        report: ${{ inputs.network }}.gasreport.ansi
+        header: |
+          # Morpho-AaveV3 gas diff (${{ inputs.network }})
+
+    - name: Add gas diff to sticky comment
+      if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        delete: ${{ !steps.gas_diff.outputs.markdown }} # delete the comment in case changes no longer impacts gas costs
+        message: ${{ steps.gas_diff.outputs.markdown }}
 
     - name: Generate lcov coverage report
       if: ${{ inputs.codecovToken != '' }}
@@ -65,6 +90,7 @@ runs:
       shell: bash
       env:
         NETWORK: ${{ inputs.network }}
+        ALCHEMY_KEY: ${{ inputs.alchemyKey }}
 
     - name: Check coverage threshold
       if: ${{ inputs.coverageThreshold != '' }}

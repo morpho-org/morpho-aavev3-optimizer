@@ -5,10 +5,11 @@ import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 
 import {MarketLib} from "./libraries/MarketLib.sol";
-import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
+
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
 
@@ -18,18 +19,19 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 /// @notice Abstract contract with functions to promote or demote users to/from peer-to-peer.
 abstract contract MatchingEngine is MorphoInternal {
     using MarketLib for Types.Market;
-    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
 
     using Math for uint256;
     using WadRayMath for uint256;
 
-    /// @dev Demotes suppliers on the `underlying` market.
+    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
+
+    /// @dev Promotes suppliers on the `underlying` market.
     /// @param underlying The address of the underlying market on which to promote suppliers.
     /// @param amount The amount of `underlying` to promote.
     /// @param maxIterations The maximum number of iterations allowed during the matching process.
     function _promoteSuppliers(address underlying, uint256 amount, uint256 maxIterations)
         internal
-        returns (uint256 promoted, uint256 iterationsDone)
+        returns (uint256, uint256)
     {
         return _promoteOrDemote(
             _marketBalances[underlying].poolSuppliers,
@@ -53,7 +55,7 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @param maxIterations The maximum number of iterations allowed during the matching process.
     function _promoteBorrowers(address underlying, uint256 amount, uint256 maxIterations)
         internal
-        returns (uint256 promoted, uint256 iterationsDone)
+        returns (uint256, uint256)
     {
         return _promoteOrDemote(
             _marketBalances[underlying].poolBorrowers,

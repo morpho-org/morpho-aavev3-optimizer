@@ -7,10 +7,11 @@ import {IACLManager} from "@aave-v3-core/interfaces/IACLManager.sol";
 import {IPoolConfigurator} from "@aave-v3-core/interfaces/IPoolConfigurator.sol";
 import {IPoolDataProvider} from "@aave-v3-core/interfaces/IPoolDataProvider.sol";
 import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
+import {IStableDebtToken} from "@aave-v3-core/interfaces/IStableDebtToken.sol";
 import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 
 import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
+import {MathUtils} from "@aave-v3-core/protocol/libraries/math/MathUtils.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
@@ -21,7 +22,21 @@ import {PoolAdminMock} from "test/mocks/PoolAdminMock.sol";
 import "./BaseTest.sol";
 
 contract ForkTest is BaseTest {
+    using WadRayMath for uint256;
+    using PercentageMath for uint256;
     using TestConfigLib for TestConfig;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+
+    /* STRUCTS */
+
+    struct StableDebtSupplyData {
+        uint256 currPrincipalStableDebt;
+        uint256 currTotalStableDebt;
+        uint256 currAvgStableBorrowRate;
+        uint40 stableDebtLastUpdateTimestamp;
+    }
+
+    /* STORAGE */
 
     address internal constant POOL_ADMIN = address(0xB055);
 
@@ -30,15 +45,9 @@ contract ForkTest is BaseTest {
     TestConfig internal config;
 
     address internal dai;
-    address internal frax;
-    address internal mai;
     address internal usdc;
-    address internal usdt;
     address internal aave;
-    address internal btcb;
     address internal link;
-    address internal sAvax;
-    address internal wavax;
     address internal wbtc;
     address internal weth;
     address internal wNative;
@@ -76,18 +85,27 @@ contract ForkTest is BaseTest {
         try vm.envString("NETWORK") returns (string memory configNetwork) {
             return configNetwork;
         } catch {
-            return "avalanche-mainnet";
+            return "ethereum-mainnet";
         }
     }
 
     function _initConfig() internal returns (TestConfig storage) {
-        network = _network();
+        if (bytes(config.json).length == 0) {
+            string memory root = vm.projectRoot();
+            string memory path = string.concat(root, "/config/", _network(), ".json");
 
-        return config.load(network);
+            config.json = vm.readFile(path);
+        }
+
+        return config;
     }
 
     function _loadConfig() internal {
-        forkId = config.createFork();
+        string memory rpcAlias = config.getRpcAlias();
+        Chain memory chain = getChain(rpcAlias);
+
+        forkId = vm.createSelectFork(chain.rpcUrl, config.getForkBlockNumber());
+        vm.chainId(chain.chainId);
 
         addressesProvider = IPoolAddressesProvider(config.getAddressesProvider());
         pool = IPool(addressesProvider.getPool());
@@ -97,32 +115,15 @@ contract ForkTest is BaseTest {
         poolConfigurator = IPoolConfigurator(addressesProvider.getPoolConfigurator());
         poolDataProvider = IPoolDataProvider(addressesProvider.getPoolDataProvider());
 
-        dai = config.getAddress("$.DAI");
-        frax = config.getAddress("$.FRAX");
-        mai = config.getAddress("$.MAI");
-        usdc = config.getAddress("$.USDC");
-        usdt = config.getAddress("$.USDT");
-        aave = config.getAddress("$.AAVE");
-        btcb = config.getAddress("$.BTCb");
-        link = config.getAddress("$.LINK");
-        sAvax = config.getAddress("$.sAVAX");
-        wavax = config.getAddress("$.WAVAX");
-        wbtc = config.getAddress("$.WBTC");
-        weth = config.getAddress("$.WETH");
-        wNative = config.getAddress("$.wrappedNative");
+        dai = config.getAddress("DAI");
+        usdc = config.getAddress("USDC");
+        aave = config.getAddress("AAVE");
+        link = config.getAddress("LINK");
+        wbtc = config.getAddress("WBTC");
+        weth = config.getAddress("WETH");
+        wNative = config.getWrappedNative();
 
-        allUnderlyings.push(dai);
-        allUnderlyings.push(frax);
-        allUnderlyings.push(mai);
-        allUnderlyings.push(usdc);
-        allUnderlyings.push(usdt);
-        allUnderlyings.push(aave);
-        allUnderlyings.push(btcb);
-        allUnderlyings.push(link);
-        allUnderlyings.push(sAvax);
-        allUnderlyings.push(wavax);
-        allUnderlyings.push(wbtc);
-        allUnderlyings.push(weth);
+        allUnderlyings = pool.getReservesList();
     }
 
     function _label() internal virtual {
@@ -135,19 +136,12 @@ contract ForkTest is BaseTest {
         vm.label(address(poolConfigurator), "PoolConfigurator");
         vm.label(address(poolDataProvider), "PoolDataProvider");
 
-        vm.label(dai, "DAI");
-        vm.label(frax, "FRAX");
-        vm.label(mai, "MAI");
-        vm.label(usdc, "USDC");
-        vm.label(usdt, "USDT");
-        vm.label(aave, "AAVE");
-        vm.label(btcb, "BTCB");
-        vm.label(link, "LINK");
-        vm.label(sAvax, "sAVAX");
-        vm.label(wavax, "WAVAX");
-        vm.label(wbtc, "WBTC");
-        vm.label(weth, "WETH");
-        vm.label(wNative, "wNative");
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            address underlying = allUnderlyings[i];
+            string memory symbol = ERC20(underlying).symbol();
+
+            vm.label(underlying, symbol);
+        }
     }
 
     function _mockPoolAdmin() internal {
@@ -161,7 +155,7 @@ contract ForkTest is BaseTest {
     }
 
     function _mockOracle() internal {
-        oracle = new AaveOracleMock(IAaveOracle(addressesProvider.getPriceOracle()), pool.getReservesList());
+        oracle = new AaveOracleMock(IAaveOracle(addressesProvider.getPriceOracle()), allUnderlyings);
 
         vm.prank(aclAdmin);
         addressesProvider.setPriceOracle(address(oracle));
@@ -175,24 +169,47 @@ contract ForkTest is BaseTest {
     }
 
     function _setBalances(address user, uint256 balance) internal {
-        deal(dai, user, balance);
-        deal(frax, user, balance);
-        deal(mai, user, balance);
-        deal(usdc, user, balance / 1e6);
-        deal(usdt, user, balance / 1e6);
-        deal(aave, user, balance);
-        deal(btcb, user, balance / 1e8);
-        deal(link, user, balance);
-        deal(sAvax, user, balance);
-        deal(wavax, user, balance);
-        deal(wbtc, user, balance / 1e8);
-        deal(weth, user, balance);
-        deal(wNative, user, balance);
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            address underlying = allUnderlyings[i];
+
+            deal(underlying, user, balance / (10 ** (18 - ERC20(underlying).decimals())));
+        }
     }
 
     /// @dev Reverts the fork to its initial fork state.
     function _revert() internal {
         if (snapshotId < type(uint256).max) vm.revertTo(snapshotId);
         snapshotId = vm.snapshot();
+    }
+
+    /// @dev Calculates the amount accrued to AaveV3's treasury.
+    function _accruedToTreasury(address underlying) internal view returns (uint256) {
+        DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
+        uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
+        uint256 poolBorrowIndex = pool.getReserveNormalizedVariableDebt(underlying);
+
+        StableDebtSupplyData memory vars;
+        (
+            vars.currPrincipalStableDebt,
+            vars.currTotalStableDebt,
+            vars.currAvgStableBorrowRate,
+            vars.stableDebtLastUpdateTimestamp
+        ) = IStableDebtToken(reserve.stableDebtTokenAddress).getSupplyData();
+        uint256 scaledTotalVariableDebt = IVariableDebtToken(reserve.variableDebtTokenAddress).scaledTotalSupply();
+
+        uint256 currTotalVariableDebt = scaledTotalVariableDebt.rayMul(poolBorrowIndex);
+        uint256 prevTotalVariableDebt = scaledTotalVariableDebt.rayMul(reserve.variableBorrowIndex);
+        uint256 prevTotalStableDebt = vars.currPrincipalStableDebt.rayMul(
+            MathUtils.calculateCompoundedInterest(
+                vars.currAvgStableBorrowRate, vars.stableDebtLastUpdateTimestamp, reserve.lastUpdateTimestamp
+            )
+        );
+
+        uint256 accruedTotalDebt =
+            currTotalVariableDebt + vars.currTotalStableDebt - prevTotalVariableDebt - prevTotalStableDebt;
+        uint256 newAccruedToTreasury =
+            accruedTotalDebt.percentMul(reserve.configuration.getReserveFactor()).rayDiv(poolSupplyIndex);
+
+        return (reserve.accruedToTreasury + newAccruedToTreasury).rayMul(poolSupplyIndex);
     }
 }
