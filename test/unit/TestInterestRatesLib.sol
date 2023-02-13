@@ -5,7 +5,7 @@ import {InterestRatesLib} from "src/libraries/InterestRatesLib.sol";
 
 import "test/helpers/BaseTest.sol";
 
-contract TestInterestRatesLib is BaseTest {
+contract TestUnitInterestRatesLib is BaseTest {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
