@@ -131,7 +131,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Market storage market = _validateRepay(underlying, amount, onBehalf);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes.borrow), amount);
+        amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes), amount);
 
         if (amount == 0) return 0;
 
@@ -163,7 +163,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Market storage market = _validateWithdraw(underlying, amount, supplier, receiver);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.supply), amount);
+        amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes), amount);
 
         if (amount == 0) return 0;
 
@@ -232,9 +232,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         vars.closeFactor = _authorizeLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
 
         amount = Math.min(
-            _getUserBorrowBalanceFromIndexes(underlyingBorrowed, borrower, borrowIndexes.borrow).percentMul(
-                vars.closeFactor
-            ), // Max liquidatable debt.
+            _getUserBorrowBalanceFromIndexes(underlyingBorrowed, borrower, borrowIndexes).percentMul(vars.closeFactor), // Max liquidatable debt.
             amount
         );
 
