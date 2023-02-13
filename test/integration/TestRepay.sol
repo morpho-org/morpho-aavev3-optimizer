@@ -178,8 +178,6 @@ contract TestIntegrationRepay is IntegrationTest {
         }
     }
 
-    // TODO: combine supply cap exceeded with parts on pool that creates a supply delta?
-
     function testShouldRepayAllP2PBorrowWhenSupplyCapExceeded(uint256 supplyCap, uint256 amount, address onBehalf)
         public
     {
