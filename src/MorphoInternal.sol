@@ -484,22 +484,35 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 poolSupplyIndex
     ) internal view returns (uint256 amountToRepay, uint256 amountToSeize) {
         amountToRepay = maxToRepay;
+        DataTypes.ReserveConfigurationMap memory borrowConfig = _POOL.getConfiguration(underlyingBorrowed);
         DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(underlyingCollateral);
-        uint256 liquidationBonus = _E_MODE_CATEGORY_ID != 0
-            && _E_MODE_CATEGORY_ID == collateralConfig.getEModeCategory()
-            ? _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID).liquidationBonus
-            : collateralConfig.getLiquidationBonus();
+        uint256 liquidationBonus;
+        uint256 borrowPrice;
+        uint256 collateralPrice;
+        IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
+
+        if (_E_MODE_CATEGORY_ID != 0) {
+            DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
+            if (_E_MODE_CATEGORY_ID == borrowConfig.getEModeCategory()) {
+                borrowPrice = _getEModePrice(underlyingBorrowed, eModeCategory.priceSource, oracle);
+            }
+            if (_E_MODE_CATEGORY_ID == collateralConfig.getEModeCategory()) {
+                liquidationBonus = eModeCategory.liquidationBonus;
+                collateralPrice = _getEModePrice(underlyingCollateral, eModeCategory.priceSource, oracle);
+            }
+        } else {
+            liquidationBonus = collateralConfig.getLiquidationBonus();
+            borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
+            collateralPrice = oracle.getAssetPrice(underlyingCollateral);
+        }
+
         uint256 collateralTokenUnit;
         uint256 borrowTokenUnit;
 
         unchecked {
             collateralTokenUnit = 10 ** collateralConfig.getDecimals();
-            borrowTokenUnit = 10 ** _POOL.getConfiguration(underlyingBorrowed).getDecimals();
+            borrowTokenUnit = 10 ** borrowConfig.getDecimals();
         }
-
-        IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
-        uint256 borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
-        uint256 collateralPrice = oracle.getAssetPrice(underlyingCollateral);
 
         amountToSeize = ((amountToRepay * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
             .percentMul(liquidationBonus);
@@ -512,5 +525,14 @@ abstract contract MorphoInternal is MorphoStorage {
                 (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
             ).percentDiv(liquidationBonus);
         }
+    }
+
+    function _getEModePrice(address underlying, address priceSource, IAaveOracle oracle)
+        internal
+        view
+        returns (uint256 price)
+    {
+        uint256 eModePrice = oracle.getAssetPrice(priceSource);
+        price = eModePrice != 0 ? eModePrice : oracle.getAssetPrice(underlying);
     }
 }
