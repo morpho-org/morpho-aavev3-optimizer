@@ -312,18 +312,14 @@ abstract contract MorphoInternal is MorphoStorage {
             tokenUnit = 10 ** config.getDecimals();
         }
 
-        if (_isInEModeCategory(config)) {
-            uint256 eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
-            underlyingPrice = eModeUnderlyingPrice != 0 ? eModeUnderlyingPrice : vars.oracle.getAssetPrice(underlying);
-        } else {
-            underlyingPrice = vars.oracle.getAssetPrice(underlying);
-        }
+        underlyingPrice = vars.oracle.getAssetPrice(underlying);
 
         // If a LTV has been reduced to 0 on Aave v3, the other assets of the collateral are frozen.
         // In response, Morpho disables the asset as collateral and sets its liquidation threshold to 0.
         if (config.getLtv() == 0) return (underlyingPrice, 0, 0, tokenUnit);
 
         if (_isInEModeCategory(config)) {
+            underlyingPrice = _getEModePrice(underlyingPrice, vars.eModeCategory.priceSource, vars.oracle);
             ltv = vars.eModeCategory.ltv;
             liquidationThreshold = vars.eModeCategory.liquidationThreshold;
         } else {
