@@ -31,7 +31,7 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @param maxIterations The maximum number of iterations allowed during the matching process.
     function _promoteSuppliers(address underlying, uint256 amount, uint256 maxIterations)
         internal
-        returns (uint256 promoted, uint256 iterationsDone)
+        returns (uint256, uint256)
     {
         return _promoteOrDemote(
             _marketBalances[underlying].poolSuppliers,
@@ -55,7 +55,7 @@ abstract contract MatchingEngine is MorphoInternal {
     /// @param maxIterations The maximum number of iterations allowed during the matching process.
     function _promoteBorrowers(address underlying, uint256 amount, uint256 maxIterations)
         internal
-        returns (uint256 promoted, uint256 iterationsDone)
+        returns (uint256, uint256)
     {
         return _promoteOrDemote(
             _marketBalances[underlying].poolBorrowers,

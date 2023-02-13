@@ -282,7 +282,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     function _supply(address underlying, uint256 amount, address from, address onBehalf, uint256 maxIterations)
         internal
-        returns (uint256 supplied)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.supplyLogic, (underlying, amount, from, onBehalf, maxIterations))
@@ -292,7 +292,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     function _supplyCollateral(address underlying, uint256 amount, address from, address onBehalf)
         internal
-        returns (uint256 supplied)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.supplyCollateralLogic, (underlying, amount, from, onBehalf))
@@ -303,7 +303,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     function _borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         internal
-        returns (uint256 borrowed)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.borrowLogic, (underlying, amount, onBehalf, receiver, maxIterations))
@@ -312,10 +312,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
-    function _repay(address underlying, uint256 amount, address from, address onBehalf)
-        internal
-        returns (uint256 repaid)
-    {
+    function _repay(address underlying, uint256 amount, address from, address onBehalf) internal returns (uint256) {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.repayLogic, (underlying, amount, from, onBehalf))
         );
@@ -325,7 +322,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     function _withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         internal
-        returns (uint256 withdrawn)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.withdrawLogic, (underlying, amount, onBehalf, receiver, maxIterations))
@@ -336,7 +333,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     function _withdrawCollateral(address underlying, uint256 amount, address onBehalf, address receiver)
         internal
-        returns (uint256 withdrawn)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.withdrawCollateralLogic, (underlying, amount, onBehalf, receiver))
