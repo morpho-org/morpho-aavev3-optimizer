@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {Types} from "src/libraries/Types.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
 
-import {Test} from "@forge-std/Test.sol";
+import "test/helpers/BaseTest.sol";
 
-contract TestUnitMarketLib is Test {
+contract TestUnitMarketLib is BaseTest {
     using MarketLib for Types.Market;
 
     Types.Market internal market;

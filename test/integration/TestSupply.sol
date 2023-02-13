@@ -6,7 +6,7 @@ import "test/helpers/IntegrationTest.sol";
 contract TestIntegrationSupply is IntegrationTest {
     using WadRayMath for uint256;
 
-    function _boundAmount(uint256 amount) internal view returns (uint256) {
+    function _boundAmount(uint256 amount) internal view override returns (uint256) {
         return bound(amount, 1, type(uint256).max);
     }
 
