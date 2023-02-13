@@ -6,9 +6,9 @@ import {IMorphoGetters} from "./interfaces/IMorpho.sol";
 import {Types} from "./libraries/Types.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
-import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
-import {BucketDLL} from "@morpho-data-structures/BucketDLL.sol";
 
+import {BucketDLL} from "@morpho-data-structures/BucketDLL.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {MorphoInternal} from "./MorphoInternal.sol";
@@ -20,10 +20,11 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
+
     using BucketDLL for BucketDLL.List;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    /// STORAGE ///
+    /* STORAGE */
 
     /// @notice Returns the pool address.
     function POOL() external view returns (address) {
@@ -84,14 +85,14 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     function supplyBalance(address underlying, address user) external view returns (uint256) {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
 
-        return _getUserSupplyBalanceFromIndexes(underlying, user, indexes.supply);
+        return _getUserSupplyBalanceFromIndexes(underlying, user, indexes);
     }
 
     /// @notice Returns the total borrow balance of `user` on the `underlying` market (in underlying).
     function borrowBalance(address underlying, address user) external view returns (uint256) {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
 
-        return _getUserBorrowBalanceFromIndexes(underlying, user, indexes.borrow);
+        return _getUserBorrowBalanceFromIndexes(underlying, user, indexes);
     }
 
     /// @notice Returns the supply collateral balance of `user` on the `underlying` market (in underlying).
@@ -149,18 +150,11 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         (, indexes) = _computeIndexes(underlying);
     }
 
-    /// @notice Returns the hypothetical liquidity data of `user`.
-    /// @param underlying The address of the underlying asset to borrow.
-    /// @param user The address of the user to get liquidity data for.
-    /// @param amountWithdrawn The hypothetical amount to withdraw on the `underlying` market.
-    /// @param amountBorrowed The hypothetical amount to borrow on the `underlying` market.
-    /// @return The hypothetical liquidaty data of `user`.
-    function liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
-        external
-        view
-        returns (Types.LiquidityData memory)
-    {
-        return _liquidityData(underlying, user, amountWithdrawn, amountBorrowed);
+    /// @notice Returns the liquidity data about the position of `user`.
+    /// @param user The address of the user to get the liquidity data for.
+    /// @return The liquidity data of the user.
+    function liquidityData(address user) external view returns (Types.LiquidityData memory) {
+        return _liquidityData(user);
     }
 
     /// @notice Returns the account after `user` in the same bucket of the corresponding market side.

@@ -10,9 +10,9 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {Constants} from "./libraries/Constants.sol";
 
-import {Permit2Lib} from "./libraries/Permit2Lib.sol";
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {ERC20 as ERC20Permit2, Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 import {MorphoGetters} from "./MorphoGetters.sol";
@@ -23,18 +23,18 @@ import {MorphoSetters} from "./MorphoSetters.sol";
 /// @custom:contact security@morpho.xyz
 /// @notice The main Morpho contract exposing all user entry points.
 contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
-    using Permit2Lib for ERC20;
     using DelegateCall for address;
     using SafeTransferLib for ERC20;
+    using Permit2Lib for ERC20Permit2;
 
-    /// CONSTRUCTOR ///
+    /* CONSTRUCTOR */
 
     /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
     /// @param addressesProvider The address of the pool addresses provider.
     /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
     constructor(address addressesProvider, uint8 eModeCategoryId) MorphoStorage(addressesProvider, eModeCategoryId) {}
 
-    /// INITIALIZER ///
+    /* INITIALIZER */
 
     /// @notice Initializes the contract.
     /// @param newPositionsManager The address of the `_positionsManager` to set.
@@ -54,7 +54,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         emit Events.EModeSet(_E_MODE_CATEGORY_ID);
     }
 
-    /// EXTERNAL ///
+    /* EXTERNAL */
 
     /// @notice Supplies `amount` of `underlying` on behalf of `onBehalf`.
     ///         The supplied amount cannot be used as collateral but is eligible for the peer-to-peer matching.
@@ -87,7 +87,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256) {
-        ERC20(underlying).simplePermit2(
+        ERC20Permit2(underlying).simplePermit2(
             msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
         );
         return _supply(underlying, amount, msg.sender, onBehalf, maxIterations);
@@ -118,7 +118,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256) {
-        ERC20(underlying).simplePermit2(
+        ERC20Permit2(underlying).simplePermit2(
             msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
         );
         return _supplyCollateral(underlying, amount, msg.sender, onBehalf);
@@ -163,7 +163,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256) {
-        ERC20(underlying).simplePermit2(
+        ERC20Permit2(underlying).simplePermit2(
             msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
         );
         return _repay(underlying, amount, msg.sender, onBehalf);
@@ -278,7 +278,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         }
     }
 
-    /// INTERNAL ///
+    /* INTERNAL */
 
     function _supply(address underlying, uint256 amount, address from, address onBehalf, uint256 maxIterations)
         internal

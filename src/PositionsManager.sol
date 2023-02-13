@@ -5,36 +5,44 @@ import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
 
 import {Types} from "./libraries/Types.sol";
+import {Errors} from "./libraries/Errors.sol";
 import {Events} from "./libraries/Events.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
+import {Constants} from "./libraries/Constants.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
-import {Permit2Lib} from "./libraries/Permit2Lib.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {ERC20 as ERC20Permit2, Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
+
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 
+/// @title PositionsManager
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Abstract contract exposing logic functions delegate-called by the `Morpho` contract.
 contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     using PoolLib for IPool;
-    using Permit2Lib for ERC20;
-    using SafeTransferLib for ERC20;
-    using EnumerableSet for EnumerableSet.AddressSet;
     using MarketBalanceLib for Types.MarketBalances;
-    using EnumerableSet for EnumerableSet.AddressSet;
 
     using Math for uint256;
     using PercentageMath for uint256;
 
-    /// CONSTRUCTOR ///
+    using SafeTransferLib for ERC20;
+    using Permit2Lib for ERC20Permit2;
+
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    /* CONSTRUCTOR */
 
     constructor(address addressesProvider, uint8 eModeCategoryId) MorphoStorage(addressesProvider, eModeCategoryId) {}
 
-    /// EXTERNAL ///
+    /* EXTERNAL */
 
     /// @notice Implements the supply logic.
     /// @param underlying The address of the underlying asset to supply.
@@ -51,7 +59,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        ERC20(underlying).transferFrom2(from, address(this), amount);
+        ERC20Permit2(underlying).transferFrom2(from, address(this), amount);
 
         Types.SupplyRepayVars memory vars = _executeSupply(underlying, amount, from, onBehalf, maxIterations, indexes);
 
@@ -76,7 +84,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        ERC20(underlying).transferFrom2(from, address(this), amount);
+        ERC20Permit2(underlying).transferFrom2(from, address(this), amount);
 
         _executeSupplyCollateral(underlying, amount, from, onBehalf, indexes.supply.poolIndex);
 
@@ -100,11 +108,14 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        // The following check requires indexes to be up-to-date.
-        _authorizeBorrow(underlying, amount, borrower, indexes);
+        _authorizeBorrow(underlying, amount, indexes);
 
         Types.BorrowWithdrawVars memory vars =
             _executeBorrow(underlying, amount, borrower, receiver, maxIterations, indexes);
+
+        // The following check requires accounting to have been performed.
+        Types.LiquidityData memory values = _liquidityData(borrower);
+        if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
 
         _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
         _POOL.borrowFromPool(underlying, vars.toBorrow);
@@ -126,11 +137,11 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Market storage market = _validateRepay(underlying, amount, onBehalf);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes.borrow), amount);
+        amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes), amount);
 
         if (amount == 0) return 0;
 
-        ERC20(underlying).transferFrom2(repayer, address(this), amount);
+        ERC20Permit2(underlying).transferFrom2(repayer, address(this), amount);
 
         Types.SupplyRepayVars memory vars =
             _executeRepay(underlying, amount, repayer, onBehalf, _defaultIterations.repay, indexes);
@@ -158,7 +169,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Market storage market = _validateWithdraw(underlying, amount, supplier, receiver);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
-        amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes.supply), amount);
+        amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes), amount);
 
         if (amount == 0) return 0;
 
@@ -192,10 +203,12 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         if (amount == 0) return 0;
 
-        // The following check requires storage indexes to be up-to-date.
-        _authorizeWithdrawCollateral(underlying, amount, supplier);
-
         _executeWithdrawCollateral(underlying, amount, supplier, receiver, poolSupplyIndex);
+
+        // The following check requires accounting to have been performed.
+        if (_getUserHealthFactor(supplier) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+            revert Errors.UnauthorizedWithdraw();
+        }
 
         _POOL.withdrawFromPool(underlying, market.aToken, amount);
 
@@ -225,9 +238,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         vars.closeFactor = _authorizeLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
 
         amount = Math.min(
-            _getUserBorrowBalanceFromIndexes(underlyingBorrowed, borrower, borrowIndexes.borrow).percentMul(
-                vars.closeFactor
-            ), // Max liquidatable debt.
+            _getUserBorrowBalanceFromIndexes(underlyingBorrowed, borrower, borrowIndexes).percentMul(vars.closeFactor), // Max liquidatable debt.
             amount
         );
 
@@ -237,7 +248,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         if (amount == 0) return (0, 0);
 
-        ERC20(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
+        ERC20Permit2(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
 
         Types.SupplyRepayVars memory repayVars =
             _executeRepay(underlyingBorrowed, amount, liquidator, borrower, 0, borrowIndexes);

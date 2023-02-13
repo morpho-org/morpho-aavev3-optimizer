@@ -37,17 +37,20 @@ abstract contract MorphoInternal is MorphoStorage {
     using PoolLib for IPool;
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
-    using EnumerableSet for EnumerableSet.AddressSet;
-    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
-    using UserConfiguration for DataTypes.UserConfigurationMap;
-    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using SafeTransferLib for ERC20;
 
     using Math for uint256;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
-    /// INTERNAL ///
+    using SafeTransferLib for ERC20;
+
+    using EnumerableSet for EnumerableSet.AddressSet;
+    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
+
+    using UserConfiguration for DataTypes.UserConfigurationMap;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+
+    /* INTERNAL */
 
     /// @dev Dynamically computed to use the root proxy address in a delegate call.
     function _domainSeparator() internal view returns (bytes32) {
@@ -117,6 +120,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Increases the peer-to-peer delta of `amount` on the `underlying` market.
+    /// @dev Note that this can fail if the amount is too big. In this case, consider splitting in multiple calls/txs.
     function _increaseP2PDeltas(address underlying, uint256 amount) internal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
@@ -165,34 +169,35 @@ abstract contract MorphoInternal is MorphoStorage {
         emit Events.ManagerApproval(delegator, manager, isAllowed);
     }
 
-    /// @dev Returns the total supply balance of `user` on the `underlying` market given `indexes`.
-    /// @param underlying The address of the underlying asset.
-    /// @param user The address of the user.
-    /// @param indexes pool & peer-to-peer borrow.
-    /// @return The total supply balance of `user` on the `underlying` market (in underlying).
-    function _getUserSupplyBalanceFromIndexes(
-        address underlying,
-        address user,
-        Types.MarketSideIndexes256 memory indexes
-    ) internal view returns (uint256) {
+    /// @dev Returns the total supply balance of `user` on the `underlying` market given `indexes` (in underlying).
+    function _getUserSupplyBalanceFromIndexes(address underlying, address user, Types.Indexes256 memory indexes)
+        internal
+        view
+        returns (uint256)
+    {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return marketBalances.scaledPoolSupplyBalance(user).rayMulDown(indexes.poolIndex)
-            + marketBalances.scaledP2PSupplyBalance(user).rayMulDown(indexes.p2pIndex);
+        return marketBalances.scaledPoolSupplyBalance(user).rayMulDown(indexes.supply.poolIndex)
+            + marketBalances.scaledP2PSupplyBalance(user).rayMulDown(indexes.supply.p2pIndex);
     }
 
-    /// @dev Returns the total borrow balance of `user` on the `underlying` market given `indexes`.
-    /// @param underlying The address of the underlying asset.
-    /// @param user The address of the user.
-    /// @param indexes pool & peer-to-peer borrow.
-    /// @return The total borrow balance of `user` on the `underlying` market (in underlying).
-    function _getUserBorrowBalanceFromIndexes(
-        address underlying,
-        address user,
-        Types.MarketSideIndexes256 memory indexes
-    ) internal view returns (uint256) {
+    /// @dev Returns the total borrow balance of `user` on the `underlying` market given `indexes` (in underlying).
+    function _getUserBorrowBalanceFromIndexes(address underlying, address user, Types.Indexes256 memory indexes)
+        internal
+        view
+        returns (uint256)
+    {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
-        return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.poolIndex)
-            + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.p2pIndex);
+        return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.borrow.poolIndex)
+            + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.borrow.p2pIndex);
+    }
+
+    /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
+    function _getUserCollateralBalanceFromIndex(address underlying, address user, uint256 poolSupplyIndex)
+        internal
+        view
+        returns (uint256)
+    {
+        return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
     }
 
     /// @dev Returns the buckets of a particular side of a market.
@@ -214,45 +219,26 @@ abstract contract MorphoInternal is MorphoStorage {
         }
     }
 
-    /// @dev Returns the collateral balance of `user` on the `underlying` market a `poolSupplyIndex` (in underlying).
-    function _getUserCollateralBalanceFromIndex(address underlying, address user, uint256 poolSupplyIndex)
-        internal
-        view
-        returns (uint256)
-    {
-        return _marketBalances[underlying].scaledCollateralBalance(user).rayMulDown(poolSupplyIndex);
-    }
-
-    /// @notice Returns the hypothetical liquidity data of `user`.
-    /// @param underlying The address of the underlying asset to borrow.
-    /// @param user The address of the user to get liquidity data for.
-    /// @param amountWithdrawn The hypothetical amount to withdraw on the `underlying` market.
-    /// @param amountBorrowed The hypothetical amount to borrow on the `underlying` market.
-    /// @return liquidityData The hypothetical liquidaty data of `user`.
-    function _liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
-        internal
-        view
-        returns (Types.LiquidityData memory liquidityData)
-    {
+    /// @notice Returns the liquidity data about the position of `user`.
+    /// @param user The address of the user to get the liquidity data for.
+    /// @return liquidityData The liquidity data of the user.
+    function _liquidityData(address user) internal view returns (Types.LiquidityData memory liquidityData) {
         Types.LiquidityVars memory vars;
 
         if (_E_MODE_CATEGORY_ID != 0) vars.eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
         vars.oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.user = user;
 
-        (liquidityData.borrowable, liquidityData.maxDebt) = _totalCollateralData(underlying, vars, amountWithdrawn);
-
-        liquidityData.debt = _totalDebt(underlying, vars, amountBorrowed);
+        (liquidityData.borrowable, liquidityData.maxDebt) = _totalCollateralData(vars);
+        liquidityData.debt = _totalDebt(vars);
     }
 
     /// @dev Returns the collateral data for a given set of inputs.
-    /// @dev The total collateral data is computed iterating through all user's collateral assets.
-    /// @param assetWithdrawn The address of the underlying asset hypothetically withdrawn. Pass address(0) if no asset is withdrawn.
+    /// @dev The total collateral data is computed looping through all user's collateral assets.
     /// @param vars The liquidity variables.
-    /// @param amountWithdrawn The amount withdrawn on the `assetWithdrawn` market (if any).
     /// @return borrowable The total borrowable amount of `vars.user`.
     /// @return maxDebt The total maximum debt of `vars.user`.
-    function _totalCollateralData(address assetWithdrawn, Types.LiquidityVars memory vars, uint256 amountWithdrawn)
+    function _totalCollateralData(Types.LiquidityVars memory vars)
         internal
         view
         returns (uint256 borrowable, uint256 maxDebt)
@@ -260,8 +246,7 @@ abstract contract MorphoInternal is MorphoStorage {
         address[] memory userCollaterals = _userCollaterals[vars.user].values();
 
         for (uint256 i; i < userCollaterals.length; ++i) {
-            (uint256 borrowableSingle, uint256 maxDebtSingle) =
-                _collateralData(userCollaterals[i], vars, userCollaterals[i] == assetWithdrawn ? amountWithdrawn : 0);
+            (uint256 borrowableSingle, uint256 maxDebtSingle) = _collateralData(userCollaterals[i], vars);
 
             borrowable += borrowableSingle;
             maxDebt += maxDebtSingle;
@@ -270,32 +255,22 @@ abstract contract MorphoInternal is MorphoStorage {
 
     /// @dev Returns the debt data for a given set of inputs.
     /// @dev The total debt data is computed iterating through all user's borrow assets.
-    /// @param assetBorrowed The address of the underlying asset borrowed. Pass address(0) if no asset is borrowed.
     /// @param vars The liquidity variables.
-    /// @param amountBorrowed The amount borrowed on the `assetBorrowed` market (if any).
     /// @return debt The total debt of `vars.user`.
-    function _totalDebt(address assetBorrowed, Types.LiquidityVars memory vars, uint256 amountBorrowed)
-        internal
-        view
-        returns (uint256 debt)
-    {
+    function _totalDebt(Types.LiquidityVars memory vars) internal view returns (uint256 debt) {
         address[] memory userBorrows = _userBorrows[vars.user].values();
 
         for (uint256 i; i < userBorrows.length; ++i) {
-            debt += _debt(userBorrows[i], vars, userBorrows[i] == assetBorrowed ? amountBorrowed : 0);
-        }
-        if (assetBorrowed != address(0) && !_userBorrows[vars.user].contains(assetBorrowed)) {
-            debt += _debt(assetBorrowed, vars, amountBorrowed);
+            debt += _debt(userBorrows[i], vars);
         }
     }
 
     /// @dev Returns the collateral data for a given set of inputs.
     /// @param underlying The address of the underlying collateral asset.
     /// @param vars The liquidity variables.
-    /// @param amountWithdrawn The amount withdrawn on the `underlying` market (if any).
     /// @return borrowable The borrowable amount of `vars.user` on the `underlying` market.
     /// @return maxDebt The maximum debt of `vars.user` on the `underlying` market.
-    function _collateralData(address underlying, Types.LiquidityVars memory vars, uint256 amountWithdrawn)
+    function _collateralData(address underlying, Types.LiquidityVars memory vars)
         internal
         view
         returns (uint256 borrowable, uint256 maxDebt)
@@ -304,11 +279,8 @@ abstract contract MorphoInternal is MorphoStorage {
             _assetLiquidityData(underlying, vars);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
-        uint256 collateral = (
-            _getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex).zeroFloorSub(
-                amountWithdrawn
-            )
-        ) * underlyingPrice / tokenUnit;
+        uint256 collateral = (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex))
+            * underlyingPrice / tokenUnit;
 
         borrowable = collateral.percentMulDown(ltv);
         maxDebt = collateral.percentMulDown(liquidationThreshold);
@@ -317,19 +289,13 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @dev Returns the debt value for a given set of inputs.
     /// @param underlying The address of the underlying asset to borrow.
     /// @param vars The liquidity variables.
-    /// @param amountBorrowed The amount borrowed on the `underlying` market (if any).
     /// @return debtValue The debt value of `vars.user` on the `underlying` market.
-    function _debt(address underlying, Types.LiquidityVars memory vars, uint256 amountBorrowed)
-        internal
-        view
-        returns (uint256 debtValue)
-    {
+    function _debt(address underlying, Types.LiquidityVars memory vars) internal view returns (uint256 debtValue) {
         (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(underlying, vars);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
-        debtValue = (
-            (_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes.borrow) + amountBorrowed) * underlyingPrice
-        ).divUp(tokenUnit);
+        debtValue =
+            (_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes) * underlyingPrice).divUp(tokenUnit);
     }
 
     /// @dev Returns the liquidity data for a given set of inputs.
@@ -498,13 +464,9 @@ abstract contract MorphoInternal is MorphoStorage {
         );
     }
 
-    /// @dev Returns the `user`'s health factor for the `underlying` market and hypothetical `withdrawnAmount`.
-    function _getUserHealthFactor(address underlying, address user, uint256 withdrawnAmount)
-        internal
-        view
-        returns (uint256)
-    {
-        Types.LiquidityData memory liquidityData = _liquidityData(underlying, user, withdrawnAmount, 0);
+    /// @dev Returns the `user`'s health factor.
+    function _getUserHealthFactor(address user) internal view returns (uint256) {
+        Types.LiquidityData memory liquidityData = _liquidityData(user);
 
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
     }

@@ -36,10 +36,7 @@ interface IMorphoGetters {
     function isClaimRewardsPaused() external view returns (bool);
 
     function updatedIndexes(address underlying) external view returns (Types.Indexes256 memory);
-    function liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
-        external
-        view
-        returns (Types.LiquidityData memory);
+    function liquidityData(address user) external view returns (Types.LiquidityData memory);
     function getNext(address underlying, Types.Position position, address user) external view returns (address);
     function getBucketsMask(address underlying, Types.Position position) external view returns (uint256);
 }
