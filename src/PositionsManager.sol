@@ -14,8 +14,8 @@ import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
-import {Permit2Lib} from "./libraries/Permit2Lib.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {ERC20 as ERC20Permit2, Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
@@ -23,8 +23,8 @@ import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 
 contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     using PoolLib for IPool;
-    using Permit2Lib for ERC20;
     using SafeTransferLib for ERC20;
+    using Permit2Lib for ERC20Permit2;
     using EnumerableSet for EnumerableSet.AddressSet;
     using MarketBalanceLib for Types.MarketBalances;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -53,7 +53,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        ERC20(underlying).transferFrom2(from, address(this), amount);
+        ERC20Permit2(underlying).transferFrom2(from, address(this), amount);
 
         Types.SupplyRepayVars memory vars = _executeSupply(underlying, amount, from, onBehalf, maxIterations, indexes);
 
@@ -78,7 +78,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        ERC20(underlying).transferFrom2(from, address(this), amount);
+        ERC20Permit2(underlying).transferFrom2(from, address(this), amount);
 
         _executeSupplyCollateral(underlying, amount, from, onBehalf, indexes.supply.poolIndex);
 
@@ -135,7 +135,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         if (amount == 0) return 0;
 
-        ERC20(underlying).transferFrom2(repayer, address(this), amount);
+        ERC20Permit2(underlying).transferFrom2(repayer, address(this), amount);
 
         Types.SupplyRepayVars memory vars =
             _executeRepay(underlying, amount, repayer, onBehalf, _defaultIterations.repay, indexes);
@@ -244,7 +244,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         if (amount == 0) return (0, 0);
 
-        ERC20(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
+        ERC20Permit2(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
 
         Types.SupplyRepayVars memory repayVars =
             _executeRepay(underlyingBorrowed, amount, liquidator, borrower, 0, borrowIndexes);
