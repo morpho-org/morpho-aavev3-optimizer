@@ -84,14 +84,14 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     function supplyBalance(address underlying, address user) external view returns (uint256) {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
 
-        return _getUserSupplyBalanceFromIndexes(underlying, user, indexes.supply);
+        return _getUserSupplyBalanceFromIndexes(underlying, user, indexes);
     }
 
     /// @notice Returns the total borrow balance of `user` on the `underlying` market (in underlying).
     function borrowBalance(address underlying, address user) external view returns (uint256) {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
 
-        return _getUserBorrowBalanceFromIndexes(underlying, user, indexes.borrow);
+        return _getUserBorrowBalanceFromIndexes(underlying, user, indexes);
     }
 
     /// @notice Returns the supply collateral balance of `user` on the `underlying` market (in underlying).
