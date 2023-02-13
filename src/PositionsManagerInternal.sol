@@ -379,10 +379,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         /// Breaking withdraw ///
 
         // Demote peer-to-peer borrowers.
-        uint256 demoted = _demoteBorrowers(underlying, amount, maxIterations);
+        uint256 demoted = _demoteBorrowers(underlying, vars.toBorrow, maxIterations);
 
         // Increase the peer-to-peer borrow delta.
-        market.deltas.borrow.increaseDelta(underlying, amount.zeroFloorSub(demoted), indexes.borrow, true);
+        market.deltas.borrow.increaseDelta(underlying, vars.toBorrow.zeroFloorSub(demoted), indexes.borrow, true);
 
         // Update the peer-to-peer totals.
         market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow + p2pTotalSupplyDecrease, indexes, true);
