@@ -12,7 +12,7 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 /// @custom:contact security@morpho.xyz
 /// @notice Library exposing all Types used in Morpho.
 library Types {
-    /// ENUMS ///
+    /* ENUMS */
 
     enum Position {
         POOL_SUPPLIER,
@@ -21,7 +21,7 @@ library Types {
         P2P_BORROWER
     }
 
-    /// NESTED STRUCTS ///
+    /* NESTED STRUCTS */
 
     struct MarketSideDelta {
         uint256 scaledDeltaPool; // In pool unit.
@@ -56,7 +56,7 @@ library Types {
         bool isDeprecated;
     }
 
-    /// STORAGE STRUCTS ///
+    /* STORAGE STRUCTS */
 
     // This market struct is able to be passed into memory.
     struct Market {
@@ -94,7 +94,7 @@ library Types {
         uint128 withdraw;
     }
 
-    /// STACK AND RETURN STRUCTS ///
+    /* STACK AND RETURN STRUCTS */
 
     struct LiquidityData {
         uint256 borrowable; // The maximum debt value allowed to borrow (in base currency).

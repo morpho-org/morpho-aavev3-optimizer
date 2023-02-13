@@ -12,9 +12,6 @@ import {DeltasLib} from "./libraries/DeltasLib.sol";
 import {MarketSideDeltaLib} from "./libraries/MarketSideDeltaLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
-import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
-
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
@@ -22,20 +19,30 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {MatchingEngine} from "./MatchingEngine.sol";
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
+import {MatchingEngine} from "./MatchingEngine.sol";
+
+/// @title PositionsManagerInternal
+/// @author Morpho Labs
+/// @custom:contact security@morpho.xyz
+/// @notice Abstract contract defining `PositionsManager`'s internal functions.
 abstract contract PositionsManagerInternal is MatchingEngine {
+    using MarketLib for Types.Market;
+    using DeltasLib for Types.Deltas;
+    using MarketBalanceLib for Types.MarketBalances;
+    using MarketSideDeltaLib for Types.MarketSideDelta;
+
     using Math for uint256;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
-    using MarketLib for Types.Market;
-    using DeltasLib for Types.Deltas;
-    using MarketSideDeltaLib for Types.MarketSideDelta;
-    using MarketBalanceLib for Types.MarketBalances;
+
     using EnumerableSet for EnumerableSet.AddressSet;
     using LogarithmicBuckets for LogarithmicBuckets.Buckets;
+
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /// @dev Validates the manager's permission.
@@ -198,7 +205,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.onPool = marketBalances.scaledPoolSupplyBalance(onBehalf);
         vars.inP2P = marketBalances.scaledP2PSupplyBalance(onBehalf);
 
-        /// Peer-to-peer supply ///
+        /* Peer-to-peer supply */
 
         if (!market.isP2PDisabled()) {
             // Decrease the peer-to-peer borrow delta.
@@ -214,7 +221,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toRepay, indexes, true);
         }
 
-        /// Pool supply ///
+        /* Pool supply */
 
         // Supply on pool.
         (vars.toSupply, vars.onPool) = _addToPool(amount, vars.onPool, indexes.supply.poolIndex);
@@ -236,7 +243,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.onPool = marketBalances.scaledPoolBorrowBalance(borrower);
         vars.inP2P = marketBalances.scaledP2PBorrowBalance(borrower);
 
-        /// Peer-to-peer borrow ///
+        /* Peer-to-peer borrow */
 
         if (!market.isP2PDisabled()) {
             // Decrease the peer-to-peer idle supply.
@@ -256,7 +263,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toWithdraw + matchedIdle, indexes, false);
         }
 
-        /// Pool borrow ///
+        /* Pool borrow */
 
         // Borrow on pool.
         (vars.toBorrow, vars.onPool) = _addToPool(amount, vars.onPool, indexes.borrow.poolIndex);
@@ -277,7 +284,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.onPool = marketBalances.scaledPoolBorrowBalance(onBehalf);
         vars.inP2P = marketBalances.scaledP2PBorrowBalance(onBehalf);
 
-        /// Pool repay ///
+        /* Pool repay */
 
         // Repay borrow on pool.
         (amount, vars.toRepay, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.borrow.poolIndex);
@@ -300,7 +307,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Repay the fee.
         amount = market.deltas.repayFee(amount, indexes);
 
-        /// Transfer repay ///
+        /* Transfer repay */
 
         if (!market.isP2PDisabled()) {
             // Promote pool borrowers.
@@ -309,7 +316,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             vars.toRepay += promoted;
         }
 
-        /// Breaking repay ///
+        /* Breaking repay */
 
         // Handle the supply cap.
         uint256 idleSupplyIncrease;
@@ -340,7 +347,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.onPool = marketBalances.scaledPoolSupplyBalance(supplier);
         vars.inP2P = marketBalances.scaledP2PSupplyBalance(supplier);
 
-        /// Pool withdraw ///
+        /* Pool withdraw */
 
         // Withdraw supply on pool.
         (amount, vars.toWithdraw, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.supply.poolIndex);
@@ -365,7 +372,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.toWithdraw += toWithdrawStep;
         uint256 p2pTotalSupplyDecrease = toWithdrawStep + matchedIdle;
 
-        /// Transfer withdraw ///
+        /* Transfer withdraw */
 
         if (!market.isP2PDisabled()) {
             // Promote pool suppliers.
@@ -376,7 +383,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             vars.toBorrow = amount;
         }
 
-        /// Breaking withdraw ///
+        /* Breaking withdraw */
 
         // Demote peer-to-peer borrowers.
         uint256 demoted = _demoteBorrowers(underlying, vars.toBorrow, maxIterations);

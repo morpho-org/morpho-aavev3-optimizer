@@ -18,7 +18,7 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     using MarketLib for Types.Market;
 
-    /// MODIFIERS ///
+    /* MODIFIERS */
 
     /// @notice Prevents to update a market not created yet.
     /// @param underlying The address of the underlying market.
@@ -27,7 +27,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         _;
     }
 
-    /// GOVERNANCE UTILS ///
+    /* GOVERNANCE UTILS */
 
     /// @notice Creates a new market for the `underlying` token with a given `reserveFactor` (in bps) and a given `p2pIndexCursor` (in bps).
     function createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) external onlyOwner {
@@ -45,7 +45,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         _increaseP2PDeltas(underlying, amount);
     }
 
-    /// SETTERS ///
+    /* SETTERS */
 
     /// @notice Sets `_defaultIterations` to `defaultIterations`.
     function setDefaultIterations(Types.Iterations calldata defaultIterations) external onlyOwner {
