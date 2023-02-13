@@ -89,7 +89,7 @@ library DeltasLib {
         // Fee = (borrow.totalScaledP2P - borrow.delta) - (supply.totalScaledP2P - supply.delta).
         uint256 feeToRepay = scaledTotalBorrowP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
             deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                deltas.supply.scaledP2PDelta.rayMul(indexes.supply.poolIndex)
+                deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
             )
         );
 

@@ -113,7 +113,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Market storage market = _market[underlying];
         Types.MarketSideDelta memory delta = market.deltas.borrow;
         uint256 totalP2P = delta.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-            delta.scaledP2PDelta.rayMul(indexes.borrow.poolIndex)
+            delta.scaledDelta.rayMul(indexes.borrow.poolIndex)
         );
 
         if (config.getBorrowCap() != 0) {

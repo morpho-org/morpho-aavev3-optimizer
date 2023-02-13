@@ -133,20 +133,20 @@ abstract contract MorphoInternal is MorphoStorage {
             amount,
             Math.min(
                 deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                    deltas.supply.scaledP2PDelta.rayMul(poolSupplyIndex)
+                    deltas.supply.scaledDelta.rayMul(poolSupplyIndex)
                 ),
                 deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                    deltas.borrow.scaledP2PDelta.rayMul(poolBorrowIndex)
+                    deltas.borrow.scaledDelta.rayMul(poolBorrowIndex)
                 )
             )
         );
         if (amount == 0) revert Errors.AmountIsZero();
 
-        uint256 newSupplyDelta = deltas.supply.scaledP2PDelta + amount.rayDiv(poolSupplyIndex);
-        uint256 newBorrowDelta = deltas.borrow.scaledP2PDelta + amount.rayDiv(poolBorrowIndex);
+        uint256 newSupplyDelta = deltas.supply.scaledDelta + amount.rayDiv(poolSupplyIndex);
+        uint256 newBorrowDelta = deltas.borrow.scaledDelta + amount.rayDiv(poolBorrowIndex);
 
-        market.deltas.supply.scaledP2PDelta = newSupplyDelta;
-        market.deltas.borrow.scaledP2PDelta = newBorrowDelta;
+        market.deltas.supply.scaledDelta = newSupplyDelta;
+        market.deltas.borrow.scaledDelta = newBorrowDelta;
         emit Events.P2PSupplyDeltaUpdated(underlying, newSupplyDelta);
         emit Events.P2PBorrowDeltaUpdated(underlying, newBorrowDelta);
 

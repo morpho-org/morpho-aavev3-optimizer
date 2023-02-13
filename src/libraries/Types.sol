@@ -24,7 +24,7 @@ library Types {
     /* NESTED STRUCTS */
 
     struct MarketSideDelta {
-        uint256 scaledP2PDelta; // In pool unit.
+        uint256 scaledDelta; // In pool unit.
         uint256 scaledP2PTotal; // In peer-to-peer unit.
     }
 
