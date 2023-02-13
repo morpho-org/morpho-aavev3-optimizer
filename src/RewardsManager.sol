@@ -9,6 +9,7 @@ import {IScaledBalanceToken} from "@aave-v3-core/interfaces/IScaledBalanceToken.
 import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewardsController.sol";
 
 import {Types} from "./libraries/Types.sol";
+
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import {Initializable} from "@openzeppelin-upgradeable/proxy/utils/Initializable.sol";

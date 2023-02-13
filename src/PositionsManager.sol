@@ -7,8 +7,8 @@ import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
 import {Types} from "./libraries/Types.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {Events} from "./libraries/Events.sol";
-import {Constants} from "./libraries/Constants.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
+import {Constants} from "./libraries/Constants.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
@@ -16,6 +16,7 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20 as ERC20Permit2, Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
+
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
@@ -27,14 +28,15 @@ import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 /// @notice Abstract contract exposing logic functions delegate-called by the `Morpho` contract.
 contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     using PoolLib for IPool;
-    using SafeTransferLib for ERC20;
-    using Permit2Lib for ERC20Permit2;
-    using EnumerableSet for EnumerableSet.AddressSet;
     using MarketBalanceLib for Types.MarketBalances;
-    using EnumerableSet for EnumerableSet.AddressSet;
 
     using Math for uint256;
     using PercentageMath for uint256;
+
+    using SafeTransferLib for ERC20;
+    using Permit2Lib for ERC20Permit2;
+
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     /* CONSTRUCTOR */
 
