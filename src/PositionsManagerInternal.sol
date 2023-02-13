@@ -12,9 +12,6 @@ import {DeltasLib} from "./libraries/DeltasLib.sol";
 import {MarketSideDeltaLib} from "./libraries/MarketSideDeltaLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
-import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
-
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
@@ -22,9 +19,12 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {MatchingEngine} from "./MatchingEngine.sol";
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
+
+import {MatchingEngine} from "./MatchingEngine.sol";
 
 /// @title PositionsManagerInternal
 /// @author Morpho Labs

@@ -7,8 +7,8 @@ import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
 import {Types} from "./libraries/Types.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {Events} from "./libraries/Events.sol";
-import {Constants} from "./libraries/Constants.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
+import {Constants} from "./libraries/Constants.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
