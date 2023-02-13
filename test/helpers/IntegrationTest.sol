@@ -329,11 +329,15 @@ contract IntegrationTest is ForkTest {
         _borrowNoCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
         market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
+        Types.Iterations memory iterations = morpho.defaultIterations();
+
         // Set the max iterations to 0 upon repay to skip demotion and fallback to supply delta.
         morpho.setDefaultIterations(Types.Iterations({repay: 0, withdraw: 10}));
 
         hacker.approve(market.underlying, amount);
         hacker.repay(market.underlying, amount, onBehalf);
+
+        morpho.setDefaultIterations(iterations);
 
         return amount;
     }
@@ -349,11 +353,15 @@ contract IntegrationTest is ForkTest {
         hacker.approve(market.underlying, amount);
         hacker.supply(market.underlying, amount);
 
+        Types.Iterations memory iterations = morpho.defaultIterations();
+
         // Set the max iterations to 0 upon withdraw to skip demotion and fallback to borrow delta.
         morpho.setDefaultIterations(Types.Iterations({repay: 10, withdraw: 0}));
 
-        hacker.withdraw(market.underlying, amount, 0);
+        hacker.withdraw(market.underlying, amount);
         market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+
+        morpho.setDefaultIterations(iterations);
 
         return amount;
     }
