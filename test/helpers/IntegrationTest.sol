@@ -358,7 +358,7 @@ contract IntegrationTest is ForkTest {
         // Set the max iterations to 0 upon withdraw to skip demotion and fallback to borrow delta.
         morpho.setDefaultIterations(Types.Iterations({repay: 10, withdraw: 0}));
 
-        hacker.withdraw(market.underlying, amount);
+        hacker.withdraw(market.underlying, amount, 0);
         market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
         morpho.setDefaultIterations(iterations);

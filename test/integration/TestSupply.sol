@@ -297,13 +297,13 @@ contract TestIntegrationSupply is IntegrationTest {
                 test.morphoMarket.deltas.borrow.scaledDelta.rayMul(test.indexes.borrow.poolIndex),
                 borrowDelta,
                 1,
-                "scaledBorrowDelta != expectedBorrowDelta"
+                "borrowDelta != expectedBorrowDelta"
             );
             assertApproxEqAbs(
                 test.morphoMarket.deltas.borrow.scaledP2PTotal.rayMul(test.indexes.borrow.p2pIndex),
                 borrowDelta,
                 1,
-                "scaledTotalBorrowP2P != expectedBorrowDelta"
+                "totalBorrowP2P != expectedBorrowDelta"
             );
             assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
         }
