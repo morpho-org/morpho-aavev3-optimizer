@@ -90,7 +90,7 @@ contract IntegrationTest is ForkTest {
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImpl)), address(proxyAdmin), "");
         morpho = Morpho(payable(address(morphoProxy)));
 
-        morpho.initialize(address(positionsManager), Types.MaxIterations({repay: 10, withdraw: 10}));
+        morpho.initialize(address(positionsManager), Types.Iterations({repay: 10, withdraw: 10}));
     }
 
     function _initUser() internal returns (UserMock newUser) {
@@ -326,7 +326,7 @@ contract IntegrationTest is ForkTest {
         market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
         // Set the max iterations to 0 upon repay to skip demotion and fallback to supply delta.
-        morpho.setDefaultMaxIterations(Types.MaxIterations({repay: 0, withdraw: 10}));
+        morpho.setDefaultIterations(Types.Iterations({repay: 0, withdraw: 10}));
 
         hacker.approve(market.underlying, amount);
         hacker.repay(market.underlying, amount, onBehalf);
