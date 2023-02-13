@@ -486,24 +486,21 @@ abstract contract MorphoInternal is MorphoStorage {
         amountToRepay = maxToRepay;
         DataTypes.ReserveConfigurationMap memory borrowConfig = _POOL.getConfiguration(underlyingBorrowed);
         DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(underlyingCollateral);
-        uint256 liquidationBonus;
-        uint256 borrowPrice;
-        uint256 collateralPrice;
+
         IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
+        uint256 borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
+        uint256 collateralPrice = oracle.getAssetPrice(underlyingCollateral);
+        uint256 liquidationBonus = collateralConfig.getLiquidationBonus();
 
         if (_E_MODE_CATEGORY_ID != 0) {
             DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
             if (_E_MODE_CATEGORY_ID == borrowConfig.getEModeCategory()) {
-                borrowPrice = _getEModePrice(underlyingBorrowed, eModeCategory.priceSource, oracle);
+                borrowPrice = _getEModePrice(borrowPrice, eModeCategory.priceSource, oracle);
             }
             if (_E_MODE_CATEGORY_ID == collateralConfig.getEModeCategory()) {
+                collateralPrice = _getEModePrice(collateralPrice, eModeCategory.priceSource, oracle);
                 liquidationBonus = eModeCategory.liquidationBonus;
-                collateralPrice = _getEModePrice(underlyingCollateral, eModeCategory.priceSource, oracle);
             }
-        } else {
-            liquidationBonus = collateralConfig.getLiquidationBonus();
-            borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
-            collateralPrice = oracle.getAssetPrice(underlyingCollateral);
         }
 
         uint256 collateralTokenUnit;
@@ -527,12 +524,12 @@ abstract contract MorphoInternal is MorphoStorage {
         }
     }
 
-    function _getEModePrice(address underlying, address priceSource, IAaveOracle oracle)
+    function _getEModePrice(uint256 currentPrice, address priceSource, IAaveOracle oracle)
         internal
         view
         returns (uint256 price)
     {
         uint256 eModePrice = oracle.getAssetPrice(priceSource);
-        price = eModePrice != 0 ? eModePrice : oracle.getAssetPrice(underlying);
+        price = eModePrice != 0 ? eModePrice : currentPrice;
     }
 }
