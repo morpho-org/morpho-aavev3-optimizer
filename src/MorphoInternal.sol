@@ -478,24 +478,24 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 poolSupplyIndex
     ) internal view returns (uint256 amountToRepay, uint256 amountToSeize) {
         Types.AmountToSeizeVars memory vars;
-        DataTypes.ReserveConfigurationMap memory borrowConfig = _POOL.getConfiguration(underlyingBorrowed);
+        DataTypes.ReserveConfigurationMap memory borrowedConfig = _POOL.getConfiguration(underlyingBorrowed);
         DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(underlyingCollateral);
 
         DataTypes.EModeCategory memory eModeCategory;
         if (_E_MODE_CATEGORY_ID != 0) eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
 
         bool isInCollateralEMode = _isInEModeCategory(collateralConfig);
-        vars.liquidationBonus = collateralConfig.getLiquidationBonus();
-        if (isInCollateralEMode) vars.liquidationBonus = eModeCategory.liquidationBonus;
+        vars.liquidationBonus =
+            isInCollateralEMode ? eModeCategory.liquidationBonus : collateralConfig.getLiquidationBonus();
 
         IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.borrowedPrice =
-            _getAssetPrice(oracle, underlyingBorrowed, _isInEModeCategory(borrowConfig), eModeCategory.priceSource);
+            _getAssetPrice(oracle, underlyingBorrowed, _isInEModeCategory(borrowedConfig), eModeCategory.priceSource);
         vars.collateralPrice =
             _getAssetPrice(oracle, underlyingCollateral, isInCollateralEMode, eModeCategory.priceSource);
 
         unchecked {
-            vars.borrowedTokenUnit = 10 ** borrowConfig.getDecimals();
+            vars.borrowedTokenUnit = 10 ** borrowedConfig.getDecimals();
             vars.collateralTokenUnit = 10 ** collateralConfig.getDecimals();
         }
 
