@@ -99,9 +99,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) internal view {
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
-            revert Errors.InconsistentEMode();
-        }
+        if (_isInEModeCategory(config)) revert Errors.InconsistentEMode();
 
         Types.Market storage market = _market[underlying];
         Types.MarketSideDelta memory delta = market.deltas.borrow;

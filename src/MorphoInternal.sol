@@ -312,9 +312,7 @@ abstract contract MorphoInternal is MorphoStorage {
             tokenUnit = 10 ** config.getDecimals();
         }
 
-        // If this instance of Morpho isn't in eMode, then vars.eModeCategory is not initalized.
-        // Thus in this case `vars.eModeCategory.priceSource` == `address(0)`.
-        if (vars.eModeCategory.priceSource != address(0) && _E_MODE_CATEGORY_ID == config.getEModeCategory()) {
+        if (_isInEModeCategory(config)) {
             uint256 eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
             underlyingPrice = eModeUnderlyingPrice != 0 ? eModeUnderlyingPrice : vars.oracle.getAssetPrice(underlying);
         } else {
@@ -325,7 +323,7 @@ abstract contract MorphoInternal is MorphoStorage {
         // In response, Morpho disables the asset as collateral and sets its liquidation threshold to 0.
         if (config.getLtv() == 0) return (underlyingPrice, 0, 0, tokenUnit);
 
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == config.getEModeCategory()) {
+        if (_isInEModeCategory(config)) {
             ltv = vars.eModeCategory.ltv;
             liquidationThreshold = vars.eModeCategory.liquidationThreshold;
         } else {
@@ -532,5 +530,9 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         uint256 eModePrice = oracle.getAssetPrice(priceSource);
         price = eModePrice != 0 ? eModePrice : currentPrice;
+    }
+
+    function _isInEModeCategory(DataTypes.ReserveConfigurationMap memory config) internal view returns (bool) {
+        return _E_MODE_CATEGORY_ID != 0 && config.getEModeCategory() == _E_MODE_CATEGORY_ID;
     }
 }
