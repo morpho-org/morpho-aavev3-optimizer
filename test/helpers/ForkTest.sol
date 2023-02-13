@@ -123,15 +123,7 @@ contract ForkTest is BaseTest {
         weth = config.getAddress("WETH");
         wNative = config.getWrappedNative();
 
-        string[] memory symbols = config.getMarkets(); // TODO: replace this with pool.getReservesList()?
-        for (uint256 i; i < symbols.length; ++i) {
-            string memory symbol = symbols[i];
-            address underlying = config.getAddress(symbol);
-
-            allUnderlyings.push(underlying);
-
-            vm.label(underlying, symbol);
-        }
+        allUnderlyings = pool.getReservesList();
     }
 
     function _label() internal virtual {
@@ -144,7 +136,12 @@ contract ForkTest is BaseTest {
         vm.label(address(poolConfigurator), "PoolConfigurator");
         vm.label(address(poolDataProvider), "PoolDataProvider");
 
-        vm.label(wNative, "wNative");
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            address underlying = allUnderlyings[i];
+            string memory symbol = ERC20(underlying).symbol();
+
+            vm.label(underlying, symbol);
+        }
     }
 
     function _mockPoolAdmin() internal {
@@ -158,7 +155,7 @@ contract ForkTest is BaseTest {
     }
 
     function _mockOracle() internal {
-        oracle = new AaveOracleMock(IAaveOracle(addressesProvider.getPriceOracle()), pool.getReservesList());
+        oracle = new AaveOracleMock(IAaveOracle(addressesProvider.getPriceOracle()), allUnderlyings);
 
         vm.prank(aclAdmin);
         addressesProvider.setPriceOracle(address(oracle));
