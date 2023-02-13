@@ -497,12 +497,12 @@ abstract contract MorphoInternal is MorphoStorage {
             }
         }
 
-        uint256 collateralTokenUnit;
         uint256 borrowTokenUnit;
+        uint256 collateralTokenUnit;
 
         unchecked {
-            collateralTokenUnit = 10 ** collateralConfig.getDecimals();
             borrowTokenUnit = 10 ** borrowConfig.getDecimals();
+            collateralTokenUnit = 10 ** collateralConfig.getDecimals();
         }
 
         amountToSeize = ((amountToRepay * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
