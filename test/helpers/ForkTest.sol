@@ -27,6 +27,17 @@ contract ForkTest is BaseTest {
     using TestConfigLib for TestConfig;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
+    /* STRUCTS */
+
+    struct StableDebtSupplyData {
+        uint256 currPrincipalStableDebt;
+        uint256 currTotalStableDebt;
+        uint256 currAvgStableBorrowRate;
+        uint40 stableDebtLastUpdateTimestamp;
+    }
+
+    /* STORAGE */
+
     address internal constant POOL_ADMIN = address(0xB055);
 
     string internal network;
@@ -172,13 +183,6 @@ contract ForkTest is BaseTest {
     function _revert() internal {
         if (snapshotId < type(uint256).max) vm.revertTo(snapshotId);
         snapshotId = vm.snapshot();
-    }
-
-    struct StableDebtSupplyData {
-        uint256 currPrincipalStableDebt;
-        uint256 currTotalStableDebt;
-        uint256 currAvgStableBorrowRate;
-        uint40 stableDebtLastUpdateTimestamp;
     }
 
     /// @dev Calculates the amount accrued to AaveV3's treasury.

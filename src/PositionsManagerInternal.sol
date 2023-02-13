@@ -96,10 +96,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Authorizes a borrow action.
-    function _authorizeBorrow(address underlying, uint256 amount, address borrower, Types.Indexes256 memory indexes)
-        internal
-        view
-    {
+    function _authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) internal view {
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
@@ -116,11 +113,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
             uint256 poolDebt =
                 ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
+
             if (amount + totalP2P + poolDebt > borrowCap) revert Errors.ExceedsBorrowCap();
         }
-
-        Types.LiquidityData memory values = _liquidityData(underlying, borrower, 0, amount);
-        if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
     }
 
     /// @dev Validates a repay action.
@@ -153,13 +148,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.isWithdrawCollateralPaused()) revert Errors.WithdrawCollateralIsPaused();
     }
 
-    /// @dev Authorizes a withdraw collateral action.
-    function _authorizeWithdrawCollateral(address underlying, uint256 amount, address supplier) internal view {
-        if (_getUserHealthFactor(underlying, supplier, amount) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
-            revert Errors.UnauthorizedWithdraw();
-        }
-    }
-
     /// @dev Authorizes a liquidate action.
     function _authorizeLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
         internal
@@ -178,7 +166,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         if (borrowMarket.isDeprecated()) return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
 
-        uint256 healthFactor = _getUserHealthFactor(address(0), borrower, 0);
+        uint256 healthFactor = _getUserHealthFactor(borrower);
         if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
             revert Errors.UnauthorizedLiquidate();
         }
@@ -326,7 +314,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Handle the supply cap.
         uint256 idleSupplyIncrease;
         (vars.toSupply, idleSupplyIncrease) =
-            market.increaseIdle(underlying, amount, _POOL.getConfiguration(underlying));
+            market.increaseIdle(underlying, amount, _POOL.getReserveData(underlying), indexes);
 
         // Demote peer-to-peer suppliers.
         uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxIterations);

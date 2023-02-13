@@ -5,7 +5,9 @@ import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
 
 import {Types} from "./libraries/Types.sol";
+import {Errors} from "./libraries/Errors.sol";
 import {Events} from "./libraries/Events.sol";
+import {Constants} from "./libraries/Constants.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 
@@ -41,7 +43,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param amount The amount of `underlying` to supply.
     /// @param from The address to transfer the underlying from.
     /// @param onBehalf The address that will receive the supply position.
-    /// @param maxIterations The maximum number of iterations allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
     /// @return The amount supplied.
     function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxIterations)
         external
@@ -90,7 +92,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param amount The amount of `underlying` to borrow.
     /// @param borrower The address that will receive the debt position.
     /// @param receiver The address that will receive the borrowed funds.
-    /// @param maxIterations The maximum number of iterations allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
     /// @return The amount borrowed.
     function borrowLogic(address underlying, uint256 amount, address borrower, address receiver, uint256 maxIterations)
         external
@@ -100,11 +102,14 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
-        // The following check requires indexes to be up-to-date.
-        _authorizeBorrow(underlying, amount, borrower, indexes);
+        _authorizeBorrow(underlying, amount, indexes);
 
         Types.BorrowWithdrawVars memory vars =
             _executeBorrow(underlying, amount, borrower, receiver, maxIterations, indexes);
+
+        // The following check requires accounting to have been performed.
+        Types.LiquidityData memory values = _liquidityData(borrower);
+        if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
 
         _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
         _POOL.borrowFromPool(underlying, vars.toBorrow);
@@ -133,7 +138,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         ERC20(underlying).transferFrom2(repayer, address(this), amount);
 
         Types.SupplyRepayVars memory vars =
-            _executeRepay(underlying, amount, repayer, onBehalf, _defaultMaxIterations.repay, indexes);
+            _executeRepay(underlying, amount, repayer, onBehalf, _defaultIterations.repay, indexes);
 
         _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
         _POOL.supplyToPool(underlying, vars.toSupply);
@@ -146,11 +151,15 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param amount The amount of `underlying` to withdraw.
     /// @param supplier The address whose position will be withdrawn.
     /// @param receiver The address that will receive the withdrawn funds.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
     /// @return The amount withdrawn.
-    function withdrawLogic(address underlying, uint256 amount, address supplier, address receiver)
-        external
-        returns (uint256)
-    {
+    function withdrawLogic(
+        address underlying,
+        uint256 amount,
+        address supplier,
+        address receiver,
+        uint256 maxIterations
+    ) external returns (uint256) {
         Types.Market storage market = _validateWithdraw(underlying, amount, supplier, receiver);
 
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
@@ -158,8 +167,9 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         if (amount == 0) return 0;
 
-        Types.BorrowWithdrawVars memory vars =
-            _executeWithdraw(underlying, amount, supplier, receiver, _defaultMaxIterations.withdraw, indexes);
+        Types.BorrowWithdrawVars memory vars = _executeWithdraw(
+            underlying, amount, supplier, receiver, Math.max(_defaultIterations.withdraw, maxIterations), indexes
+        );
 
         _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
         _POOL.borrowFromPool(underlying, vars.toBorrow);
@@ -187,10 +197,12 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         if (amount == 0) return 0;
 
-        // The following check requires storage indexes to be up-to-date.
-        _authorizeWithdrawCollateral(underlying, amount, supplier);
-
         _executeWithdrawCollateral(underlying, amount, supplier, receiver, poolSupplyIndex);
+
+        // The following check requires accounting to have been performed.
+        if (_getUserHealthFactor(supplier) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+            revert Errors.UnauthorizedWithdraw();
+        }
 
         _POOL.withdrawFromPool(underlying, market.aToken, amount);
 

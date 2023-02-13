@@ -28,7 +28,7 @@ interface IMorphoGetters {
     function isManaging(address delegator, address manager) external view returns (bool);
     function userNonce(address user) external view returns (uint256);
 
-    function defaultMaxIterations() external view returns (Types.MaxIterations memory);
+    function defaultIterations() external view returns (Types.Iterations memory);
     function positionsManager() external view returns (address);
     function rewardsManager() external view returns (address);
     function treasuryVault() external view returns (address);
@@ -36,10 +36,7 @@ interface IMorphoGetters {
     function isClaimRewardsPaused() external view returns (bool);
 
     function updatedIndexes(address underlying) external view returns (Types.Indexes256 memory);
-    function liquidityData(address underlying, address user, uint256 amountWithdrawn, uint256 amountBorrowed)
-        external
-        view
-        returns (Types.LiquidityData memory);
+    function liquidityData(address user) external view returns (Types.LiquidityData memory);
     function getNext(address underlying, Types.Position position, address user) external view returns (address);
     function getBucketsMask(address underlying, Types.Position position) external view returns (uint256);
 }
@@ -52,7 +49,7 @@ interface IMorphoSetters {
     function setPositionsManager(address positionsManager) external;
     function setRewardsManager(address rewardsManager) external;
     function setTreasuryVault(address treasuryVault) external;
-    function setDefaultMaxIterations(Types.MaxIterations memory defaultMaxIterations) external;
+    function setDefaultIterations(Types.Iterations memory defaultIterations) external;
     function setP2PIndexCursor(address underlying, uint16 p2pIndexCursor) external;
     function setReserveFactor(address underlying, uint16 newReserveFactor) external;
 
@@ -71,7 +68,7 @@ interface IMorphoSetters {
 }
 
 interface IMorpho is IMorphoGetters, IMorphoSetters {
-    function initialize(address newPositionsManager, Types.MaxIterations memory newDefaultMaxIterations) external;
+    function initialize(address newPositionsManager, Types.Iterations memory newDefaultIterations) external;
 
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
         external
@@ -108,7 +105,7 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
         Types.Signature calldata signature
     ) external returns (uint256 repaid);
 
-    function withdraw(address underlying, uint256 amount, address onBehalf, address receiver)
+    function withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
         returns (uint256 withdrawn);
     function withdrawCollateral(address underlying, uint256 amount, address onBehalf, address receiver)
