@@ -522,18 +522,26 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
 
         _marketBalances[dai].collateral[address(1)] = collateralAmount.rayDivUp(indexes.supply.poolIndex);
 
-        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(dai);
-        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = config.getParams();
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == config.getEModeCategory()) {
-            vars.liquidationBonus = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID).liquidationBonus;
-        }
-        (,,, vars.borrowTokenUnit,,) = _POOL.getConfiguration(wbtc).getParams();
-
-        vars.collateralTokenUnit = 10 ** vars.collateralTokenUnit;
-        vars.borrowTokenUnit = 10 ** vars.borrowTokenUnit;
-
         vars.borrowPrice = oracle.getAssetPrice(wbtc);
         vars.collateralPrice = oracle.getAssetPrice(dai);
+
+        DataTypes.ReserveConfigurationMap memory borrowConfig = _POOL.getConfiguration(wbtc);
+        DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(dai);
+        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
+
+        (,,, vars.borrowTokenUnit,,) = borrowConfig.getParams();
+        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = collateralConfig.getParams();
+
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == borrowConfig.getEModeCategory()) {
+            vars.borrowPrice = _getEModePrice(vars.borrowPrice, eModeCategory.priceSource, oracle);
+        }
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == collateralConfig.getEModeCategory()) {
+            vars.liquidationBonus = eModeCategory.liquidationBonus;
+            vars.collateralPrice = _getEModePrice(vars.collateralPrice, eModeCategory.priceSource, oracle);
+        }
+
+        vars.borrowTokenUnit = 10 ** vars.borrowTokenUnit;
+        vars.collateralTokenUnit = 10 ** vars.collateralTokenUnit;
 
         TestSeizeVars2 memory expected;
         TestSeizeVars2 memory actual;

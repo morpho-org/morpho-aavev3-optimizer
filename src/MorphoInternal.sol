@@ -524,6 +524,7 @@ abstract contract MorphoInternal is MorphoStorage {
         }
     }
 
+    /// @dev Returns the e-mode price given a `currentPrice` and a `priceSource` using Aave's `oracle`.
     function _getEModePrice(uint256 currentPrice, address priceSource, IAaveOracle oracle)
         internal
         view
