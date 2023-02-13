@@ -31,10 +31,10 @@ contract TestInterestRatesLib is BaseTest {
             bound(_rng(seed, "poolBorrowIndex"), indexesParams.lastBorrowIndexes.poolIndex, MAX_INDEX);
         indexesParams.reserveFactor = bound(_rng(seed, "reserveFactor"), 0, MAX_RESERVE_FACTOR);
         indexesParams.p2pIndexCursor = bound(_rng(seed, "p2pIndexCursor"), 0, MAX_P2P_INDEX_CURSOR);
-        indexesParams.deltas.supply.scaledDeltaPool = bound(_rng(seed, "supplyDeltaPool"), 0, MAX_DELTA);
-        indexesParams.deltas.supply.scaledTotalP2P = bound(_rng(seed, "supplyTotalP2P"), 0, MAX_TOTAL_P2P);
-        indexesParams.deltas.borrow.scaledDeltaPool = bound(_rng(seed, "borrowDeltaPool"), 0, MAX_DELTA);
-        indexesParams.deltas.borrow.scaledTotalP2P = bound(_rng(seed, "borrowTotalP2P"), 0, MAX_TOTAL_P2P);
+        indexesParams.deltas.supply.scaledDelta = bound(_rng(seed, "supplyDeltaPool"), 0, MAX_DELTA);
+        indexesParams.deltas.supply.scaledP2PTotal = bound(_rng(seed, "supplyTotalP2P"), 0, MAX_TOTAL_P2P);
+        indexesParams.deltas.borrow.scaledDelta = bound(_rng(seed, "borrowDeltaPool"), 0, MAX_DELTA);
+        indexesParams.deltas.borrow.scaledP2PTotal = bound(_rng(seed, "borrowTotalP2P"), 0, MAX_TOTAL_P2P);
         indexesParams.proportionIdle = bound(_rng(seed, "proportionIdle"), 0, MAX_PROPORTION_IDLE);
 
         Types.GrowthFactors memory expectedGrowthFactors = InterestRatesLib.computeGrowthFactors(
@@ -50,8 +50,8 @@ contract TestInterestRatesLib is BaseTest {
             expectedGrowthFactors.poolSupplyGrowthFactor,
             expectedGrowthFactors.p2pSupplyGrowthFactor,
             indexesParams.lastSupplyIndexes,
-            indexesParams.deltas.supply.scaledDeltaPool,
-            indexesParams.deltas.supply.scaledTotalP2P,
+            indexesParams.deltas.supply.scaledDelta,
+            indexesParams.deltas.supply.scaledP2PTotal,
             indexesParams.proportionIdle
         );
 
@@ -59,8 +59,8 @@ contract TestInterestRatesLib is BaseTest {
             expectedGrowthFactors.poolBorrowGrowthFactor,
             expectedGrowthFactors.p2pBorrowGrowthFactor,
             indexesParams.lastBorrowIndexes,
-            indexesParams.deltas.borrow.scaledDeltaPool,
-            indexesParams.deltas.borrow.scaledTotalP2P,
+            indexesParams.deltas.borrow.scaledDelta,
+            indexesParams.deltas.borrow.scaledP2PTotal,
             0
         );
 
@@ -186,7 +186,7 @@ contract TestInterestRatesLib is BaseTest {
         p2pGrowthFactor = bound(p2pGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
         lastPoolIndex = bound(lastPoolIndex, MIN_INDEX, MAX_INDEX);
         lastP2PIndex = bound(lastP2PIndex, MIN_INDEX, MAX_INDEX);
-        uint256 p2pDelta = 0;
+        uint256 delta = 0;
         uint256 p2pAmount = 0;
         proportionIdle = bound(proportionIdle, 0, MAX_PROPORTION_IDLE);
 
@@ -196,7 +196,7 @@ contract TestInterestRatesLib is BaseTest {
             poolGrowthFactor,
             p2pGrowthFactor,
             Types.MarketSideIndexes256(lastPoolIndex, lastP2PIndex),
-            p2pDelta,
+            delta,
             p2pAmount,
             proportionIdle
         );
@@ -218,7 +218,7 @@ contract TestInterestRatesLib is BaseTest {
         p2pGrowthFactor = bound(p2pGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
         lastPoolIndex = bound(lastPoolIndex, MIN_INDEX, MAX_INDEX);
         lastP2PIndex = bound(lastP2PIndex, MIN_INDEX, MAX_INDEX);
-        uint256 p2pDelta = 0;
+        uint256 delta = 0;
         p2pAmount = bound(p2pAmount, 1, MAX_TOTAL_P2P);
         proportionIdle = 0;
 
@@ -228,7 +228,7 @@ contract TestInterestRatesLib is BaseTest {
             poolGrowthFactor,
             p2pGrowthFactor,
             Types.MarketSideIndexes256(lastPoolIndex, lastP2PIndex),
-            p2pDelta,
+            delta,
             p2pAmount,
             proportionIdle
         );
@@ -243,14 +243,14 @@ contract TestInterestRatesLib is BaseTest {
         uint256 p2pGrowthFactor,
         uint256 lastPoolIndex,
         uint256 lastP2PIndex,
-        uint256 p2pDelta,
+        uint256 delta,
         uint256 proportionIdle
     ) public {
         poolGrowthFactor = bound(poolGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
         p2pGrowthFactor = bound(p2pGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
         lastPoolIndex = bound(lastPoolIndex, MIN_INDEX, MAX_INDEX);
         lastP2PIndex = bound(lastP2PIndex, MIN_INDEX, MAX_INDEX);
-        p2pDelta = bound(p2pDelta, 1, MAX_DELTA);
+        delta = bound(delta, 1, MAX_DELTA);
         uint256 p2pAmount = 0;
         proportionIdle = bound(proportionIdle, 0, MAX_PROPORTION_IDLE);
 
@@ -260,7 +260,7 @@ contract TestInterestRatesLib is BaseTest {
             poolGrowthFactor,
             p2pGrowthFactor,
             Types.MarketSideIndexes256(lastPoolIndex, lastP2PIndex),
-            p2pDelta,
+            delta,
             p2pAmount,
             proportionIdle
         );
@@ -275,7 +275,7 @@ contract TestInterestRatesLib is BaseTest {
         uint256 p2pGrowthFactor,
         uint256 lastPoolIndex,
         uint256 lastP2PIndex,
-        uint256 p2pDelta,
+        uint256 delta,
         uint256 p2pAmount,
         uint256 proportionIdle
     ) public {
@@ -283,12 +283,12 @@ contract TestInterestRatesLib is BaseTest {
         p2pGrowthFactor = bound(p2pGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
         lastPoolIndex = bound(lastPoolIndex, MIN_INDEX, MAX_INDEX);
         lastP2PIndex = bound(lastP2PIndex, MIN_INDEX, MAX_INDEX);
-        p2pDelta = bound(p2pDelta, 1, MAX_DELTA);
+        delta = bound(delta, 1, MAX_DELTA);
         p2pAmount = bound(p2pAmount, 1, MAX_TOTAL_P2P);
         proportionIdle = bound(proportionIdle, 0, MAX_PROPORTION_IDLE);
 
         uint256 expectedProportionDelta = Math.min(
-            p2pDelta.rayMul(lastPoolIndex).rayDivUp(p2pAmount.rayMul(lastP2PIndex)), WadRayMath.RAY - proportionIdle
+            delta.rayMul(lastPoolIndex).rayDivUp(p2pAmount.rayMul(lastP2PIndex)), WadRayMath.RAY - proportionIdle
         );
 
         uint256 expectedP2PIndex = lastP2PIndex.rayMul(
@@ -299,7 +299,7 @@ contract TestInterestRatesLib is BaseTest {
             poolGrowthFactor,
             p2pGrowthFactor,
             Types.MarketSideIndexes256(lastPoolIndex, lastP2PIndex),
-            p2pDelta,
+            delta,
             p2pAmount,
             proportionIdle
         );
