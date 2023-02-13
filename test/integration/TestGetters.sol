@@ -65,19 +65,21 @@ contract TestIntegrationGetters is IntegrationTest {
             uint256 supplyBalanceBefore = morpho.supplyBalance(market.underlying, address(user));
             uint256 borrowBalanceBefore = morpho.borrowBalance(market.underlying, address(user));
 
+            DataTypes.ReserveData memory reserve = pool.getReserveData(market.underlying);
+
             _forward(blocks);
 
-            assertGt(
+            assertEq(
                 morpho.supplyBalance(market.underlying, address(user)),
-                supplyBalanceBefore,
-                "supplyBalanceAfter <= supplyBalanceBefore"
+                supplyBalanceBefore + reserve.currentLiquidityRate * blocks * BLOCK_TIME,
+                "supplyBalanceAfter <= supplyBalanceBefore + interestsAccrued"
             );
 
             if (market.isBorrowable) {
-                assertGt(
+                assertEq(
                     morpho.borrowBalance(market.underlying, address(user)),
-                    borrowBalanceBefore,
-                    "borrowBalanceAfter <= borrowBalanceBefore"
+                    borrowBalanceBefore + reserve.currentVariableBorrowRate * blocks * BLOCK_TIME,
+                    "borrowBalanceAfter <= borrowBalanceBefore + interestsAccrued"
                 );
             } else {
                 assertEq(morpho.borrowBalance(market.underlying, address(user)), 0, "borrowBalanceAfter != 0");

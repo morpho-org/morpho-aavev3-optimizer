@@ -17,6 +17,7 @@ import {console} from "@forge-std/console.sol";
 import {Test} from "@forge-std/Test.sol";
 
 contract BaseTest is Test {
+    uint256 internal constant BLOCK_TIME = 12;
     uint256 internal constant DEFAULT_MAX_ITERATIONS = 10;
 
     /// @dev Asserts a is approximately equal to b, with a maximum absolute difference of DUST_THRESHOLD.
@@ -39,7 +40,7 @@ contract BaseTest is Test {
     /// @dev Rolls & warps the given number of blocks forward the blockchain.
     function _forward(uint256 blocks) internal {
         vm.roll(block.number + blocks);
-        vm.warp(block.timestamp + blocks * 12); // Block speed should depend on test network.
+        vm.warp(block.timestamp + blocks * BLOCK_TIME); // Block speed should depend on test network.
     }
 
     /// @dev Bounds the fuzzing input to a realistic number of blocks.
