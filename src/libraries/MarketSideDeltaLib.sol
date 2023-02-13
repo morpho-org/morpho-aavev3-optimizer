@@ -30,12 +30,12 @@ library MarketSideDeltaLib {
     ) internal {
         if (amount == 0) return;
 
-        uint256 newScaledDeltaPool = delta.scaledDeltaPool + amount.rayDiv(indexes.poolIndex);
+        uint256 newScaledDelta = delta.scaledDelta + amount.rayDiv(indexes.poolIndex);
 
-        delta.scaledDeltaPool = newScaledDeltaPool;
+        delta.scaledDelta = newScaledDelta;
 
-        if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, newScaledDeltaPool);
-        else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledDeltaPool);
+        if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, newScaledDelta);
+        else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledDelta);
     }
 
     /// @notice Given variables from a market side, matches the delta and calculates the amount to supply/borrow from delta.
@@ -53,16 +53,16 @@ library MarketSideDeltaLib {
         uint256 poolIndex,
         bool borrowSide
     ) internal returns (uint256, uint256) {
-        uint256 scaledDeltaPool = delta.scaledDeltaPool;
-        if (scaledDeltaPool == 0) return (amount, 0);
+        uint256 scaledDelta = delta.scaledDelta;
+        if (scaledDelta == 0) return (amount, 0);
 
-        uint256 decreased = Math.min(scaledDeltaPool.rayMulUp(poolIndex), amount); // In underlying.
-        uint256 newScaledDeltaPool = scaledDeltaPool.zeroFloorSub(decreased.rayDivDown(poolIndex));
+        uint256 decreased = Math.min(scaledDelta.rayMulUp(poolIndex), amount); // In underlying.
+        uint256 newScaledDelta = scaledDelta.zeroFloorSub(decreased.rayDivDown(poolIndex));
 
-        delta.scaledDeltaPool = newScaledDeltaPool;
+        delta.scaledDelta = newScaledDelta;
 
-        if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, newScaledDeltaPool);
-        else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledDeltaPool);
+        if (borrowSide) emit Events.P2PBorrowDeltaUpdated(underlying, newScaledDelta);
+        else emit Events.P2PSupplyDeltaUpdated(underlying, newScaledDelta);
 
         return (amount - decreased, decreased);
     }

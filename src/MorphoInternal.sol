@@ -132,21 +132,21 @@ abstract contract MorphoInternal is MorphoStorage {
         amount = Math.min(
             amount,
             Math.min(
-                deltas.supply.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                    deltas.supply.scaledDeltaPool.rayMul(poolSupplyIndex)
+                deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                    deltas.supply.scaledDelta.rayMul(poolSupplyIndex)
                 ),
-                deltas.borrow.scaledTotalP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                    deltas.borrow.scaledDeltaPool.rayMul(poolBorrowIndex)
+                deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+                    deltas.borrow.scaledDelta.rayMul(poolBorrowIndex)
                 )
             )
         );
         if (amount == 0) revert Errors.AmountIsZero();
 
-        uint256 newSupplyDelta = deltas.supply.scaledDeltaPool + amount.rayDiv(poolSupplyIndex);
-        uint256 newBorrowDelta = deltas.borrow.scaledDeltaPool + amount.rayDiv(poolBorrowIndex);
+        uint256 newSupplyDelta = deltas.supply.scaledDelta + amount.rayDiv(poolSupplyIndex);
+        uint256 newBorrowDelta = deltas.borrow.scaledDelta + amount.rayDiv(poolBorrowIndex);
 
-        market.deltas.supply.scaledDeltaPool = newSupplyDelta;
-        market.deltas.borrow.scaledDeltaPool = newBorrowDelta;
+        market.deltas.supply.scaledDelta = newSupplyDelta;
+        market.deltas.borrow.scaledDelta = newBorrowDelta;
         emit Events.P2PSupplyDeltaUpdated(underlying, newSupplyDelta);
         emit Events.P2PBorrowDeltaUpdated(underlying, newBorrowDelta);
 

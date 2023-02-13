@@ -39,10 +39,10 @@ library DeltasLib {
         Types.MarketSideIndexes256 memory counterIndexes = borrowSide ? indexes.supply : indexes.borrow;
 
         p2pBalanceIncrease = amount.rayDiv(counterIndexes.p2pIndex);
-        promotedDelta.scaledTotalP2P += promoted.rayDiv(promotedIndexes.p2pIndex);
-        counterDelta.scaledTotalP2P += p2pBalanceIncrease;
+        promotedDelta.scaledP2PTotal += promoted.rayDiv(promotedIndexes.p2pIndex);
+        counterDelta.scaledP2PTotal += p2pBalanceIncrease;
 
-        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
+        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledP2PTotal, deltas.borrow.scaledP2PTotal);
     }
 
     /// @notice Decreases the peer-to-peer amounts following a demotion.
@@ -68,10 +68,10 @@ library DeltasLib {
         Types.MarketSideIndexes256 memory counterIndexes = borrowSide ? indexes.supply : indexes.borrow;
 
         // zeroFloorSub as the last decimal might flip.
-        demotedDelta.scaledTotalP2P = demotedDelta.scaledTotalP2P.zeroFloorSub(demoted.rayDiv(demotedIndexes.p2pIndex));
-        counterDelta.scaledTotalP2P = counterDelta.scaledTotalP2P.zeroFloorSub(amount.rayDiv(counterIndexes.p2pIndex));
+        demotedDelta.scaledP2PTotal = demotedDelta.scaledP2PTotal.zeroFloorSub(demoted.rayDiv(demotedIndexes.p2pIndex));
+        counterDelta.scaledP2PTotal = counterDelta.scaledP2PTotal.zeroFloorSub(amount.rayDiv(counterIndexes.p2pIndex));
 
-        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledTotalP2P, deltas.borrow.scaledTotalP2P);
+        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledP2PTotal, deltas.borrow.scaledP2PTotal);
     }
 
     /// @notice Calculates & deducts the reserve fee to repay from the given amount, updating the total peer-to-peer amount.
@@ -85,18 +85,18 @@ library DeltasLib {
     {
         if (amount == 0) return 0;
 
-        uint256 scaledTotalBorrowP2P = deltas.borrow.scaledTotalP2P;
+        uint256 scaledTotalBorrowP2P = deltas.borrow.scaledP2PTotal;
         // Fee = (borrow.totalScaledP2P - borrow.delta) - (supply.totalScaledP2P - supply.delta).
         uint256 feeToRepay = scaledTotalBorrowP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-            deltas.supply.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                deltas.supply.scaledDeltaPool.rayMul(indexes.supply.poolIndex)
+            deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
             )
         );
 
         if (feeToRepay == 0) return amount;
 
         feeToRepay = Math.min(feeToRepay, amount);
-        deltas.borrow.scaledTotalP2P = scaledTotalBorrowP2P.zeroFloorSub(feeToRepay.rayDivDown(indexes.borrow.p2pIndex)); // P2PTotalsUpdated emitted in `decreaseP2P`.
+        deltas.borrow.scaledP2PTotal = scaledTotalBorrowP2P.zeroFloorSub(feeToRepay.rayDivDown(indexes.borrow.p2pIndex)); // P2PTotalsUpdated emitted in `decreaseP2P`.
 
         return amount - feeToRepay;
     }

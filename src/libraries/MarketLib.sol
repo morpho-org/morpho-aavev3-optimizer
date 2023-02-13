@@ -189,7 +189,7 @@ library MarketLib {
         uint256 idleSupply = market.idleSupply;
         if (idleSupply == 0) return 0;
 
-        uint256 totalP2PSupplied = market.deltas.supply.scaledTotalP2P.rayMul(market.indexes.supply.p2pIndex);
+        uint256 totalP2PSupplied = market.deltas.supply.scaledP2PTotal.rayMul(market.indexes.supply.p2pIndex);
         return idleSupply.rayDivUp(totalP2PSupplied);
     }
 

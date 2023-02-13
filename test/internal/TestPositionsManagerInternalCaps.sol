@@ -51,8 +51,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         poolAdmin.setBorrowCap(dai, 0);
 
-        market.deltas.borrow.scaledDeltaPool = delta.rayDiv(indexes.borrow.poolIndex);
-        market.deltas.borrow.scaledTotalP2P = totalP2P.rayDiv(indexes.borrow.p2pIndex);
+        market.deltas.borrow.scaledDelta = delta.rayDiv(indexes.borrow.poolIndex);
+        market.deltas.borrow.scaledP2PTotal = totalP2P.rayDiv(indexes.borrow.p2pIndex);
 
         this.authorizeBorrow(dai, amount);
     }
@@ -85,8 +85,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         poolAdmin.setBorrowCap(dai, borrowCap);
 
-        market.deltas.borrow.scaledDeltaPool = delta.rayDiv(indexes.borrow.poolIndex);
-        market.deltas.borrow.scaledTotalP2P = totalP2P.rayDiv(indexes.borrow.p2pIndex);
+        market.deltas.borrow.scaledDelta = delta.rayDiv(indexes.borrow.poolIndex);
+        market.deltas.borrow.scaledP2PTotal = totalP2P.rayDiv(indexes.borrow.p2pIndex);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.ExceedsBorrowCap.selector));
         this.authorizeBorrow(dai, amount);
