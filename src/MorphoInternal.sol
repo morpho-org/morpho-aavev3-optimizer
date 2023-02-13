@@ -484,15 +484,15 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.EModeCategory memory eModeCategory;
         if (_E_MODE_CATEGORY_ID != 0) eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
 
-        bool isInCollateralEMode = _isInEModeCategory(collateralConfig);
+        bool collateralIsInEMode = _isInEModeCategory(collateralConfig);
         vars.liquidationBonus =
-            isInCollateralEMode ? eModeCategory.liquidationBonus : collateralConfig.getLiquidationBonus();
+            collateralIsInEMode ? eModeCategory.liquidationBonus : collateralConfig.getLiquidationBonus();
 
         IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.borrowedPrice =
             _getAssetPrice(oracle, underlyingBorrowed, _isInEModeCategory(borrowedConfig), eModeCategory.priceSource);
         vars.collateralPrice =
-            _getAssetPrice(oracle, underlyingCollateral, isInCollateralEMode, eModeCategory.priceSource);
+            _getAssetPrice(oracle, underlyingCollateral, collateralIsInEMode, eModeCategory.priceSource);
 
         unchecked {
             vars.borrowedTokenUnit = 10 ** borrowedConfig.getDecimals();
