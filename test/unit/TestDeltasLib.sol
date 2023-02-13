@@ -41,8 +41,8 @@ contract TestUnitDeltasLib is Test {
         promoted = bound(promoted, 0, amount);
         totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
         totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
-        deltas.supply.scaledTotalP2P = totalP2PSupply;
-        deltas.borrow.scaledTotalP2P = totalP2PBorrow;
+        deltas.supply.scaledP2PTotal = totalP2PSupply;
+        deltas.borrow.scaledP2PTotal = totalP2PBorrow;
 
         vm.expectEmit(true, true, true, true);
         emit Events.P2PTotalsUpdated(
@@ -53,8 +53,8 @@ contract TestUnitDeltasLib is Test {
 
         uint256 p2pIncrease = this.increaseP2P(address(1), promoted, amount, false);
         assertEq(p2pIncrease, amount.rayDiv(indexes.supply.p2pIndex), "p2pIncrease");
-        assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply + promoted.rayDiv(indexes.supply.p2pIndex), "supply");
-        assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow + p2pIncrease, "borrow");
+        assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply + promoted.rayDiv(indexes.supply.p2pIndex), "supply");
+        assertEq(deltas.borrow.scaledP2PTotal, totalP2PBorrow + p2pIncrease, "borrow");
     }
 
     function testIncreaseP2PSupply(uint256 promoted, uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow)
@@ -64,8 +64,8 @@ contract TestUnitDeltasLib is Test {
         promoted = bound(promoted, 0, amount);
         totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
         totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
-        deltas.supply.scaledTotalP2P = totalP2PSupply;
-        deltas.borrow.scaledTotalP2P = totalP2PBorrow;
+        deltas.supply.scaledP2PTotal = totalP2PSupply;
+        deltas.borrow.scaledP2PTotal = totalP2PBorrow;
 
         vm.expectEmit(true, true, true, true);
         emit Events.P2PTotalsUpdated(
@@ -76,8 +76,8 @@ contract TestUnitDeltasLib is Test {
 
         uint256 p2pIncrease = this.increaseP2P(address(1), promoted, amount, true);
         assertEq(p2pIncrease, amount.rayDiv(indexes.borrow.p2pIndex), "p2pIncrease");
-        assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply + p2pIncrease, "supply");
-        assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow + promoted.rayDiv(indexes.borrow.p2pIndex), "borrow");
+        assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply + p2pIncrease, "supply");
+        assertEq(deltas.borrow.scaledP2PTotal, totalP2PBorrow + promoted.rayDiv(indexes.borrow.p2pIndex), "borrow");
     }
 
     function testDecreaseP2PSupplyShouldNotChangeDeltasIfAmountIsZero() public {
@@ -85,11 +85,11 @@ contract TestUnitDeltasLib is Test {
         uint256 amount = 0;
         uint256 totalP2PSupply = 1000;
         uint256 totalP2PBorrow = 1000;
-        deltas.supply.scaledTotalP2P = totalP2PSupply;
-        deltas.borrow.scaledTotalP2P = totalP2PBorrow;
+        deltas.supply.scaledP2PTotal = totalP2PSupply;
+        deltas.borrow.scaledP2PTotal = totalP2PBorrow;
         this.decreaseP2P(address(1), demoted, amount, false);
-        assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply);
-        assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow);
+        assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply);
+        assertEq(deltas.borrow.scaledP2PTotal, totalP2PBorrow);
     }
 
     function testDecreaseP2PSupply(uint256 demoted, uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow)
@@ -99,8 +99,8 @@ contract TestUnitDeltasLib is Test {
         demoted = bound(demoted, 0, amount);
         totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
         totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
-        deltas.supply.scaledTotalP2P = totalP2PSupply;
-        deltas.borrow.scaledTotalP2P = totalP2PBorrow;
+        deltas.supply.scaledP2PTotal = totalP2PSupply;
+        deltas.borrow.scaledP2PTotal = totalP2PBorrow;
 
         vm.expectEmit(true, true, true, true);
         emit Events.P2PTotalsUpdated(
@@ -110,8 +110,8 @@ contract TestUnitDeltasLib is Test {
             );
 
         this.decreaseP2P(address(1), demoted, amount, false);
-        assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply.zeroFloorSub(demoted.rayDiv(indexes.supply.p2pIndex)));
-        assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow.zeroFloorSub(amount.rayDiv(indexes.borrow.p2pIndex)));
+        assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply.zeroFloorSub(demoted.rayDiv(indexes.supply.p2pIndex)));
+        assertEq(deltas.borrow.scaledP2PTotal, totalP2PBorrow.zeroFloorSub(amount.rayDiv(indexes.borrow.p2pIndex)));
     }
 
     function testDecreaseP2PBorrow(uint256 demoted, uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow)
@@ -121,8 +121,8 @@ contract TestUnitDeltasLib is Test {
         demoted = bound(demoted, 0, amount);
         totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
         totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
-        deltas.supply.scaledTotalP2P = totalP2PSupply;
-        deltas.borrow.scaledTotalP2P = totalP2PBorrow;
+        deltas.supply.scaledP2PTotal = totalP2PSupply;
+        deltas.borrow.scaledP2PTotal = totalP2PBorrow;
 
         vm.expectEmit(true, true, true, true);
         emit Events.P2PTotalsUpdated(
@@ -132,20 +132,20 @@ contract TestUnitDeltasLib is Test {
             );
 
         this.decreaseP2P(address(1), demoted, amount, true);
-        assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply.zeroFloorSub(amount.rayDiv(indexes.supply.p2pIndex)));
-        assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow.zeroFloorSub(demoted.rayDiv(indexes.borrow.p2pIndex)));
+        assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply.zeroFloorSub(amount.rayDiv(indexes.supply.p2pIndex)));
+        assertEq(deltas.borrow.scaledP2PTotal, totalP2PBorrow.zeroFloorSub(demoted.rayDiv(indexes.borrow.p2pIndex)));
     }
 
     function testRepayFeeShouldReturnZeroIfAmountIsZero(uint256 totalP2PSupply, uint256 totalP2PBorrow) public {
         totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
         totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
         uint256 amount = 0;
-        deltas.supply.scaledTotalP2P = totalP2PSupply;
-        deltas.borrow.scaledTotalP2P = totalP2PBorrow;
+        deltas.supply.scaledP2PTotal = totalP2PSupply;
+        deltas.borrow.scaledP2PTotal = totalP2PBorrow;
         uint256 fee = DeltasLib.repayFee(deltas, amount, indexes);
         assertEq(fee, 0);
-        assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply);
-        assertEq(deltas.borrow.scaledTotalP2P, totalP2PBorrow);
+        assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply);
+        assertEq(deltas.borrow.scaledP2PTotal, totalP2PBorrow);
     }
 
     function testRepayFee(uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow, uint256 supplyDelta) public {
@@ -154,9 +154,9 @@ contract TestUnitDeltasLib is Test {
         totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
         supplyDelta = bound(supplyDelta, 0, totalP2PSupply);
 
-        deltas.supply.scaledTotalP2P = totalP2PSupply;
-        deltas.borrow.scaledTotalP2P = totalP2PBorrow;
-        deltas.supply.scaledDeltaPool = supplyDelta;
+        deltas.supply.scaledP2PTotal = totalP2PSupply;
+        deltas.borrow.scaledP2PTotal = totalP2PBorrow;
+        deltas.supply.scaledDelta = supplyDelta;
 
         uint256 expectedFee = totalP2PBorrow.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
             totalP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(supplyDelta.rayMul(indexes.supply.poolIndex))
@@ -164,9 +164,9 @@ contract TestUnitDeltasLib is Test {
         expectedFee = Math.min(amount, expectedFee);
         uint256 toProcess = DeltasLib.repayFee(deltas, amount, indexes);
         assertEq(toProcess, amount - expectedFee, "expected fee");
-        assertEq(deltas.supply.scaledTotalP2P, totalP2PSupply, "supply total");
+        assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply, "supply total");
         assertEq(
-            deltas.borrow.scaledTotalP2P,
+            deltas.borrow.scaledP2PTotal,
             totalP2PBorrow.zeroFloorSub(expectedFee.rayDiv(indexes.borrow.p2pIndex)),
             "borrow total"
         );

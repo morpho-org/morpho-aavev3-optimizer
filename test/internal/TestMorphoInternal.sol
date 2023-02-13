@@ -220,8 +220,13 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         p2pSupplyIndex = bound(p2pSupplyIndex, MIN_INDEX, MAX_INDEX);
         _updateSupplierInDS(dai, user, onPool, inP2P, head);
 
-        uint256 balance =
-            _getUserSupplyBalanceFromIndexes(dai, user, Types.MarketSideIndexes256(poolSupplyIndex, p2pSupplyIndex));
+        uint256 balance = _getUserSupplyBalanceFromIndexes(
+            dai,
+            user,
+            Types.Indexes256(
+                Types.MarketSideIndexes256(poolSupplyIndex, p2pSupplyIndex), Types.MarketSideIndexes256(0, 0)
+            )
+        );
 
         assertEq(balance, onPool.rayMul(poolSupplyIndex) + inP2P.rayMul(p2pSupplyIndex));
     }
@@ -241,8 +246,13 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         p2pBorrowIndex = bound(p2pBorrowIndex, MIN_INDEX, MAX_INDEX);
         _updateBorrowerInDS(dai, user, onPool, inP2P, head);
 
-        uint256 balance =
-            _getUserBorrowBalanceFromIndexes(dai, user, Types.MarketSideIndexes256(poolBorrowIndex, p2pBorrowIndex));
+        uint256 balance = _getUserBorrowBalanceFromIndexes(
+            dai,
+            user,
+            Types.Indexes256(
+                Types.MarketSideIndexes256(0, 0), Types.MarketSideIndexes256(poolBorrowIndex, p2pBorrowIndex)
+            )
+        );
 
         assertEq(balance, onPool.rayMulUp(poolBorrowIndex) + inP2P.rayMulUp(p2pBorrowIndex));
     }
@@ -307,7 +317,7 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(dai, vars);
 
         uint256 expectedDebtValue =
-            (_getUserBorrowBalanceFromIndexes(dai, address(1), indexes.borrow)) * underlyingPrice / tokenUnit;
+            (_getUserBorrowBalanceFromIndexes(dai, address(1), indexes)) * underlyingPrice / tokenUnit;
         assertApproxEqAbs(debt, expectedDebtValue, 1, "debtValue not equal to expected");
     }
 

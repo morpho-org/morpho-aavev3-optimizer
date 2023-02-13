@@ -75,10 +75,10 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
             );
 
             // Assert Morpho's market state.
-            assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
-            assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
-            assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
-            assertEq(test.morphoMarket.deltas.borrow.scaledTotalP2P, 0, "scaledTotalBorrowP2P != 0");
+            assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
+            assertEq(test.morphoMarket.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != 0");
+            assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
+            assertEq(test.morphoMarket.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
             assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
         }
     }
