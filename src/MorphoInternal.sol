@@ -528,6 +528,7 @@ abstract contract MorphoInternal is MorphoStorage {
         price = eModePrice != 0 ? eModePrice : currentPrice;
     }
 
+    /// @dev Returns whether Morpho is in the e-mode category of the `config`.
     function _isInEModeCategory(DataTypes.ReserveConfigurationMap memory config) internal view returns (bool) {
         return _E_MODE_CATEGORY_ID != 0 && config.getEModeCategory() == _E_MODE_CATEGORY_ID;
     }
