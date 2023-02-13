@@ -35,8 +35,4 @@ library TestConfigLib {
     function getWrappedNative(TestConfig storage config) internal view returns (address) {
         return getAddress(config, config.json.readString(WRAPPED_NATIVE_PATH));
     }
-
-    function getMarkets(TestConfig storage config) internal view returns (string[] memory) {
-        return config.json.readStringArray(MARKETS_PATH);
-    }
 }
