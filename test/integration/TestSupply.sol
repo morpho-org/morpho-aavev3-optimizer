@@ -25,6 +25,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
     function _assertSupplyPool(TestMarket storage market, uint256 amount, address onBehalf, SupplyTest memory test)
         internal
+        returns (SupplyTest memory)
     {
         test.morphoMarket = morpho.market(market.underlying);
         test.indexes = morpho.updatedIndexes(market.underlying);
@@ -56,12 +57,7 @@ contract TestIntegrationSupply is IntegrationTest {
             test.balanceBefore, user.balanceOf(market.underlying) + amount, "balanceBefore - balanceAfter != amount"
         );
 
-        // Assert Morpho's market state.
-        assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
-        assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
-        assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
-        assertEq(test.morphoMarket.deltas.borrow.scaledTotalP2P, 0, "scaledTotalBorrowP2P != 0");
-        assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
+        return test;
     }
 
     function _assertSupplyP2P(TestMarket storage market, uint256 amount, address onBehalf, SupplyTest memory test)
@@ -145,9 +141,16 @@ contract TestIntegrationSupply is IntegrationTest {
 
             test.supplied = user.supply(market.underlying, amount, onBehalf); // 100% pool.
 
-            _assertSupplyPool(market, amount, onBehalf, test);
+            test = _assertSupplyPool(market, amount, onBehalf, test);
 
             assertEq(market.variableBorrowOf(address(morpho)), 0, "morphoVariableBorrow != 0");
+
+            // Assert Morpho's market state.
+            assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
+            assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
+            assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
+            assertEq(test.morphoMarket.deltas.borrow.scaledTotalP2P, 0, "scaledTotalBorrowP2P != 0");
+            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
         }
     }
 
@@ -213,15 +216,98 @@ contract TestIntegrationSupply is IntegrationTest {
 
             test.supplied = user.supply(market.underlying, amount, onBehalf); // 100% pool.
 
-            _assertSupplyPool(market, amount, onBehalf, test);
+            test = _assertSupplyPool(market, amount, onBehalf, test);
 
             assertApproxEqAbs(market.variableBorrowOf(address(morpho)), amount, 1, "morphoVariableBorrow != amount");
+
+            // Assert Morpho's market state.
+            assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
+            assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
+            assertEq(test.morphoMarket.deltas.borrow.scaledDeltaPool, 0, "scaledBorrowDelta != 0");
+            assertEq(test.morphoMarket.deltas.borrow.scaledTotalP2P, 0, "scaledTotalBorrowP2P != 0");
+            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
         }
     }
 
-    // TODO: should supply p2p when borrow delta
+    function testShouldSupplyP2PWhenBorrowDelta(uint256 amount, address onBehalf) public {
+        SupplyTest memory test;
 
-    // TODO: should not supply p2p when p2p disabled & borrow delta
+        onBehalf = _boundAddressNotZero(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+
+            amount = _increaseBorrowDelta(promoter1, market, amount);
+
+            test.balanceBefore = user.balanceOf(market.underlying);
+            test.morphoSupplyBefore = market.supplyOf(address(morpho));
+
+            user.approve(market.underlying, amount);
+
+            vm.expectEmit(true, true, true, true, address(morpho));
+            emit Events.P2PBorrowDeltaUpdated(market.underlying, 0);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.P2PTotalsUpdated(market.underlying, 0, 0);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.Supplied(address(user), onBehalf, market.underlying, 0, 0, 0);
+
+            test.supplied = user.supply(market.underlying, amount, onBehalf);
+
+            _assertSupplyP2P(market, amount, onBehalf, test);
+        }
+    }
+
+    function testShouldNotSupplyP2PWhenP2PDisabledWithBorrowDelta(uint256 borrowDelta, uint256 amount, address onBehalf)
+        public
+    {
+        SupplyTest memory test;
+
+        onBehalf = _boundAddressNotZero(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+
+            amount = _boundBorrow(market, amount);
+            borrowDelta = _increaseBorrowDelta(promoter1, market, borrowDelta);
+
+            morpho.setIsP2PDisabled(market.underlying, true);
+
+            test.balanceBefore = user.balanceOf(market.underlying);
+            test.morphoSupplyBefore = market.supplyOf(address(morpho));
+
+            user.approve(market.underlying, amount);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.Supplied(address(user), onBehalf, market.underlying, 0, 0, 0);
+
+            test.supplied = user.supply(market.underlying, amount, onBehalf);
+
+            test = _assertSupplyPool(market, amount, onBehalf, test);
+
+            // Assert Morpho's market state.
+            assertEq(test.morphoMarket.deltas.supply.scaledDeltaPool, 0, "scaledSupplyDelta != 0");
+            assertEq(test.morphoMarket.deltas.supply.scaledTotalP2P, 0, "scaledTotalSupplyP2P != 0");
+            assertApproxEqAbs(
+                test.morphoMarket.deltas.borrow.scaledDeltaPool.rayMul(test.indexes.borrow.poolIndex),
+                borrowDelta,
+                1,
+                "scaledBorrowDelta != expectedBorrowDelta"
+            );
+            assertApproxEqAbs(
+                test.morphoMarket.deltas.borrow.scaledTotalP2P.rayMul(test.indexes.borrow.p2pIndex),
+                borrowDelta,
+                1,
+                "scaledTotalBorrowP2P != expectedBorrowDelta"
+            );
+            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
+        }
+    }
 
     function testShouldNotSupplyPoolWhenSupplyCapExceeded(
         uint256 amount,

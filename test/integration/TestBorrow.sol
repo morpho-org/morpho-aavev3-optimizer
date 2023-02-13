@@ -331,6 +331,9 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
+
             test.borrowed =
                 _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 

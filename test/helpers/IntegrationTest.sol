@@ -337,4 +337,24 @@ contract IntegrationTest is ForkTest {
 
         return amount;
     }
+
+    /// @dev Adds a given amount of borrow delta on the given market.
+    function _increaseBorrowDelta(UserMock promoter, TestMarket storage market, uint256 amount)
+        internal
+        returns (uint256)
+    {
+        amount = _boundSupply(market, amount);
+        amount = _promoteSupply(promoter, market, amount); // 100% peer-to-peer.
+
+        hacker.approve(market.underlying, amount);
+        hacker.supply(market.underlying, amount);
+
+        // Set the max iterations to 0 upon withdraw to skip demotion and fallback to borrow delta.
+        morpho.setDefaultIterations(Types.Iterations({repay: 10, withdraw: 0}));
+
+        hacker.withdraw(market.underlying, amount, 0);
+        market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+
+        return amount;
+    }
 }
