@@ -46,13 +46,13 @@ contract TestUnitMarketSideDeltaLib is Test {
         delta.scaledP2PDelta = scaledP2PDelta;
         delta.scaledP2PTotal = scaledP2PTotal;
 
-        uint256 expectedDeltaPool = scaledP2PDelta + amount.rayDiv(marketSideIndex.poolIndex);
+        uint256 expectedP2PDelta = scaledP2PDelta + amount.rayDiv(marketSideIndex.poolIndex);
 
         vm.expectEmit(true, true, true, true);
-        emit Events.P2PBorrowDeltaUpdated(underlying, expectedDeltaPool);
+        emit Events.P2PBorrowDeltaUpdated(underlying, expectedP2PDelta);
         delta.increaseDelta(underlying, amount, marketSideIndex, true);
 
-        assertEq(delta.scaledP2PDelta, expectedDeltaPool);
+        assertEq(delta.scaledP2PDelta, expectedP2PDelta);
         assertEq(delta.scaledP2PTotal, scaledP2PTotal);
     }
 
@@ -66,13 +66,13 @@ contract TestUnitMarketSideDeltaLib is Test {
         delta.scaledP2PDelta = scaledP2PDelta;
         delta.scaledP2PTotal = scaledP2PTotal;
 
-        uint256 expectedDeltaPool = scaledP2PDelta + amount.rayDiv(marketSideIndex.poolIndex);
+        uint256 expectedP2PDelta = scaledP2PDelta + amount.rayDiv(marketSideIndex.poolIndex);
 
         vm.expectEmit(true, true, true, true);
-        emit Events.P2PSupplyDeltaUpdated(underlying, expectedDeltaPool);
+        emit Events.P2PSupplyDeltaUpdated(underlying, expectedP2PDelta);
         delta.increaseDelta(underlying, amount, marketSideIndex, false);
 
-        assertEq(delta.scaledP2PDelta, expectedDeltaPool);
+        assertEq(delta.scaledP2PDelta, expectedP2PDelta);
         assertEq(delta.scaledP2PTotal, scaledP2PTotal);
     }
 
@@ -100,17 +100,17 @@ contract TestUnitMarketSideDeltaLib is Test {
         delta.scaledP2PTotal = scaledP2PTotal;
 
         uint256 expectedDecreased = Math.min(scaledP2PDelta.rayMulUp(marketSideIndex.poolIndex), amount);
-        uint256 expectedDeltaPool = scaledP2PDelta.zeroFloorSub(expectedDecreased.rayDivDown(marketSideIndex.poolIndex));
+        uint256 expectedP2PDelta = scaledP2PDelta.zeroFloorSub(expectedDecreased.rayDivDown(marketSideIndex.poolIndex));
         uint256 expectedToProcess = amount - expectedDecreased;
 
         vm.expectEmit(true, true, true, true);
-        emit Events.P2PBorrowDeltaUpdated(underlying, expectedDeltaPool);
+        emit Events.P2PBorrowDeltaUpdated(underlying, expectedP2PDelta);
 
         (uint256 toProcess, uint256 toRepay) = delta.decreaseDelta(underlying, amount, marketSideIndex.poolIndex, true);
 
         assertEq(toProcess, expectedToProcess);
         assertEq(toRepay, expectedDecreased);
-        assertEq(delta.scaledP2PDelta, expectedDeltaPool);
+        assertEq(delta.scaledP2PDelta, expectedP2PDelta);
         assertEq(delta.scaledP2PTotal, scaledP2PTotal);
     }
 
@@ -125,18 +125,18 @@ contract TestUnitMarketSideDeltaLib is Test {
         delta.scaledP2PTotal = scaledP2PTotal;
 
         uint256 expectedDecreased = Math.min(scaledP2PDelta.rayMulUp(marketSideIndex.poolIndex), amount);
-        uint256 expectedDeltaPool = scaledP2PDelta.zeroFloorSub(expectedDecreased.rayDivDown(marketSideIndex.poolIndex));
+        uint256 expectedP2PDelta = scaledP2PDelta.zeroFloorSub(expectedDecreased.rayDivDown(marketSideIndex.poolIndex));
         uint256 expectedToProcess = amount - expectedDecreased;
 
         vm.expectEmit(true, true, true, true);
-        emit Events.P2PSupplyDeltaUpdated(underlying, expectedDeltaPool);
+        emit Events.P2PSupplyDeltaUpdated(underlying, expectedP2PDelta);
 
         (uint256 toProcess, uint256 toWithdraw) =
             delta.decreaseDelta(underlying, amount, marketSideIndex.poolIndex, false);
 
         assertEq(toProcess, expectedToProcess);
         assertEq(toWithdraw, expectedDecreased);
-        assertEq(delta.scaledP2PDelta, expectedDeltaPool);
+        assertEq(delta.scaledP2PDelta, expectedP2PDelta);
         assertEq(delta.scaledP2PTotal, scaledP2PTotal);
     }
 }
