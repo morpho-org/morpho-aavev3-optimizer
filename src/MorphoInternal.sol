@@ -517,7 +517,7 @@ abstract contract MorphoInternal is MorphoStorage {
         }
     }
 
-    /// @dev Returns the price of a given asset, according to the given oracle and, if in the e-mode category, the given price source.
+    /// @dev Returns the underlying price of a given asset, according to the given oracle, or the price of the e-mode price source if the asset is in the e-mode category.
     function _getAssetPrice(IAaveOracle oracle, address underlying, bool isInEMode, address priceSource)
         internal
         view
@@ -532,7 +532,7 @@ abstract contract MorphoInternal is MorphoStorage {
         return oracle.getAssetPrice(underlying);
     }
 
-    /// @dev Returns whether Morpho is in the e-mode category of the `config`.
+    /// @dev Returns whether Morpho is in an e-mode category and that `config` is part of it.
     function _isInEModeCategory(DataTypes.ReserveConfigurationMap memory config) internal view returns (bool) {
         return _E_MODE_CATEGORY_ID != 0 && config.getEModeCategory() == _E_MODE_CATEGORY_ID;
     }
