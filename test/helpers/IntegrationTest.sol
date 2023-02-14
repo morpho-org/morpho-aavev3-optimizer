@@ -275,7 +275,6 @@ contract IntegrationTest is ForkTest {
         try promoter.borrow(market.underlying, amount) returns (uint256 borrowed) {
             amount = borrowed;
 
-            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
             _deposit(market, market.minBorrowCollateral(market, amount), address(morpho)); // Make Morpho able to borrow again with some collateral.
         } catch {
             amount = 0;
@@ -306,7 +305,6 @@ contract IntegrationTest is ForkTest {
 
         address onBehalf = address(hacker);
         _borrowNoCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-        market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
         // Set the supply cap as exceeded.
         _setSupplyCap(market, market.totalSupply() / (10 ** market.decimals));
@@ -327,7 +325,6 @@ contract IntegrationTest is ForkTest {
 
         address onBehalf = address(hacker);
         _borrowNoCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-        market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
         Types.Iterations memory iterations = morpho.defaultIterations();
 
@@ -359,7 +356,6 @@ contract IntegrationTest is ForkTest {
         morpho.setDefaultIterations(Types.Iterations({repay: 10, withdraw: 0}));
 
         hacker.withdraw(market.underlying, amount, 0);
-        market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
         morpho.setDefaultIterations(iterations);
 

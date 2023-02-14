@@ -34,7 +34,6 @@ contract TestIntegrationRepay is IntegrationTest {
             amount = test.borrowed - promoted;
 
             _borrowNoCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
             test.balanceBefore = user.balanceOf(market.underlying);
             test.morphoSupplyBefore = market.supplyOf(address(morpho));
@@ -110,7 +109,6 @@ contract TestIntegrationRepay is IntegrationTest {
             amount = bound(amount, test.borrowed + 1, type(uint256).max);
 
             _borrowNoCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
             test.balanceBefore = user.balanceOf(market.underlying);
             test.morphoSupplyBefore = market.supplyOf(address(morpho));
@@ -191,7 +189,6 @@ contract TestIntegrationRepay is IntegrationTest {
             amount = bound(amount, test.borrowed + 1, type(uint256).max);
 
             _borrowNoCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
             supplyCap = _boundSupplyCapExceeded(market, test.borrowed, supplyCap);
             _setSupplyCap(market, supplyCap);
@@ -277,7 +274,6 @@ contract TestIntegrationRepay is IntegrationTest {
             amount = bound(amount, test.borrowed + 1, type(uint256).max);
 
             _borrowNoCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
             // Set the max iterations to 0 upon repay to skip demotion and fallback to supply delta.
             morpho.setDefaultIterations(Types.Iterations({repay: 0, withdraw: 10}));
@@ -414,7 +410,6 @@ contract TestIntegrationRepay is IntegrationTest {
             borrowed = _boundBorrow(market, borrowed);
 
             _borrowNoCollateral(onBehalf, market, borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
 
             morpho.setIsPausedForAllMarkets(true);
             morpho.setIsRepayPaused(market.underlying, false);
