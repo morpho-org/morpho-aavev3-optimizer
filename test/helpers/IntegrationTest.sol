@@ -244,7 +244,7 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Borrows from `user` on behalf of `onBehalf`, without collateral.
-    function _borrowNoCollateral(
+    function _borrowWithoutCollateral(
         address borrower,
         TestMarket storage market,
         uint256 amount,
@@ -304,7 +304,7 @@ contract IntegrationTest is ForkTest {
         amount = _promoteBorrow(promoter, market, amount); // 100% peer-to-peer.
 
         address onBehalf = address(hacker);
-        _borrowNoCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
+        _borrowWithoutCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
 
         // Set the supply cap as exceeded.
         _setSupplyCap(market, market.totalSupply() / (10 ** market.decimals));
@@ -324,7 +324,7 @@ contract IntegrationTest is ForkTest {
         amount = _promoteBorrow(promoter, market, amount); // 100% peer-to-peer.
 
         address onBehalf = address(hacker);
-        _borrowNoCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
+        _borrowWithoutCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
 
         Types.Iterations memory iterations = morpho.defaultIterations();
 

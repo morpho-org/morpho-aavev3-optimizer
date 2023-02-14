@@ -133,7 +133,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
             test.borrowed =
-                _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+                _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
             test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
@@ -169,7 +169,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
             test.borrowed =
-                _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+                _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
             test = _assertBorrowP2P(market, amount, onBehalf, receiver, test);
         }
@@ -202,7 +202,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
             test.borrowed =
-                _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+                _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
             test = _assertBorrowP2P(market, amount, onBehalf, receiver, test);
         }
@@ -232,7 +232,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
             test.borrowed =
-                _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+                _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
             test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
@@ -267,7 +267,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
             test.borrowed =
-                _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+                _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
             test = _assertBorrowP2P(market, amount, onBehalf, receiver, test);
         }
@@ -302,7 +302,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
             test.borrowed =
-                _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+                _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
             test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
@@ -351,7 +351,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
             test.borrowed =
-                _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+                _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
             test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
@@ -451,7 +451,7 @@ contract TestIntegrationBorrow is IntegrationTest {
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
 
-            _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS); // 100% pool.
+            _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS); // 100% pool.
 
             _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
         }
@@ -557,7 +557,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             morpho.setIsBorrowPaused(market.underlying, false);
 
-            _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+            _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
         }
     }
 }
