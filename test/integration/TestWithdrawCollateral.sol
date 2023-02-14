@@ -164,7 +164,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
             user.withdrawCollateral(market.underlying, amount);
 
-            _testUpdateIndexes(morpho.market(market.underlying), futureIndexes);
+            _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 

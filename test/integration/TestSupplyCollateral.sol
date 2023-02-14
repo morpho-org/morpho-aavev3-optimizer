@@ -115,7 +115,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
             user.supplyCollateral(market.underlying, amount, onBehalf);
 
-            _testUpdateIndexes(morpho.market(market.underlying), futureIndexes);
+            _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 

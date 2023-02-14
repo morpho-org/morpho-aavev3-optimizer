@@ -341,7 +341,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
             user.supply(market.underlying, amount, onBehalf); // 100% pool.
 
-            _testUpdateIndexes(morpho.market(market.underlying), futureIndexes);
+            _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 

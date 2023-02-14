@@ -378,7 +378,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
             test.repaid = user.repay(market.underlying, type(uint256).max, onBehalf);
 
-            _testUpdateIndexes(morpho.market(market.underlying), futureIndexes);
+            _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 

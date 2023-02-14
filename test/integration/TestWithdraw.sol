@@ -435,7 +435,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             user.withdraw(market.underlying, type(uint256).max);
 
-            _testUpdateIndexes(morpho.market(market.underlying), futureIndexes);
+            _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 

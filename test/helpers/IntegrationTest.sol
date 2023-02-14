@@ -385,7 +385,7 @@ contract IntegrationTest is ForkTest {
         }
     }
 
-    function _testUpdateIndexes(Types.Market memory market, Types.Indexes256 memory futureIndexes) internal {
+    function _assertUpdateIndexes(Types.Market memory market, Types.Indexes256 memory futureIndexes) internal {
         assertEq(market.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
         assertEq(
             market.indexes.supply.poolIndex, futureIndexes.supply.poolIndex, "poolSupplyIndex != futurePoolSupplyIndex"
