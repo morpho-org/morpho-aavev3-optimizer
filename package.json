@@ -34,7 +34,8 @@
   },
   "lint-staged": {
     "*.sol": "forge fmt",
-    "*.json": "yarn prettier"
+    "*.json": "yarn prettier",
+    "*.yml": "yarn prettier"
   },
   "commitlint": {
     "extends": [

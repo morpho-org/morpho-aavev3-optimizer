@@ -10,9 +10,9 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {Constants} from "./libraries/Constants.sol";
 
-import {Permit2Lib} from "./libraries/Permit2Lib.sol";
 import {DelegateCall} from "@morpho-utils/DelegateCall.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+import {ERC20 as ERC20Permit2, Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 import {MorphoGetters} from "./MorphoGetters.sol";
@@ -23,45 +23,45 @@ import {MorphoSetters} from "./MorphoSetters.sol";
 /// @custom:contact security@morpho.xyz
 /// @notice The main Morpho contract exposing all user entry points.
 contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
-    using Permit2Lib for ERC20;
     using DelegateCall for address;
     using SafeTransferLib for ERC20;
+    using Permit2Lib for ERC20Permit2;
 
-    /// CONSTRUCTOR ///
+    /* CONSTRUCTOR */
 
     /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
     /// @param addressesProvider The address of the pool addresses provider.
     /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
     constructor(address addressesProvider, uint8 eModeCategoryId) MorphoStorage(addressesProvider, eModeCategoryId) {}
 
-    /// INITIALIZER ///
+    /* INITIALIZER */
 
     /// @notice Initializes the contract.
     /// @param newPositionsManager The address of the `_positionsManager` to set.
-    /// @param newDefaultMaxIterations The `_defaultMaxIterations` to set.
-    function initialize(address newPositionsManager, Types.MaxIterations memory newDefaultMaxIterations)
+    /// @param newDefaultIterations The `_defaultIterations` to set.
+    function initialize(address newPositionsManager, Types.Iterations memory newDefaultIterations)
         external
         initializer
     {
         __Ownable_init_unchained();
 
         _positionsManager = newPositionsManager;
-        _defaultMaxIterations = newDefaultMaxIterations;
-        emit Events.DefaultMaxIterationsSet(newDefaultMaxIterations.repay, newDefaultMaxIterations.withdraw);
+        _defaultIterations = newDefaultIterations;
+        emit Events.DefaultIterationsSet(newDefaultIterations.repay, newDefaultIterations.withdraw);
         emit Events.PositionsManagerSet(newPositionsManager);
 
         _POOL.setUserEMode(_E_MODE_CATEGORY_ID);
         emit Events.EModeSet(_E_MODE_CATEGORY_ID);
     }
 
-    /// EXTERNAL ///
+    /* EXTERNAL */
 
     /// @notice Supplies `amount` of `underlying` on behalf of `onBehalf`.
     ///         The supplied amount cannot be used as collateral but is eligible for the peer-to-peer matching.
     /// @param underlying The address of the underlying asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the supply position.
-    /// @param maxIterations The maximum number of iterations allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
     /// @return The amount supplied.
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
         external
@@ -75,7 +75,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param underlying The address of the `underlying` asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the supply position.
-    /// @param maxIterations The maximum number of iterations allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
     /// @param deadline The deadline for the permit2 signature.
     /// @param signature The permit2 signature.
     /// @return The amount supplied.
@@ -87,7 +87,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256) {
-        ERC20(underlying).simplePermit2(
+        ERC20Permit2(underlying).simplePermit2(
             msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
         );
         return _supply(underlying, amount, msg.sender, onBehalf, maxIterations);
@@ -118,7 +118,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256) {
-        ERC20(underlying).simplePermit2(
+        ERC20Permit2(underlying).simplePermit2(
             msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
         );
         return _supplyCollateral(underlying, amount, msg.sender, onBehalf);
@@ -130,7 +130,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to borrow.
     /// @param onBehalf The address that will receive the debt position.
     /// @param receiver The address that will receive the borrowed funds.
-    /// @param maxIterations The maximum number of iterations allowed during matching process.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
     /// @return The amount borrowed.
     function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
@@ -163,7 +163,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256) {
-        ERC20(underlying).simplePermit2(
+        ERC20Permit2(underlying).simplePermit2(
             msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
         );
         return _repay(underlying, amount, msg.sender, onBehalf);
@@ -174,12 +174,15 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to withdraw.
     /// @param onBehalf The address whose position will be withdrawn.
     /// @param receiver The address that will receive the withdrawn funds.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process.
+    ///                      If it is less than `_defaultIterations.withdraw`, the latter will be used.
+    ///                      Pass 0 to fallback to the `_defaultIterations.withdraw`.
     /// @return The amount withdrawn.
-    function withdraw(address underlying, uint256 amount, address onBehalf, address receiver)
+    function withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
         returns (uint256)
     {
-        return _withdraw(underlying, amount, onBehalf, receiver);
+        return _withdraw(underlying, amount, onBehalf, receiver, maxIterations);
     }
 
     /// @notice Withdraws `amount` of `underlying` collateral on behalf of `onBehalf`.
@@ -275,11 +278,11 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         }
     }
 
-    /// INTERNAL ///
+    /* INTERNAL */
 
     function _supply(address underlying, uint256 amount, address from, address onBehalf, uint256 maxIterations)
         internal
-        returns (uint256 supplied)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.supplyLogic, (underlying, amount, from, onBehalf, maxIterations))
@@ -289,7 +292,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     function _supplyCollateral(address underlying, uint256 amount, address from, address onBehalf)
         internal
-        returns (uint256 supplied)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.supplyCollateralLogic, (underlying, amount, from, onBehalf))
@@ -300,7 +303,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     function _borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         internal
-        returns (uint256 borrowed)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.borrowLogic, (underlying, amount, onBehalf, receiver, maxIterations))
@@ -309,10 +312,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
-    function _repay(address underlying, uint256 amount, address from, address onBehalf)
-        internal
-        returns (uint256 repaid)
-    {
+    function _repay(address underlying, uint256 amount, address from, address onBehalf) internal returns (uint256) {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.repayLogic, (underlying, amount, from, onBehalf))
         );
@@ -320,12 +320,12 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
-    function _withdraw(address underlying, uint256 amount, address onBehalf, address receiver)
+    function _withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         internal
-        returns (uint256 withdrawn)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
-            abi.encodeCall(IPositionsManager.withdrawLogic, (underlying, amount, onBehalf, receiver))
+            abi.encodeCall(IPositionsManager.withdrawLogic, (underlying, amount, onBehalf, receiver, maxIterations))
         );
 
         return (abi.decode(returnData, (uint256)));
@@ -333,7 +333,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     function _withdrawCollateral(address underlying, uint256 amount, address onBehalf, address receiver)
         internal
-        returns (uint256 withdrawn)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.withdrawCollateralLogic, (underlying, amount, onBehalf, receiver))

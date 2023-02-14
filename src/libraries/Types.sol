@@ -12,7 +12,7 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 /// @custom:contact security@morpho.xyz
 /// @notice Library exposing all Types used in Morpho.
 library Types {
-    /// ENUMS ///
+    /* ENUMS */
 
     enum Position {
         POOL_SUPPLIER,
@@ -21,11 +21,11 @@ library Types {
         P2P_BORROWER
     }
 
-    /// NESTED STRUCTS ///
+    /* NESTED STRUCTS */
 
     struct MarketSideDelta {
-        uint256 scaledDeltaPool; // In pool unit.
-        uint256 scaledTotalP2P; // In peer-to-peer unit.
+        uint256 scaledDelta; // In pool unit.
+        uint256 scaledP2PTotal; // In peer-to-peer unit.
     }
 
     struct Deltas {
@@ -56,7 +56,7 @@ library Types {
         bool isDeprecated;
     }
 
-    /// STORAGE STRUCTS ///
+    /* STORAGE STRUCTS */
 
     // This market struct is able to be passed into memory.
     struct Market {
@@ -89,12 +89,12 @@ library Types {
         mapping(address => uint256) collateral; // In pool unit.
     }
 
-    struct MaxIterations {
-        uint64 repay;
-        uint64 withdraw;
+    struct Iterations {
+        uint128 repay;
+        uint128 withdraw;
     }
 
-    /// STACK AND RETURN STRUCTS ///
+    /* STACK AND RETURN STRUCTS */
 
     struct LiquidityData {
         uint256 borrowable; // The maximum debt value allowed to borrow (in base currency).
@@ -179,5 +179,13 @@ library Types {
     struct LiquidateVars {
         uint256 closeFactor;
         uint256 seized;
+    }
+
+    struct AmountToSeizeVars {
+        uint256 liquidationBonus;
+        uint256 borrowedTokenUnit;
+        uint256 collateralTokenUnit;
+        uint256 borrowedPrice;
+        uint256 collateralPrice;
     }
 }

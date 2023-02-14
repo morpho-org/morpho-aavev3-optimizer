@@ -24,7 +24,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     uint256 constant MAX_AMOUNT = type(uint96).max / 2;
 
     function setUp() public virtual override {
-        _defaultMaxIterations = Types.MaxIterations(10, 10);
+        _defaultIterations = Types.Iterations(10, 10);
 
         _createMarket(dai, 0, 3_333);
         _createMarket(wbtc, 0, 3_333);
@@ -116,9 +116,9 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.validateBorrow(dai, amount, address(this), address(this));
     }
 
-    function authorizeBorrow(address underlying, uint256 onPool, address borrower) public view {
+    function authorizeBorrow(address underlying, uint256 onPool) public view {
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
-        _authorizeBorrow(underlying, onPool, borrower, indexes);
+        _authorizeBorrow(underlying, onPool, indexes);
     }
 
     function testAuthorizeBorrowShouldRevertIfBorrowingNotEnabled() public {
@@ -130,25 +130,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _POOL.setConfiguration(dai, reserveConfig);
 
         vm.expectRevert(abi.encodeWithSelector(Errors.BorrowingNotEnabled.selector));
-        this.authorizeBorrow(dai, 1, address(this));
-    }
-
-    function testAuthorizeBorrowShouldFailIfDebtTooHigh(uint256 onPool) public {
-        DataTypes.ReserveConfigurationMap memory reserveConfig = _POOL.getConfiguration(dai);
-        reserveConfig.setBorrowCap(0);
-        assertEq(reserveConfig.getBorrowCap(), 0);
-
-        vm.prank(address(poolConfigurator));
-        _POOL.setConfiguration(dai, reserveConfig);
-
-        onPool = bound(onPool, MIN_AMOUNT, MAX_AMOUNT);
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
-
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = onPool.rayDiv(indexes.supply.poolIndex);
-
-        vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorizedBorrow.selector));
-        this.authorizeBorrow(dai, onPool, address(this));
+        this.authorizeBorrow(dai, 1);
     }
 
     function testValidateRepayShouldRevertIfRepayPaused() public {
@@ -186,19 +168,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = onPool.rayDivUp(indexes.supply.poolIndex);
         this.validateWithdrawCollateral(dai, onPool, address(this), address(this));
-    }
-
-    function testAuthorizeWithdrawCollateralShouldRevertIfHealthFactorTooLow(uint256 onPool) public {
-        onPool = bound(onPool, MIN_AMOUNT, MAX_AMOUNT);
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
-
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = onPool.rayDiv(indexes.supply.poolIndex);
-        _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(dai, address(this), onPool.rayDiv(indexes.borrow.poolIndex) / 2, 0, true);
-
-        vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorizedWithdraw.selector));
-        this.authorizeWithdrawCollateral(dai, onPool.rayDiv(indexes.supply.poolIndex) / 2, address(this));
     }
 
     function testAuthorizeLiquidateIfBorrowMarketNotCreated() public {
@@ -396,10 +365,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         view
     {
         _validateWithdrawCollateral(underlying, amount, supplier, receiver);
-    }
-
-    function authorizeWithdrawCollateral(address underlying, uint256 amount, address supplier) external view {
-        _authorizeWithdrawCollateral(underlying, amount, supplier);
     }
 
     function authorizeLiquidate(address collateral, address borrow, address liquidator)
