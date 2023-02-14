@@ -137,12 +137,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
-            // Assert Morpho's market state.
-            assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
-            assertEq(test.morphoMarket.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != 0");
-            assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
-            assertEq(test.morphoMarket.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
-            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
+            _assertMarketState(test.morphoMarket);
         }
     }
 
@@ -241,12 +236,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
-            // Assert Morpho's market state.
-            assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
-            assertEq(test.morphoMarket.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != 0");
-            assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
-            assertEq(test.morphoMarket.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
-            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
+            _assertMarketState(test.morphoMarket);
         }
     }
 

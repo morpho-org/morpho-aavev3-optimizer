@@ -400,4 +400,12 @@ contract IntegrationTest is ForkTest {
             market.indexes.borrow.p2pIndex, futureIndexes.borrow.p2pIndex, "p2pBorrowIndex != futureP2PBorrowIndex"
         );
     }
+
+    function _assertMarketState(Types.Market memory market) internal {
+        assertEq(market.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
+        assertEq(market.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != 0");
+        assertEq(market.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
+        assertEq(market.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
+        assertEq(market.idleSupply, 0, "idleSupply != 0");
+    }
 }
