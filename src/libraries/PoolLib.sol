@@ -6,6 +6,7 @@ import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
 
 import {Constants} from "./Constants.sol";
+
 import {Math} from "@morpho-utils/math/Math.sol";
 
 /// @title PoolLib

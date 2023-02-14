@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {Vm} from "@forge-std/Vm.sol";
 import {stdJson} from "@forge-std/StdJson.sol";
 
 struct TestConfig {
@@ -11,39 +10,29 @@ struct TestConfig {
 library TestConfigLib {
     using stdJson for string;
 
-    Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
-    function load(TestConfig storage config, string memory network) internal returns (TestConfig storage) {
-        string memory root = vm.projectRoot();
-        string memory path = string(abi.encodePacked(root, "/config/", network, ".json"));
-
-        config.json = vm.readFile(path);
-
-        return config;
-    }
+    string public constant RPC_ALIAS_PATH = "$.rpcAlias";
+    string public constant FORK_BLOCK_NUMBER_PATH = "$.forkBlockNumber";
+    string public constant ADDRESSES_PROVIDER_PATH = "$.addressesProvider";
+    string public constant WRAPPED_NATIVE_PATH = "$.wrappedNative";
+    string public constant MARKETS_PATH = "$.markets";
 
     function getAddress(TestConfig storage config, string memory key) internal view returns (address) {
-        return config.json.readAddress(string(abi.encodePacked(key)));
+        return config.json.readAddress(string.concat("$.", key));
     }
 
-    function getTestMarkets(TestConfig storage config) internal view returns (address[] memory) {
-        string[] memory marketNames = config.json.readStringArray(string(abi.encodePacked("testMarkets")));
-        address[] memory markets = new address[](marketNames.length);
-
-        for (uint256 i; i < markets.length; i++) {
-            markets[i] = getAddress(config, marketNames[i]);
-        }
-
-        return markets;
+    function getRpcAlias(TestConfig storage config) internal view returns (string memory) {
+        return config.json.readString(RPC_ALIAS_PATH);
     }
 
-    function createFork(TestConfig storage config) internal returns (uint256 forkId) {
-        bool rpcPrefixed = stdJson.readBool(config.json, string(abi.encodePacked("usesRpcPrefix")));
-        string memory endpoint = rpcPrefixed
-            ? string(abi.encodePacked(config.json.readString(string(abi.encodePacked("rpc"))), vm.envString("ALCHEMY_KEY")))
-            : config.json.readString(string(abi.encodePacked("rpc")));
+    function getForkBlockNumber(TestConfig storage config) internal view returns (uint256) {
+        return config.json.readUint(FORK_BLOCK_NUMBER_PATH);
+    }
 
-        forkId = vm.createSelectFork(endpoint, config.json.readUint(string(abi.encodePacked("testBlock"))));
-        vm.chainId(config.json.readUint(string(abi.encodePacked("chainId"))));
+    function getAddressesProvider(TestConfig storage config) internal view returns (address) {
+        return config.json.readAddress(ADDRESSES_PROVIDER_PATH);
+    }
+
+    function getWrappedNative(TestConfig storage config) internal view returns (address) {
+        return getAddress(config, config.json.readString(WRAPPED_NATIVE_PATH));
     }
 }

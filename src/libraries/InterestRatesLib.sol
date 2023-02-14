@@ -16,7 +16,7 @@ library InterestRatesLib {
     using PercentageMath for uint256;
 
     function computeP2PIndexes(Types.IndexesParams memory params)
-        external
+        internal
         pure
         returns (uint256 newP2PSupplyIndex, uint256 newP2PBorrowIndex)
     {
@@ -33,16 +33,16 @@ library InterestRatesLib {
             growthFactors.poolSupplyGrowthFactor,
             growthFactors.p2pSupplyGrowthFactor,
             params.lastSupplyIndexes,
-            params.deltas.supply.scaledDeltaPool,
-            params.deltas.supply.scaledTotalP2P,
+            params.deltas.supply.scaledDelta,
+            params.deltas.supply.scaledP2PTotal,
             params.proportionIdle
         );
         newP2PBorrowIndex = computeP2PIndex(
             growthFactors.poolBorrowGrowthFactor,
             growthFactors.p2pBorrowGrowthFactor,
             params.lastBorrowIndexes,
-            params.deltas.borrow.scaledDeltaPool,
-            params.deltas.borrow.scaledTotalP2P,
+            params.deltas.borrow.scaledDelta,
+            params.deltas.borrow.scaledP2PTotal,
             0
         );
     }
@@ -85,25 +85,25 @@ library InterestRatesLib {
 
     /// @notice Computes and returns the new peer-to-peer index of a market given its parameters.
     /// @param poolGrowthFactor The pool growth factor.
-    /// @param p2pGrowthFactor The P2P growth factor.
+    /// @param p2pGrowthFactor The peer-to-peer growth factor.
     /// @param lastIndexes The last pool & peer-to-peer indexes.
-    /// @param p2pDelta The last P2P delta.
-    /// @param p2pAmount The last P2P amount.
+    /// @param scaledDelta The last scaled peer-to-peer delta (pool unit).
+    /// @param scaledP2PTotal The last scaled total peer-to-peer amount (P2P unit).
     /// @return newP2PIndex The updated peer-to-peer index (in ray).
     function computeP2PIndex(
         uint256 poolGrowthFactor,
         uint256 p2pGrowthFactor,
         Types.MarketSideIndexes256 memory lastIndexes,
-        uint256 p2pDelta,
-        uint256 p2pAmount,
+        uint256 scaledDelta,
+        uint256 scaledP2PTotal,
         uint256 proportionIdle
     ) internal pure returns (uint256) {
-        if (p2pAmount == 0 || p2pDelta == 0) {
+        if (scaledP2PTotal == 0 || (scaledDelta == 0 && proportionIdle == 0)) {
             return lastIndexes.p2pIndex.rayMul(p2pGrowthFactor);
         }
 
         uint256 proportionDelta = Math.min(
-            p2pDelta.rayMul(lastIndexes.poolIndex).rayDivUp(p2pAmount.rayMul(lastIndexes.p2pIndex)),
+            scaledDelta.rayMul(lastIndexes.poolIndex).rayDivUp(scaledP2PTotal.rayMul(lastIndexes.p2pIndex)),
             WadRayMath.RAY - proportionIdle // To avoid proportionDelta + proportionIdle > 1 with rounding errors.
         ); // in ray.
 
