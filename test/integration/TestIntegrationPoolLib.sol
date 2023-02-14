@@ -8,7 +8,7 @@ import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 
 import "test/helpers/ForkTest.sol";
 
-contract TestPoolLib is ForkTest {
+contract TestIntegrationPoolLib is ForkTest {
     using PoolLib for IPool;
 
     address internal aDai;
