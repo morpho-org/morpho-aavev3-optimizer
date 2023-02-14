@@ -8,8 +8,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
 
-    function testShouldNotLiquidateHealthyUser() public {}
-
     function testShouldNotLiquidateUserNotOnCollateralMarket() public {}
 
     function testShouldNotLiquidateUserNotInBorrowMarket() public {}
@@ -24,6 +22,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
 
         for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+            _revert();
+
             TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
             vm.expectRevert(Errors.MarketNotCreated.selector);
@@ -37,6 +37,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
+            _revert();
+
             TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
 
             vm.expectRevert(Errors.MarketNotCreated.selector);
@@ -47,6 +49,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testShouldRevertWhenLiquidateCollateralIsPaused(address borrower, uint256 amount) public {
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+                _revert();
+
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
@@ -61,6 +65,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testShouldRevertWhenLiquidateBorrowIsPaused(address borrower, uint256 amount) public {
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+                _revert();
+
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
@@ -75,6 +81,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testShouldRevertWhenBorrowerZero(uint256 amount) public {
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+                _revert();
+
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
