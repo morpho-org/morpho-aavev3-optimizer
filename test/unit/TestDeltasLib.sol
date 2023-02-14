@@ -173,13 +173,13 @@ contract TestUnitDeltasLib is Test {
     }
 
     function increaseP2P(address underlying, uint256 promoted, uint256 amount, bool borrowSide)
-        external
+        public
         returns (uint256)
     {
         return DeltasLib.increaseP2P(deltas, underlying, promoted, amount, indexes, borrowSide);
     }
 
-    function decreaseP2P(address underlying, uint256 demoted, uint256 amount, bool borrowSide) external {
+    function decreaseP2P(address underlying, uint256 demoted, uint256 amount, bool borrowSide) public {
         DeltasLib.decreaseP2P(deltas, underlying, demoted, amount, indexes, borrowSide);
     }
 }
