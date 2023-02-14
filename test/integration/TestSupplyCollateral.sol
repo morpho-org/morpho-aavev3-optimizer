@@ -7,10 +7,6 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     using WadRayMath for uint256;
     using TestMarketLib for TestMarket;
 
-    function _boundAmount(uint256 amount) internal view returns (uint256) {
-        return bound(amount, 1, type(uint256).max);
-    }
-
     struct SupplyCollateralTest {
         uint256 supplied;
         uint256 balanceBefore;

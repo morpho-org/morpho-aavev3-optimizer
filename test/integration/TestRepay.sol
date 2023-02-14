@@ -8,10 +8,6 @@ contract TestIntegrationRepay is IntegrationTest {
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
 
-    function _boundAmount(uint256 amount) internal view returns (uint256) {
-        return bound(amount, 1, type(uint256).max);
-    }
-
     struct RepayTest {
         uint256 borrowed;
         uint256 repaid;

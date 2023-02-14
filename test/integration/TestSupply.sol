@@ -8,10 +8,6 @@ contract TestIntegrationSupply is IntegrationTest {
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
 
-    function _boundAmount(uint256 amount) internal view returns (uint256) {
-        return bound(amount, 1, type(uint256).max);
-    }
-
     struct SupplyTest {
         uint256 supplied;
         uint256 balanceBefore;
