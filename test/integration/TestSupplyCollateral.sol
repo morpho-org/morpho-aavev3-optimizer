@@ -121,6 +121,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
             user.supplyCollateral(market.underlying, amount, onBehalf);
 
             Types.Market memory morphoMarket = morpho.market(market.underlying);
+            assertEq(morphoMarket.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
             assertEq(
                 morphoMarket.indexes.supply.poolIndex,
                 futureIndexes.supply.poolIndex,

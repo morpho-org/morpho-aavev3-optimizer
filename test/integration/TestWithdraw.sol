@@ -436,6 +436,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
             user.withdraw(market.underlying, type(uint256).max);
 
             Types.Market memory morphoMarket = morpho.market(market.underlying);
+            assertEq(morphoMarket.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
             assertEq(
                 morphoMarket.indexes.supply.poolIndex,
                 futureIndexes.supply.poolIndex,

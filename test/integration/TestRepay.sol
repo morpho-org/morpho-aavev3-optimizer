@@ -352,6 +352,57 @@ contract TestIntegrationRepay is IntegrationTest {
         }
     }
 
+    function testShouldUpdateIndexesAfterRepay(uint256 amount, address onBehalf, address receiver) public {
+        RepayTest memory test;
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+
+            amount = _boundBorrow(market, amount);
+
+            _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS); // 100% pool.
+            vm.warp(block.timestamp + 1);
+
+            Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
+
+            user.approve(market.underlying, type(uint256).max);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
+
+            test.repaid = user.repay(market.underlying, type(uint256).max, onBehalf);
+
+            Types.Market memory morphoMarket = morpho.market(market.underlying);
+            assertEq(morphoMarket.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
+            assertEq(
+                morphoMarket.indexes.supply.poolIndex,
+                futureIndexes.supply.poolIndex,
+                "poolSupplyIndex != futurePoolSupplyIndex"
+            );
+            assertEq(
+                morphoMarket.indexes.borrow.poolIndex,
+                futureIndexes.borrow.poolIndex,
+                "poolBorrowIndex != futurePoolBorrowIndex"
+            );
+            assertEq(
+                morphoMarket.indexes.supply.p2pIndex,
+                futureIndexes.supply.p2pIndex,
+                "p2pSupplyIndex != futureP2PSupplyIndex"
+            );
+            assertEq(
+                morphoMarket.indexes.borrow.p2pIndex,
+                futureIndexes.borrow.p2pIndex,
+                "p2pBorrowIndex != futureP2PBorrowIndex"
+            );
+        }
+    }
+
     function testShouldRevertRepayZero(address onBehalf) public {
         onBehalf = _boundAddressNotZero(onBehalf);
 

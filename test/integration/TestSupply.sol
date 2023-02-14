@@ -352,6 +352,7 @@ contract TestIntegrationSupply is IntegrationTest {
             user.supply(market.underlying, amount, onBehalf); // 100% pool.
 
             Types.Market memory morphoMarket = morpho.market(market.underlying);
+            assertEq(morphoMarket.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
             assertEq(
                 morphoMarket.indexes.supply.poolIndex,
                 futureIndexes.supply.poolIndex,

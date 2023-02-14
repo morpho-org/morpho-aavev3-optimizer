@@ -153,6 +153,48 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         }
     }
 
+    function testShouldUpdateIndexesAfterWithdrawCollateral(uint256 amount, address onBehalf) public {
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+
+            Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
+
+            user.withdrawCollateral(market.underlying, amount);
+
+            Types.Market memory morphoMarket = morpho.market(market.underlying);
+            assertEq(morphoMarket.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
+            assertEq(
+                morphoMarket.indexes.supply.poolIndex,
+                futureIndexes.supply.poolIndex,
+                "poolSupplyIndex != futurePoolSupplyIndex"
+            );
+            assertEq(
+                morphoMarket.indexes.borrow.poolIndex,
+                futureIndexes.borrow.poolIndex,
+                "poolBorrowIndex != futurePoolBorrowIndex"
+            );
+
+            assertEq(
+                morphoMarket.indexes.supply.p2pIndex,
+                futureIndexes.supply.p2pIndex,
+                "p2pSupplyIndex != futureP2PSupplyIndex"
+            );
+            assertEq(
+                morphoMarket.indexes.borrow.p2pIndex,
+                futureIndexes.borrow.p2pIndex,
+                "p2pBorrowIndex != futureP2PBorrowIndex"
+            );
+        }
+    }
+
     function testShouldRevertWithdrawCollateralZero(address onBehalf, address receiver) public {
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
