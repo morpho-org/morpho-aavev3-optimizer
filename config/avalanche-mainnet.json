@@ -2,16 +2,6 @@
     "rpcAlias": "avalanche",
     "forkBlockNumber": 24800000,
     "addressesProvider": "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
-    "markets": [
-        "DAI",
-        "USDT",
-        "WAVAX",
-        "USDC",
-        "AAVE",
-        "LINK",
-        "WBTC",
-        "WETH"
-    ],
     "DAI": "0xd586E7F844cEa2F87f50152665BCbc2C279D8d70",
     "USDC": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
     "USDT": "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7",

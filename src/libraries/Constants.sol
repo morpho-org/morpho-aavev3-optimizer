@@ -12,6 +12,8 @@ library Constants {
     uint8 internal constant NO_REFERRAL_CODE = 0;
     uint8 internal constant VARIABLE_INTEREST_MODE = 2;
 
+    uint256 internal constant DUST_THRESHOLD = 1;
+
     uint256 internal constant MAX_CLOSE_FACTOR = PercentageMath.PERCENTAGE_FACTOR;
     uint256 internal constant DEFAULT_CLOSE_FACTOR = PercentageMath.HALF_PERCENTAGE_FACTOR;
     uint256 internal constant DEFAULT_LIQUIDATION_THRESHOLD = WadRayMath.WAD; // Health factor below which the positions can be liquidated.

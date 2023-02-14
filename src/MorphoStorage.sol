@@ -17,13 +17,13 @@ import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2
 /// @custom:contact security@morpho.xyz
 /// @notice The storage shared by Morpho's contracts.
 abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
-    /// IMMUTABLES ///
+    /* IMMUTABLES */
 
     IPool internal immutable _POOL; // The address of the pool.
     IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER; // The address of the pool addresses provider.
     uint8 internal immutable _E_MODE_CATEGORY_ID; // The e-mode category of the deployed Morpho.
 
-    /// STORAGE ///
+    /* STORAGE */
 
     address[] internal _marketsCreated; // Keeps track of the created markets.
     mapping(address => Types.Market) internal _market; // The market data.
@@ -33,7 +33,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     mapping(address => mapping(address => bool)) internal _isManaging; // Whether a user is allowed to borrow or withdraw on behalf of another user. delegator => manager => bool
     mapping(address => uint256) internal _userNonce; // The nonce of a user. Used to prevent replay attacks.
 
-    Types.MaxIterations internal _defaultMaxIterations; // The default max iterations values to use in the matching process.
+    Types.Iterations internal _defaultIterations; // The default iterations values to use in the matching process.
 
     address internal _positionsManager; // The address of the positions manager on which calls are delegated to.
     IRewardsManager internal _rewardsManager; // The address of the rewards manager to track pool rewards for users.
