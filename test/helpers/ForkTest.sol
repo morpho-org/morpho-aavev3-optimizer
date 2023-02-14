@@ -74,7 +74,7 @@ contract ForkTest is BaseTest {
         _mockOracle();
         _mockOracleSentinel();
 
-        _setBalances(address(this), type(uint256).max);
+        _setBalances(address(this), type(uint96).max);
     }
 
     function setUp() public virtual {
