@@ -367,10 +367,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _validateWithdrawCollateral(underlying, amount, supplier, receiver);
     }
 
-    function authorizeWithdrawCollateral(address underlying, uint256 amount, address supplier) public view {
-        _authorizeWithdrawCollateral(underlying, amount, supplier);
-    }
-
     function authorizeLiquidate(address collateral, address borrow, address liquidator) public view returns (uint256) {
         return _authorizeLiquidate(collateral, borrow, liquidator);
     }
