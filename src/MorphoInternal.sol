@@ -535,7 +535,7 @@ abstract contract MorphoInternal is MorphoStorage {
         return oracle.getAssetPrice(underlying);
     }
 
-    /// @dev Returns whether Morpho is in an e-mode category and that the given asset configuration is in the same e-mode category.
+    /// @dev Returns whether Morpho is in an e-mode category and the given asset configuration is in the same e-mode category.
     function _isInEModeCategory(DataTypes.ReserveConfigurationMap memory config) internal view returns (bool) {
         return _E_MODE_CATEGORY_ID != 0 && config.getEModeCategory() == _E_MODE_CATEGORY_ID;
     }
