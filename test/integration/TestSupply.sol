@@ -50,7 +50,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
         // Assert user's underlying balance.
         assertEq(
-            test.balanceBefore, user.balanceOf(market.underlying) + amount, "balanceBefore - balanceAfter != amount"
+            test.balanceBefore - user.balanceOf(market.underlying), amount, "balanceBefore - balanceAfter != amount"
         );
 
         return test;
