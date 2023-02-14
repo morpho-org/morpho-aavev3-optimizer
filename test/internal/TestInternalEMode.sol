@@ -94,14 +94,6 @@ contract TestInternalEMode is ForkTest, MorphoInternal {
     }
 
     function testLtvLiquidationThresholdPriceSourceEMode() public {
-        address[] memory reserves = pool.getReservesList();
-        for (uint256 i = 0; i < reserves.length; i++) {
-            DataTypes.ReserveConfigurationMap memory currentConfig = pool.getConfiguration(reserves[i]);
-            if (_E_MODE_CATEGORY_ID == currentConfig.getEModeCategory()) {
-                vm.prank(address(poolAdmin));
-                currentConfig.setEModeCategory(_E_MODE_CATEGORY_ID + 1);
-            }
-        }
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(dai);
 
         DataTypes.ReserveConfigurationMap memory config = reserveData.configuration;
