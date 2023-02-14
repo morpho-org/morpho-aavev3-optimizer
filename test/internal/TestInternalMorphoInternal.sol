@@ -501,55 +501,56 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         assertEq(_isManaging[owner][manager], isAllowed);
     }
 
-    struct TestSeizeVars1 {
-        uint256 liquidationBonus;
-        uint256 collateralTokenUnit;
-        uint256 borrowTokenUnit;
-        uint256 borrowPrice;
-        uint256 collateralPrice;
-    }
-
-    struct TestSeizeVars2 {
+    struct TestSeizeVars {
         uint256 amountToSeize;
         uint256 amountToLiquidate;
     }
 
     function testCalculateAmountToSeize(uint256 maxToLiquidate, uint256 collateralAmount) public {
+        Types.AmountToSeizeVars memory vars;
         maxToLiquidate = bound(maxToLiquidate, 0, 1_000_000 ether);
         collateralAmount = bound(collateralAmount, 0, 1_000_000 ether);
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
-        TestSeizeVars1 memory vars;
 
         _marketBalances[dai].collateral[address(1)] = collateralAmount.rayDivUp(indexes.supply.poolIndex);
 
-        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(dai);
-        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = config.getParams();
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == config.getEModeCategory()) {
-            vars.liquidationBonus = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID).liquidationBonus;
-        }
-        (,,, vars.borrowTokenUnit,,) = _POOL.getConfiguration(wbtc).getParams();
+        DataTypes.ReserveConfigurationMap memory borrowConfig = _POOL.getConfiguration(wbtc);
+        DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(dai);
+        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
 
+        (,,, vars.borrowedTokenUnit,,) = borrowConfig.getParams();
+        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = collateralConfig.getParams();
+
+        bool isInCollateralEMode =
+            _E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == collateralConfig.getEModeCategory();
+        vars.borrowedPrice = _getAssetPrice(
+            wbtc,
+            oracle,
+            _E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == borrowConfig.getEModeCategory(),
+            eModeCategory.priceSource
+        );
+        vars.collateralPrice = _getAssetPrice(dai, oracle, isInCollateralEMode, eModeCategory.priceSource);
+
+        if (isInCollateralEMode) vars.liquidationBonus = eModeCategory.liquidationBonus;
+
+        vars.borrowedTokenUnit = 10 ** vars.borrowedTokenUnit;
         vars.collateralTokenUnit = 10 ** vars.collateralTokenUnit;
-        vars.borrowTokenUnit = 10 ** vars.borrowTokenUnit;
 
-        vars.borrowPrice = oracle.getAssetPrice(wbtc);
-        vars.collateralPrice = oracle.getAssetPrice(dai);
-
-        TestSeizeVars2 memory expected;
-        TestSeizeVars2 memory actual;
+        TestSeizeVars memory expected;
+        TestSeizeVars memory actual;
 
         expected.amountToSeize = Math.min(
             (
-                (maxToLiquidate * vars.borrowPrice * vars.collateralTokenUnit)
-                    / (vars.borrowTokenUnit * vars.collateralPrice)
+                (maxToLiquidate * vars.borrowedPrice * vars.collateralTokenUnit)
+                    / (vars.borrowedTokenUnit * vars.collateralPrice)
             ).percentMul(vars.liquidationBonus),
             collateralAmount
         );
         expected.amountToLiquidate = Math.min(
             maxToLiquidate,
             (
-                (collateralAmount * vars.collateralPrice * vars.borrowTokenUnit)
-                    / (vars.borrowPrice * vars.collateralTokenUnit)
+                (collateralAmount * vars.collateralPrice * vars.borrowedTokenUnit)
+                    / (vars.borrowedPrice * vars.collateralTokenUnit)
             ).percentDiv(vars.liquidationBonus)
         );
 
