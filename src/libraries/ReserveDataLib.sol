@@ -20,6 +20,7 @@ import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configurati
 library ReserveDataLib {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
+
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /// @notice Calculates the scaled quantity of reserve dedicated to AaveV3's treasury, taking into account interests accrued.

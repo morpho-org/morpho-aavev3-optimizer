@@ -37,17 +37,20 @@ abstract contract MorphoInternal is MorphoStorage {
     using PoolLib for IPool;
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
-    using EnumerableSet for EnumerableSet.AddressSet;
-    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
-    using UserConfiguration for DataTypes.UserConfigurationMap;
-    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using SafeTransferLib for ERC20;
 
     using Math for uint256;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
-    /// INTERNAL ///
+    using SafeTransferLib for ERC20;
+
+    using EnumerableSet for EnumerableSet.AddressSet;
+    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
+
+    using UserConfiguration for DataTypes.UserConfigurationMap;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+
+    /* INTERNAL */
 
     /// @dev Dynamically computed to use the root proxy address in a delegate call.
     function _domainSeparator() internal view returns (bytes32) {
@@ -129,21 +132,21 @@ abstract contract MorphoInternal is MorphoStorage {
         amount = Math.min(
             amount,
             Math.min(
-                deltas.supply.scaledTotalP2P.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                    deltas.supply.scaledDeltaPool.rayMul(poolSupplyIndex)
+                deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                    deltas.supply.scaledDelta.rayMul(poolSupplyIndex)
                 ),
-                deltas.borrow.scaledTotalP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                    deltas.borrow.scaledDeltaPool.rayMul(poolBorrowIndex)
+                deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+                    deltas.borrow.scaledDelta.rayMul(poolBorrowIndex)
                 )
             )
         );
         if (amount == 0) revert Errors.AmountIsZero();
 
-        uint256 newSupplyDelta = deltas.supply.scaledDeltaPool + amount.rayDiv(poolSupplyIndex);
-        uint256 newBorrowDelta = deltas.borrow.scaledDeltaPool + amount.rayDiv(poolBorrowIndex);
+        uint256 newSupplyDelta = deltas.supply.scaledDelta + amount.rayDiv(poolSupplyIndex);
+        uint256 newBorrowDelta = deltas.borrow.scaledDelta + amount.rayDiv(poolBorrowIndex);
 
-        market.deltas.supply.scaledDeltaPool = newSupplyDelta;
-        market.deltas.borrow.scaledDeltaPool = newBorrowDelta;
+        market.deltas.supply.scaledDelta = newSupplyDelta;
+        market.deltas.borrow.scaledDelta = newBorrowDelta;
         emit Events.P2PSupplyDeltaUpdated(underlying, newSupplyDelta);
         emit Events.P2PBorrowDeltaUpdated(underlying, newBorrowDelta);
 

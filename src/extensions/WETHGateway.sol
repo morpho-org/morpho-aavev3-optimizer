@@ -13,26 +13,26 @@ import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 contract WETHGateway {
     using SafeTransferLib for ERC20;
 
-    /// ERRORS ///
+    /* ERRORS */
 
     error OnlyWETH();
 
-    /// CONSTANTS ///
+    /* CONSTANTS */
 
     address internal constant _WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
-    /// IMMUTABLES ///
+    /* IMMUTABLES */
 
     IMorpho internal immutable _MORPHO;
 
-    /// CONSTRUCTOR ///
+    /* CONSTRUCTOR */
 
     constructor(address morpho) {
         _MORPHO = IMorpho(morpho);
         ERC20(_WETH).safeApprove(morpho, type(uint256).max);
     }
 
-    /// EXTERNAL ///
+    /* EXTERNAL */
 
     /// @notice Returns the address of the WETH address.
     function WETH() external pure returns (address) {
@@ -88,7 +88,7 @@ contract WETHGateway {
         if (msg.sender != _WETH) revert OnlyWETH();
     }
 
-    /// INTERNAL ///
+    /* INTERNAL */
 
     /// @dev Wraps `amount` of ETH to WETH.
     function _wrapETH(uint256 amount) internal {

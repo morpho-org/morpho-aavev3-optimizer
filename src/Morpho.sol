@@ -27,14 +27,14 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     using SafeTransferLib for ERC20;
     using Permit2Lib for ERC20Permit2;
 
-    /// CONSTRUCTOR ///
+    /* CONSTRUCTOR */
 
     /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
     /// @param addressesProvider The address of the pool addresses provider.
     /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
     constructor(address addressesProvider, uint8 eModeCategoryId) MorphoStorage(addressesProvider, eModeCategoryId) {}
 
-    /// INITIALIZER ///
+    /* INITIALIZER */
 
     /// @notice Initializes the contract.
     /// @param newPositionsManager The address of the `_positionsManager` to set.
@@ -54,7 +54,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         emit Events.EModeSet(_E_MODE_CATEGORY_ID);
     }
 
-    /// EXTERNAL ///
+    /* EXTERNAL */
 
     /// @notice Supplies `amount` of `underlying` on behalf of `onBehalf`.
     ///         The supplied amount cannot be used as collateral but is eligible for the peer-to-peer matching.
@@ -278,11 +278,11 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         }
     }
 
-    /// INTERNAL ///
+    /* INTERNAL */
 
     function _supply(address underlying, uint256 amount, address from, address onBehalf, uint256 maxIterations)
         internal
-        returns (uint256 supplied)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.supplyLogic, (underlying, amount, from, onBehalf, maxIterations))
@@ -292,7 +292,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     function _supplyCollateral(address underlying, uint256 amount, address from, address onBehalf)
         internal
-        returns (uint256 supplied)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.supplyCollateralLogic, (underlying, amount, from, onBehalf))
@@ -303,7 +303,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     function _borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         internal
-        returns (uint256 borrowed)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.borrowLogic, (underlying, amount, onBehalf, receiver, maxIterations))
@@ -312,10 +312,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         return (abi.decode(returnData, (uint256)));
     }
 
-    function _repay(address underlying, uint256 amount, address from, address onBehalf)
-        internal
-        returns (uint256 repaid)
-    {
+    function _repay(address underlying, uint256 amount, address from, address onBehalf) internal returns (uint256) {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.repayLogic, (underlying, amount, from, onBehalf))
         );
@@ -325,7 +322,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     function _withdraw(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         internal
-        returns (uint256 withdrawn)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.withdrawLogic, (underlying, amount, onBehalf, receiver, maxIterations))
@@ -336,7 +333,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     function _withdrawCollateral(address underlying, uint256 amount, address onBehalf, address receiver)
         internal
-        returns (uint256 withdrawn)
+        returns (uint256)
     {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(IPositionsManager.withdrawCollateralLogic, (underlying, amount, onBehalf, receiver))

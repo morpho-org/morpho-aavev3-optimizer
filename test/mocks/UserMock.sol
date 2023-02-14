@@ -109,7 +109,11 @@ contract UserMock {
         public
         returns (uint256)
     {
-        return morpho.withdraw(underlying, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+        return withdraw(underlying, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+    }
+
+    function withdraw(address underlying, uint256 amount, uint256 maxIterations) public returns (uint256) {
+        return withdraw(underlying, amount, address(this), address(this), maxIterations);
     }
 
     function withdraw(address underlying, uint256 amount, address onBehalf) public returns (uint256) {
