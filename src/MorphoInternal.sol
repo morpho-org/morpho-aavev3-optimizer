@@ -313,7 +313,7 @@ abstract contract MorphoInternal is MorphoStorage {
         }
 
         bool isInEMode = _isInEModeCategory(config);
-        underlyingPrice = _getAssetPrice(vars.oracle, underlying, isInEMode, vars.eModeCategory.priceSource);
+        underlyingPrice = _getAssetPrice(underlying, vars.oracle, isInEMode, vars.eModeCategory.priceSource);
 
         ltv = config.getLtv();
         // If the LTV is 0 on Aave V3, the asset cannot be used as collateral to borrow upon a breaking withdraw.
@@ -491,9 +491,9 @@ abstract contract MorphoInternal is MorphoStorage {
 
         IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.borrowedPrice =
-            _getAssetPrice(oracle, underlyingBorrowed, _isInEModeCategory(borrowedConfig), eModeCategory.priceSource);
+            _getAssetPrice(underlyingBorrowed, oracle, _isInEModeCategory(borrowedConfig), eModeCategory.priceSource);
         vars.collateralPrice =
-            _getAssetPrice(oracle, underlyingCollateral, collateralIsInEMode, eModeCategory.priceSource);
+            _getAssetPrice(underlyingCollateral, oracle, collateralIsInEMode, eModeCategory.priceSource);
 
         unchecked {
             vars.borrowedTokenUnit = 10 ** borrowedConfig.getDecimals();
@@ -517,8 +517,8 @@ abstract contract MorphoInternal is MorphoStorage {
         }
     }
 
-    /// @dev Returns the price of a given asset, according to the given oracle and, if in the e-mode category, the given price source.
-    function _getAssetPrice(IAaveOracle oracle, address underlying, bool isInEMode, address priceSource)
+    /// @dev Returns the underlying price of a given asset or the price of the e-mode price source if the asset is in the e-mode category.
+    function _getAssetPrice(address underlying, IAaveOracle oracle, bool isInEMode, address priceSource)
         internal
         view
         returns (uint256)
@@ -532,7 +532,7 @@ abstract contract MorphoInternal is MorphoStorage {
         return oracle.getAssetPrice(underlying);
     }
 
-    /// @dev Returns whether Morpho is in the e-mode category of the `config`.
+    /// @dev Returns whether Morpho is in an e-mode category and that the given asset configuration is in the same e-mode category.
     function _isInEModeCategory(DataTypes.ReserveConfigurationMap memory config) internal view returns (bool) {
         return _E_MODE_CATEGORY_ID != 0 && config.getEModeCategory() == _E_MODE_CATEGORY_ID;
     }

@@ -524,12 +524,12 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         bool isInCollateralEMode =
             _E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == collateralConfig.getEModeCategory();
         vars.borrowedPrice = _getAssetPrice(
-            oracle,
             wbtc,
+            oracle,
             _E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == borrowConfig.getEModeCategory(),
             eModeCategory.priceSource
         );
-        vars.collateralPrice = _getAssetPrice(oracle, dai, isInCollateralEMode, eModeCategory.priceSource);
+        vars.collateralPrice = _getAssetPrice(dai, oracle, isInCollateralEMode, eModeCategory.priceSource);
 
         if (isInCollateralEMode) vars.liquidationBonus = eModeCategory.liquidationBonus;
 
