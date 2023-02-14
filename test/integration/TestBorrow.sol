@@ -463,29 +463,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             _borrowNoCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS); // 100% pool.
 
-            Types.Market memory morphoMarket = morpho.market(market.underlying);
-            assertEq(morphoMarket.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
-            assertEq(
-                morphoMarket.indexes.supply.poolIndex,
-                futureIndexes.supply.poolIndex,
-                "poolSupplyIndex != futurePoolSupplyIndex"
-            );
-            assertEq(
-                morphoMarket.indexes.borrow.poolIndex,
-                futureIndexes.borrow.poolIndex,
-                "poolBorrowIndex != futurePoolBorrowIndex"
-            );
-
-            assertEq(
-                morphoMarket.indexes.supply.p2pIndex,
-                futureIndexes.supply.p2pIndex,
-                "p2pSupplyIndex != futureP2PSupplyIndex"
-            );
-            assertEq(
-                morphoMarket.indexes.borrow.p2pIndex,
-                futureIndexes.borrow.p2pIndex,
-                "p2pBorrowIndex != futureP2PBorrowIndex"
-            );
+            _testUpdateIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 

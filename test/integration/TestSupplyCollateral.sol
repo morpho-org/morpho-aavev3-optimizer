@@ -120,29 +120,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
             user.supplyCollateral(market.underlying, amount, onBehalf);
 
-            Types.Market memory morphoMarket = morpho.market(market.underlying);
-            assertEq(morphoMarket.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
-            assertEq(
-                morphoMarket.indexes.supply.poolIndex,
-                futureIndexes.supply.poolIndex,
-                "poolSupplyIndex != futurePoolSupplyIndex"
-            );
-            assertEq(
-                morphoMarket.indexes.borrow.poolIndex,
-                futureIndexes.borrow.poolIndex,
-                "poolBorrowIndex != futurePoolBorrowIndex"
-            );
-
-            assertEq(
-                morphoMarket.indexes.supply.p2pIndex,
-                futureIndexes.supply.p2pIndex,
-                "p2pSupplyIndex != futureP2PSupplyIndex"
-            );
-            assertEq(
-                morphoMarket.indexes.borrow.p2pIndex,
-                futureIndexes.borrow.p2pIndex,
-                "p2pBorrowIndex != futureP2PBorrowIndex"
-            );
+            _testUpdateIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 

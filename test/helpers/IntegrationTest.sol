@@ -384,4 +384,20 @@ contract IntegrationTest is ForkTest {
             morpho.approveManager(address(user), true);
         }
     }
+
+    function _testUpdateIndexes(Types.Market memory market, Types.Indexes256 memory futureIndexes) internal {
+        assertEq(market.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
+        assertEq(
+            market.indexes.supply.poolIndex, futureIndexes.supply.poolIndex, "poolSupplyIndex != futurePoolSupplyIndex"
+        );
+        assertEq(
+            market.indexes.borrow.poolIndex, futureIndexes.borrow.poolIndex, "poolBorrowIndex != futurePoolBorrowIndex"
+        );
+        assertEq(
+            market.indexes.supply.p2pIndex, futureIndexes.supply.p2pIndex, "p2pSupplyIndex != futureP2PSupplyIndex"
+        );
+        assertEq(
+            market.indexes.borrow.p2pIndex, futureIndexes.borrow.p2pIndex, "p2pBorrowIndex != futureP2PBorrowIndex"
+        );
+    }
 }
