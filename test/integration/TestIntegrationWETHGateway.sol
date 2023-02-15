@@ -15,7 +15,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         wethGateway = new WETHGateway(address(morpho));
     }
 
-    function testWETHAllowance() public {
+    function invariantWETHAllowance() public {
         assertEq(ERC20(weth).allowance(address(wethGateway), address(morpho)), type(uint256).max);
     }
 
