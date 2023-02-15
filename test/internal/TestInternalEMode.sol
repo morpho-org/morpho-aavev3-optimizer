@@ -206,7 +206,7 @@ contract TestInternalEMode is ForkTest, PositionsManagerInternal {
 
         uint256 expectedPrice = isInEMode && underlyingPriceEMode != 0 ? underlyingPriceEMode : underlyingPrice;
         uint256 realPrice = _getAssetPrice(underlying, oracle, isInEMode, priceSourceEMode);
-        console.log(expectedPrice, realPrice, isInEMode);
+
         assertEq(expectedPrice, realPrice, "Wrong price");
     }
 
