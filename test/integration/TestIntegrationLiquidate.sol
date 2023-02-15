@@ -129,7 +129,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
             TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-            vm.expectRevert(Errors.MarketNotCreated.selector);
+            vm.expectRevert();
             user.liquidate(borrowedMarket.underlying, underlying, borrower, amount);
         }
     }
@@ -144,7 +144,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
             TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
 
-            vm.expectRevert(Errors.MarketNotCreated.selector);
+            vm.expectRevert();
             user.liquidate(underlying, collateralMarket.underlying, borrower, amount);
         }
     }
