@@ -293,7 +293,9 @@ contract TestUnitMarketLib is Test {
 
         assertEq(
             proportionIdle,
-            market.idleSupply.rayDivUp(market.deltas.supply.scaledP2PTotal.rayMul(market.indexes.supply.p2pIndex))
+            market.idleSupply == 0
+                ? 0
+                : market.idleSupply.rayDivUp(market.deltas.supply.scaledP2PTotal.rayMul(market.indexes.supply.p2pIndex))
         );
     }
 
