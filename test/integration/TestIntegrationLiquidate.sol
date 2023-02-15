@@ -42,13 +42,10 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
-    function testShouldNotLiquidateUserNotOnCollateralMarket() public {}
-
-    function testShouldNotLiquidateUserNotInBorrowMarket() public {}
-
-    function testShouldLiquidateUnhealthyUser(address borrower, uint256 amount, uint256 toRepay) public {
+    function testShouldNotLiquidateUserNotOnCollateralMarket(address borrower, uint256 amount, uint256 toRepay)
+        public
+    {
         vm.assume(borrower != address(0));
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -57,10 +54,91 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                uint256 minAmount = MIN_PRICE_AMOUNT * (10 ** borrowedMarket.decimals) / borrowedMarket.price;
-                amount = bound(amount, minAmount, MAX_AMOUNT);
+                amount = _boundAmountWithPrice(amount, borrowedMarket);
 
-                (, uint256 borrowed) = _borrowWithCollateral(
+                (uint256 supplied, uint256 borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                );
+
+                assertGt(supplied, 0);
+                assertGt(borrowed, 0);
+
+                stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
+                    collateralMarket.underlying
+                ).with_key(borrower).checked_write(
+                    morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
+                );
+
+                toRepay = bound(toRepay, MIN_AMOUNT, borrowed);
+
+                user.approve(borrowedMarket.underlying, toRepay);
+
+                address collateralUnderlying =
+                    collateralUnderlyings[collateralIndex + 1 == collateralUnderlyings.length ? 0 : collateralIndex + 1];
+
+                (uint256 repaid, uint256 seized) =
+                    user.liquidate(borrowedMarket.underlying, collateralUnderlying, borrower, toRepay);
+
+                assertEq(repaid, 0);
+                assertEq(seized, 0);
+            }
+        }
+    }
+
+    function testShouldNotLiquidateUserNotInBorrowMarket(address borrower, uint256 amount, uint256 toRepay) public {
+        vm.assume(borrower != address(0));
+
+        for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
+            for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+                _revert();
+
+                TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
+                TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
+
+                amount = _boundAmountWithPrice(amount, borrowedMarket);
+
+                (uint256 supplied, uint256 borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                );
+
+                assertGt(supplied, 0);
+                assertGt(borrowed, 0);
+
+                stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
+                    collateralMarket.underlying
+                ).with_key(borrower).checked_write(
+                    morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
+                );
+
+                toRepay = bound(toRepay, MIN_AMOUNT, borrowed);
+
+                user.approve(borrowedMarket.underlying, toRepay);
+
+                address borrowedUnderlying =
+                    borrowableUnderlyings[borrowedIndex + 1 == borrowableUnderlyings.length ? 0 : borrowedIndex + 1];
+
+                (uint256 repaid, uint256 seized) =
+                    user.liquidate(borrowedUnderlying, collateralMarket.underlying, borrower, toRepay);
+
+                assertEq(repaid, 0);
+                assertEq(seized, 0);
+            }
+        }
+    }
+
+    function testShouldLiquidateUnhealthyUser(address borrower, uint256 amount, uint256 toRepay) public {
+        vm.assume(borrower != address(0));
+
+        for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
+            for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+                _revert();
+
+                TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
+                TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
+
+                amount = _boundAmountWithPrice(amount, borrowedMarket);
+
+                (uint256 supplied, uint256 borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
@@ -73,15 +151,25 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 toRepay = bound(toRepay, MIN_AMOUNT, borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
+
+                vm.expectEmit(true, true, true, false, address(morpho));
+                emit Events.Liquidated(
+                    address(user), borrower, borrowedMarket.underlying, 0, collateralMarket.underlying, 0
+                    );
+
                 (uint256 repaid, uint256 seized) =
                     user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
+
+                assertGt(repaid, 0);
+                assertGt(seized, 0);
+                assertLe(repaid, borrowed);
+                assertLe(seized, supplied);
             }
         }
     }
 
     function testShouldLiquidateAnyUserOnDeprecatedMarket(address borrower, uint256 amount, uint256 toRepay) public {
         vm.assume(borrower != address(0));
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -89,6 +177,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
+
+                amount = _boundAmountWithPrice(amount, borrowedMarket);
 
                 (uint256 supplied, uint256 borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
@@ -101,16 +191,16 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
-                // vm.expectEmit(true, true, true, false, address(morpho));
-                // emit Events.Liquidated(
-                //     address(user), borrower, borrowedMarket.underlying, 0, collateralMarket.underlying, 0
-                //     );
+                vm.expectEmit(true, true, true, false, address(morpho));
+                emit Events.Liquidated(
+                    address(user), borrower, borrowedMarket.underlying, 0, collateralMarket.underlying, 0
+                    );
 
                 (uint256 repaid, uint256 seized) =
                     user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
 
-                // assertGt(repaid, 0);
-                // assertGt(seized, 0);
+                assertGt(repaid, 0);
+                assertGt(seized, 0);
                 assertLe(repaid, borrowed);
                 assertLe(seized, supplied);
             }
@@ -193,5 +283,10 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, address(0), amount);
             }
         }
+    }
+
+    function _boundAmountWithPrice(uint256 amount, TestMarket memory market) internal view returns (uint256) {
+        uint256 minAmount = MIN_PRICE_AMOUNT * (10 ** market.decimals) / market.price;
+        return bound(amount, minAmount, MAX_AMOUNT);
     }
 }

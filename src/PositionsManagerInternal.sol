@@ -168,8 +168,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Market storage borrowMarket = _market[underlyingBorrowed];
         Types.Market storage collateralMarket = _market[underlyingCollateral];
 
-        console2.log("collateralMarket.isCreated()", collateralMarket.isCreated());
-        console2.log("borrowMarket.isCreated()", borrowMarket.isCreated());
         if (!collateralMarket.isCreated() || !borrowMarket.isCreated()) revert Errors.MarketNotCreated();
 
         if (collateralMarket.isLiquidateCollateralPaused()) revert Errors.LiquidateCollateralIsPaused();
