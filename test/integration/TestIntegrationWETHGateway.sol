@@ -19,6 +19,14 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertEq(ERC20(weth).allowance(address(wethGateway), address(morpho)), type(uint256).max);
     }
 
+    function invariantETHBalance() public {
+        assertEq(address(wethGateway).balance, 0);
+    }
+
+    function invariantWETHBalance() public {
+        assertEq(ERC20(weth).balanceOf(address(wethGateway)), 0);
+    }
+
     function testCannotSendETHToWETHGateway(uint256 amount) public {
         deal(address(this), amount);
         vm.expectRevert(abi.encodeWithSelector(WETHGateway.OnlyWETH.selector));
