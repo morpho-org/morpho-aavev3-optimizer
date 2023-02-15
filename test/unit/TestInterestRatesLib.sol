@@ -19,23 +19,22 @@ contract TestUnitInterestRatesLib is BaseTest {
     uint256 internal constant MAX_DELTA = 1e9 ether;
     uint256 internal constant MAX_TOTAL_P2P = 1e9 ether;
 
-    function testComputeP2PIndexes(uint256 seed) public {
-        Types.IndexesParams memory indexesParams;
-        indexesParams.lastSupplyIndexes.poolIndex = bound(_rng(seed, "lastSupplyPoolIndex"), MIN_INDEX, MAX_INDEX);
-        indexesParams.lastSupplyIndexes.p2pIndex = bound(_rng(seed, "lastSupplyP2PIndex"), MIN_INDEX, MAX_INDEX);
-        indexesParams.lastBorrowIndexes.poolIndex = bound(_rng(seed, "lastBorrowPoolIndex"), MIN_INDEX, MAX_INDEX);
-        indexesParams.lastBorrowIndexes.p2pIndex = bound(_rng(seed, "lastBorrowP2PIndex"), MIN_INDEX, MAX_INDEX);
-        indexesParams.poolSupplyIndex =
-            bound(_rng(seed, "poolSupplyIndex"), indexesParams.lastSupplyIndexes.poolIndex, MAX_INDEX);
-        indexesParams.poolBorrowIndex =
-            bound(_rng(seed, "poolBorrowIndex"), indexesParams.lastBorrowIndexes.poolIndex, MAX_INDEX);
-        indexesParams.reserveFactor = bound(_rng(seed, "reserveFactor"), 0, MAX_RESERVE_FACTOR);
-        indexesParams.p2pIndexCursor = bound(_rng(seed, "p2pIndexCursor"), 0, MAX_P2P_INDEX_CURSOR);
-        indexesParams.deltas.supply.scaledDelta = bound(_rng(seed, "supplyDeltaPool"), 0, MAX_DELTA);
-        indexesParams.deltas.supply.scaledP2PTotal = bound(_rng(seed, "supplyTotalP2P"), 0, MAX_TOTAL_P2P);
-        indexesParams.deltas.borrow.scaledDelta = bound(_rng(seed, "borrowDeltaPool"), 0, MAX_DELTA);
-        indexesParams.deltas.borrow.scaledP2PTotal = bound(_rng(seed, "borrowTotalP2P"), 0, MAX_TOTAL_P2P);
-        indexesParams.proportionIdle = bound(_rng(seed, "proportionIdle"), 0, MAX_PROPORTION_IDLE);
+    function testComputeP2PIndexes(Types.IndexesParams memory indexesParams) public {
+        indexesParams.lastSupplyIndexes.poolIndex =
+            bound(indexesParams.lastSupplyIndexes.poolIndex, MIN_INDEX, MAX_INDEX);
+        indexesParams.lastSupplyIndexes.p2pIndex = bound(indexesParams.lastSupplyIndexes.p2pIndex, MIN_INDEX, MAX_INDEX);
+        indexesParams.lastBorrowIndexes.poolIndex =
+            bound(indexesParams.lastBorrowIndexes.poolIndex, MIN_INDEX, MAX_INDEX);
+        indexesParams.lastBorrowIndexes.p2pIndex = bound(indexesParams.lastBorrowIndexes.p2pIndex, MIN_INDEX, MAX_INDEX);
+        indexesParams.poolSupplyIndex = bound(indexesParams.poolSupplyIndex, MIN_INDEX, MAX_INDEX);
+        indexesParams.poolBorrowIndex = bound(indexesParams.poolBorrowIndex, MIN_INDEX, MAX_INDEX);
+        indexesParams.reserveFactor = bound(indexesParams.reserveFactor, 0, MAX_RESERVE_FACTOR);
+        indexesParams.p2pIndexCursor = bound(indexesParams.p2pIndexCursor, 0, MAX_P2P_INDEX_CURSOR);
+        indexesParams.deltas.supply.scaledDelta = bound(indexesParams.deltas.supply.scaledDelta, 0, MAX_DELTA);
+        indexesParams.deltas.supply.scaledP2PTotal = bound(indexesParams.deltas.supply.scaledP2PTotal, 0, MAX_TOTAL_P2P);
+        indexesParams.deltas.borrow.scaledDelta = bound(indexesParams.deltas.borrow.scaledDelta, 0, MAX_DELTA);
+        indexesParams.deltas.borrow.scaledP2PTotal = bound(indexesParams.deltas.borrow.scaledP2PTotal, 0, MAX_TOTAL_P2P);
+        indexesParams.proportionIdle = bound(indexesParams.proportionIdle, 0, MAX_PROPORTION_IDLE);
 
         Types.GrowthFactors memory expectedGrowthFactors = InterestRatesLib.computeGrowthFactors(
             indexesParams.poolSupplyIndex,
@@ -307,9 +306,5 @@ contract TestUnitInterestRatesLib is BaseTest {
         assertEq(actualP2PIndex, expectedP2PIndex, "p2pIndex");
         // Sanity check
         assertGe(actualP2PIndex, MIN_INDEX, "too low p2pIndex");
-    }
-
-    function _rng(uint256 seed, string memory salt) internal pure returns (uint256) {
-        return uint256(keccak256(abi.encode(seed, salt)));
     }
 }
