@@ -14,43 +14,43 @@ contracts:
 	FOUNDRY_TEST=/dev/null forge build --via-ir --extra-output-files irOptimized --sizes --force
 
 
-test:
-	forge test -vvv
-
-test-unit:
-	@FOUNDRY_MATCH_CONTRACT=TestUnit make test
+test-integration:
+	@FOUNDRY_MATCH_CONTRACT=TestIntegration make test
 
 test-internal:
 	@FOUNDRY_MATCH_CONTRACT=TestInternal make test
 
-test-integration:
-	@FOUNDRY_MATCH_CONTRACT=TestIntegration make test
+test-unit:
+	@FOUNDRY_MATCH_CONTRACT=TestUnit make test
 
+test:
+	forge test -vvv
 
-test-%:
-	@FOUNDRY_MATCH_TEST=$* make test
-
-test-unit-%:
-	@FOUNDRY_MATCH_TEST=$* make test-unit
-
-test-internal-%:
-	@FOUNDRY_MATCH_TEST=$* make test-internal
 
 test-integration-%:
 	@FOUNDRY_MATCH_TEST=$* make test-integration
 
+test-internal-%:
+	@FOUNDRY_MATCH_TEST=$* make test-internal
 
-test/%:
-	@FOUNDRY_MATCH_CONTRACT=$* make test
+test-unit-%:
+	@FOUNDRY_MATCH_TEST=$* make test-unit
 
-test-unit/%:
-	@FOUNDRY_MATCH_CONTRACT=TestUnit$* make test
+test-%:
+	@FOUNDRY_MATCH_TEST=$* make test
+
+
+test-integration/%:
+	@FOUNDRY_MATCH_CONTRACT=TestIntegration$* make test
 
 test-internal/%:
 	@FOUNDRY_MATCH_CONTRACT=TestInternal$* make test
 
-test-integration/%:
-	@FOUNDRY_MATCH_CONTRACT=TestIntegration$* make test
+test-unit/%:
+	@FOUNDRY_MATCH_CONTRACT=TestUnit$* make test
+
+test/%:
+	@FOUNDRY_MATCH_CONTRACT=$* make test
 
 
 coverage:
