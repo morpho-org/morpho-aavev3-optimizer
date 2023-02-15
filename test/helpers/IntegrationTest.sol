@@ -257,8 +257,6 @@ contract IntegrationTest is ForkTest {
 
         vm.startPrank(borrower);
         uint256 collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount);
-        console2.log("collateral", collateral);
-        console2.log("amount", amount);
         deal(collateralMarket.underlying, borrower, collateral);
         ERC20(collateralMarket.underlying).approve(address(morpho), collateral);
         supplied = morpho.supplyCollateral(collateralMarket.underlying, collateral, borrower);
