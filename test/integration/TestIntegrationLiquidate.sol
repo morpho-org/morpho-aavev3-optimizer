@@ -3,17 +3,20 @@ pragma solidity ^0.8.0;
 
 import "test/helpers/IntegrationTest.sol";
 
+import "@forge-std/StdStorage.sol";
+
 contract TestIntegrationLiquidate is IntegrationTest {
     using WadRayMath for uint256;
+    using stdStorage for StdStorage;
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
 
     uint256 internal constant MIN_AMOUNT = 10_000_000;
+    uint256 internal constant MIN_PRICE_AMOUNT = 100_000_000; // 10$
     uint256 internal constant MAX_AMOUNT = 100 ether;
 
     function testShouldNotLiquidateHealthyUser(address borrower, uint256 amount, uint256 toRepay) public {
         vm.assume(borrower != address(0));
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -22,16 +25,19 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
+                uint256 minAmount = MIN_PRICE_AMOUNT * (10 ** borrowedMarket.decimals) / borrowedMarket.price;
+                amount = bound(amount, minAmount, MAX_AMOUNT);
+
                 (, uint256 borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
-                toRepay = bound(toRepay, MIN_AMOUNT, borrowed);
+                toRepay = bound(toRepay, minAmount, borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
                 vm.expectRevert(Errors.UnauthorizedLiquidate.selector);
-                user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, address(this), toRepay);
+                user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
             }
         }
     }
@@ -101,7 +107,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 //     );
 
                 (uint256 repaid, uint256 seized) =
-                    user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, address(this), toRepay);
+                    user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
 
                 // assertGt(repaid, 0);
                 // assertGt(seized, 0);
