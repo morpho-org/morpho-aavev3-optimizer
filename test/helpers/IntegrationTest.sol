@@ -243,6 +243,29 @@ contract IntegrationTest is ForkTest {
         );
     }
 
+    /// @dev Borrows from `user` on behalf of `onBehalf`, with collateral.
+    function _borrowWithCollateral(
+        address borrower,
+        TestMarket storage collateralMarket,
+        TestMarket storage borrowedMarket,
+        uint256 amount,
+        address onBehalf,
+        address receiver,
+        uint256 maxIterations
+    ) internal returns (uint256 supplied, uint256 borrowed) {
+        amount = _boundBorrow(borrowedMarket, amount);
+
+        vm.startPrank(borrower);
+        uint256 collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount);
+        console2.log("collateral", collateral);
+        console2.log("amount", amount);
+        deal(collateralMarket.underlying, borrower, collateral);
+        ERC20(collateralMarket.underlying).approve(address(morpho), collateral);
+        supplied = morpho.supplyCollateral(collateralMarket.underlying, collateral, borrower);
+        borrowed = morpho.borrow(borrowedMarket.underlying, amount, onBehalf, receiver, maxIterations);
+        vm.stopPrank();
+    }
+
     /// @dev Borrows from `user` on behalf of `onBehalf`, without collateral.
     function _borrowWithoutCollateral(
         address borrower,
