@@ -40,7 +40,38 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
     function testShouldNotLiquidateUserNotInBorrowMarket() public {}
 
-    function testShouldLiquidateUnhealthyUser() public {}
+    function testShouldLiquidateUnhealthyUser(address borrower, uint256 amount, uint256 toRepay) public {
+        vm.assume(borrower != address(0));
+        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
+
+        for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
+            for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+                _revert();
+
+                TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
+                TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
+
+                uint256 minAmount = MIN_PRICE_AMOUNT * (10 ** borrowedMarket.decimals) / borrowedMarket.price;
+                amount = bound(amount, minAmount, MAX_AMOUNT);
+
+                (, uint256 borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                );
+
+                stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
+                    collateralMarket.underlying
+                ).with_key(borrower).checked_write(
+                    morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
+                );
+
+                toRepay = bound(toRepay, MIN_AMOUNT, borrowed);
+
+                user.approve(borrowedMarket.underlying, toRepay);
+                (uint256 repaid, uint256 seized) =
+                    user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
+            }
+        }
+    }
 
     function testShouldLiquidateAnyUserOnDeprecatedMarket(address borrower, uint256 amount, uint256 toRepay) public {
         vm.assume(borrower != address(0));
