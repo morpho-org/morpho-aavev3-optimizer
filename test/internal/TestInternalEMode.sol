@@ -1,24 +1,25 @@
 pragma solidity ^0.8.0;
 
-import "test/helpers/ForkTest.sol";
-import {IMorpho} from "src/interfaces/IMorpho.sol";
-import {Morpho} from "src/Morpho.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {Types} from "src/libraries/Types.sol";
 import {PoolLib} from "src/libraries/PoolLib.sol";
-import {PriceOracleSentinelMock} from "test/mocks/PriceOracleSentinelMock.sol";
-import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
-import {PoolAdminMock} from "test/mocks/PoolAdminMock.sol";
-import "src/MorphoInternal.sol";
-import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
+
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {TestMarket, TestMarketLib} from "test/helpers/TestMarketLib.sol";
-import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
+import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
+import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
+
+import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
+
+import "test/helpers/ForkTest.sol";
+import "src/MorphoInternal.sol";
+import {IMorpho} from "src/interfaces/IMorpho.sol";
+import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
+import {TestMarket, TestMarketLib} from "test/helpers/TestMarketLib.sol";
 /// Assumption : Unit Test made for only one E-mode
-contract TestInternalEMode is ForkTest, MorphoInternal {
+
+contract TestInternalEMode is ForkTest, PositionsManagerInternal {
     using MarketLib for Types.Market;
     using PoolLib for IPool;
     using MarketBalanceLib for Types.MarketBalances;
@@ -32,8 +33,10 @@ contract TestInternalEMode is ForkTest, MorphoInternal {
     uint256 internal constant LIQUIDATION_THRESHOLD_MASK =
         0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000FFFF;
     uint256 internal constant LTV_MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000;
+    uint256 internal constant BORROWING_MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFFFFFFFFFFF;
     uint256 internal constant LIQUIDATION_THRESHOLD_START_BIT_POSITION = 16;
     uint256 internal constant LIQUIDATION_BONUS_START_BIT_POSITION = 32;
+    uint256 internal constant BORROWING_ENABLED_START_BIT_POSITION = 58;
     IMorpho internal morpho;
 
     ProxyAdmin internal proxyAdmin;
@@ -80,6 +83,7 @@ contract TestInternalEMode is ForkTest, MorphoInternal {
         market.underlying = underlying;
         market.aToken = reserveData.aTokenAddress;
         market.variableDebtToken = reserveData.variableDebtTokenAddress;
+        market.stableDebtToken = reserveData.stableDebtTokenAddress;
         market.reserveFactor = reserveFactor;
         market.p2pIndexCursor = p2pIndexCursor;
 
@@ -101,7 +105,6 @@ contract TestInternalEMode is ForkTest, MorphoInternal {
         uint16 ltConfig =
             uint16((config.data & ~LIQUIDATION_THRESHOLD_MASK) >> LIQUIDATION_THRESHOLD_START_BIT_POSITION);
         uint16 ltvConfig = uint16(config.data & ~LTV_MASK);
-
         uint16 liquidationBonus = uint16(PercentageMath.PERCENTAGE_FACTOR + 1);
 
         uint16 ltvEMode;
@@ -115,7 +118,6 @@ contract TestInternalEMode is ForkTest, MorphoInternal {
         underlyingPriceEMode = bound(underlyingPriceEMode, underlyingPrice + 1, type(uint96).max);
         vm.assume(uint256(ltEMode).percentMul(liquidationBonus) <= PercentageMath.PERCENTAGE_FACTOR);
         vm.assume(underlyingPrice != underlyingPriceEMode);
-
         address priceSourceEMode = address(1);
 
         DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
@@ -134,6 +136,7 @@ contract TestInternalEMode is ForkTest, MorphoInternal {
             vm.prank(address(poolAdmin));
             poolConfigurator.setAssetEModeCategory(dai, _E_MODE_CATEGORY_ID);
         }
+
         oracle.setAssetPrice(priceSourceEMode, underlyingPriceEMode);
         oracle.setAssetPrice(dai, underlyingPrice);
 
@@ -152,5 +155,98 @@ contract TestInternalEMode is ForkTest, MorphoInternal {
             _E_MODE_CATEGORY_ID != 0 ? underlyingPriceEMode : underlyingPrice,
             "Underlying Price E-Mode"
         );
+    }
+
+    function testIsInEModeCategory() public {
+        address underlying;
+        underlying = address(uint160(bound(uint256(uint160(underlying)), 1, type(uint160).max)));
+        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+
+        address priceSourceEMode = address(1);
+        uint16 ltv = uint16(PercentageMath.PERCENTAGE_FACTOR - 30);
+        uint16 lt = uint16(PercentageMath.PERCENTAGE_FACTOR - 20);
+        uint16 liquidationBonus = uint16(PercentageMath.PERCENTAGE_FACTOR + 1);
+
+        uint8 EModeCategoryId;
+        EModeCategoryId = uint8(bound(uint256(EModeCategoryId), 0, type(uint8).max));
+        if (EModeCategoryId != 0) {
+            vm.prank(address(poolAdmin));
+            poolConfigurator.setEModeCategory(EModeCategoryId, ltv, lt, liquidationBonus, priceSourceEMode, "");
+
+            vm.prank(address(poolAdmin));
+            poolConfigurator.setAssetEModeCategory(underlying, EModeCategoryId);
+        }
+
+        bool expectedIsInEMode = _E_MODE_CATEGORY_ID == EModeCategoryId && _E_MODE_CATEGORY_ID != 0 ? true : false;
+        bool isInEMode = _isInEModeCategory(config);
+        assertEq(expectedIsInEMode, isInEMode, "Wrong E-Mode");
+    }
+
+    function testGetAssetPrice() public {
+        address underlying;
+        underlying = address(uint160(bound(uint256(uint160(underlying)), 1, type(uint160).max)));
+        address priceSourceEMode;
+        priceSourceEMode = address(
+            uint160(bound(uint256(uint160(priceSourceEMode)), uint256(uint160(underlying)) + 1, type(uint160).max))
+        );
+        vm.assume(underlying != priceSourceEMode);
+
+        uint256 underlyingPriceEMode;
+        underlyingPriceEMode = bound(underlyingPriceEMode, 0, type(uint256).max);
+        uint256 underlyingPrice;
+        underlyingPrice = bound(underlyingPrice, 0, type(uint256).max);
+
+        oracle.setAssetPrice(underlying, underlyingPrice);
+        oracle.setAssetPrice(priceSourceEMode, underlyingPriceEMode);
+
+        bool isInEMode;
+        uint256 randomNumber;
+        randomNumber = bound(randomNumber, 0, type(uint256).max);
+        isInEMode = randomNumber % 2 == 0;
+
+        uint256 expectedPrice = isInEMode && underlyingPriceEMode != 0 ? underlyingPriceEMode : underlyingPrice;
+        uint256 realPrice = _getAssetPrice(underlying, oracle, isInEMode, priceSourceEMode);
+        console.log(expectedPrice, realPrice, isInEMode);
+        assertEq(expectedPrice, realPrice, "Wrong price");
+    }
+
+    function testAuthorizeBorrowEmode() public {
+        address priceSourceEMode = address(1);
+        uint16 ltv = uint16(PercentageMath.PERCENTAGE_FACTOR - 20);
+        uint16 lt = uint16(PercentageMath.PERCENTAGE_FACTOR - 10);
+        uint16 liquidationBonus = uint16(PercentageMath.PERCENTAGE_FACTOR + 1);
+
+        uint8 EModeCategoryId;
+        EModeCategoryId = uint8(bound(uint256(EModeCategoryId), 1, type(uint8).max));
+        if (EModeCategoryId != 0) {
+            vm.prank(address(poolAdmin));
+            poolConfigurator.setEModeCategory(EModeCategoryId, ltv, lt, liquidationBonus, priceSourceEMode, "");
+            console.log("true");
+            vm.prank(address(poolAdmin));
+            poolConfigurator.setAssetEModeCategory(dai, EModeCategoryId);
+        }
+
+        Types.Indexes256 memory indexes;
+        uint256 poolSupplyIndex;
+        uint256 p2pSupplyIndex;
+        uint256 poolBorrowIndex;
+        uint256 p2pBorrowIndex;
+        poolSupplyIndex = bound(poolSupplyIndex, 0, type(uint96).max);
+        p2pSupplyIndex = bound(p2pSupplyIndex, 0, type(uint96).max);
+        poolBorrowIndex = bound(poolBorrowIndex, 0, type(uint96).max);
+        p2pBorrowIndex = bound(p2pBorrowIndex, 0, type(uint96).max);
+        indexes.borrow.poolIndex = poolBorrowIndex;
+        indexes.borrow.p2pIndex = p2pBorrowIndex;
+        indexes.supply.poolIndex = poolSupplyIndex;
+        indexes.supply.p2pIndex = p2pSupplyIndex;
+
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != EModeCategoryId) {
+            vm.expectRevert(abi.encodeWithSelector(Errors.InconsistentEMode.selector));
+        }
+        this.authorizeBorrow(dai, 0, indexes);
+    }
+
+    function authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) external view {
+        _authorizeBorrow(underlying, amount, indexes);
     }
 }
