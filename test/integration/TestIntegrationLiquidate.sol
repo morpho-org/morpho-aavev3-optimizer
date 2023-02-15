@@ -22,7 +22,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                (uint256 supplied, uint256 borrowed) = _borrowWithCollateral(
+                (, uint256 borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
@@ -30,11 +30,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
-                (uint256 repaid, uint256 seized) =
-                    user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, address(this), toRepay);
-
-                assertEq(repaid, 0);
-                assertEq(seized, 0);
+                vm.expectRevert(Errors.UnauthorizedLiquidate.selector);
+                user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, address(this), toRepay);
             }
         }
     }
