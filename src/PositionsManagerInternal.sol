@@ -3,8 +3,6 @@ pragma solidity ^0.8.17;
 
 import {IPriceOracleSentinel} from "@aave-v3-core/interfaces/IPriceOracleSentinel.sol";
 
-import "@forge-std/console2.sol";
-
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";

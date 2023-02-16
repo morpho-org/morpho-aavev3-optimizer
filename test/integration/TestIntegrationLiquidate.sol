@@ -126,7 +126,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
-    function testShouldLiquidateUnhealthyUser(address borrower, uint256 amount, uint256 toRepay) public {
+    function testLiquidateUnhealthyUser(address borrower, uint256 amount, uint256 toRepay) public {
         vm.assume(borrower != address(0));
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
@@ -141,6 +141,56 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 (uint256 supplied, uint256 borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
+
+                stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
+                    collateralMarket.underlying
+                ).with_key(borrower).checked_write(
+                    morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
+                );
+
+                toRepay = bound(toRepay, MIN_AMOUNT, borrowed);
+
+                user.approve(borrowedMarket.underlying, toRepay);
+
+                vm.expectEmit(true, true, true, false, address(morpho));
+                emit Events.Liquidated(
+                    address(user), borrower, borrowedMarket.underlying, 0, collateralMarket.underlying, 0
+                    );
+
+                (uint256 repaid, uint256 seized) =
+                    user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
+
+                assertGt(repaid, 0);
+                assertGt(seized, 0);
+                assertLe(repaid, borrowed);
+                assertLe(seized, supplied);
+            }
+        }
+    }
+
+    function testLiquidateUnhealthyUserBorrowMatched(
+        address borrower,
+        uint256 amount,
+        uint256 promoted,
+        uint256 toRepay
+    ) public {
+        vm.assume(borrower != address(0));
+
+        for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
+            for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+                _revert();
+
+                TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
+                TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
+
+                amount = _boundAmountWithPrice(amount, borrowedMarket);
+
+                (uint256 supplied, uint256 borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                );
+
+                promoted = bound(0, promoted, borrowed);
+                _promoteBorrow(promoter1, borrowedMarket, promoted);
 
                 stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
                     collateralMarket.underlying
