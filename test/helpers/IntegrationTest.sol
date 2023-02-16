@@ -406,6 +406,12 @@ contract IntegrationTest is ForkTest {
         }
     }
 
+    function _assumeNotPartOfAllUnderlyings(address underlying) internal view {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.assume(underlying != allUnderlyings[i]);
+        }
+    }
+
     function _assertUpdateIndexes(Types.Market memory market, Types.Indexes256 memory futureIndexes) internal {
         assertEq(market.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
         assertEq(

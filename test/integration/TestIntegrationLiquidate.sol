@@ -410,9 +410,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testShouldRevertWhenCollateralMarketNotCreated(address underlying, address borrower, uint256 amount)
         public
     {
-        for (uint256 i; i < allUnderlyings.length; ++i) {
-            vm.assume(underlying != allUnderlyings[i]);
-        }
+        _assumeNotPartOfAllUnderlyings(underlying);
 
         for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
             _revert();
@@ -425,9 +423,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     }
 
     function testShouldRevertWhenBorrowMarketNotCreated(address underlying, address borrower, uint256 amount) public {
-        for (uint256 i; i < allUnderlyings.length; ++i) {
-            vm.assume(underlying != allUnderlyings[i]);
-        }
+        _assumeNotPartOfAllUnderlyings(underlying);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             _revert();

@@ -364,9 +364,7 @@ contract TestIntegrationSupply is IntegrationTest {
     }
 
     function testShouldRevertSupplyWhenMarketNotCreated(address underlying, uint256 amount, address onBehalf) public {
-        for (uint256 i; i < allUnderlyings.length; ++i) {
-            vm.assume(underlying != allUnderlyings[i]);
-        }
+        _assumeNotPartOfAllUnderlyings(underlying);
 
         amount = _boundAmount(amount);
         onBehalf = _boundAddressNotZero(onBehalf);

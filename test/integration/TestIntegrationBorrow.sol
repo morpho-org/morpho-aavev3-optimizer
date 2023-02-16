@@ -495,9 +495,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         address onBehalf,
         address receiver
     ) public {
-        for (uint256 i; i < allUnderlyings.length; ++i) {
-            vm.assume(underlying != allUnderlyings[i]);
-        }
+        _assumeNotPartOfAllUnderlyings(underlying);
 
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
