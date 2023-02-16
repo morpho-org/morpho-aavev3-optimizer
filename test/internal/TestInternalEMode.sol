@@ -157,7 +157,7 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
         vm.stopPrank();
     }
 
-    function testIsInEModeCategory(uint8 EModeCategoryId, uint16 lt, uint16 ltv, uint16 liquidationBonus) public {
+    function testIsInEModeCategory(uint8 eModeCategoryId, uint16 lt, uint16 ltv, uint16 liquidationBonus) public {
         for (uint256 i; i < underlyings.length; ++i) {
             address underlying = underlyings[i];
             (uint16 ltvBound, uint16 ltBound,,) = getLtvLt(underlying);
@@ -168,7 +168,7 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
             liquidationBonus = uint16(bound(liquidationBonus, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max));
             vm.assume(uint256(lt).percentMul(liquidationBonus) <= PercentageMath.PERCENTAGE_FACTOR);
 
-            EModeCategoryId = uint8(bound(uint256(EModeCategoryId), 1, type(uint8).max));
+            eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
 
             DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
                 ltv: ltv,
@@ -181,10 +181,9 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
             setEModeCategoryAsset(eModeCategory, underlying, EModeCategoryId);
 
             DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
-            console.log(config.getEModeCategory(), _E_MODE_CATEGORY_ID, EModeCategoryId);
-            bool expectedIsInEMode = _E_MODE_CATEGORY_ID == EModeCategoryId && _E_MODE_CATEGORY_ID != 0;
+            bool expectedIsInEMode = _E_MODE_CATEGORY_ID == 0 && _E_MODE_CATEGORY_ID != 0;
             bool isInEMode = _isInEModeCategory(config);
-            console.log(expectedIsInEMode, isInEMode);
+
             assertEq(isInEMode, expectedIsInEMode, "Wrong E-Mode");
         }
     }
@@ -212,7 +211,7 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
     }
 
     function testAuthorizeBorrowEmode(
-        uint8 EModeCategoryId,
+        uint8 eModeCategoryId,
         uint256 poolSupplyIndex,
         uint256 p2pSupplyIndex,
         uint256 poolBorrowIndex,
@@ -224,7 +223,7 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
         uint16 lt = uint16(PercentageMath.PERCENTAGE_FACTOR - 10);
         uint16 liquidationBonus = uint16(PercentageMath.PERCENTAGE_FACTOR + 1);
 
-        EModeCategoryId = uint8(bound(uint256(EModeCategoryId), 1, type(uint8).max));
+        eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
 
         DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
             ltv: ltv,
@@ -234,7 +233,7 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
             label: ""
         });
 
-        setEModeCategoryAsset(eModeCategory, dai, EModeCategoryId);
+        setEModeCategoryAsset(eModeCategory, dai, eModeCategoryId);
 
         Types.Indexes256 memory indexes;
 
