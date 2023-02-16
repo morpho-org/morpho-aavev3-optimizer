@@ -1,5 +1,8 @@
 pragma solidity ^0.8.0;
 
+import {IMorpho} from "src/interfaces/IMorpho.sol";
+import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
+
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {Types} from "src/libraries/Types.sol";
 import {PoolLib} from "src/libraries/PoolLib.sol";
@@ -8,13 +11,11 @@ import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.s
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
-import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import "test/helpers/ForkTest.sol";
 import "src/MorphoInternal.sol";
-import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
 import {TestMarket, TestMarketLib} from "test/helpers/TestMarketLib.sol";
 /// Assumption : Unit Test made for only one E-mode
