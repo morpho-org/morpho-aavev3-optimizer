@@ -16,7 +16,6 @@ import {Test} from "@forge-std/Test.sol";
 contract TestUnitMarketLib is Test {
     using MarketLib for Types.Market;
     using WadRayMath for uint256;
-    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     uint256 internal constant MAX_AMOUNT = 1e10 ether;
     uint256 internal constant MIN_INDEX = WadRayMath.RAY;
@@ -289,6 +288,7 @@ contract TestUnitMarketLib is Test {
         _market.deltas.supply.scaledP2PTotal = bound(_market.deltas.supply.scaledP2PTotal, 0, MAX_AMOUNT);
         _market.idleSupply = bound(_market.idleSupply, 0, _market.deltas.supply.scaledP2PTotal);
         _market.indexes.supply.poolIndex = uint128(bound(_market.indexes.supply.poolIndex, MIN_INDEX, MAX_INDEX));
+        _market.indexes.supply.p2pIndex = uint128(bound(_market.indexes.supply.p2pIndex, MIN_INDEX, MAX_INDEX));
         _market.indexes.borrow.poolIndex = uint128(bound(_market.indexes.borrow.poolIndex, MIN_INDEX, MAX_INDEX));
 
         market = _market;
