@@ -367,6 +367,46 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
+    function testShouldUpdateIndexesAfterLiquidate(address borrower, uint256 amount, uint256 toRepay) public {
+        vm.assume(borrower != address(0));
+
+        for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
+            for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+                _revert();
+
+                TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
+                TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
+
+                amount = _boundAmountWithPrice(amount, borrowedMarket);
+
+                (, uint256 borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                );
+                vm.warp(block.timestamp + 1);
+
+                stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
+                    collateralMarket.underlying
+                ).with_key(borrower).checked_write(
+                    morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
+                );
+
+                toRepay = bound(toRepay, MIN_AMOUNT, borrowed);
+
+                user.approve(borrowedMarket.underlying, toRepay);
+
+                vm.expectEmit(true, true, true, false, address(morpho));
+                emit Events.IndexesUpdated(borrowedMarket.underlying, 0, 0, 0, 0);
+
+                if (borrowedMarket.underlying != collateralMarket.underlying) {
+                    vm.expectEmit(true, true, true, false, address(morpho));
+                    emit Events.IndexesUpdated(collateralMarket.underlying, 0, 0, 0, 0);
+                }
+
+                user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
+            }
+        }
+    }
+
     function testShouldRevertWhenCollateralMarketNotCreated(address underlying, address borrower, uint256 amount)
         public
     {
