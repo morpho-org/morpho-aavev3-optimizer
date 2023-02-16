@@ -8,29 +8,6 @@ contract TestIntegrationWithdraw is IntegrationTest {
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
 
-    function _boundAmount(uint256 amount) internal view returns (uint256) {
-        return bound(amount, 1, type(uint256).max);
-    }
-
-    function _boundOnBehalf(address onBehalf) internal view returns (address) {
-        onBehalf = _boundAddressNotZero(onBehalf);
-
-        vm.assume(onBehalf != address(proxyAdmin)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
-
-        return onBehalf;
-    }
-
-    function _boundReceiver(address receiver) internal view returns (address) {
-        return address(uint160(bound(uint256(uint160(receiver)), 1, type(uint160).max)));
-    }
-
-    function _prepareOnBehalf(address onBehalf) internal {
-        if (onBehalf != address(user)) {
-            vm.prank(onBehalf);
-            morpho.approveManager(address(user), true);
-        }
-    }
-
     struct WithdrawTest {
         uint256 supplied;
         uint256 withdrawn;
@@ -458,28 +435,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             user.withdraw(market.underlying, type(uint256).max);
 
-            Types.Market memory morphoMarket = morpho.market(market.underlying);
-            assertEq(
-                morphoMarket.indexes.supply.poolIndex,
-                futureIndexes.supply.poolIndex,
-                "poolSupplyIndex != futurePoolSupplyIndex"
-            );
-            assertEq(
-                morphoMarket.indexes.borrow.poolIndex,
-                futureIndexes.borrow.poolIndex,
-                "poolBorrowIndex != futurePoolBorrowIndex"
-            );
-
-            assertEq(
-                morphoMarket.indexes.supply.p2pIndex,
-                futureIndexes.supply.p2pIndex,
-                "p2pSupplyIndex != futureP2PSupplyIndex"
-            );
-            assertEq(
-                morphoMarket.indexes.borrow.p2pIndex,
-                futureIndexes.borrow.p2pIndex,
-                "p2pBorrowIndex != futureP2PBorrowIndex"
-            );
+            _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 

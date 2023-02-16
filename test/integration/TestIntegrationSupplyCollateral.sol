@@ -7,10 +7,6 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     using WadRayMath for uint256;
     using TestMarketLib for TestMarket;
 
-    function _boundAmount(uint256 amount) internal view returns (uint256) {
-        return bound(amount, 1, type(uint256).max);
-    }
-
     struct SupplyCollateralTest {
         uint256 supplied;
         uint256 balanceBefore;
@@ -74,12 +70,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
                 test.balanceBefore - user.balanceOf(market.underlying), amount, "balanceBefore - balanceAfter != amount"
             );
 
-            // Assert Morpho's market state.
-            assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
-            assertEq(test.morphoMarket.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != 0");
-            assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
-            assertEq(test.morphoMarket.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
-            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
+            _assertMarketState(test.morphoMarket);
         }
     }
 
@@ -124,28 +115,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
             user.supplyCollateral(market.underlying, amount, onBehalf);
 
-            Types.Market memory morphoMarket = morpho.market(market.underlying);
-            assertEq(
-                morphoMarket.indexes.supply.poolIndex,
-                futureIndexes.supply.poolIndex,
-                "poolSupplyIndex != futurePoolSupplyIndex"
-            );
-            assertEq(
-                morphoMarket.indexes.borrow.poolIndex,
-                futureIndexes.borrow.poolIndex,
-                "poolBorrowIndex != futurePoolBorrowIndex"
-            );
-
-            assertEq(
-                morphoMarket.indexes.supply.p2pIndex,
-                futureIndexes.supply.p2pIndex,
-                "p2pSupplyIndex != futureP2PSupplyIndex"
-            );
-            assertEq(
-                morphoMarket.indexes.borrow.p2pIndex,
-                futureIndexes.borrow.p2pIndex,
-                "p2pBorrowIndex != futureP2PBorrowIndex"
-            );
+            _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 
