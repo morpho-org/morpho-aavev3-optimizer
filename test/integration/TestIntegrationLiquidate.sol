@@ -32,14 +32,13 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                uint256 minAmount = MIN_PRICE_AMOUNT * (10 ** borrowedMarket.decimals) / borrowedMarket.price;
-                amount = bound(amount, minAmount, MAX_AMOUNT);
+                amount = _boundAmountWithPrice(amount, borrowedMarket);
 
                 (, uint256 borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
-                toRepay = bound(toRepay, minAmount, borrowed);
+                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -76,7 +75,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
                 );
 
-                toRepay = bound(toRepay, MIN_AMOUNT, borrowed);
+                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -117,7 +116,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
                 );
 
-                toRepay = bound(toRepay, MIN_AMOUNT, borrowed);
+                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -155,14 +154,11 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
                 );
 
-                toRepay = bound(toRepay, MIN_AMOUNT, borrowed);
+                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
-                vm.expectEmit(true, true, true, false, address(morpho));
-                emit Events.Liquidated(
-                    address(user), borrower, borrowedMarket.underlying, 0, collateralMarket.underlying, 0
-                    );
+                _assertEvents(address(user), borrower, collateralMarket, borrowedMarket);
 
                 (uint256 repaid, uint256 seized) =
                     user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
@@ -196,7 +192,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
-                promoted = bound(0, promoted, borrowed);
+                promoted = bound(promoted, 0, borrowed);
                 _promoteBorrow(promoter1, borrowedMarket, promoted);
 
                 stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
@@ -205,14 +201,11 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
                 );
 
-                toRepay = bound(toRepay, MIN_AMOUNT, borrowed);
+                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
-                vm.expectEmit(true, true, true, false, address(morpho));
-                emit Events.Liquidated(
-                    address(user), borrower, borrowedMarket.underlying, 0, collateralMarket.underlying, 0
-                    );
+                _assertEvents(address(user), borrower, collateralMarket, borrowedMarket);
 
                 (uint256 repaid, uint256 seized) =
                     user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
@@ -259,14 +252,11 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
                 );
 
-                toRepay = bound(toRepay, MIN_AMOUNT, test.borrowed);
+                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, test.borrowed), test.borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
-                vm.expectEmit(true, true, true, false, address(morpho));
-                emit Events.Liquidated(
-                    address(user), borrower, borrowedMarket.underlying, 0, collateralMarket.underlying, 0
-                    );
+                _assertEvents(address(user), borrower, collateralMarket, borrowedMarket);
 
                 (test.repaid, test.seized) =
                     user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
@@ -308,14 +298,11 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
                 );
 
-                toRepay = bound(toRepay, MIN_AMOUNT, test.borrowed);
+                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, test.borrowed), test.borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
-                vm.expectEmit(true, true, true, false, address(morpho));
-                emit Events.Liquidated(
-                    address(user), borrower, borrowedMarket.underlying, 0, collateralMarket.underlying, 0
-                    );
+                _assertEvents(address(user), borrower, collateralMarket, borrowedMarket);
 
                 (test.repaid, test.seized) =
                     user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
@@ -347,14 +334,11 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 morpho.setIsBorrowPaused(borrowedMarket.underlying, true);
                 morpho.setIsDeprecated(borrowedMarket.underlying, true);
 
-                toRepay = bound(toRepay, MIN_AMOUNT, borrowed);
+                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
-                vm.expectEmit(true, true, true, false, address(morpho));
-                emit Events.Liquidated(
-                    address(user), borrower, borrowedMarket.underlying, 0, collateralMarket.underlying, 0
-                    );
+                _assertEvents(address(user), borrower, collateralMarket, borrowedMarket);
 
                 (uint256 repaid, uint256 seized) =
                     user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
@@ -390,7 +374,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
                 );
 
-                toRepay = bound(toRepay, MIN_AMOUNT, borrowed);
+                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -479,6 +463,22 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, address(0), amount);
             }
         }
+    }
+
+    function _assertEvents(
+        address liquidator,
+        address borrower,
+        TestMarket storage collateralMarket,
+        TestMarket storage borrowedMarket
+    ) internal {
+        vm.expectEmit(true, true, true, false, address(morpho));
+        emit Events.Repaid(liquidator, borrower, borrowedMarket.underlying, 0, 0, 0);
+
+        vm.expectEmit(true, true, true, false, address(morpho));
+        emit Events.CollateralWithdrawn(address(0), borrower, liquidator, collateralMarket.underlying, 0, 0);
+
+        vm.expectEmit(true, true, true, false, address(morpho));
+        emit Events.Liquidated(address(user), borrower, borrowedMarket.underlying, 0, address(0), 0);
     }
 
     function _boundAmountWithPrice(uint256 amount, TestMarket memory market) internal view returns (uint256) {
