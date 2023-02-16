@@ -192,6 +192,7 @@ contract TestInternalEMode is ForkTest, PositionsManagerInternal {
         priceSourceEMode = address(
             uint160(bound(uint256(uint160(priceSourceEMode)), uint256(uint160(underlying)) + 1, type(uint160).max))
         );
+
         vm.assume(underlying != priceSourceEMode);
 
         uint256 underlyingPriceEMode;
