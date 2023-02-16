@@ -279,6 +279,55 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
+    function testLiquidateUnhealthyUserWhenDemotedZero(address borrower, uint256 amount, uint256 toRepay) public {
+        vm.assume(borrower != address(0));
+
+        LiquidateTest memory test;
+
+        for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
+            for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+                _revert();
+
+                TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
+                TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
+
+                amount = _boundAmountWithPrice(amount, borrowedMarket);
+
+                (test.supplied, test.borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                );
+
+                _promoteBorrow(promoter1, borrowedMarket, test.borrowed); // 100% peer-to-peer.
+
+                // Set the max iterations to 0 upon repay to skip demotion and fallback to supply delta.
+                morpho.setDefaultIterations(Types.Iterations({repay: 0, withdraw: 10}));
+
+                stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
+                    collateralMarket.underlying
+                ).with_key(borrower).checked_write(
+                    morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
+                );
+
+                toRepay = bound(toRepay, MIN_AMOUNT, test.borrowed);
+
+                user.approve(borrowedMarket.underlying, toRepay);
+
+                vm.expectEmit(true, true, true, false, address(morpho));
+                emit Events.Liquidated(
+                    address(user), borrower, borrowedMarket.underlying, 0, collateralMarket.underlying, 0
+                    );
+
+                (test.repaid, test.seized) =
+                    user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
+
+                assertGt(test.repaid, 0);
+                assertGt(test.seized, 0);
+                assertLe(test.repaid, test.borrowed);
+                assertLe(test.seized, test.supplied);
+            }
+        }
+    }
+
     function testLiquidateAnyUserOnDeprecatedMarket(address borrower, uint256 amount, uint256 toRepay) public {
         vm.assume(borrower != address(0));
 
