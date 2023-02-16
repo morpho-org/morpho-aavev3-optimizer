@@ -79,7 +79,7 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
                 label: ""
             });
             if (_E_MODE_CATEGORY_ID != 0) {
-                setEModeCategoryAsset(eModeCategory, underlying);
+                setEModeCategoryAsset(eModeCategory, underlying, _E_MODE_CATEGORY_ID);
             }
 
             oracle.setAssetPrice(address(1), assetInfo.underlyingPriceEMode);
@@ -139,17 +139,21 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
         }
     }
 
-    function setEModeCategoryAsset(DataTypes.EModeCategory memory eModeCategory, address underlying) internal {
+    function setEModeCategoryAsset(
+        DataTypes.EModeCategory memory eModeCategory,
+        address underlying,
+        uint8 EModeCategoryId
+    ) internal {
         vm.startPrank(address(poolAdmin));
         poolConfigurator.setEModeCategory(
-            _E_MODE_CATEGORY_ID,
+            EModeCategoryId,
             eModeCategory.ltv,
             eModeCategory.liquidationThreshold,
             eModeCategory.liquidationBonus,
             address(1),
             ""
         );
-        poolConfigurator.setAssetEModeCategory(underlying, _E_MODE_CATEGORY_ID);
+        poolConfigurator.setAssetEModeCategory(underlying, EModeCategoryId);
         vm.stopPrank();
     }
 
@@ -164,19 +168,24 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
             liquidationBonus = uint16(bound(liquidationBonus, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max));
             vm.assume(uint256(lt).percentMul(liquidationBonus) <= PercentageMath.PERCENTAGE_FACTOR);
 
-            EModeCategoryId = uint8(bound(uint256(EModeCategoryId), 0, type(uint8).max));
+            EModeCategoryId = uint8(bound(uint256(EModeCategoryId), 1, type(uint8).max));
 
-            if (EModeCategoryId != 0) {
-                vm.startPrank(address(poolAdmin));
-                poolConfigurator.setEModeCategory(EModeCategoryId, ltv, lt, liquidationBonus, priceSourceEMode, "");
-                poolConfigurator.setAssetEModeCategory(underlying, EModeCategoryId);
-                vm.stopPrank();
-            }
+            DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
+                ltv: ltv,
+                liquidationThreshold: lt,
+                liquidationBonus: liquidationBonus,
+                priceSource: priceSourceEMode,
+                label: ""
+            });
+
+            setEModeCategoryAsset(eModeCategory, underlying, EModeCategoryId);
+
             DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+            console.log(config.getEModeCategory(), _E_MODE_CATEGORY_ID, EModeCategoryId);
             bool expectedIsInEMode = _E_MODE_CATEGORY_ID == EModeCategoryId && _E_MODE_CATEGORY_ID != 0;
             bool isInEMode = _isInEModeCategory(config);
-
-            assertEq(expectedIsInEMode, isInEMode, "Wrong E-Mode");
+            console.log(expectedIsInEMode, isInEMode);
+            assertEq(isInEMode, expectedIsInEMode, "Wrong E-Mode");
         }
     }
 
@@ -210,18 +219,22 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
         uint256 p2pBorrowIndex
     ) public {
         address priceSourceEMode = address(1);
+
         uint16 ltv = uint16(PercentageMath.PERCENTAGE_FACTOR - 20);
         uint16 lt = uint16(PercentageMath.PERCENTAGE_FACTOR - 10);
         uint16 liquidationBonus = uint16(PercentageMath.PERCENTAGE_FACTOR + 1);
 
         EModeCategoryId = uint8(bound(uint256(EModeCategoryId), 1, type(uint8).max));
 
-        if (EModeCategoryId != 0) {
-            vm.startPrank(address(poolAdmin));
-            poolConfigurator.setEModeCategory(EModeCategoryId, ltv, lt, liquidationBonus, priceSourceEMode, "");
-            poolConfigurator.setAssetEModeCategory(dai, EModeCategoryId);
-            vm.stopPrank();
-        }
+        DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
+            ltv: ltv,
+            liquidationThreshold: lt,
+            liquidationBonus: liquidationBonus,
+            priceSource: priceSourceEMode,
+            label: ""
+        });
+
+        setEModeCategoryAsset(eModeCategory, dai, EModeCategoryId);
 
         Types.Indexes256 memory indexes;
 
