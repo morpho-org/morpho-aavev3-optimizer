@@ -169,6 +169,7 @@ contract TestInternalEMode is ForkTest, PositionsManagerInternal {
 
         uint8 EModeCategoryId;
         EModeCategoryId = uint8(bound(uint256(EModeCategoryId), 0, type(uint8).max));
+
         if (EModeCategoryId != 0) {
             vm.prank(address(poolAdmin));
             poolConfigurator.setEModeCategory(EModeCategoryId, ltv, lt, liquidationBonus, priceSourceEMode, "");
@@ -179,12 +180,14 @@ contract TestInternalEMode is ForkTest, PositionsManagerInternal {
 
         bool expectedIsInEMode = _E_MODE_CATEGORY_ID == EModeCategoryId && _E_MODE_CATEGORY_ID != 0 ? true : false;
         bool isInEMode = _isInEModeCategory(config);
+
         assertEq(expectedIsInEMode, isInEMode, "Wrong E-Mode");
     }
 
     function testGetAssetPrice() public {
         address underlying;
         underlying = address(uint160(bound(uint256(uint160(underlying)), 1, type(uint160).max)));
+
         address priceSourceEMode;
         priceSourceEMode = address(
             uint160(bound(uint256(uint160(priceSourceEMode)), uint256(uint160(underlying)) + 1, type(uint160).max))
@@ -218,6 +221,7 @@ contract TestInternalEMode is ForkTest, PositionsManagerInternal {
 
         uint8 EModeCategoryId;
         EModeCategoryId = uint8(bound(uint256(EModeCategoryId), 1, type(uint8).max));
+
         if (EModeCategoryId != 0) {
             vm.prank(address(poolAdmin));
             poolConfigurator.setEModeCategory(EModeCategoryId, ltv, lt, liquidationBonus, priceSourceEMode, "");
@@ -231,10 +235,12 @@ contract TestInternalEMode is ForkTest, PositionsManagerInternal {
         uint256 p2pSupplyIndex;
         uint256 poolBorrowIndex;
         uint256 p2pBorrowIndex;
+
         poolSupplyIndex = bound(poolSupplyIndex, 0, type(uint96).max);
         p2pSupplyIndex = bound(p2pSupplyIndex, 0, type(uint96).max);
         poolBorrowIndex = bound(poolBorrowIndex, 0, type(uint96).max);
         p2pBorrowIndex = bound(p2pBorrowIndex, 0, type(uint96).max);
+
         indexes.borrow.poolIndex = poolBorrowIndex;
         indexes.borrow.p2pIndex = p2pBorrowIndex;
         indexes.supply.poolIndex = poolSupplyIndex;
