@@ -9,11 +9,14 @@ import {Errors} from "src/libraries/Errors.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+
 import {Test} from "@forge-std/Test.sol";
 
 contract TestUnitMarketLib is Test {
     using MarketLib for Types.Market;
     using WadRayMath for uint256;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     uint256 internal constant MAX_AMOUNT = 1e10 ether;
     uint256 internal constant MIN_INDEX = WadRayMath.RAY;
@@ -285,7 +288,8 @@ contract TestUnitMarketLib is Test {
     function testGetProportionIdle(Types.Market memory _market) public {
         _market.deltas.supply.scaledP2PTotal = bound(_market.deltas.supply.scaledP2PTotal, 0, MAX_AMOUNT);
         _market.idleSupply = bound(_market.idleSupply, 0, _market.deltas.supply.scaledP2PTotal);
-        _market.indexes.supply.p2pIndex = uint128(bound(_market.indexes.supply.p2pIndex, MIN_INDEX, MAX_INDEX));
+        _market.indexes.supply.poolIndex = uint128(bound(_market.indexes.supply.poolIndex, MIN_INDEX, MAX_INDEX));
+        _market.indexes.borrow.poolIndex = uint128(bound(_market.indexes.borrow.poolIndex, MIN_INDEX, MAX_INDEX));
 
         market = _market;
 
@@ -298,10 +302,4 @@ contract TestUnitMarketLib is Test {
                 : market.idleSupply.rayDivUp(market.deltas.supply.scaledP2PTotal.rayMul(market.indexes.supply.p2pIndex))
         );
     }
-
-    // function testIncreaseIdle(Types.Market memory _market, uint256 amount) public {
-    // }
-
-    // function testDecreaseIdle(Types.Market memory _market, uint256 amount) public {
-    // }
 }
