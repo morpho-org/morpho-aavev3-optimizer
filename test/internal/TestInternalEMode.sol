@@ -59,7 +59,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         assertEq(_E_MODE_CATEGORY_ID, eModeCategoryId);
     }
 
-    struct AssetDate {
+    struct AssetData {
         uint256 underlyingPrice;
         uint256 underlyingPriceEMode;
         uint16 ltvEMode;
@@ -70,10 +70,10 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             address underlying = allUnderlyings[i];
             (uint16 ltvBound, uint16 ltBound, uint16 ltvConfig, uint16 ltConfig) =
-                getLtvLt(underlying, _E_MODE_CATEGORY_ID);
+                _getLtvLt(underlying, _E_MODE_CATEGORY_ID);
 
             assetData.ltEMode = uint16(bound(assetData.ltEMode, ltBound + 1, type(uint16).max));
-            assetData.ltvEMode = uint16(bound(assetData.ltvEMode, ltvBound + 1, assetInfo.ltEMode));
+            assetData.ltvEMode = uint16(bound(assetData.ltvEMode, ltvBound + 1, assetData.ltEMode));
             uint16 liquidationBonus = uint16(PercentageMath.PERCENTAGE_FACTOR + 1);
             assetData.underlyingPrice = bound(assetData.underlyingPrice, 0, type(uint96).max - 1);
             assetData.underlyingPriceEMode = bound(assetData.underlyingPriceEMode, 0, type(uint96).max);
@@ -114,7 +114,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
             );
             assertEq(
                 assetPrice,
-                _E_MODE_CATEGORY_ID != 0 && assetInfo.underlyingPriceEMode != 0
+                _E_MODE_CATEGORY_ID != 0 && assetData.underlyingPriceEMode != 0
                     ? assetData.underlyingPriceEMode
                     : assetData.underlyingPrice,
                 "Underlying Price E-Mode"
@@ -173,7 +173,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     function testIsInEModeCategory(uint8 eModeCategoryId, uint16 lt, uint16 ltv, uint16 liquidationBonus) public {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             address underlying = allUnderlyings[i];
-            (uint16 ltvBound, uint16 ltBound,,) = getLtvLt(underlying, eModeCategoryId);
+            (uint16 ltvBound, uint16 ltBound,,) = _getLtvLt(underlying, eModeCategoryId);
 
             address priceSourceEMode = address(1);
             ltv = uint16(bound(ltv, ltvBound + 1, PercentageMath.PERCENTAGE_FACTOR));
@@ -271,7 +271,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         DataTypes.EModeCategory memory eModeCategory
     ) public {
         eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
-        (uint16 ltvBound, uint16 ltBound,,) = getLtvLt(dai, eModeCategoryId);
+        (uint16 ltvBound, uint16 ltBound,,) = _getLtvLt(dai, eModeCategoryId);
         eModeCategory.ltv = uint16(bound(eModeCategory.ltv, ltvBound + 1, PercentageMath.PERCENTAGE_FACTOR - 1));
         eModeCategory.liquidationThreshold = uint16(
             bound(
