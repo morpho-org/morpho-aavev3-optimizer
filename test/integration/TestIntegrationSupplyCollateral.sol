@@ -140,7 +140,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     function testShouldRevertSupplyCollateralWhenMarketNotCreated(address underlying, uint256 amount, address onBehalf)
         public
     {
-        _assumeNotPartOfAllUnderlyings(underlying);
+        _assumeNotUnderlying(underlying);
 
         amount = _boundAmount(amount);
         onBehalf = _boundAddressNotZero(onBehalf);

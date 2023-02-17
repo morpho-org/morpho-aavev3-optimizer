@@ -406,9 +406,9 @@ contract IntegrationTest is ForkTest {
         }
     }
 
-    function _assumeNotPartOfAllUnderlyings(address underlying) internal view {
+    function _assumeNotUnderlying(address input) internal view {
         for (uint256 i; i < allUnderlyings.length; ++i) {
-            vm.assume(underlying != allUnderlyings[i]);
+            vm.assume(input != allUnderlyings[i]);
         }
     }
 

@@ -50,7 +50,6 @@ contract ForkTest is BaseTest {
     address internal link;
     address internal wbtc;
     address internal weth;
-    address internal wstEth;
     address internal wNative;
     address[] internal allUnderlyings;
 
@@ -122,7 +121,6 @@ contract ForkTest is BaseTest {
         link = config.getAddress("LINK");
         wbtc = config.getAddress("WBTC");
         weth = config.getAddress("WETH");
-        wstEth = config.getAddress("WSTETH");
         wNative = config.getWrappedNative();
 
         allUnderlyings = pool.getReservesList();
