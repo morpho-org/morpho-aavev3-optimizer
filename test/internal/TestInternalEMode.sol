@@ -178,10 +178,11 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
                 label: ""
             });
 
-            setEModeCategoryAsset(eModeCategory, underlying, EModeCategoryId);
+            setEModeCategoryAsset(eModeCategory, underlying, eModeCategoryId);
 
             DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
-            bool expectedIsInEMode = _E_MODE_CATEGORY_ID == 0 && _E_MODE_CATEGORY_ID != 0;
+
+            bool expectedIsInEMode = _E_MODE_CATEGORY_ID == eModeCategoryId && _E_MODE_CATEGORY_ID != 0;
             bool isInEMode = _isInEModeCategory(config);
 
             assertEq(isInEMode, expectedIsInEMode, "Wrong E-Mode");
@@ -247,7 +248,7 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
         indexes.supply.poolIndex = poolSupplyIndex;
         indexes.supply.p2pIndex = p2pSupplyIndex;
 
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != EModeCategoryId) {
+        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != eModeCategoryId) {
             vm.expectRevert(abi.encodeWithSelector(Errors.InconsistentEMode.selector));
         }
         this.authorizeBorrow(dai, 0, indexes);
