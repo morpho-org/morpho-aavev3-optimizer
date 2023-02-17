@@ -228,7 +228,7 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
             )
         );
 
-        assertEq(balance, onPool.rayMul(poolSupplyIndex) + inP2P.rayMul(p2pSupplyIndex));
+        assertEq(balance, onPool.rayMulDown(poolSupplyIndex) + inP2P.rayMulDown(p2pSupplyIndex));
     }
 
     function testGetUserBorrowBalanceFromIndexes(
