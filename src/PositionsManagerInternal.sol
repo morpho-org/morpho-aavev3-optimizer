@@ -290,7 +290,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         (amount, vars.toRepay, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
         // Repay borrow peer-to-peer.
-        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDiv(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
+        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
 
         _updateBorrowerInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
 
@@ -355,7 +355,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Market storage market = _market[underlying];
 
         // Withdraw supply peer-to-peer.
-        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDiv(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
+        vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
         _updateSupplierInDS(underlying, supplier, vars.onPool, vars.inP2P, false);
 
@@ -389,7 +389,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 demoted = _demoteBorrowers(underlying, vars.toBorrow, maxIterations);
 
         // Increase the peer-to-peer borrow delta.
-        market.deltas.borrow.increaseDelta(underlying, vars.toBorrow.zeroFloorSub(demoted), indexes.borrow, true);
+        market.deltas.borrow.increaseDelta(underlying, vars.toBorrow - demoted, indexes.borrow, true);
 
         // Update the peer-to-peer totals.
         market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow + p2pTotalSupplyDecrease, indexes, true);
@@ -402,7 +402,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
 
-        collateralBalance = marketBalances.collateral[onBehalf] + amount.rayDiv(poolSupplyIndex);
+        collateralBalance = marketBalances.collateral[onBehalf] + amount.rayDivDown(poolSupplyIndex);
         marketBalances.collateral[onBehalf] = collateralBalance;
 
         _userCollaterals[onBehalf].add(underlying);
@@ -514,7 +514,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         return (
             amount,
-            onPool + amount.rayDiv(poolIndex) // In scaled balance.
+            onPool + amount.rayDivDown(poolIndex) // In scaled balance.
         );
     }
 
@@ -535,7 +535,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         return (
             amount - toProcess,
             toProcess,
-            onPool.zeroFloorSub(toProcess.rayDiv(poolIndex)) // In scaled balance.
+            onPool.zeroFloorSub(toProcess.rayDivUp(poolIndex)) // In scaled balance.
         );
     }
 
