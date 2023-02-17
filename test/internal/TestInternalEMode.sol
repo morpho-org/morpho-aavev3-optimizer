@@ -59,32 +59,32 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         assertEq(_E_MODE_CATEGORY_ID, eModeCategoryId);
     }
 
-    struct AssetInformation {
+    struct AssetDate {
         uint256 underlyingPrice;
         uint256 underlyingPriceEMode;
         uint16 ltvEMode;
         uint16 ltEMode;
     }
 
-    function testLtvLiquidationThresholdPriceSourceEMode(AssetInformation memory assetInfo) public {
+    function testLtvLiquidationThresholdPriceSourceEMode(AssetData memory assetData) public {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             address underlying = allUnderlyings[i];
             (uint16 ltvBound, uint16 ltBound, uint16 ltvConfig, uint16 ltConfig) =
                 getLtvLt(underlying, _E_MODE_CATEGORY_ID);
 
-            assetInfo.ltEMode = uint16(bound(assetInfo.ltEMode, ltBound + 1, type(uint16).max));
-            assetInfo.ltvEMode = uint16(bound(assetInfo.ltvEMode, ltvBound + 1, assetInfo.ltEMode));
+            assetData.ltEMode = uint16(bound(assetData.ltEMode, ltBound + 1, type(uint16).max));
+            assetData.ltvEMode = uint16(bound(assetData.ltvEMode, ltvBound + 1, assetInfo.ltEMode));
             uint16 liquidationBonus = uint16(PercentageMath.PERCENTAGE_FACTOR + 1);
-            assetInfo.underlyingPrice = bound(assetInfo.underlyingPrice, 0, type(uint96).max - 1);
-            assetInfo.underlyingPriceEMode = bound(assetInfo.underlyingPriceEMode, 0, type(uint96).max);
+            assetData.underlyingPrice = bound(assetData.underlyingPrice, 0, type(uint96).max - 1);
+            assetData.underlyingPriceEMode = bound(assetData.underlyingPriceEMode, 0, type(uint96).max);
             vm.assume(
-                uint256(assetInfo.ltEMode).percentMul(uint256(liquidationBonus)) <= PercentageMath.PERCENTAGE_FACTOR
+                uint256(assetData.ltEMode).percentMul(uint256(liquidationBonus)) <= PercentageMath.PERCENTAGE_FACTOR
             );
-            vm.assume(assetInfo.underlyingPrice != assetInfo.underlyingPriceEMode);
+            vm.assume(assetData.underlyingPrice != assetData.underlyingPriceEMode);
 
             DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
-                ltv: assetInfo.ltvEMode,
-                liquidationThreshold: assetInfo.ltEMode,
+                ltv: assetData.ltvEMode,
+                liquidationThreshold: assetData.ltEMode,
                 liquidationBonus: liquidationBonus,
                 priceSource: address(1),
                 label: ""
@@ -93,8 +93,8 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
                 setEModeCategoryAsset(eModeCategory, underlying, _E_MODE_CATEGORY_ID);
             }
 
-            oracle.setAssetPrice(address(1), assetInfo.underlyingPriceEMode);
-            oracle.setAssetPrice(underlying, assetInfo.underlyingPrice);
+            oracle.setAssetPrice(address(1), assetData.underlyingPriceEMode);
+            oracle.setAssetPrice(underlying, assetData.underlyingPrice);
 
             Types.LiquidityVars memory vars;
             vars.oracle = oracle;
@@ -104,19 +104,19 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
 
             assertEq(
                 uint16(ltv),
-                _E_MODE_CATEGORY_ID != 0 && ltvConfig != 0 ? assetInfo.ltvEMode : ltvConfig,
+                _E_MODE_CATEGORY_ID != 0 && ltvConfig != 0 ? assetData.ltvEMode : ltvConfig,
                 "Loan to value E-mode"
             );
             assertEq(
                 uint16(lt),
-                _E_MODE_CATEGORY_ID != 0 && ltvConfig != 0 ? assetInfo.ltEMode : ltConfig,
+                _E_MODE_CATEGORY_ID != 0 && ltvConfig != 0 ? assetData.ltEMode : ltConfig,
                 "Liquidation Threshold E-Mode"
             );
             assertEq(
                 assetPrice,
                 _E_MODE_CATEGORY_ID != 0 && assetInfo.underlyingPriceEMode != 0
-                    ? assetInfo.underlyingPriceEMode
-                    : assetInfo.underlyingPrice,
+                    ? assetData.underlyingPriceEMode
+                    : assetData.underlyingPrice,
                 "Underlying Price E-Mode"
             );
         }
