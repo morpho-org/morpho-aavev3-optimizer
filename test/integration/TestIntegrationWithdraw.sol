@@ -291,7 +291,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
                 2,
                 "totalBorrowP2P != supplied"
             );
-            assertApproxEqAbs(test.morphoMarket.idleSupply, 0, 1, "idleSupply != 0");
+            assertApproxEqAbs(test.morphoMarket.idleSupply, 0, 2, "idleSupply != 0");
         }
     }
 

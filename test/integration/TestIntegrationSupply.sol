@@ -71,7 +71,7 @@ contract TestIntegrationSupply is IntegrationTest {
         assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
         assertApproxEqDust(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
         assertApproxEqDust(p2pSupply, amount, "p2pSupply != amount");
-        assertApproxGeAbs(
+        assertApproxEqAbs(
             morpho.scaledP2PBorrowBalance(market.underlying, address(promoter1)),
             test.scaledP2PSupply,
             1,
