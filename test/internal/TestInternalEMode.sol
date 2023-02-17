@@ -131,7 +131,6 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         for (uint256 j = 0; j < reserves.length; ++j) {
             DataTypes.ReserveConfigurationMap memory currentConfig = _POOL.getConfiguration(reserves[j]);
             if (eModeCategoryId == currentConfig.getEModeCategory() || underlying == reserves[j]) {
-                console.log(eModeCategoryId, reserves[j]);
                 ltvBound = uint16(Math.max(ltvBound, (currentConfig.data & ~ReserveConfiguration.LTV_MASK)));
                 ltBound = uint16(
                     Math.max(
@@ -140,7 +139,6 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
                             >> ReserveConfiguration.LIQUIDATION_THRESHOLD_START_BIT_POSITION
                     )
                 );
-                console.log(ltvBound, ltBound);
 
                 if (underlying == reserves[j]) {
                     ltvConfig = uint16((currentConfig.data & ~ReserveConfiguration.LTV_MASK));
@@ -281,7 +279,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
                 PercentageMath.PERCENTAGE_FACTOR
             )
         );
-        console.log("done");
+
         eModeCategory.liquidationBonus = uint16(
             bound(
                 eModeCategory.liquidationBonus,
@@ -295,13 +293,13 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
                 <= PercentageMath.PERCENTAGE_FACTOR
         );
 
-        console.log(eModeCategory.ltv, eModeCategory.liquidationThreshold);
         setEModeCategoryAsset(eModeCategory, dai, eModeCategoryId);
 
         indexes.supply.poolIndex = bound(indexes.supply.poolIndex, 0, type(uint96).max);
         indexes.supply.p2pIndex = bound(indexes.supply.p2pIndex, indexes.supply.poolIndex, type(uint96).max);
         indexes.borrow.p2pIndex = bound(indexes.borrow.p2pIndex, 0, type(uint96).max);
         indexes.borrow.poolIndex = bound(indexes.borrow.poolIndex, indexes.borrow.p2pIndex, type(uint96).max);
+        /// keep the condition because test revert if _E_MODE_CATEGORY_ID == 0
         if (_E_MODE_CATEGORY_ID != 0) {
             vm.assume(_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != eModeCategoryId);
             vm.expectRevert(abi.encodeWithSelector(Errors.InconsistentEMode.selector));
