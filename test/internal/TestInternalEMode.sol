@@ -121,6 +121,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
             );
         }
     }
+    /// Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
 
     function getLtvLt(address underlying, uint8 eModeCategoryId)
         internal
@@ -128,9 +129,9 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         returns (uint16 ltvBound, uint16 ltBound, uint16 ltvConfig, uint16 ltConfig)
     {
         address[] memory reserves = _POOL.getReservesList();
-        for (uint256 j = 0; j < reserves.length; ++j) {
-            DataTypes.ReserveConfigurationMap memory currentConfig = _POOL.getConfiguration(reserves[j]);
-            if (eModeCategoryId == currentConfig.getEModeCategory() || underlying == reserves[j]) {
+        for (uint256 i = 0; i < reserves.length; ++i) {
+            DataTypes.ReserveConfigurationMap memory currentConfig = _POOL.getConfiguration(reserves[i]);
+            if (eModeCategoryId == currentConfig.getEModeCategory() || underlying == reserves[i]) {
                 ltvBound = uint16(Math.max(ltvBound, (currentConfig.data & ~ReserveConfiguration.LTV_MASK)));
                 ltBound = uint16(
                     Math.max(
@@ -140,7 +141,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
                     )
                 );
 
-                if (underlying == reserves[j]) {
+                if (underlying == reserves[i]) {
                     ltvConfig = uint16((currentConfig.data & ~ReserveConfiguration.LTV_MASK));
                     ltConfig = uint16(
                         (currentConfig.data & ~ReserveConfiguration.LIQUIDATION_THRESHOLD_MASK)
@@ -299,9 +300,9 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         indexes.supply.p2pIndex = bound(indexes.supply.p2pIndex, indexes.supply.poolIndex, type(uint96).max);
         indexes.borrow.p2pIndex = bound(indexes.borrow.p2pIndex, 0, type(uint96).max);
         indexes.borrow.poolIndex = bound(indexes.borrow.poolIndex, indexes.borrow.p2pIndex, type(uint96).max);
-        /// keep the condition because test revert if _E_MODE_CATEGORY_ID == 0
+        /// Keep the condition because the test reverts if _E_MODE_CATEGORY_ID == 0
         if (_E_MODE_CATEGORY_ID != 0) {
-            vm.assume(_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != eModeCategoryId);
+            vm.assume(_E_MODE_CATEGORY_ID != eModeCategoryId);
             vm.expectRevert(abi.encodeWithSelector(Errors.InconsistentEMode.selector));
         }
         this.authorizeBorrow(dai, 0, indexes);
