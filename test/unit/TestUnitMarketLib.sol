@@ -196,7 +196,7 @@ contract TestUnitMarketLib is Test {
         vm.assume(reserveFactor > PercentageMath.PERCENTAGE_FACTOR);
         market = _market;
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.ExceedsMaxBasisPoints.selector));
+        vm.expectRevert(Errors.ExceedsMaxBasisPoints.selector);
         market.setReserveFactor(reserveFactor);
     }
 
@@ -218,7 +218,7 @@ contract TestUnitMarketLib is Test {
         vm.assume(p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR);
         market = _market;
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.ExceedsMaxBasisPoints.selector));
+        vm.expectRevert(Errors.ExceedsMaxBasisPoints.selector);
         market.setP2PIndexCursor(p2pIndexCursor);
     }
 
@@ -253,6 +253,7 @@ contract TestUnitMarketLib is Test {
         assertEq(market.indexes.supply.p2pIndex, indexes.supply.p2pIndex);
         assertEq(market.indexes.borrow.poolIndex, indexes.borrow.poolIndex);
         assertEq(market.indexes.borrow.p2pIndex, indexes.borrow.p2pIndex);
+        assertEq(market.lastUpdateTimestamp, block.timestamp);
     }
 
     function testGetSupplyIndexes(Types.Market memory _market) public {
@@ -297,9 +298,10 @@ contract TestUnitMarketLib is Test {
 
         assertEq(
             proportionIdle,
-            market.idleSupply == 0
+            market.deltas.supply.scaledP2PTotal == 0
                 ? 0
                 : market.idleSupply.rayDivUp(market.deltas.supply.scaledP2PTotal.rayMul(market.indexes.supply.p2pIndex))
         );
+        assertLe(proportionIdle, WadRayMath.RAY);
     }
 }
