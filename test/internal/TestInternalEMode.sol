@@ -176,7 +176,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
             (uint16 ltvBound, uint16 ltBound,,) = _getLtvLt(underlying, eModeCategoryId);
 
             address priceSourceEMode = address(1);
-            ltv = uint16(bound(ltv, ltvBound + 1, PercentageMath.PERCENTAGE_FACTOR));
+            ltv = uint16(bound(ltv, ltvBound + 1, PercentageMath.PERCENTAGE_FACTOR - 1));
             lt = uint16(bound(lt, Math.max(ltv + 1, ltBound + 1), PercentageMath.PERCENTAGE_FACTOR));
             liquidationBonus = uint16(bound(liquidationBonus, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max));
             vm.assume(uint256(lt).percentMul(liquidationBonus) <= PercentageMath.PERCENTAGE_FACTOR);
