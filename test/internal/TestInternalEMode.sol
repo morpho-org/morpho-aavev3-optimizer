@@ -16,11 +16,12 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import "test/helpers/IntegrationTest.sol";
 import "src/MorphoInternal.sol";
+import "test/helpers/InternalTest.sol";
 import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
 import {TestMarket, TestMarketLib} from "test/helpers/TestMarketLib.sol";
 /// Assumption : Unit Test made for only one E-mode
 
-contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
+contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     using MarketLib for Types.Market;
     using PoolLib for IPool;
     using MarketBalanceLib for Types.MarketBalances;
@@ -31,17 +32,26 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
     using SafeTransferLib for ERC20;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    constructor() MorphoStorage(_initConfig().getAddressesProvider(), uint8(vm.envUint("E_MODE_CATEGORY_ID"))) {}
-
     function setUp() public virtual override {
         super.setUp();
 
         _defaultIterations = Types.Iterations(10, 10);
+        _createMarket(dai, 0, 3_333);
+        _createMarket(wbtc, 0, 3_333);
+        _createMarket(usdc, 0, 3_333);
+        _createMarket(wNative, 0, 3_333);
+
+        _setBalances(address(this), type(uint256).max);
 
         ERC20(dai).approve(address(_POOL), type(uint256).max);
         ERC20(wbtc).approve(address(_POOL), type(uint256).max);
         ERC20(usdc).approve(address(_POOL), type(uint256).max);
         ERC20(wNative).approve(address(_POOL), type(uint256).max);
+
+        _POOL.supplyToPool(dai, 100 ether);
+        _POOL.supplyToPool(wbtc, 1e8);
+        _POOL.supplyToPool(usdc, 1e8);
+        _POOL.supplyToPool(wNative, 1 ether);
     }
 
     function testInitializeEMode() public {
@@ -57,9 +67,10 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
     }
 
     function testLtvLiquidationThresholdPriceSourceEMode(AssetInformation memory assetInfo) public {
-        for (uint256 i; i < underlyings.length; ++i) {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
             address underlying = allUnderlyings[i];
-            (uint16 ltvBound, uint16 ltBound, uint16 ltvConfig, uint16 ltConfig) = getLtvLt(underlying);
+            (uint16 ltvBound, uint16 ltBound, uint16 ltvConfig, uint16 ltConfig) =
+                getLtvLt(underlying, _E_MODE_CATEGORY_ID);
 
             assetInfo.ltEMode = uint16(bound(assetInfo.ltEMode, ltBound + 1, type(uint16).max));
             assetInfo.ltvEMode = uint16(bound(assetInfo.ltvEMode, ltvBound + 1, assetInfo.ltEMode));
@@ -111,7 +122,7 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
         }
     }
 
-    function getLtvLt(address underlying)
+    function getLtvLt(address underlying, uint8 eModeCategoryId)
         internal
         view
         returns (uint16 ltvBound, uint16 ltBound, uint16 ltvConfig, uint16 ltConfig)
@@ -119,15 +130,18 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
         address[] memory reserves = _POOL.getReservesList();
         for (uint256 j = 0; j < reserves.length; ++j) {
             DataTypes.ReserveConfigurationMap memory currentConfig = _POOL.getConfiguration(reserves[j]);
-            if (_E_MODE_CATEGORY_ID == currentConfig.getEModeCategory() || underlying == reserves[j]) {
-                ltvBound = uint16(Math.max(ltvConfig, (currentConfig.data & ~ReserveConfiguration.LTV_MASK)));
+            if (eModeCategoryId == currentConfig.getEModeCategory() || underlying == reserves[j]) {
+                console.log(eModeCategoryId, reserves[j]);
+                ltvBound = uint16(Math.max(ltvBound, (currentConfig.data & ~ReserveConfiguration.LTV_MASK)));
                 ltBound = uint16(
                     Math.max(
-                        ltConfig,
+                        ltBound,
                         (currentConfig.data & ~ReserveConfiguration.LIQUIDATION_THRESHOLD_MASK)
                             >> ReserveConfiguration.LIQUIDATION_THRESHOLD_START_BIT_POSITION
                     )
                 );
+                console.log(ltvBound, ltBound);
+
                 if (underlying == reserves[j]) {
                     ltvConfig = uint16((currentConfig.data & ~ReserveConfiguration.LTV_MASK));
                     ltConfig = uint16(
@@ -158,9 +172,9 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
     }
 
     function testIsInEModeCategory(uint8 eModeCategoryId, uint16 lt, uint16 ltv, uint16 liquidationBonus) public {
-        for (uint256 i; i < underlyings.length; ++i) {
-            address underlying = underlyings[i];
-            (uint16 ltvBound, uint16 ltBound,,) = getLtvLt(underlying);
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            address underlying = allUnderlyings[i];
+            (uint16 ltvBound, uint16 ltBound,,) = getLtvLt(underlying, eModeCategoryId);
 
             address priceSourceEMode = address(1);
             ltv = uint16(bound(ltv, ltvBound + 1, PercentageMath.PERCENTAGE_FACTOR));
@@ -189,72 +203,113 @@ contract TestInternalEMode is IntegrationTest, PositionsManagerInternal {
         }
     }
 
-    function testGetAssetPrice(
+    function testAssetPriceEMode(
         address underlying,
         address priceSourceEMode,
         uint256 underlyingPriceEMode,
-        uint256 underlyingPrice,
-        bool isInEMode
+        uint256 underlyingPrice
     ) public {
         priceSourceEMode = address(uint160(bound(uint256(uint160(priceSourceEMode)), 0, type(uint160).max)));
         vm.assume(underlying != priceSourceEMode);
-
-        underlyingPriceEMode = bound(underlyingPriceEMode, 0, type(uint256).max);
+        bool isInEMode = true;
+        underlyingPriceEMode = bound(underlyingPriceEMode, 1, type(uint256).max);
         underlyingPrice = bound(underlyingPrice, 0, type(uint256).max);
 
         oracle.setAssetPrice(underlying, underlyingPrice);
         oracle.setAssetPrice(priceSourceEMode, underlyingPriceEMode);
 
-        uint256 expectedPrice = isInEMode && underlyingPriceEMode != 0 ? underlyingPriceEMode : underlyingPrice;
+        uint256 expectedPrice = underlyingPriceEMode;
         uint256 realPrice = _getAssetPrice(underlying, oracle, isInEMode, priceSourceEMode);
 
-        assertEq(expectedPrice, realPrice, "Wrong price");
+        assertEq(expectedPrice, realPrice, "expectedPrice != realPrice");
     }
 
-    function testAuthorizeBorrowEmode(
-        uint8 eModeCategoryId,
-        uint256 poolSupplyIndex,
-        uint256 p2pSupplyIndex,
-        uint256 poolBorrowIndex,
-        uint256 p2pBorrowIndex
+    function testAssetPriceShouldBeNormal(
+        address underlying,
+        address priceSourceEMode,
+        uint256 underlyingPriceEMode,
+        uint256 underlyingPrice
     ) public {
-        address priceSourceEMode = address(1);
+        priceSourceEMode = address(uint160(bound(uint256(uint160(priceSourceEMode)), 0, type(uint160).max)));
+        vm.assume(underlying != priceSourceEMode);
+        bool isInEMode = false;
+        underlyingPriceEMode = bound(underlyingPriceEMode, 1, type(uint256).max);
+        underlyingPrice = bound(underlyingPrice, 0, type(uint256).max);
 
-        uint16 ltv = uint16(PercentageMath.PERCENTAGE_FACTOR - 20);
-        uint16 lt = uint16(PercentageMath.PERCENTAGE_FACTOR - 10);
-        uint16 liquidationBonus = uint16(PercentageMath.PERCENTAGE_FACTOR + 1);
+        oracle.setAssetPrice(underlying, underlyingPrice);
+        oracle.setAssetPrice(priceSourceEMode, underlyingPriceEMode);
 
+        uint256 expectedPrice = underlyingPrice;
+        uint256 realPrice = _getAssetPrice(underlying, oracle, isInEMode, priceSourceEMode);
+
+        assertEq(expectedPrice, realPrice, "expectedPrice != realPrice");
+    }
+
+    function testAssetPriceShouldBeNormalBecauseEModePrice0(
+        address underlying,
+        address priceSourceEMode,
+        uint256 underlyingPriceEMode,
+        uint256 underlyingPrice
+    ) public {
+        priceSourceEMode = address(uint160(bound(uint256(uint160(priceSourceEMode)), 0, type(uint160).max)));
+        vm.assume(underlying != priceSourceEMode);
+        bool isInEMode = true;
+        underlyingPriceEMode = 0;
+        underlyingPrice = bound(underlyingPrice, 0, type(uint256).max);
+
+        oracle.setAssetPrice(underlying, underlyingPrice);
+        oracle.setAssetPrice(priceSourceEMode, underlyingPriceEMode);
+
+        uint256 expectedPrice = underlyingPrice;
+        uint256 realPrice = _getAssetPrice(underlying, oracle, isInEMode, priceSourceEMode);
+
+        assertEq(expectedPrice, realPrice, "expectedPrice != realPrice");
+    }
+
+    function testShouldNotAuthorizeBorrowInconsistentEmode(
+        uint8 eModeCategoryId,
+        Types.Indexes256 memory indexes,
+        DataTypes.EModeCategory memory eModeCategory
+    ) public {
         eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
+        (uint16 ltvBound, uint16 ltBound,,) = getLtvLt(dai, eModeCategoryId);
+        eModeCategory.ltv = uint16(bound(eModeCategory.ltv, ltvBound + 1, PercentageMath.PERCENTAGE_FACTOR - 1));
+        eModeCategory.liquidationThreshold = uint16(
+            bound(
+                eModeCategory.liquidationThreshold,
+                Math.max(eModeCategory.ltv + 1, ltBound + 1),
+                PercentageMath.PERCENTAGE_FACTOR
+            )
+        );
+        console.log("done");
+        eModeCategory.liquidationBonus = uint16(
+            bound(
+                eModeCategory.liquidationBonus,
+                PercentageMath.PERCENTAGE_FACTOR + 1,
+                2 * PercentageMath.PERCENTAGE_FACTOR
+            )
+        );
 
-        DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
-            ltv: ltv,
-            liquidationThreshold: lt,
-            liquidationBonus: liquidationBonus,
-            priceSource: priceSourceEMode,
-            label: ""
-        });
+        vm.assume(
+            uint256(eModeCategory.liquidationThreshold).percentMul(eModeCategory.liquidationBonus)
+                <= PercentageMath.PERCENTAGE_FACTOR
+        );
 
+        console.log(eModeCategory.ltv, eModeCategory.liquidationThreshold);
         setEModeCategoryAsset(eModeCategory, dai, eModeCategoryId);
 
-        Types.Indexes256 memory indexes;
-
-        poolSupplyIndex = bound(poolSupplyIndex, 0, type(uint96).max);
-        p2pSupplyIndex = bound(p2pSupplyIndex, poolSupplyIndex, type(uint96).max);
-        p2pBorrowIndex = bound(p2pBorrowIndex, 0, type(uint96).max);
-        poolBorrowIndex = bound(poolBorrowIndex, p2pBorrowIndex, type(uint96).max);
-
-        indexes.borrow.poolIndex = poolBorrowIndex;
-        indexes.borrow.p2pIndex = p2pBorrowIndex;
-        indexes.supply.poolIndex = poolSupplyIndex;
-        indexes.supply.p2pIndex = p2pSupplyIndex;
-
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != eModeCategoryId) {
+        indexes.supply.poolIndex = bound(indexes.supply.poolIndex, 0, type(uint96).max);
+        indexes.supply.p2pIndex = bound(indexes.supply.p2pIndex, indexes.supply.poolIndex, type(uint96).max);
+        indexes.borrow.p2pIndex = bound(indexes.borrow.p2pIndex, 0, type(uint96).max);
+        indexes.borrow.poolIndex = bound(indexes.borrow.poolIndex, indexes.borrow.p2pIndex, type(uint96).max);
+        if (_E_MODE_CATEGORY_ID != 0) {
+            vm.assume(_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != eModeCategoryId);
             vm.expectRevert(abi.encodeWithSelector(Errors.InconsistentEMode.selector));
         }
         this.authorizeBorrow(dai, 0, indexes);
     }
 
-    function authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) external view {
+    function authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) public view {
         _authorizeBorrow(underlying, amount, indexes);
     }
 }
