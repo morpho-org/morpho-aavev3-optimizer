@@ -170,8 +170,8 @@ abstract contract MatchingEngine is MorphoInternal {
     ) internal pure returns (uint256 newPoolBalance, uint256 newP2PBalance, uint256 newRemaining) {
         uint256 toProcess = Math.min(poolBalance.rayMul(indexes.poolIndex), remaining);
 
-        newRemaining = remaining.zeroFloorSub(toProcess);
-        newPoolBalance = poolBalance.zeroFloorSub(toProcess.rayDiv(indexes.poolIndex));
+        newRemaining = remaining - toProcess;
+        newPoolBalance = poolBalance - toProcess.rayDiv(indexes.poolIndex);
         newP2PBalance = p2pBalance + toProcess.rayDiv(indexes.p2pIndex);
     }
 
@@ -188,8 +188,8 @@ abstract contract MatchingEngine is MorphoInternal {
     ) internal pure returns (uint256 newPoolBalance, uint256 newP2PBalance, uint256 newRemaining) {
         uint256 toProcess = Math.min(p2pBalance.rayMul(indexes.p2pIndex), remaining);
 
-        newRemaining = remaining.zeroFloorSub(toProcess);
+        newRemaining = remaining - toProcess;
         newPoolBalance = poolBalance + toProcess.rayDiv(indexes.poolIndex);
-        newP2PBalance = p2pBalance.zeroFloorSub(toProcess.rayDiv(indexes.p2pIndex));
+        newP2PBalance = p2pBalance - toProcess.rayDiv(indexes.p2pIndex);
     }
 }

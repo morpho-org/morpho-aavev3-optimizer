@@ -81,7 +81,7 @@ contract TestIntegrationSupply is IntegrationTest {
             morpho.scaledPoolBorrowBalance(market.underlying, address(promoter1)), 0, "promoterScaledPoolBorrow != 0"
         );
 
-        assertApproxEqDust(morpho.supplyBalance(market.underlying, onBehalf), amount, "supply != amount");
+        assertApproxEqAbs(morpho.supplyBalance(market.underlying, onBehalf), amount, 2, "supply != amount");
         assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
         assertApproxEqDust(
             morpho.borrowBalance(market.underlying, address(promoter1)), amount, "promoterBorrow != amount"
@@ -101,15 +101,17 @@ contract TestIntegrationSupply is IntegrationTest {
 
         // Assert Morpho's market state.
         assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
-        assertEq(
+        assertApproxEqAbs(
             test.morphoMarket.deltas.supply.scaledP2PTotal,
             test.scaledP2PSupply,
+            1,
             "scaledTotalSupplyP2P != scaledP2PSupply"
         );
         assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
-        assertEq(
+        assertApproxEqAbs(
             test.morphoMarket.deltas.borrow.scaledP2PTotal,
             test.scaledP2PSupply,
+            1,
             "scaledTotalBorrowP2P != scaledP2PSupply"
         );
         assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
@@ -278,7 +280,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
             // Assert Morpho's market state.
             assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
-            assertEq(test.morphoMarket.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != 0");
+            assertApproxEqAbs(test.morphoMarket.deltas.supply.scaledP2PTotal, 0, 1, "scaledTotalSupplyP2P != 0");
             assertApproxEqAbs(
                 test.morphoMarket.deltas.borrow.scaledDelta.rayMul(test.indexes.borrow.poolIndex),
                 borrowDelta,
