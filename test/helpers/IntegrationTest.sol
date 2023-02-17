@@ -164,11 +164,23 @@ contract IntegrationTest is ForkTest {
         poolAdmin.setSupplyCap(market.underlying, supplyCap);
     }
 
+    /// @dev Sets the supply gap of AaveV3 to the given input.
+    function _setSupplyGap(TestMarket storage market, uint256 supplyGap) internal {
+        _setSupplyCap(
+            market, (market.totalSupply() + _accruedToTreasury(market.underlying) + supplyGap) / (10 ** market.decimals)
+        );
+    }
+
     /// @dev Sets the borrow cap of AaveV3 to the given input.
     function _setBorrowCap(TestMarket storage market, uint256 borrowCap) internal {
         market.borrowCap = borrowCap > 0 ? borrowCap * 10 ** market.decimals : type(uint256).max;
 
         poolAdmin.setBorrowCap(market.underlying, borrowCap);
+    }
+
+    /// @dev Sets the borrow gap of AaveV3 to the given input.
+    function _setBorrowGap(TestMarket storage market, uint256 borrowGap) internal {
+        _setBorrowCap(market, (market.totalBorrow() + borrowGap) / (10 ** market.decimals));
     }
 
     modifier bypassSupplyCap(TestMarket storage market, uint256 amount) {
