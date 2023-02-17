@@ -301,7 +301,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         indexes.borrow.poolIndex = bound(indexes.borrow.poolIndex, indexes.borrow.p2pIndex, type(uint96).max);
         /// keep the condition because test revert if _E_MODE_CATEGORY_ID == 0
         if (_E_MODE_CATEGORY_ID != 0) {
-            vm.assume(_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != eModeCategoryId);
+            vm.assume(_E_MODE_CATEGORY_ID != eModeCategoryId);
             vm.expectRevert(abi.encodeWithSelector(Errors.InconsistentEMode.selector));
         }
         this.authorizeBorrow(dai, 0, indexes);
