@@ -67,11 +67,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 assertGt(supplied, 0);
                 assertGt(borrowed, 0);
 
-                stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
-                    collateralMarket.underlying
-                ).with_key(borrower).checked_write(
-                    morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2
-                );
+                _overrideCollateral(borrowedMarket, collateralMarket, borrower);
 
                 toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
