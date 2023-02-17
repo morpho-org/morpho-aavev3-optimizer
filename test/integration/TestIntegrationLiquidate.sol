@@ -3,8 +3,6 @@ pragma solidity ^0.8.0;
 
 import "test/helpers/IntegrationTest.sol";
 
-import "@forge-std/StdStorage.sol";
-
 contract TestIntegrationLiquidate is IntegrationTest {
     using WadRayMath for uint256;
     using stdStorage for StdStorage;
@@ -32,7 +30,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundAmountWithPrice(amount, borrowedMarket);
+                amount = _boundCollateral(collateralMarket, amount, borrowedMarket);
 
                 (, uint256 borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
@@ -60,7 +58,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundAmountWithPrice(amount, borrowedMarket);
+                amount = _boundCollateral(collateralMarket, amount, borrowedMarket);
 
                 (uint256 supplied, uint256 borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
@@ -101,7 +99,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundAmountWithPrice(amount, borrowedMarket);
+                amount = _boundCollateral(collateralMarket, amount, borrowedMarket);
 
                 (uint256 supplied, uint256 borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
@@ -138,7 +136,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundAmountWithPrice(amount, borrowedMarket);
+                amount = _boundCollateral(collateralMarket, amount, borrowedMarket);
 
                 (, uint256 borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
@@ -187,7 +185,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundAmountWithPrice(amount, borrowedMarket);
+                amount = _boundCollateral(collateralMarket, amount, borrowedMarket);
 
                 (test.supplied, test.borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
@@ -239,7 +237,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundAmountWithPrice(amount, borrowedMarket);
+                amount = _boundCollateral(collateralMarket, amount, borrowedMarket);
 
                 (test.supplied, test.borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
@@ -288,7 +286,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundAmountWithPrice(amount, borrowedMarket);
+                amount = _boundCollateral(collateralMarket, amount, borrowedMarket);
 
                 (test.supplied, test.borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
@@ -337,7 +335,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundAmountWithPrice(amount, borrowedMarket);
+                amount = _boundCollateral(collateralMarket, amount, borrowedMarket);
 
                 (test.supplied, test.borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
@@ -382,7 +380,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundAmountWithPrice(amount, borrowedMarket);
+                amount = _boundCollateral(collateralMarket, amount, borrowedMarket);
 
                 (, uint256 borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
@@ -411,6 +409,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testShouldRevertWhenCollateralMarketNotCreated(address underlying, address borrower, uint256 amount)
         public
     {
+        vm.assume(borrower != address(0));
         _assumeNotUnderlying(underlying);
 
         for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -418,12 +417,13 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
             TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-            vm.expectRevert();
+            vm.expectRevert(); // Indexes calculation revert because indexes are updated before the market created check.
             user.liquidate(borrowedMarket.underlying, underlying, borrower, amount);
         }
     }
 
     function testShouldRevertWhenBorrowMarketNotCreated(address underlying, address borrower, uint256 amount) public {
+        vm.assume(borrower != address(0));
         _assumeNotUnderlying(underlying);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
@@ -431,12 +431,14 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
             TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
 
-            vm.expectRevert();
+            vm.expectRevert(); // Indexes calculation revert because indexes are updated before the market created check.
             user.liquidate(underlying, collateralMarket.underlying, borrower, amount);
         }
     }
 
     function testShouldRevertWhenLiquidateCollateralIsPaused(address borrower, uint256 amount) public {
+        vm.assume(borrower != address(0));
+
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
                 _revert();
@@ -453,6 +455,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
     }
 
     function testShouldRevertWhenLiquidateBorrowIsPaused(address borrower, uint256 amount) public {
+        vm.assume(borrower != address(0));
+
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
                 _revert();
@@ -531,11 +535,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
         vm.expectEmit(true, true, true, false, address(morpho));
         emit Events.Liquidated(address(user), borrower, borrowedMarket.underlying, 0, address(0), 0);
-    }
-
-    function _boundAmountWithPrice(uint256 amount, TestMarket memory market) internal view returns (uint256) {
-        uint256 minAmount = MIN_PRICE_AMOUNT * (10 ** market.decimals) / market.price;
-        return bound(amount, minAmount, MAX_AMOUNT);
     }
 
     function _overrideCollateral(
