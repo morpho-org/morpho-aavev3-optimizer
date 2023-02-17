@@ -48,15 +48,20 @@ contract TestIntegrationMarketIdle is IntegrationTest {
         _setSupplyCap(testMarket, supplyCap);
 
         uint256 supplyGap = _supplyGap(testMarket);
+        uint256 expectedIdleIncrease = amount.zeroFloorSub(supplyGap);
 
         DataTypes.ReserveData memory reserve = pool.getReserveData(dai);
         Types.Indexes256 memory indexes = morpho.updatedIndexes(dai);
 
+        if (amount > supplyGap) {
+            vm.expectEmit(true, true, true, true);
+            emit Events.IdleSupplyUpdated(testMarket.underlying, _market.idleSupply + expectedIdleIncrease);
+        }
         (uint256 suppliable, uint256 idleSupplyIncrease) = market.increaseIdle(dai, amount, reserve, indexes);
 
         assertEq(suppliable, supplyGap, "suppliable");
-        assertEq(idleSupplyIncrease, amount.zeroFloorSub(supplyGap), "idleSupplyIncrease");
-        assertEq(market.idleSupply, _market.idleSupply + idleSupplyIncrease, "market.idleSupply");
+        assertEq(idleSupplyIncrease, expectedIdleIncrease, "idleSupplyIncrease");
+        assertEq(market.idleSupply, _market.idleSupply + expectedIdleIncrease, "market.idleSupply");
     }
 
     function testDecreaseIdle(Types.Market memory _market, uint256 amount) public {
@@ -66,11 +71,17 @@ contract TestIntegrationMarketIdle is IntegrationTest {
         _market.idleSupply = bound(_market.idleSupply, 0, testMarket.maxAmount);
         market = _market;
 
-        uint256 expectedMatched = Math.min(_market.idleSupply, amount);
-        (uint256 amountToProcess, uint256 matchedIdle) = market.decreaseIdle(dai, amount);
+        uint256 expectedIdleDecrease = Math.min(_market.idleSupply, amount);
 
-        assertEq(amountToProcess, amount - expectedMatched, "toProcess");
-        assertEq(matchedIdle, expectedMatched, "matchedIdle");
-        assertEq(market.idleSupply, _market.idleSupply - expectedMatched, "market.idleSupply");
+        if (_market.idleSupply != 0 && amount != 0) {
+            vm.expectEmit(true, true, true, true);
+            emit Events.IdleSupplyUpdated(testMarket.underlying, _market.idleSupply - expectedIdleDecrease);
+        }
+
+        (uint256 amountToProcess, uint256 idleDecrease) = market.decreaseIdle(dai, amount);
+
+        assertEq(amountToProcess, amount - expectedIdleDecrease, "toProcess");
+        assertEq(idleDecrease, expectedIdleDecrease, "matchedIdle");
+        assertEq(market.idleSupply, _market.idleSupply - expectedIdleDecrease, "market.idleSupply");
     }
 }
