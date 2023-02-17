@@ -540,7 +540,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
     ) internal returns (uint256 borrowBalance, uint256 collateralBalance) {
         stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
             collateralMarket.underlying
-        ).with_key(borrower).checked_write(morpho.scaledCollateralBalance(collateralMarket.underlying, borrower) / 2);
+        ).with_key(borrower).checked_write(
+            morpho.scaledCollateralBalance(collateralMarket.underlying, borrower).percentSub(3_000)
+        );
         borrowBalance = morpho.borrowBalance(borrowedMarket.underlying, borrower);
         collateralBalance = morpho.collateralBalance(collateralMarket.underlying, borrower);
     }
