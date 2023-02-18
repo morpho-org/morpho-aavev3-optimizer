@@ -38,24 +38,17 @@ contract TestIntegrationMarketIdle is IntegrationTest {
         assertEq(idleSupplyIncrease, 0, "idleSupplyIncrease");
     }
 
-    function testIncreaseIdleWhenSupplyGapIsLarger(Types.Market memory _market, uint256 amount, uint256 supplyCap)
+    function testIncreaseIdleWhenSupplyGapIsLarger(Types.Market memory _market, uint256 amount, uint256 supplyGap)
         public
     {
         TestMarket storage testMarket = testMarkets[dai];
-        supplyCap = _boundSupplyCapExceeded(
-            testMarket,
-            (testMarket.totalSupply() + _accruedToTreasury(testMarket.underlying) / (10 ** testMarket.decimals)) + 1,
-            ReserveConfiguration.MAX_VALID_SUPPLY_CAP
-        );
+        supplyGap = _setSupplyGap(testMarket, bound(supplyGap, (10 ** testMarket.decimals), testMarket.maxAmount));
 
         _market.aToken = testMarket.aToken;
         _market.idleSupply = bound(_market.idleSupply, 0, testMarket.maxAmount);
 
         market = _market;
 
-        _setSupplyCap(testMarket, supplyCap);
-
-        uint256 supplyGap = _supplyGap(testMarket);
         amount = bound(amount, testMarket.minAmount, supplyGap);
 
         DataTypes.ReserveData memory reserve = pool.getReserveData(dai);
@@ -68,35 +61,35 @@ contract TestIntegrationMarketIdle is IntegrationTest {
         assertEq(market.idleSupply, _market.idleSupply, "market.idleSupply");
     }
 
-    function testIncreaseIdleWhenSupplyGapIsSmaller(Types.Market memory _market, uint256 amount, uint256 supplyCap)
+    function testIncreaseIdleWhenSupplyGapIsSmaller(Types.Market memory _market, uint256 amount, uint256 supplyGap)
         public
     {
         TestMarket storage testMarket = testMarkets[dai];
-        supplyCap = _boundSupplyCapExceeded(testMarket, testMarket.minAmount * 10, supplyCap);
+        supplyGap = _setSupplyGap(testMarket, bound(supplyGap, (10 ** testMarket.decimals), testMarket.maxAmount));
 
         _market.aToken = testMarket.aToken;
         _market.idleSupply = bound(_market.idleSupply, 0, testMarket.maxAmount);
 
         market = _market;
 
-        _setSupplyCap(testMarket, supplyCap);
-
-        uint256 supplyGap = _supplyGap(testMarket);
-
-        amount = bound(amount, supplyGap, testMarket.maxAmount);
+        amount = bound(amount, supplyGap + 10, testMarket.maxAmount);
         uint256 expectedIdleIncrease = amount - supplyGap;
 
         DataTypes.ReserveData memory reserve = pool.getReserveData(dai);
         Types.Indexes256 memory indexes = morpho.updatedIndexes(dai);
 
-        vm.expectEmit(true, true, true, true);
+        // Cannot check data in this case because there can be a roudning error in the idle supply by 1. See note below.
+        vm.expectEmit(true, true, true, false);
         emit Events.IdleSupplyUpdated(testMarket.underlying, _market.idleSupply + expectedIdleIncrease);
 
         (uint256 suppliable, uint256 idleSupplyIncrease) = market.increaseIdle(dai, amount, reserve, indexes);
 
-        assertEq(suppliable, supplyGap, "suppliable");
-        assertEq(idleSupplyIncrease, expectedIdleIncrease, "idleSupplyIncrease");
-        assertEq(market.idleSupply, _market.idleSupply + expectedIdleIncrease, "market.idleSupply");
+        assertGt(idleSupplyIncrease, 0, "idleSupplyIncrease is zero");
+
+        // Note: Max rounding error should be 1 from the difference in supply gap calculations from an extra rayMul.
+        assertApproxEqAbs(suppliable, supplyGap, 1, "suppliable");
+        assertApproxEqAbs(idleSupplyIncrease, expectedIdleIncrease, 1, "idleSupplyIncrease");
+        assertApproxEqAbs(market.idleSupply, _market.idleSupply + expectedIdleIncrease, 1, "market.idleSupply");
     }
 
     function testDecreaseIdle(Types.Market memory _market, uint256 amount) public {
