@@ -165,10 +165,12 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Sets the supply gap of AaveV3 to the given input.
-    function _setSupplyGap(TestMarket storage market, uint256 supplyGap) internal {
+    /// @return The new supply gap taking into account rounding.
+    function _setSupplyGap(TestMarket storage market, uint256 supplyGap) internal returns (uint256) {
         _setSupplyCap(
             market, (market.totalSupply() + _accruedToTreasury(market.underlying) + supplyGap) / (10 ** market.decimals)
         );
+        return market.supplyCap.zeroFloorSub(market.totalSupply() + _accruedToTreasury(market.underlying));
     }
 
     /// @dev Sets the borrow cap of AaveV3 to the given input.
@@ -179,8 +181,10 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Sets the borrow gap of AaveV3 to the given input.
-    function _setBorrowGap(TestMarket storage market, uint256 borrowGap) internal {
+    /// @return The new borrow gap taking into account rounding.
+    function _setBorrowGap(TestMarket storage market, uint256 borrowGap) internal returns (uint256) {
         _setBorrowCap(market, (market.totalBorrow() + borrowGap) / (10 ** market.decimals));
+        return market.borrowCap.zeroFloorSub(market.totalBorrow());
     }
 
     modifier bypassSupplyCap(TestMarket storage market, uint256 amount) {
