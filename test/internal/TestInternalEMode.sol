@@ -122,7 +122,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         }
     }
 
-    //@dev  Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
+    // @dev  Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
     function _getLtvLt(address underlying, uint8 eModeCategoryId)
         internal
         view
