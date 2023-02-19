@@ -187,8 +187,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
-                promoted = bound(promoted, 0, test.borrowed);
-                _promoteBorrow(promoter1, borrowedMarket, promoted);
+                _promoteBorrow(promoter1, borrowedMarket, bound(promoted, 1, test.borrowed));
 
                 (uint256 borrowBalance, uint256 collateralBalance) =
                     _overrideCollateral(borrowedMarket, collateralMarket, borrower);
