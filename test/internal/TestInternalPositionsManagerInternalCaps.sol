@@ -130,7 +130,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         Types.SupplyRepayVars memory vars = this.accountRepay(dai, amount, address(this), 10);
 
-        assertApproxEqAbs(market.idleSupply, amount - (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply), 1);
+        assertEq(market.idleSupply, amount - (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply));
         assertEq(vars.toRepay, 0);
         assertEq(vars.toSupply, amount - market.idleSupply);
     }
