@@ -240,8 +240,7 @@ contract ForkTest is BaseTest {
         address underlying,
         uint8 eModeCategoryId
     ) internal {
-        vm.startPrank(address(poolAdmin));
-        poolConfigurator.setEModeCategory(
+        poolAdmin.setEModeCategory(
             eModeCategoryId,
             eModeCategory.ltv,
             eModeCategory.liquidationThreshold,
@@ -249,7 +248,6 @@ contract ForkTest is BaseTest {
             address(1),
             ""
         );
-        poolConfigurator.setAssetEModeCategory(underlying, eModeCategoryId);
-        vm.stopPrank();
+        poolAdmin.setAssetEModeCategory(underlying, eModeCategoryId);
     }
 }
