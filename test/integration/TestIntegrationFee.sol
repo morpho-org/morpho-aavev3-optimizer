@@ -1,61 +1,39 @@
 pragma solidity ^0.8.17;
 
+import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
 import {PoolLib} from "src/libraries/PoolLib.sol";
-import {MarketLib} from "src/libraries/MarketLib.sol";
-import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
-import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {MorphoStorage} from "src/MorphoStorage.sol";
 import {MorphoSetters} from "src/MorphoSetters.sol";
-import "test/helpers/InternalTest.sol";
+import "test/helpers/IntegrationTest.sol";
 
-contract TestInternalFee is InternalTest, MorphoSetters {
+contract TestIntegrationFee is IntegrationTest, MorphoSetters {
+    using TestConfigLib for TestConfig;
+    using PoolLib for IPool;
     using Math for uint256;
     using WadRayMath for uint256;
-    using PercentageMath for uint256;
-    using PoolLib for IPool;
+
+    constructor() MorphoStorage(_initConfig().getAddressesProvider(), 0) {}
 
     function setUp() public virtual override {
         super.setUp();
-
-        _defaultIterations = Types.Iterations(10, 10);
-
-        _createMarket(dai, 0, 3_333);
-        _createMarket(wbtc, 0, 3_333);
-        _createMarket(usdc, 0, 3_333);
-        _createMarket(wNative, 0, 3_333);
-
-        ERC20(dai).approve(address(_POOL), type(uint256).max);
-        ERC20(wbtc).approve(address(_POOL), type(uint256).max);
-        ERC20(usdc).approve(address(_POOL), type(uint256).max);
-        ERC20(wNative).approve(address(_POOL), type(uint256).max);
-
-        _POOL.supplyToPool(dai, 100 ether);
-        _POOL.supplyToPool(wbtc, 1e8);
-        _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(wNative, 1 ether);
     }
 
     function testClaimToTreasuryShouldRevertIfTreasuryVaultIsZero(uint256[] calldata amounts) public {
         address[] memory underlyings;
 
-        vm.startPrank(this.owner());
-        this.setTreasuryVault(address(0));
+        vm.prank(this.owner());
         vm.expectRevert(Errors.AddressIsZero.selector);
         this.claimToTreasury(underlyings, amounts);
-        vm.stopPrank();
     }
 
-    function testClaimToTreasuryShouldPassIfMarketNotCreated(uint256[] calldata amounts, address treasuryVault)
-        public
-    {
-        vm.assume(treasuryVault != address(0));
+    function testClaimToTreasuryShouldPassIfMarketNotCreated(uint256[] calldata amounts) public {
         vm.assume(amounts.length >= allUnderlyings.length);
         address[] memory underlyings = allUnderlyings;
-
+        address treasuryVault = address(1);
         for (uint256 i = 0; i < underlyings.length; ++i) {
             Types.Market storage underlyingMarket = _market[underlyings[i]];
 
@@ -73,19 +51,15 @@ contract TestInternalFee is InternalTest, MorphoSetters {
         }
     }
 
-    function testClaimToTreasuryShouldPassIfAmountsClaimedEqualsZero(
-        uint256[] calldata balanceAmounts,
-        address treasuryVault
-    ) public {
+    function testClaimToTreasuryShouldPassIfAmountsClaimedEqualsZero(uint256[] calldata balanceAmounts) public {
         uint256[] memory claimedAmounts = new uint256[](balanceAmounts.length);
         address[] memory underlyings = allUnderlyings;
-
-        vm.assume(treasuryVault != address(0));
+        address treasuryVault = address(1);
         vm.assume(balanceAmounts.length >= underlyings.length);
 
         for (uint256 i = 0; i < underlyings.length; ++i) {
             deal(underlyings[i], address(this), balanceAmounts[i]);
-            _market[underlyings[i]].aToken = address(1);
+            _market[underlyings[i]].aToken = address(2);
         }
 
         vm.startPrank(this.owner());
@@ -134,11 +108,15 @@ contract TestInternalFee is InternalTest, MorphoSetters {
         vm.stopPrank();
 
         for (uint256 i = 0; i < underlyings.length; ++i) {
-            assertApproxEqAbs(
+            assertEq(
                 ERC20(underlyings[i]).balanceOf(address(this)) - _market[underlyings[i]].idleSupply,
                 (balanceAmounts[i] - _market[underlyings[i]].idleSupply).zeroFloorSub(claimedAmounts[i]),
-                2,
-                "Expected Balance!= Real Balance"
+                "Expected Contract Balance!= Real Contract Balance"
+            );
+            assertEq(
+                ERC20(underlyings[i]).balanceOf(treasuryVault),
+                Math.min(claimedAmounts[i], balanceAmounts[i] - _market[underlyings[i]].idleSupply),
+                "Expected Treasury Balance!= Real Treasury Balance"
             );
         }
     }
