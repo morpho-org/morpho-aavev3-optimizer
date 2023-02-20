@@ -40,9 +40,10 @@ contract TestInternalFee is InternalTest, MorphoSetters {
     }
 
     function testClaimToTreasuryShouldRevertIfTreasuryVaultIsZero(uint256[] calldata amounts) public {
+        address[] memory underlyings;
+
         vm.startPrank(this.owner());
         this.setTreasuryVault(address(0));
-        address[] memory underlyings;
         vm.expectRevert(Errors.AddressIsZero.selector);
         this.claimToTreasury(underlyings, amounts);
         vm.stopPrank();
@@ -51,6 +52,7 @@ contract TestInternalFee is InternalTest, MorphoSetters {
     function testClaimToTreasuryShouldPassIfMarketNotCreated(uint256[] calldata amounts, address treasuryVault)
         public
     {
+        vm.assume(treasuryVault != address(0));
         vm.assume(amounts.length >= allUnderlyings.length);
         address[] memory underlyings = allUnderlyings;
 
@@ -60,11 +62,12 @@ contract TestInternalFee is InternalTest, MorphoSetters {
             underlyingMarket.aToken = address(0);
             deal(underlyings[i], address(this), amounts[i]);
         }
-        vm.assume(treasuryVault != address(0));
+
         vm.startPrank(this.owner());
         this.setTreasuryVault(treasuryVault);
         this.claimToTreasury(underlyings, amounts);
         vm.stopPrank();
+
         for (uint256 i = 0; i < underlyings.length; ++i) {
             assertEq(amounts[i], ERC20(underlyings[i]).balanceOf(address(this)), "Incorrect balance");
         }
