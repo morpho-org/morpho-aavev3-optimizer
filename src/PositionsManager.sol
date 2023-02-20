@@ -10,7 +10,6 @@ import {Events} from "./libraries/Events.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
 import {Constants} from "./libraries/Constants.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
-import {MarketLib} from "./libraries/MarketLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
@@ -29,7 +28,6 @@ import {PositionsManagerInternal} from "./PositionsManagerInternal.sol";
 /// @notice Abstract contract exposing logic functions delegate-called by the `Morpho` contract.
 contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     using PoolLib for IPool;
-    using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
 
     using Math for uint256;
