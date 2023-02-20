@@ -29,6 +29,12 @@ contract TestIntegrationLiquididityData is IntegrationTest {
                 Types.LiquidityData memory data = morpho.liquidityData(borrower);
                 (, uint256 totalDebtBase,,,, uint256 healthFactor) = pool.getUserAccountData(address(morpho));
 
+                // Sanity checks: no peer-to-peer.
+                assertEq(morpho.market(borrowedMarket.underlying).deltas.supply.scaledP2PTotal, 0);
+                assertEq(morpho.market(borrowedMarket.underlying).deltas.borrow.scaledP2PTotal, 0);
+                assertEq(morpho.market(collateralMarket.underlying).deltas.supply.scaledP2PTotal, 0);
+                assertEq(morpho.market(collateralMarket.underlying).deltas.borrow.scaledP2PTotal, 0);
+
                 assertApproxEqAbs(data.debt, totalDebtBase, 1, "debt");
                 assertApproxLeAbs(data.maxDebt.wadDiv(data.debt), healthFactor, 1e5, "health factor incorrect");
             }
@@ -70,6 +76,18 @@ contract TestIntegrationLiquididityData is IntegrationTest {
 
         Types.LiquidityData memory data = morpho.liquidityData(address(user));
         (, uint256 totalDebtBase,,,, uint256 healthFactor) = pool.getUserAccountData(address(morpho));
+
+        // Sanity checks: no peer-to-peer.
+        assertEq(morpho.market(wbtc).deltas.supply.scaledP2PTotal, 0);
+        assertEq(morpho.market(wbtc).deltas.borrow.scaledP2PTotal, 0);
+        assertEq(morpho.market(weth).deltas.supply.scaledP2PTotal, 0);
+        assertEq(morpho.market(weth).deltas.borrow.scaledP2PTotal, 0);
+        assertEq(morpho.market(dai).deltas.supply.scaledP2PTotal, 0);
+        assertEq(morpho.market(dai).deltas.borrow.scaledP2PTotal, 0);
+        assertEq(morpho.market(usdc).deltas.supply.scaledP2PTotal, 0);
+        assertEq(morpho.market(usdc).deltas.borrow.scaledP2PTotal, 0);
+        assertEq(morpho.market(link).deltas.supply.scaledP2PTotal, 0);
+        assertEq(morpho.market(link).deltas.borrow.scaledP2PTotal, 0);
 
         assertApproxEqAbs(data.debt, totalDebtBase, 1e3, "debt");
         assertApproxLeAbs(data.maxDebt.wadDiv(data.debt), healthFactor, 1e5, "health factor incorrect");
