@@ -30,8 +30,48 @@ contract TestIntegrationLiquididityData is IntegrationTest {
                 (, uint256 totalDebtBase,,,, uint256 healthFactor) = pool.getUserAccountData(address(morpho));
 
                 assertApproxEqAbs(data.debt, totalDebtBase, 1, "debt");
-                assertApproxLeAbs(data.maxDebt.wadDiv(data.debt), healthFactor, 1e5, "health factor uncorrect");
+                assertApproxLeAbs(data.maxDebt.wadDiv(data.debt), healthFactor, 1e5, "health factor incorrect");
             }
         }
+    }
+
+    function testLiquidityDataMultiple(uint256 amount) public {
+        TestMarket storage borrowedMarket;
+
+        uint256 wbtcCollateral = _boundSupply(testMarkets[wbtc], amount);
+        user.approve(wbtc, wbtcCollateral);
+        user.supplyCollateral(wbtc, wbtcCollateral);
+
+        uint256 wethCollateral = _boundSupply(testMarkets[weth], amount);
+        user.approve(weth, wethCollateral);
+        user.supplyCollateral(weth, wethCollateral);
+
+        uint256 daiCollateral = _boundSupply(testMarkets[dai], amount);
+        user.approve(dai, daiCollateral);
+        user.supplyCollateral(dai, daiCollateral);
+
+        borrowedMarket = testMarkets[usdc];
+        uint256 borrowable = borrowedMarket.borrowable(testMarkets[wbtc], wbtcCollateral);
+        borrowable = bound(
+            borrowable,
+            borrowedMarket.minAmount / 2,
+            Math.min(borrowable, Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap()))
+        );
+        user.borrow(usdc, borrowable);
+
+        borrowedMarket = testMarkets[link];
+        borrowable = borrowedMarket.borrowable(testMarkets[dai], daiCollateral);
+        borrowable = bound(
+            borrowable,
+            borrowedMarket.minAmount / 2,
+            Math.min(borrowable, Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap()))
+        );
+        user.borrow(link, borrowable);
+
+        Types.LiquidityData memory data = morpho.liquidityData(address(user));
+        (, uint256 totalDebtBase,,,, uint256 healthFactor) = pool.getUserAccountData(address(morpho));
+
+        assertApproxEqAbs(data.debt, totalDebtBase, 1e3, "debt");
+        assertApproxLeAbs(data.maxDebt.wadDiv(data.debt), healthFactor, 1e5, "health factor incorrect");
     }
 }

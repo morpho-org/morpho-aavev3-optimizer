@@ -6,6 +6,7 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {Vm} from "@forge-std/Vm.sol";
+import "@forge-std/console2.sol";
 
 struct TestMarket {
     address aToken;
@@ -88,6 +89,11 @@ library TestMarketLib {
         view
         returns (uint256)
     {
+        console2.log("collateralMarket.ltv", collateralMarket.ltv);
+        console2.log("collateralMarket.price", collateralMarket.price);
+        console2.log("borrowedMarket.price", borrowedMarket.price);
+        console2.log("10 ** collateralMarket.decimals", 10 ** collateralMarket.decimals);
+        console2.log("10 ** borrowedMarket.decimals", 10 ** borrowedMarket.decimals);
         return (
             (collateral.percentMul(collateralMarket.ltv - 1) * collateralMarket.price * 10 ** borrowedMarket.decimals)
                 / (borrowedMarket.price * 10 ** collateralMarket.decimals)

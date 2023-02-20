@@ -56,8 +56,8 @@ contract IntegrationTest is ForkTest {
         }
 
         // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() always return true.
-        _deposit(testMarkets[weth], 1e12, address(morpho));
-        _deposit(testMarkets[dai], 1e12, address(morpho));
+        // _deposit(testMarkets[weth], 1e12, address(morpho));
+        // _deposit(testMarkets[dai], 1e12, address(morpho));
 
         _forward(1); // All markets are outdated in Morpho's storage.
 
