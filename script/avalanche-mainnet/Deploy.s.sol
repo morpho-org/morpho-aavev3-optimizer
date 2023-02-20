@@ -78,7 +78,7 @@ contract Deploy is Script {
             abi.encodeWithSelector(
                 morphoImpl.initialize.selector, 
                 address(positionsManager), 
-                Types.MaxIterations({repay: 10, withdraw: 10})));
+                Types.Iterations({repay: 10, withdraw: 10})));
         morpho = Morpho(payable(address(morphoProxy)));
     }
 }

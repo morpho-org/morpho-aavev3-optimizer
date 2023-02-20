@@ -1,17 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {IMorpho} from "src/interfaces/IMorpho.sol";
-
-import {Types} from "src/libraries/Types.sol";
-import {Errors} from "src/libraries/Errors.sol";
-import {Events} from "src/libraries/Events.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
-
-import {Math} from "@morpho-utils/math/Math.sol";
-
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
-import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import "test/helpers/IntegrationTest.sol";
 
