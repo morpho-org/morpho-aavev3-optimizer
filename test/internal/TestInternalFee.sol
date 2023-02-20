@@ -1,12 +1,12 @@
 pragma solidity ^0.8.17;
 
-import {Math} from "@morpho-utils/math/Math.sol";
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
-import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
-
 import {PoolLib} from "src/libraries/PoolLib.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
 import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
+
+import {Math} from "@morpho-utils/math/Math.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
+import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
 import {MorphoStorage} from "src/MorphoStorage.sol";
 import {MorphoSetters} from "src/MorphoSetters.sol";
@@ -77,16 +77,19 @@ contract TestInternalFee is InternalTest, MorphoSetters {
         uint256[] memory claimedAmounts = new uint256[](balanceAmounts.length);
         address[] memory underlyings = allUnderlyings;
 
+        vm.assume(treasuryVault != address(0));
         vm.assume(balanceAmounts.length >= underlyings.length);
+
         for (uint256 i = 0; i < underlyings.length; ++i) {
             deal(underlyings[i], address(this), balanceAmounts[i]);
             _market[underlyings[i]].aToken = address(1);
         }
-        vm.assume(treasuryVault != address(0));
+
         vm.startPrank(this.owner());
         this.setTreasuryVault(treasuryVault);
         this.claimToTreasury(underlyings, claimedAmounts);
         vm.stopPrank();
+
         for (uint256 i = 0; i < underlyings.length; ++i) {
             assertEq(balanceAmounts[i], ERC20(underlyings[i]).balanceOf(address(this)), "Incorrect balance");
         }
@@ -99,16 +102,19 @@ contract TestInternalFee is InternalTest, MorphoSetters {
         address treasuryVault
     ) public {
         address[] memory underlyings = allUnderlyings;
+
         vm.assume(claimedAmounts.length >= underlyings.length);
         vm.assume(balanceAmounts.length >= idleAmounts.length);
         vm.assume(idleAmounts.length >= underlyings.length);
+        vm.assume(treasuryVault != address(0));
+
         for (uint256 i = 0; i < underlyings.length; ++i) {
             idleAmounts[i] = bound(idleAmounts[i], 0, balanceAmounts[i]);
             _market[underlyings[i]].idleSupply = idleAmounts[i];
             _market[underlyings[i]].aToken = address(1);
             deal(underlyings[i], address(this), balanceAmounts[i]);
         }
-        vm.assume(treasuryVault != address(0));
+
         vm.startPrank(this.owner());
         this.setTreasuryVault(treasuryVault);
 
@@ -118,9 +124,9 @@ contract TestInternalFee is InternalTest, MorphoSetters {
                 emit Events.ReserveFeeClaimed(underlyings[i], 0);
             }
         }
-
         this.claimToTreasury(underlyings, claimedAmounts);
         vm.stopPrank();
+
         for (uint256 i = 0; i < underlyings.length; ++i) {
             assertApproxEqAbs(
                 ERC20(underlyings[i]).balanceOf(address(this)) - _market[underlyings[i]].idleSupply,
