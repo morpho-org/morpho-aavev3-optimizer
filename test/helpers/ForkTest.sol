@@ -217,7 +217,7 @@ contract ForkTest is BaseTest {
     function _getLtvLt(address underlying, uint8 eModeCategoryId)
         internal
         view
-        returns (uint16 ltvBound, uint16 ltBound, uint16 ltvConfig, uint16 ltConfig)
+        returns (uint256 ltvBound, uint256 ltBound, uint256 ltvConfig, uint256 ltConfig)
     {
         address[] memory reserves = pool.getReservesList();
         for (uint256 i = 0; i < reserves.length; ++i) {
