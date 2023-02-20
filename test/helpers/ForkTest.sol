@@ -223,41 +223,33 @@ contract ForkTest is BaseTest {
         for (uint256 i = 0; i < reserves.length; ++i) {
             DataTypes.ReserveConfigurationMap memory currentConfig = pool.getConfiguration(reserves[i]);
             if (eModeCategoryId == currentConfig.getEModeCategory() || underlying == reserves[i]) {
-                ltvBound = uint16(Math.max(ltvBound, (currentConfig.data & ~ReserveConfiguration.LTV_MASK)));
-                ltBound = uint16(
-                    Math.max(
-                        ltBound,
-                        (currentConfig.data & ~ReserveConfiguration.LIQUIDATION_THRESHOLD_MASK)
-                            >> ReserveConfiguration.LIQUIDATION_THRESHOLD_START_BIT_POSITION
-                    )
-                );
+                ltvBound = uint16(Math.max(ltvBound, ReserveConfiguration.getLtv(currentConfig)));
+
+                ltBound = uint16(Math.max(ltBound, ReserveConfiguration.getLiquidationThreshold(currentConfig)));
 
                 if (underlying == reserves[i]) {
-                    ltvConfig = uint16((currentConfig.data & ~ReserveConfiguration.LTV_MASK));
-                    ltConfig = uint16(
-                        (currentConfig.data & ~ReserveConfiguration.LIQUIDATION_THRESHOLD_MASK)
-                            >> ReserveConfiguration.LIQUIDATION_THRESHOLD_START_BIT_POSITION
-                    );
+                    ltvConfig = uint16(ReserveConfiguration.getLtv(currentConfig));
+                    ltConfig = uint16(ReserveConfiguration.getLiquidationThreshold(currentConfig));
                 }
             }
         }
     }
 
-    function setEModeCategoryAsset(
+    function _setEModeCategoryAsset(
         DataTypes.EModeCategory memory eModeCategory,
         address underlying,
-        uint8 EModeCategoryId
+        uint8 eModeCategoryId
     ) internal {
         vm.startPrank(address(poolAdmin));
         poolConfigurator.setEModeCategory(
-            EModeCategoryId,
+            eModeCategoryId,
             eModeCategory.ltv,
             eModeCategory.liquidationThreshold,
             eModeCategory.liquidationBonus,
             address(1),
             ""
         );
-        poolConfigurator.setAssetEModeCategory(underlying, EModeCategoryId);
+        poolConfigurator.setAssetEModeCategory(underlying, eModeCategoryId);
         vm.stopPrank();
     }
 }

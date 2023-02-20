@@ -19,7 +19,6 @@ import "src/MorphoInternal.sol";
 import "test/helpers/InternalTest.sol";
 import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
 import {TestMarket, TestMarketLib} from "test/helpers/TestMarketLib.sol";
-/// Assumption : Unit Test made for only one E-mode
 
 contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     using MarketLib for Types.Market;
@@ -88,7 +87,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
                 label: ""
             });
             if (_E_MODE_CATEGORY_ID != 0) {
-                setEModeCategoryAsset(eModeCategory, underlying, _E_MODE_CATEGORY_ID);
+                _setEModeCategoryAsset(eModeCategory, underlying, _E_MODE_CATEGORY_ID);
             }
 
             oracle.setAssetPrice(address(1), assetData.underlyingPriceEMode);
@@ -141,7 +140,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
                 label: ""
             });
 
-            setEModeCategoryAsset(eModeCategory, underlying, eModeCategoryId);
+            _setEModeCategoryAsset(eModeCategory, underlying, eModeCategoryId);
 
             DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
 
@@ -173,7 +172,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         assertEq(expectedPrice, realPrice, "expectedPrice != realPrice");
     }
 
-    function testAssetPriceShouldBeNormal(
+    function testAssetPriceNonEMode(
         address underlying,
         address priceSourceEMode,
         uint256 underlyingPriceEMode,
@@ -194,7 +193,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         assertEq(expectedPrice, realPrice, "expectedPrice != realPrice");
     }
 
-    function testAssetPriceShouldBeNormalBecauseEModePrice0(
+    function testAssetPriceEModeWithEModePriceZero(
         address underlying,
         address priceSourceEMode,
         uint256 underlyingPriceEMode,
@@ -244,7 +243,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
                 <= PercentageMath.PERCENTAGE_FACTOR
         );
 
-        setEModeCategoryAsset(eModeCategory, dai, eModeCategoryId);
+        _setEModeCategoryAsset(eModeCategory, dai, eModeCategoryId);
 
         indexes.supply.poolIndex = bound(indexes.supply.poolIndex, 0, type(uint96).max);
         indexes.supply.p2pIndex = bound(indexes.supply.p2pIndex, indexes.supply.poolIndex, type(uint96).max);
