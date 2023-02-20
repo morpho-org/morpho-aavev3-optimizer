@@ -8,5 +8,7 @@ import "./ForkTest.sol";
 contract InternalTest is ForkTest, MorphoStorage {
     using TestConfigLib for TestConfig;
 
-    constructor() MorphoStorage(_initConfig().getAddressesProvider(), uint8(vm.envUint("E_MODE_CATEGORY_ID"))) {}
+    constructor()
+        MorphoStorage(_initConfig().getAddressesProvider(), uint8(vm.envOr("E_MODE_CATEGORY_ID", uint256(0))))
+    {}
 }

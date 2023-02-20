@@ -33,8 +33,6 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     function setUp() public virtual override {
-        super.setUp();
-
         _defaultIterations = Types.Iterations(10, 10);
         _createMarket(dai, 0, 3_333);
         _createMarket(wbtc, 0, 3_333);
@@ -55,7 +53,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     }
 
     function testInitializeEMode() public {
-        uint256 eModeCategoryId = vm.envUint("E_MODE_CATEGORY_ID");
+        uint256 eModeCategoryId = vm.envOr("E_MODE_CATEGORY_ID", uint256(0));
         assertEq(_E_MODE_CATEGORY_ID, eModeCategoryId);
     }
 
@@ -120,54 +118,6 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
                 "Underlying Price E-Mode"
             );
         }
-    }
-
-    // @dev  Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
-    function _getLtvLt(address underlying, uint8 eModeCategoryId)
-        internal
-        view
-        returns (uint16 ltvBound, uint16 ltBound, uint16 ltvConfig, uint16 ltConfig)
-    {
-        address[] memory reserves = _POOL.getReservesList();
-        for (uint256 i = 0; i < reserves.length; ++i) {
-            DataTypes.ReserveConfigurationMap memory currentConfig = _POOL.getConfiguration(reserves[i]);
-            if (eModeCategoryId == currentConfig.getEModeCategory() || underlying == reserves[i]) {
-                ltvBound = uint16(Math.max(ltvBound, (currentConfig.data & ~ReserveConfiguration.LTV_MASK)));
-                ltBound = uint16(
-                    Math.max(
-                        ltBound,
-                        (currentConfig.data & ~ReserveConfiguration.LIQUIDATION_THRESHOLD_MASK)
-                            >> ReserveConfiguration.LIQUIDATION_THRESHOLD_START_BIT_POSITION
-                    )
-                );
-
-                if (underlying == reserves[i]) {
-                    ltvConfig = uint16((currentConfig.data & ~ReserveConfiguration.LTV_MASK));
-                    ltConfig = uint16(
-                        (currentConfig.data & ~ReserveConfiguration.LIQUIDATION_THRESHOLD_MASK)
-                            >> ReserveConfiguration.LIQUIDATION_THRESHOLD_START_BIT_POSITION
-                    );
-                }
-            }
-        }
-    }
-
-    function setEModeCategoryAsset(
-        DataTypes.EModeCategory memory eModeCategory,
-        address underlying,
-        uint8 EModeCategoryId
-    ) internal {
-        vm.startPrank(address(poolAdmin));
-        poolConfigurator.setEModeCategory(
-            EModeCategoryId,
-            eModeCategory.ltv,
-            eModeCategory.liquidationThreshold,
-            eModeCategory.liquidationBonus,
-            address(1),
-            ""
-        );
-        poolConfigurator.setAssetEModeCategory(underlying, EModeCategoryId);
-        vm.stopPrank();
     }
 
     function testIsInEModeCategory(uint8 eModeCategoryId, uint16 lt, uint16 ltv, uint16 liquidationBonus) public {
