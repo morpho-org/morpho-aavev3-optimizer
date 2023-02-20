@@ -111,7 +111,9 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
     function testAccountRepayShouldIncreaseIdleSupplyIfSupplyCapReached(uint256 amount, uint256 supplyCap) public {
         Types.Market storage market = _market[dai];
 
-        uint256 totalPoolSupply = ERC20(market.aToken).totalSupply();
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+        uint256 totalPoolSupply = (IAToken(market.aToken).scaledTotalSupply() + _accruedToTreasury(market.underlying))
+            .rayMul(indexes.supply.poolIndex);
         supplyCap = bound(
             supplyCap,
             // Should be at least 1, but also cover some cases where supply cap is less than the current supplied.
@@ -119,12 +121,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
             Math.min(ReserveConfiguration.MAX_VALID_SUPPLY_CAP, MAX_AMOUNT / daiTokenUnit)
         );
         // We are testing the case the supply cap is reached, so the min should be greater than the amount needed to reach the supply cap.
-        amount = bound(
-            amount,
-            (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply + _accruedToTreasury(market.underlying))
-                + MIN_AMOUNT,
-            MAX_AMOUNT
-        );
+        amount = bound(amount, (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply) + MIN_AMOUNT, MAX_AMOUNT);
 
         _updateSupplierInDS(dai, address(1), 0, MAX_AMOUNT, false);
         _updateBorrowerInDS(dai, address(this), 0, MAX_AMOUNT, false);
@@ -133,11 +130,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         Types.SupplyRepayVars memory vars = this.accountRepay(dai, amount, address(this), 10);
 
-        assertApproxEqAbs(
-            market.idleSupply,
-            amount - (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply + _accruedToTreasury(market.underlying)),
-            1
-        );
+        assertApproxEqAbs(market.idleSupply, amount - (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply), 1);
         assertEq(vars.toRepay, 0);
         assertEq(vars.toSupply, amount - market.idleSupply);
     }
