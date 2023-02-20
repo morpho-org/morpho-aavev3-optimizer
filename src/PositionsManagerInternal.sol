@@ -102,6 +102,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.isBorrowPaused()) revert Errors.BorrowIsPaused();
     }
 
+    /// @dev Validates a liquidate action.
+    function _validateLiquidate(address underlyingBorrowed, address underlyingCollateral) internal view {
+        if (!_market[underlyingBorrowed].isCreated() || !_market[underlyingCollateral].isCreated()) {
+            revert Errors.MarketNotCreated();
+        }
+    }
+
     /// @dev Authorizes a borrow action.
     function _authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) internal view {
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
