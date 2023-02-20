@@ -53,13 +53,12 @@ contract TestInternalFee is InternalTest, MorphoSetters {
     {
         vm.assume(amounts.length >= allUnderlyings.length);
         address[] memory underlyings = allUnderlyings;
-        console.log(amounts.length);
+
         for (uint256 i = 0; i < underlyings.length; ++i) {
             Types.Market storage underlyingMarket = _market[underlyings[i]];
 
             underlyingMarket.aToken = address(0);
             deal(underlyings[i], address(this), amounts[i]);
-            console.log(ERC20(underlyings[i]).balanceOf(address(this)), amounts[i], underlyings[i]);
         }
         vm.assume(treasuryVault != address(0));
         vm.startPrank(this.owner());
