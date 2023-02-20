@@ -123,8 +123,10 @@ contract TestInternalFee is InternalTest, MorphoSetters {
 
         for (uint256 i = 0; i < underlyings.length; ++i) {
             if (claimedAmounts[i] > 0 && balanceAmounts[i] - _market[underlyings[i]].idleSupply > 0) {
-                vm.expectEmit(true, false, false, false);
-                emit Events.ReserveFeeClaimed(underlyings[i], 0);
+                vm.expectEmit(true, true, false, false);
+                emit Events.ReserveFeeClaimed(
+                    underlyings[i], Math.min(claimedAmounts[i], balanceAmounts[i] - _market[underlyings[i]].idleSupply)
+                    );
             }
         }
 
@@ -136,7 +138,7 @@ contract TestInternalFee is InternalTest, MorphoSetters {
                 ERC20(underlyings[i]).balanceOf(address(this)) - _market[underlyings[i]].idleSupply,
                 (balanceAmounts[i] - _market[underlyings[i]].idleSupply).zeroFloorSub(claimedAmounts[i]),
                 2,
-                "Expected balance"
+                "Expected Balance!= Real Balance"
             );
         }
     }
