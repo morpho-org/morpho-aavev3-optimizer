@@ -170,6 +170,20 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.validateWithdrawCollateral(dai, onPool, address(this), address(this));
     }
 
+    function testValidateLiquidateRevertsIfBorrowMarketNotCreated() public {
+        vm.expectRevert(abi.encodeWithSelector(Errors.MarketNotCreated.selector));
+        this.validateLiquidate(address(420), dai);
+    }
+
+    function testValidateLiquidateRevertsIfCollateralMarketNotCreated() public {
+        vm.expectRevert(abi.encodeWithSelector(Errors.MarketNotCreated.selector));
+        this.validateLiquidate(dai, address(420));
+    }
+
+    function testValidateLiquidate() public view {
+        this.validateLiquidate(dai, usdc);
+    }
+
     function testAuthorizeLiquidateIfBorrowMarketNotCreated() public {
         vm.expectRevert(abi.encodeWithSelector(Errors.MarketNotCreated.selector));
         this.authorizeLiquidate(address(420), dai, address(this));
@@ -365,6 +379,10 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         view
     {
         _validateWithdrawCollateral(underlying, amount, supplier, receiver);
+    }
+
+    function validateLiquidate(address underlyingBorrowed, address underlyingCollateral) public view {
+        _validateLiquidate(underlyingBorrowed, underlyingCollateral);
     }
 
     function authorizeLiquidate(address collateral, address borrow, address liquidator) public view returns (uint256) {
