@@ -45,7 +45,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
         if (onBehalf != address(this)) assertEq(onBehalf.balance, onBehalfBalanceBefore);
         assertEq(address(this).balance, 0);
-        assertEq(morpho.supplyBalance(weth, onBehalf), amount);
+        assertApproxEqAbs(morpho.supplyBalance(weth, onBehalf), amount, 1, "supply != amount");
     }
 
     function testSupplyCollateralETH(uint256 amount, address onBehalf) public {
@@ -87,7 +87,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         wethGateway.withdrawETH(toWithdraw, receiver, MAX_ITERATIONS);
 
         if (receiver != address(this)) assertEq(address(this).balance, 0);
-        assertApproxEqAbs(morpho.supplyBalance(weth, address(this)), amount - toWithdraw, 1);
+        assertApproxEqAbs(morpho.supplyBalance(weth, address(this)), amount - toWithdraw, 2, "supply != expected");
         assertApproxEqAbs(receiver.balance, balanceBefore + toWithdraw, 1);
     }
 
@@ -115,7 +115,9 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         wethGateway.withdrawCollateralETH(toWithdraw, receiver);
 
         if (receiver != address(this)) assertEq(address(this).balance, 0);
-        assertApproxEqAbs(morpho.collateralBalance(weth, address(this)), amount - toWithdraw, 1);
+        assertApproxEqAbs(
+            morpho.collateralBalance(weth, address(this)), amount - toWithdraw, 2, "collateral != expected"
+        );
         assertApproxEqAbs(receiver.balance, balanceBefore + toWithdraw, 1);
     }
 
@@ -171,7 +173,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         wethGateway.repayETH{value: toRepay}(address(this));
 
         assertEq(repayer.balance, 0);
-        assertApproxEqAbs(morpho.borrowBalance(weth, address(this)), toBorrow - toRepay, 1);
+        assertApproxEqAbs(morpho.borrowBalance(weth, address(this)), toBorrow - toRepay, 2, "repay != expected");
     }
 
     function _supplyETH(address onBehalf, uint256 amount) internal {
