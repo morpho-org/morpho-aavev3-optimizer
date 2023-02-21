@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import "src/extensions/WETHGateway.sol";
+import {WETHGateway} from "src/extensions/WETHGateway.sol";
+
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationWETHGateway is IntegrationTest {
@@ -12,6 +13,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
     function setUp() public override {
         super.setUp();
+
         wethGateway = new WETHGateway(address(morpho));
     }
 
@@ -128,7 +130,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         _supplyCollateralETH(address(this), amount);
         assertGt(morpho.collateralBalance(weth, address(this)), 0);
 
-        vm.expectRevert();
+        vm.expectRevert(Errors.PermissionDenied.selector);
         wethGateway.borrowETH(amount / 2, address(this), MAX_ITERATIONS);
     }
 
