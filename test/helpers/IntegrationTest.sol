@@ -173,12 +173,19 @@ contract IntegrationTest is ForkTest {
 
     modifier bypassSupplyCap(TestMarket storage market, uint256 amount) {
         uint256 supplyCapBefore = market.supplyCap;
-        bool disableSupplyCap = amount <= type(uint256).max - supplyCapBefore;
+        bool disableSupplyCap = amount < type(uint256).max - supplyCapBefore;
         if (disableSupplyCap) _setSupplyCap(market, 0);
 
         _;
 
-        if (disableSupplyCap) _setSupplyCap(market, (supplyCapBefore + amount).divUp(10 ** market.decimals));
+        if (disableSupplyCap) {
+            uint256 supplyCap;
+            unchecked {
+                supplyCap = supplyCapBefore + amount;
+            }
+            if (supplyCap < supplyCapBefore) supplyCap = 0; // If overflow, remove supply cap.
+            _setSupplyCap(market, supplyCap.divUp(10 ** market.decimals));
+        }
     }
 
     /// @dev Deposits the given amount of tokens on behalf of the given address, on AaveV3, increasing the supply cap if necessary.
@@ -312,6 +319,7 @@ contract IntegrationTest is ForkTest {
         bypassSupplyCap(market, amount)
         returns (uint256)
     {
+        if (amount == 0) return 0;
         promoter.approve(market.underlying, amount);
         return promoter.supply(market.underlying, amount);
     }
