@@ -102,13 +102,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.isBorrowPaused()) revert Errors.BorrowIsPaused();
     }
 
-    /// @dev Validates a liquidate action.
-    function _validateLiquidate(address underlyingBorrowed, address underlyingCollateral) internal view {
-        if (!_market[underlyingBorrowed].isCreated() || !_market[underlyingCollateral].isCreated()) {
-            revert Errors.MarketNotCreated();
-        }
-    }
-
     /// @dev Authorizes a borrow action.
     function _authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) internal view {
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
@@ -162,23 +155,26 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.isWithdrawCollateralPaused()) revert Errors.WithdrawCollateralIsPaused();
     }
 
-    /// @dev Authorizes a liquidate action.
-    function _authorizeLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
+    /// @dev Validates a liquidate action.
+    function _validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
         internal
         view
-        returns (uint256)
     {
-        if (borrower == address(0)) revert Errors.AddressIsZero();
-
         Types.Market storage borrowMarket = _market[underlyingBorrowed];
         Types.Market storage collateralMarket = _market[underlyingCollateral];
 
-        if (!collateralMarket.isCreated() || !borrowMarket.isCreated()) revert Errors.MarketNotCreated();
+        if (borrower == address(0)) revert Errors.AddressIsZero();
 
+        if (!borrowMarket.isCreated() || !collateralMarket.isCreated()) {
+            revert Errors.MarketNotCreated();
+        }
         if (collateralMarket.isLiquidateCollateralPaused()) revert Errors.LiquidateCollateralIsPaused();
         if (borrowMarket.isLiquidateBorrowPaused()) revert Errors.LiquidateBorrowIsPaused();
+    }
 
-        if (borrowMarket.isDeprecated()) return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
+    /// @dev Authorizes a liquidate action.
+    function _authorizeLiquidate(address underlyingBorrowed, address borrower) internal view returns (uint256) {
+        if (_market[underlyingBorrowed].isDeprecated()) return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
 
         uint256 healthFactor = _getUserHealthFactor(borrower);
         if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
