@@ -68,7 +68,7 @@ contract TestIntegrationFee is IntegrationTest, MorphoSetters {
         vm.stopPrank();
 
         for (uint256 i = 0; i < underlyings.length; ++i) {
-            assertEq(balanceAmounts[i], ERC20(underlyings[i]).balanceOf(address(this)), "Incorrect balance");
+            assertEq(balanceAmounts[i], ERC20(underlyings[i]).balanceOf(address(this)), "Incorrect Contract Balance");
         }
     }
 
@@ -97,7 +97,7 @@ contract TestIntegrationFee is IntegrationTest, MorphoSetters {
 
         for (uint256 i = 0; i < underlyings.length; ++i) {
             if (claimedAmounts[i] > 0 && balanceAmounts[i] - _market[underlyings[i]].idleSupply > 0) {
-                vm.expectEmit(true, true, false, false);
+                vm.expectEmit(true, true, true, true);
                 emit Events.ReserveFeeClaimed(
                     underlyings[i], Math.min(claimedAmounts[i], balanceAmounts[i] - _market[underlyings[i]].idleSupply)
                     );
