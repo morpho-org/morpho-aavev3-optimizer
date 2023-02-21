@@ -142,7 +142,7 @@ contract TestUnitDeltasLib is Test {
         uint256 amount = 0;
         deltas.supply.scaledP2PTotal = totalP2PSupply;
         deltas.borrow.scaledP2PTotal = totalP2PBorrow;
-        uint256 fee = DeltasLib.repayFee(deltas, amount, 0, indexes);
+        uint256 fee = DeltasLib.repayFee(deltas, amount, indexes);
         assertEq(fee, 0);
         assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply);
         assertEq(deltas.borrow.scaledP2PTotal, totalP2PBorrow);
@@ -162,7 +162,7 @@ contract TestUnitDeltasLib is Test {
             totalP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(supplyDelta.rayMul(indexes.supply.poolIndex))
         );
         expectedFee = Math.min(amount, expectedFee);
-        uint256 toProcess = DeltasLib.repayFee(deltas, amount, 0, indexes);
+        uint256 toProcess = DeltasLib.repayFee(deltas, amount, indexes);
         assertEq(toProcess, amount - expectedFee, "expected fee");
         assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply, "supply total");
         assertEq(

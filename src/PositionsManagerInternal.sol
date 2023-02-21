@@ -298,14 +298,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         Types.Market storage market = _market[underlying];
 
+        // Repay the fee.
+        amount = market.deltas.repayFee(amount, indexes);
+
         // Decrease the peer-to-peer borrow delta.
         uint256 matchedBorrowDelta;
         (amount, matchedBorrowDelta) =
             market.deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
         vars.toRepay += matchedBorrowDelta;
-
-        // Repay the fee.
-        amount = market.deltas.repayFee(amount, matchedBorrowDelta, indexes);
 
         /* Transfer repay */
 
