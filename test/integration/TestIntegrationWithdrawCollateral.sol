@@ -78,7 +78,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
                 "balanceAfter != expectedBalance"
             );
 
-            _assertMarketState(test.morphoMarket);
+            _assertMarketAccountingZero(test.morphoMarket);
         }
     }
 
@@ -164,7 +164,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
             user.withdrawCollateral(market.underlying, amount);
 
-            _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
+            _assertMarketUpdatedIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 

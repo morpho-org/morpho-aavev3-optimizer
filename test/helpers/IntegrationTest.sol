@@ -385,7 +385,7 @@ contract IntegrationTest is ForkTest {
         }
     }
 
-    function _assertUpdateIndexes(Types.Market memory market, Types.Indexes256 memory futureIndexes) internal {
+    function _assertMarketUpdatedIndexes(Types.Market memory market, Types.Indexes256 memory futureIndexes) internal {
         assertEq(market.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
         assertEq(
             market.indexes.supply.poolIndex, futureIndexes.supply.poolIndex, "poolSupplyIndex != futurePoolSupplyIndex"
@@ -401,7 +401,7 @@ contract IntegrationTest is ForkTest {
         );
     }
 
-    function _assertMarketState(Types.Market memory market) internal {
+    function _assertMarketAccountingZero(Types.Market memory market) internal {
         assertEq(market.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
         assertEq(market.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != 0");
         assertEq(market.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");

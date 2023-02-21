@@ -138,7 +138,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
-            _assertMarketState(test.morphoMarket);
+            _assertMarketAccountingZero(test.morphoMarket);
         }
     }
 
@@ -237,7 +237,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
-            _assertMarketState(test.morphoMarket);
+            _assertMarketAccountingZero(test.morphoMarket);
         }
     }
 
@@ -454,7 +454,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS); // 100% pool.
 
-            _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
+            _assertMarketUpdatedIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 

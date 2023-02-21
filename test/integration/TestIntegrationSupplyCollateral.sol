@@ -70,7 +70,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
                 test.balanceBefore - user.balanceOf(market.underlying), amount, "balanceBefore - balanceAfter != amount"
             );
 
-            _assertMarketState(test.morphoMarket);
+            _assertMarketAccountingZero(test.morphoMarket);
         }
     }
 
@@ -115,7 +115,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
             user.supplyCollateral(market.underlying, amount, onBehalf);
 
-            _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
+            _assertMarketUpdatedIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 

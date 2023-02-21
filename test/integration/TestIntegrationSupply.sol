@@ -143,7 +143,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
             assertEq(market.variableBorrowOf(address(morpho)), 0, "morphoVariableBorrow != 0");
 
-            _assertMarketState(test.morphoMarket);
+            _assertMarketAccountingZero(test.morphoMarket);
         }
     }
 
@@ -213,7 +213,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
             assertApproxEqAbs(market.variableBorrowOf(address(morpho)), amount, 1, "morphoVariableBorrow != amount");
 
-            _assertMarketState(test.morphoMarket);
+            _assertMarketAccountingZero(test.morphoMarket);
         }
     }
 
@@ -343,7 +343,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
             user.supply(market.underlying, amount, onBehalf); // 100% pool.
 
-            _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
+            _assertMarketUpdatedIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 
