@@ -23,7 +23,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
     }
 
     // @dev The test assumes that at least one the five tokens used is not listed on Morpho, otherwise the test is useless.
-    // Morpho Labs chooses arbitrarily Matic, The Graph, Rocket Pool(governance token), Kucoin Token and TUSD.
+    // Morpho Labs choses arbitrarily Matic, The Graph, Rocket Pool(governance token), Kucoin Token and TUSD.
     function testClaimToTreasuryShouldPassIfMarketNotCreated(uint256[] calldata amounts) public {
         vm.assume(amounts.length >= allUnderlyings.length);
         address[5] memory tokenAddresses = [
@@ -51,7 +51,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
 
         for (uint256 i = 0; i < underlyings.length; ++i) {
             if (underlyings[i] != address(0)) {
-                assertEq(amounts[i], ERC20(underlyings[i]).balanceOf(address(morpho)), "Incorrect Contract Balance");
+                assertEq(amounts[i], ERC20(underlyings[i]).balanceOf(address(morpho)), "Incorrect contract balance");
             }
         }
     }
@@ -60,7 +60,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
         uint256[] calldata claimedAmounts,
         uint256[] calldata balanceAmounts
     ) public {
-        address[] memory underlyingsAddress;
+        address[] memory underlyingsAddresses;
         uint256[] memory beforeBalanceTreasury = new uint256[](underlyings.length);
         address treasuryVault = address(1);
         vm.assume(claimedAmounts.length >= allUnderlyings.length);
@@ -71,21 +71,21 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
             deal(allUnderlyings[i], address(morpho), balanceAmounts[i]);
             beforeBalanceTreasury[i] = ERC20(allUnderlyings[i]).balanceOf(treasuryVault);
         }
-        morpho.claimToTreasury(underlyingsAddress, claimedAmounts);
+        morpho.claimToTreasury(underlyingsAddresses, claimedAmounts);
 
         for (uint256 i = 0; i < allUnderlyings.length; ++i) {
             assertEq(
-                balanceAmounts[i], ERC20(allUnderlyings[i]).balanceOf(address(morpho)), "Incorrect Contract Balance"
+                balanceAmounts[i], ERC20(allUnderlyings[i]).balanceOf(address(morpho)), "Incorrect contract balance"
             );
             assertEq(
                 beforeBalanceTreasury[i],
                 ERC20(allUnderlyings[i]).balanceOf(treasuryVault),
-                "Incorrect Treasury Balance"
+                "Incorrect treasury balance"
             );
         }
     }
 
-    function testClaimToTreasuryShouldPassIfAmountsClaimedEqualsZero(uint256[] calldata balanceAmounts) public {
+    function testClaimToTreasuryShouldPassIfAmountsClaimedEqualZero(uint256[] calldata balanceAmounts) public {
         uint256[] memory claimedAmounts = new uint256[](balanceAmounts.length);
         address[] memory underlyings = allUnderlyings;
         address treasuryVault = address(1);
@@ -99,16 +99,16 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
         morpho.claimToTreasury(underlyings, claimedAmounts);
 
         for (uint256 i = 0; i < underlyings.length; ++i) {
-            assertEq(balanceAmounts[i], ERC20(underlyings[i]).balanceOf(address(morpho)), "Incorrect Contract Balance");
+            assertEq(balanceAmounts[i], ERC20(underlyings[i]).balanceOf(address(morpho)), "Incorrect contract balance");
         }
     }
 
     function testClaimToTreasury(
         uint256[] memory balanceAmounts,
         uint256[] memory idleAmounts,
-        uint256[] memory claimedAmounts,
-        address treasuryVault
+        uint256[] memory claimedAmounts
     ) public {
+        address treasuryVault = address(1);
         address[] memory underlyings = allUnderlyings;
         uint256[] memory beforeBalanceTreasury = new uint256[](underlyings.length);
 
@@ -143,12 +143,12 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
             assertEq(
                 ERC20(underlyings[i]).balanceOf(address(morpho)) - morpho.market(underlyings[i]).idleSupply,
                 (balanceAmounts[i] - morpho.market(underlyings[i]).idleSupply).zeroFloorSub(claimedAmounts[i]),
-                "Expected Contract Balance!= Real Contract Balance"
+                "Expected contract balance != Real contract balance"
             );
             assertEq(
                 ERC20(underlyings[i]).balanceOf(treasuryVault) - beforeBalanceTreasury[i],
                 Math.min(claimedAmounts[i], balanceAmounts[i] - morpho.market(underlyings[i]).idleSupply),
-                "Expected Treasury Balance!= Real Treasury Balance"
+                "Expected treasury balance != Real treasury balance"
             );
         }
     }
