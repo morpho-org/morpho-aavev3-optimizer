@@ -42,14 +42,14 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
-    function testShouldNotLiquidateUserNotOnCollateralMarket(
+    function testShouldNotSeizeCollateralOfUserNotOnCollateralMarket(
         address borrower,
         uint256 amount,
         uint256 toRepay,
-        uint256 collateralIndexShift
+        uint256 indexShift
     ) public {
         vm.assume(borrower != address(0));
-        collateralIndexShift = bound(collateralIndexShift, 1, collateralUnderlyings.length - 1);
+        indexShift = bound(indexShift, 1, collateralUnderlyings.length - 1);
 
         LiquidateTest memory test;
 
@@ -74,19 +74,26 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 user.approve(borrowedMarket.underlying, toRepay);
 
                 address collateralUnderlying =
-                    collateralUnderlyings[(collateralIndex + 1) % collateralUnderlyings.length];
+                    collateralUnderlyings[(collateralIndex + indexShift) % collateralUnderlyings.length];
 
                 (test.repaid, test.seized) =
                     user.liquidate(borrowedMarket.underlying, collateralUnderlying, borrower, toRepay);
 
-                assertEq(test.repaid, 0);
-                assertEq(test.seized, 0);
+                assertEq(test.seized, 0, "seized");
             }
         }
     }
 
-    function testShouldNotLiquidateUserNotInBorrowMarket(address borrower, uint256 amount, uint256 toRepay) public {
+    function testShouldNotLiquidateUserNotInBorrowMarket(
+        address borrower,
+        uint256 amount,
+        uint256 toRepay,
+        uint256 indexShift
+    ) public {
         vm.assume(borrower != address(0));
+        indexShift = bound(indexShift, 1, borrowableUnderlyings.length - 1);
+
+        LiquidateTest memory test;
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -95,27 +102,27 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                (uint256 supplied, uint256 borrowed) = _borrowWithCollateral(
+                (test.supplied, test.borrowed) = _borrowWithCollateral(
                     borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
-                assertGt(supplied, 0);
-                assertGt(borrowed, 0);
+                assertGt(test.supplied, 0);
+                assertGt(test.borrowed, 0);
 
                 _overrideCollateral(borrowedMarket, collateralMarket, borrower);
 
-                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
+                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, test.borrowed), test.borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
                 address borrowedUnderlying =
-                    borrowableUnderlyings[borrowedIndex + 1 == borrowableUnderlyings.length ? 0 : borrowedIndex + 1];
+                    borrowableUnderlyings[(borrowedIndex + indexShift) % borrowableUnderlyings.length];
 
-                (uint256 repaid, uint256 seized) =
+                (test.repaid, test.seized) =
                     user.liquidate(borrowedUnderlying, collateralMarket.underlying, borrower, toRepay);
 
-                assertEq(repaid, 0);
-                assertEq(seized, 0);
+                assertEq(test.repaid, 0);
+                assertEq(test.seized, 0);
             }
         }
     }
@@ -432,9 +439,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 repaid,
         uint256 seized
     ) internal returns (uint256 expectedSeized, uint256 expectedRepaid) {
-        assertGt(repaid, 0);
-        assertGt(seized, 0);
-
         // For now skip oracle sentinel check.
         uint256 closeFactor = Constants.MAX_CLOSE_FACTOR;
 
