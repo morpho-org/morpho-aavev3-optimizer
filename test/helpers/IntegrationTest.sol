@@ -260,8 +260,6 @@ contract IntegrationTest is ForkTest {
         address receiver,
         uint256 maxIterations
     ) internal returns (uint256 supplied, uint256 borrowed) {
-        amount = _boundBorrow(borrowedMarket, amount);
-
         vm.startPrank(borrower);
         uint256 collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount);
         deal(collateralMarket.underlying, borrower, collateral);
