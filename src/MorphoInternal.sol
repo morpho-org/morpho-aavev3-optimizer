@@ -221,7 +221,6 @@ abstract contract MorphoInternal is MorphoStorage {
         }
     }
 
-    /// @notice Returns the liquidity data about the position of `user`.
     /// @param user The address of the user to get the liquidity data for.
     /// @return liquidityData The liquidity data of the user.
     function _liquidityData(address user) internal view returns (Types.LiquidityData memory liquidityData) {
@@ -231,25 +230,23 @@ abstract contract MorphoInternal is MorphoStorage {
         vars.oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
         vars.user = user;
 
-        (liquidityData.borrowable, liquidityData.maxDebt) = _totalCollateralData(vars);
+        (liquidityData.collateral, liquidityData.borrowable, liquidityData.maxDebt) = _totalCollateralData(vars);
         liquidityData.debt = _totalDebt(vars);
     }
 
     /// @dev Returns the collateral data for a given set of inputs.
-    /// @dev The total collateral data is computed looping through all user's collateral assets.
-    /// @param vars The liquidity variables.
-    /// @return borrowable The total borrowable amount of `vars.user`.
-    /// @return maxDebt The total maximum debt of `vars.user`.
     function _totalCollateralData(Types.LiquidityVars memory vars)
         internal
         view
-        returns (uint256 borrowable, uint256 maxDebt)
+        returns (uint256 collateral, uint256 borrowable, uint256 maxDebt)
     {
         address[] memory userCollaterals = _userCollaterals[vars.user].values();
 
         for (uint256 i; i < userCollaterals.length; ++i) {
-            (uint256 borrowableSingle, uint256 maxDebtSingle) = _collateralData(userCollaterals[i], vars);
+            (uint256 collateralSingle, uint256 borrowableSingle, uint256 maxDebtSingle) =
+                _collateralData(userCollaterals[i], vars);
 
+            collateral += collateralSingle;
             borrowable += borrowableSingle;
             maxDebt += maxDebtSingle;
         }
@@ -268,20 +265,16 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Returns the collateral data for a given set of inputs.
-    /// @param underlying The address of the underlying collateral asset.
-    /// @param vars The liquidity variables.
-    /// @return borrowable The borrowable amount of `vars.user` on the `underlying` market.
-    /// @return maxDebt The maximum debt of `vars.user` on the `underlying` market.
     function _collateralData(address underlying, Types.LiquidityVars memory vars)
         internal
         view
-        returns (uint256 borrowable, uint256 maxDebt)
+        returns (uint256 collateral, uint256 borrowable, uint256 maxDebt)
     {
         (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
             _assetLiquidityData(underlying, vars);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
-        uint256 collateral = (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex))
+        collateral = (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex))
             * underlyingPrice / tokenUnit;
 
         borrowable = collateral.percentMulDown(ltv);

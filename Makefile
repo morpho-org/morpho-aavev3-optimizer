@@ -15,7 +15,7 @@ contracts:
 
 
 test:
-	forge test -vvv
+	forge test -vv
 
 test-unit:
 	@FOUNDRY_MATCH_CONTRACT=TestUnit make test
