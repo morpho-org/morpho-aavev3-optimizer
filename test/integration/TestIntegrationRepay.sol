@@ -355,7 +355,7 @@ contract TestIntegrationRepay is IntegrationTest {
     function testShouldUpdateIndexesAfterRepay(uint256 amount, address onBehalf, address receiver) public {
         RepayTest memory test;
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 

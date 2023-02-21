@@ -25,7 +25,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         WithdrawCollateralTest memory test;
 
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -90,7 +90,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         address receiver
     ) public {
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -130,7 +130,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -170,7 +170,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
     function testShouldRevertWithdrawCollateralZero(address onBehalf, address receiver) public {
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -180,7 +180,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
     function testShouldRevertWithdrawCollateralOnBehalfZero(uint256 amount, address receiver) public {
         amount = _boundAmount(amount);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
@@ -210,7 +210,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -225,7 +225,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     ) public {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -247,7 +247,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         vm.assume(onBehalf != address(user));
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);
@@ -259,7 +259,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         public
     {
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 

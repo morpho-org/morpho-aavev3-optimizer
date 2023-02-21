@@ -24,7 +24,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         WithdrawTest memory test;
 
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -101,7 +101,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         WithdrawTest memory test;
 
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -189,7 +189,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         WithdrawTest memory test;
 
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -299,7 +299,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         WithdrawTest memory test;
 
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -398,7 +398,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -441,7 +441,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
     function testShouldRevertWithdrawZero(address onBehalf, address receiver) public {
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -451,7 +451,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
     function testShouldRevertWithdrawOnBehalfZero(uint256 amount, address receiver) public {
         amount = _boundAmount(amount);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
@@ -481,7 +481,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -492,7 +492,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
     function testShouldRevertWithdrawWhenWithdrawPaused(uint256 amount, address onBehalf, address receiver) public {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -512,7 +512,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         vm.assume(onBehalf != address(user));
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);
@@ -528,7 +528,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
     ) public {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+        receiver = _boundAddressNotZero(receiver);
 
         _prepareOnBehalf(onBehalf);
 
