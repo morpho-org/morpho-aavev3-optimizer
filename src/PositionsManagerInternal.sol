@@ -305,7 +305,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         vars.toRepay += matchedBorrowDelta;
 
         // Repay the fee.
-        amount = market.deltas.repayFee(amount, indexes);
+        amount = market.deltas.repayFee(amount, matchedBorrowDelta, indexes);
 
         /* Transfer repay */
 
