@@ -53,7 +53,7 @@ contract TestIntegrationFee is IntegrationTest {
 
         for (uint256 i = 0; i < underlyings.length; ++i) {
             if (underlyings[i] != address(0)) {
-                assertEq(amounts[i], ERC20(underlyings[i]).balanceOf(address(morpho)), "Incorrect balance");
+                assertEq(amounts[i], ERC20(underlyings[i]).balanceOf(address(morpho)), "Incorrect Contract Balance");
             }
         }
     }
