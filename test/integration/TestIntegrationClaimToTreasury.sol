@@ -118,6 +118,8 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
         vm.assume(treasuryVault != address(0));
 
         for (uint256 i = 0; i < underlyings.length; ++i) {
+            balanceAmounts[i] =
+                bound(balanceAmounts[i], 0, type(uint256).max - ERC20(underlyings[i]).balanceOf(treasuryVault));
             idleAmounts[i] = bound(idleAmounts[i], 0, balanceAmounts[i]);
             morpho.market(underlyings[i]).idleSupply = idleAmounts[i];
             morpho.market(underlyings[i]).aToken = address(1);
