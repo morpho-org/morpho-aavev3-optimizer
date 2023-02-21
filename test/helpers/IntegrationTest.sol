@@ -178,14 +178,7 @@ contract IntegrationTest is ForkTest {
 
         _;
 
-        if (disableSupplyCap) {
-            uint256 supplyCap;
-            unchecked {
-                supplyCap = supplyCapBefore + amount;
-            }
-            if (supplyCap < supplyCapBefore) supplyCap = 0; // If overflow, remove supply cap.
-            _setSupplyCap(market, supplyCap.divUp(10 ** market.decimals));
-        }
+        if (disableSupplyCap) _setSupplyCap(market, (supplyCapBefore + amount).divUp(10 ** market.decimals));
     }
 
     /// @dev Deposits the given amount of tokens on behalf of the given address, on AaveV3, increasing the supply cap if necessary.
