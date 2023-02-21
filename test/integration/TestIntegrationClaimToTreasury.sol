@@ -7,11 +7,9 @@ import {PoolLib} from "src/libraries/PoolLib.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
-import {MorphoStorage} from "src/MorphoStorage.sol";
-import {MorphoSetters} from "src/MorphoSetters.sol";
 import "test/helpers/IntegrationTest.sol";
 
-contract TestIntegrationFee is IntegrationTest {
+contract TestIntegrationClaimToTreasury is IntegrationTest {
     using TestConfigLib for TestConfig;
     using PoolLib for IPool;
     using Math for uint256;
