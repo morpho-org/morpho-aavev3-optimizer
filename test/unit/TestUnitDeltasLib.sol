@@ -159,7 +159,7 @@ contract TestUnitDeltasLib is Test {
         deltas.borrow.scaledP2PTotal = totalP2PBorrow;
         deltas.supply.scaledDelta = supplyDelta;
 
-        uint256 expectedFee = (totalP2PBorrow).rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+        uint256 expectedFee = totalP2PBorrow.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
             totalP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(supplyDelta.rayMul(indexes.supply.poolIndex))
         );
         expectedFee = Math.min(amount, expectedFee);
