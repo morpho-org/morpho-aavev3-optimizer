@@ -14,16 +14,12 @@ import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configurati
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-import "test/helpers/IntegrationTest.sol";
-import "src/MorphoInternal.sol";
 import "test/helpers/InternalTest.sol";
 import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
 import {TestMarket, TestMarketLib} from "test/helpers/TestMarketLib.sol";
 
 contract TestInternalEMode is InternalTest, PositionsManagerInternal {
-    using MarketLib for Types.Market;
     using PoolLib for IPool;
-    using MarketBalanceLib for Types.MarketBalances;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
     using Math for uint256;
