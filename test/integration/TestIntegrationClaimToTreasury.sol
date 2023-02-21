@@ -58,6 +58,35 @@ contract TestIntegrationFee is IntegrationTest {
         }
     }
 
+    function testClaimToTreasuryShouldPassIfZeroUnderlyings(
+        uint256[] calldata claimedAmounts,
+        uint256[] calldata balanceAmounts
+    ) public {
+        address[] memory underlyingsAddress;
+        uint256[] memory beforeBalanceTreasury = new uint256[](underlyings.length);
+        address treasuryVault = address(1);
+        vm.assume(claimedAmounts.length >= allUnderlyings.length);
+        vm.assume(balanceAmounts.length >= allUnderlyings.length);
+        morpho.setTreasuryVault(treasuryVault);
+
+        for (uint256 i = 0; i < allUnderlyings.length; ++i) {
+            deal(allUnderlyings[i], address(morpho), balanceAmounts[i]);
+            beforeBalanceTreasury[i] = ERC20(allUnderlyings[i]).balanceOf(treasuryVault);
+        }
+        morpho.claimToTreasury(underlyingsAddress, claimedAmounts);
+
+        for (uint256 i = 0; i < allUnderlyings.length; ++i) {
+            assertEq(
+                balanceAmounts[i], ERC20(allUnderlyings[i]).balanceOf(address(morpho)), "Incorrect Contract Balance"
+            );
+            assertEq(
+                beforeBalanceTreasury[i],
+                ERC20(allUnderlyings[i]).balanceOf(treasuryVault),
+                "Incorrect Treasury Balance"
+            );
+        }
+    }
+
     function testClaimToTreasuryShouldPassIfAmountsClaimedEqualsZero(uint256[] calldata balanceAmounts) public {
         uint256[] memory claimedAmounts = new uint256[](balanceAmounts.length);
         address[] memory underlyings = allUnderlyings;
