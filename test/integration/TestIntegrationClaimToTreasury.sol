@@ -26,22 +26,16 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
     // Morpho Labs choses arbitrarily Matic, The Graph, Rocket Pool(governance token), Kucoin Token and TUSD.
     function testClaimToTreasuryShouldPassIfMarketNotCreated(uint256[] calldata amounts) public {
         vm.assume(amounts.length >= allUnderlyings.length);
-        address[5] memory tokenAddresses = [
-            0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0,
-            0xc944E90C64B2c07662A292be6244BDf05Cda44a7,
-            0xD33526068D116cE69F19A9ee46F0bd304F21A51f,
-            0xf34960d9d60be18cC1D5Afc1A6F012A723a28811,
-            0x0000000000085d4780B73119b644AE5ecd22b376
-        ];
-        address[] memory underlyings = new address[](tokenAddresses.length);
+
+        address[] memory underlyings = new address[](addressesMarketNotCreated.length);
 
         address treasuryVault = address(1);
         uint256 lengthUnderlyings;
 
-        for (uint256 i = 0; i < tokenAddresses.length; ++i) {
-            if (morpho.market(tokenAddresses[i]).aToken == address(0)) {
-                underlyings[lengthUnderlyings] = tokenAddresses[i];
-                deal(tokenAddresses[i], address(morpho), amounts[lengthUnderlyings]);
+        for (uint256 i = 0; i < addressesMarketNotCreated.length; ++i) {
+            if (morpho.market(addressesMarketNotCreated[i]).aToken == address(0)) {
+                underlyings[lengthUnderlyings] = addressesMarketNotCreated[i];
+                deal(addressesMarketNotCreated[i], address(morpho), amounts[lengthUnderlyings]);
                 ++lengthUnderlyings;
             }
         }
