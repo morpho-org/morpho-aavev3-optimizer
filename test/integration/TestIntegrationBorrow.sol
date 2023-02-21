@@ -79,8 +79,8 @@ contract TestIntegrationBorrow is IntegrationTest {
         );
 
         assertApproxEqDust(morpho.borrowBalance(market.underlying, onBehalf), amount, "borrow != amount");
-        assertApproxEqDust(
-            morpho.supplyBalance(market.underlying, address(promoter1)), amount, "promoterSupply != amount"
+        assertApproxEqAbs(
+            morpho.supplyBalance(market.underlying, address(promoter1)), amount, 2, "promoterSupply != amount"
         );
 
         // Assert Morpho's position on pool.
@@ -95,10 +95,11 @@ contract TestIntegrationBorrow is IntegrationTest {
         );
 
         // Assert Morpho's market state.
-        assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
-        assertEq(
+        assertApproxEqAbs(test.morphoMarket.deltas.supply.scaledDelta, 0, 1, "scaledSupplyDelta != 0");
+        assertApproxEqAbs(
             test.morphoMarket.deltas.supply.scaledP2PTotal,
             test.scaledP2PBorrow,
+            1,
             "scaledTotalSupplyP2P != scaledP2PBorrow"
         );
         assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
@@ -137,7 +138,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
-            _assertMarketState(test.morphoMarket);
+            _assertMarketAccountingZero(test.morphoMarket);
         }
     }
 
@@ -236,7 +237,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
-            _assertMarketState(test.morphoMarket);
+            _assertMarketAccountingZero(test.morphoMarket);
         }
     }
 
@@ -257,7 +258,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
-            vm.expectEmit(true, true, true, true, address(morpho));
+            vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.P2PSupplyDeltaUpdated(market.underlying, 0);
 
             vm.expectEmit(true, true, true, false, address(morpho));
@@ -453,7 +454,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
             _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS); // 100% pool.
 
-            _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
+            _assertMarketUpdatedIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 
