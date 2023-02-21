@@ -214,6 +214,7 @@ contract ForkTest is BaseTest {
     }
 
     // @dev  Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
+    // https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/pool/PoolConfigurator.sol#L369-L376
     function _getLtvLt(address underlying, uint8 eModeCategoryId)
         internal
         view
@@ -223,13 +224,13 @@ contract ForkTest is BaseTest {
         for (uint256 i = 0; i < reserves.length; ++i) {
             DataTypes.ReserveConfigurationMap memory currentConfig = pool.getConfiguration(reserves[i]);
             if (eModeCategoryId == currentConfig.getEModeCategory() || underlying == reserves[i]) {
-                ltvBound = uint16(Math.max(ltvBound, ReserveConfiguration.getLtv(currentConfig)));
+                ltvBound = uint16(Math.max(ltvBound, currentConfig.getLtv()));
 
-                ltBound = uint16(Math.max(ltBound, ReserveConfiguration.getLiquidationThreshold(currentConfig)));
+                ltBound = uint16(Math.max(ltBound, currentConfig.getLiquidationThreshold()));
 
                 if (underlying == reserves[i]) {
-                    ltvConfig = uint16(ReserveConfiguration.getLtv(currentConfig));
-                    ltConfig = uint16(ReserveConfiguration.getLiquidationThreshold(currentConfig));
+                    ltvConfig = uint16(currentConfig.getLtv());
+                    ltConfig = uint16(currentConfig.getLiquidationThreshold());
                 }
             }
         }
