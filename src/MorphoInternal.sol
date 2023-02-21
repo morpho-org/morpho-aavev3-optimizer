@@ -236,7 +236,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
     /// @dev Returns the collateral data for a given set of inputs.
     function _totalCollateralData(Types.LiquidityVars memory vars)
-        internal
+        public
         view
         returns (uint256 collateral, uint256 borrowable, uint256 maxDebt)
     {
@@ -256,7 +256,7 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @dev The total debt data is computed iterating through all user's borrow assets.
     /// @param vars The liquidity variables.
     /// @return debt The total debt of `vars.user`.
-    function _totalDebt(Types.LiquidityVars memory vars) internal view returns (uint256 debt) {
+    function _totalDebt(Types.LiquidityVars memory vars) public view returns (uint256 debt) {
         address[] memory userBorrows = _userBorrows[vars.user].values();
 
         for (uint256 i; i < userBorrows.length; ++i) {
@@ -266,7 +266,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
     /// @dev Returns the collateral data for a given set of inputs.
     function _collateralData(address underlying, Types.LiquidityVars memory vars)
-        internal
+        public
         view
         returns (uint256 collateral, uint256 borrowable, uint256 maxDebt)
     {
@@ -285,7 +285,7 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param underlying The address of the underlying asset to borrow.
     /// @param vars The liquidity variables.
     /// @return debtValue The debt value of `vars.user` on the `underlying` market.
-    function _debt(address underlying, Types.LiquidityVars memory vars) internal view returns (uint256 debtValue) {
+    function _debt(address underlying, Types.LiquidityVars memory vars) public view returns (uint256 debtValue) {
         (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(underlying, vars);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
@@ -301,7 +301,7 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @return liquidationThreshold The liquidation threshold of the underlying asset.
     /// @return tokenUnit The token unit of the underlying asset.
     function _assetLiquidityData(address underlying, Types.LiquidityVars memory vars)
-        internal
+        public
         view
         returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit)
     {

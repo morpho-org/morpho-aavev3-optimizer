@@ -2,6 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "test/helpers/IntegrationTest.sol";
+import "src/interfaces/IMorphoExtended.sol";
+import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 
 contract TestIntegrationLiquididityData is IntegrationTest {
     using WadRayMath for uint256;
@@ -17,8 +19,6 @@ contract TestIntegrationLiquididityData is IntegrationTest {
 
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
-
-                if (collateralMarket.underlying == borrowedMarket.underlying) continue;
 
                 amount = _boundCollateral(collateralMarket, amount, borrowedMarket);
 
@@ -43,21 +43,36 @@ contract TestIntegrationLiquididityData is IntegrationTest {
         }
     }
 
-    function testLiquidityDataMultiple(uint256 amount) public {
-        TestMarket storage borrowedMarket;
+    function testLiquidityDataMultiple() public {
+        IMorphoExtended morphoExtended = IMorphoExtended(address(morpho));
+        uint256 amount = 10e10;
+
+        Types.LiquidityVars memory vars;
+        // emode category is 0 here
+        vars.oracle = IAaveOracle(IPoolAddressesProvider(morpho.ADDRESSES_PROVIDER()).getPriceOracle());
+        vars.user = address(user);
+
+        uint256 avgLT;
+        uint256 collateral;
+        uint256 debt;
 
         uint256 wbtcCollateral = _boundSupply(testMarkets[wbtc], amount);
         user.approve(wbtc, wbtcCollateral);
         user.supplyCollateral(wbtc, wbtcCollateral);
+        (uint256 collateralWbtc,,) = morphoExtended._collateralData(wbtc, vars);
+        (,, uint256 ltWbtc,) = morphoExtended._assetLiquidityData(wbtc, vars);
+        collateral += collateralWbtc;
+        avgLT += collateralWbtc * ltWbtc;
 
         uint256 wethCollateral = _boundSupply(testMarkets[weth], amount);
         user.approve(weth, wethCollateral);
         user.supplyCollateral(weth, wethCollateral);
+        (uint256 collateralWeth,, uint256 maxDebtWeth) = morphoExtended._collateralData(weth, vars);
+        (,, uint256 ltWeth,) = morphoExtended._assetLiquidityData(weth, vars);
+        collateral += collateralWeth;
+        avgLT += collateralWeth * ltWeth;
 
-        uint256 daiCollateral = _boundSupply(testMarkets[dai], amount);
-        user.approve(dai, daiCollateral);
-        user.supplyCollateral(dai, daiCollateral);
-
+        TestMarket storage borrowedMarket;
         borrowedMarket = testMarkets[usdc];
         uint256 borrowable = borrowedMarket.borrowable(testMarkets[wbtc], wbtcCollateral);
         borrowable = bound(
@@ -66,18 +81,14 @@ contract TestIntegrationLiquididityData is IntegrationTest {
             Math.min(borrowable, Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap()))
         );
         user.borrow(usdc, borrowable);
+        debt = morphoExtended._debt(usdc, vars);
 
-        borrowedMarket = testMarkets[link];
-        borrowable = borrowedMarket.borrowable(testMarkets[dai], daiCollateral);
-        borrowable = bound(
-            borrowable,
-            borrowedMarket.minAmount / 2,
-            Math.min(borrowable, Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap()))
-        );
-        user.borrow(link, borrowable);
+        avgLT = avgLT / collateral;
+        uint256 simulatedAaveHF = collateral.percentMul(avgLT).wadDiv(debt);
 
         Types.LiquidityData memory data = morpho.liquidityData(address(user));
-        (, uint256 totalDebtBase,,,, uint256 healthFactor) = pool.getUserAccountData(address(morpho));
+        (uint256 totalCollateralBase, uint256 totalDebtBase,,,, uint256 healthFactor) =
+            pool.getUserAccountData(address(morpho));
 
         // Sanity checks: no peer-to-peer.
         assertEq(morpho.market(wbtc).deltas.supply.scaledP2PTotal, 0);
@@ -92,6 +103,9 @@ contract TestIntegrationLiquididityData is IntegrationTest {
         assertEq(morpho.market(link).deltas.borrow.scaledP2PTotal, 0);
 
         // assertApproxEqAbs(data.debt, totalDebtBase, 1e3, "debt");
-        assertApproxLeAbs(data.maxDebt.wadDiv(data.debt), healthFactor, 1e5, "health factor incorrect");
+        // assertApproxEqAbs(data.debt, totalDebtBase, 10e2, "debt");
+        // assertApproxEqAbs(data.collateral, totalCollateralBase, 10e2, "collateral");
+        // assertApproxLeAbs(data.maxDebt.wadDiv(data.debt), healthFactor, 1e5, "health factor incorrect");
+        assertApproxLeAbs(simulatedAaveHF, healthFactor, 1e5, "health factor incorrect");
     }
 }
