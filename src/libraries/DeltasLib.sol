@@ -77,15 +77,25 @@ library DeltasLib {
     /// @notice Calculates & deducts the reserve fee to repay from the given amount, updating the total peer-to-peer amount.
     /// @dev Should only be called if amount or borrow delta is zero.
     /// @param amount The amount to repay/withdraw.
+    /// @param matchedBorrowDelta The amount of the borrow delta that was matched (in underlying units).
     /// @param indexes The current indexes.
     /// @return The new amount left to process.
-    function repayFee(Types.Deltas storage deltas, uint256 amount, Types.Indexes256 memory indexes)
-        internal
-        returns (uint256)
-    {
+    function repayFee(
+        Types.Deltas storage deltas,
+        uint256 amount,
+        uint256 matchedBorrowDelta,
+        Types.Indexes256 memory indexes
+    ) internal returns (uint256) {
+        // Update the P2P total first.
+        deltas.borrow.scaledP2PTotal =
+            deltas.borrow.scaledP2PTotal.zeroFloorSub(matchedBorrowDelta.rayDiv(indexes.borrow.p2pIndex));
+
+        // Early return if there's nothing to repay.
         if (amount == 0) return 0;
 
+        // Cache the P2P total for gas savings.
         uint256 scaledTotalBorrowP2P = deltas.borrow.scaledP2PTotal;
+
         // Fee = (borrow.totalScaledP2P - borrow.delta) - (supply.totalScaledP2P - supply.delta).
         uint256 feeToRepay = scaledTotalBorrowP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
             deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
