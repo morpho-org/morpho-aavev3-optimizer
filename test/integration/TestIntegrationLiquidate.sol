@@ -19,7 +19,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     }
 
     function testShouldNotLiquidateHealthyUser(address borrower, uint256 amount, uint256 toRepay) public {
-        vm.assume(borrower != address(0));
+        borrower = _boundAddressNotZero(borrower);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -49,7 +49,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 toRepay,
         uint256 indexShift
     ) public {
-        vm.assume(borrower != address(0));
+        borrower = _boundAddressNotZero(borrower);
         indexShift = bound(indexShift, 1, collateralUnderlyings.length - 1);
 
         LiquidateTest memory test;
@@ -103,7 +103,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 toRepay,
         uint256 indexShift
     ) public {
-        vm.assume(borrower != address(0));
+        borrower = _boundAddressNotZero(borrower);
         indexShift = bound(indexShift, 1, borrowableUnderlyings.length - 1);
 
         LiquidateTest memory test;
@@ -142,7 +142,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     }
 
     function testLiquidateUnhealthyUser(address borrower, uint256 amount, uint256 promoted, uint256 toRepay) public {
-        vm.assume(borrower != address(0));
+        borrower = _boundAddressNotZero(borrower);
 
         LiquidateTest memory test;
 
@@ -192,7 +192,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 toRepay,
         uint256 supplyCap
     ) public {
-        vm.assume(borrower != address(0));
+        borrower = _boundAddressNotZero(borrower);
 
         LiquidateTest memory test;
 
@@ -240,7 +240,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     }
 
     function testLiquidateUnhealthyUserWhenDemotedZero(address borrower, uint256 amount, uint256 toRepay) public {
-        vm.assume(borrower != address(0));
+        borrower = _boundAddressNotZero(borrower);
 
         LiquidateTest memory test;
 
@@ -288,7 +288,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     }
 
     function testLiquidateAnyUserOnDeprecatedMarket(address borrower, uint256 amount, uint256 toRepay) public {
-        vm.assume(borrower != address(0));
+        borrower = _boundAddressNotZero(borrower);
 
         LiquidateTest memory test;
 
@@ -334,7 +334,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     }
 
     function testShouldUpdateIndexesAfterLiquidate(address borrower, uint256 amount, uint256 toRepay) public {
-        vm.assume(borrower != address(0));
+        borrower = _boundAddressNotZero(borrower);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -371,7 +371,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testShouldRevertWhenCollateralMarketNotCreated(address underlying, address borrower, uint256 amount)
         public
     {
-        vm.assume(borrower != address(0));
+        borrower = _boundAddressNotZero(borrower);
         _assumeNotUnderlying(underlying);
 
         for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -385,7 +385,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     }
 
     function testShouldRevertWhenBorrowMarketNotCreated(address underlying, address borrower, uint256 amount) public {
-        vm.assume(borrower != address(0));
+        borrower = _boundAddressNotZero(borrower);
         _assumeNotUnderlying(underlying);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
@@ -399,7 +399,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     }
 
     function testShouldRevertWhenLiquidateCollateralIsPaused(address borrower, uint256 amount) public {
-        vm.assume(borrower != address(0));
+        borrower = _boundAddressNotZero(borrower);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -417,7 +417,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     }
 
     function testShouldRevertWhenLiquidateBorrowIsPaused(address borrower, uint256 amount) public {
-        vm.assume(borrower != address(0));
+        borrower = _boundAddressNotZero(borrower);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {

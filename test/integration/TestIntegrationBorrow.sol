@@ -117,7 +117,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         BorrowTest memory test;
 
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -146,7 +146,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         BorrowTest memory test;
 
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -180,7 +180,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         BorrowTest memory test;
 
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -213,7 +213,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         BorrowTest memory test;
 
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -245,7 +245,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         BorrowTest memory test;
 
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -283,7 +283,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         BorrowTest memory test;
 
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -335,7 +335,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         BorrowTest memory test;
 
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -378,7 +378,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         uint256 promoted
     ) public {
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -403,7 +403,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         public
     {
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -436,7 +436,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
     function testShouldUpdateIndexesAfterBorrow(uint256 amount, address onBehalf, address receiver) public {
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -460,7 +460,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
     function testShouldRevertBorrowZero(address onBehalf, address receiver) public {
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -470,7 +470,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
     function testShouldRevertBorrowOnBehalfZero(uint256 amount, address receiver) public {
         amount = _boundAmount(amount);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
@@ -500,7 +500,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -511,7 +511,7 @@ contract TestIntegrationBorrow is IntegrationTest {
     function testShouldRevertBorrowWhenBorrowPaused(uint256 amount, address onBehalf, address receiver) public {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
@@ -531,7 +531,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         vm.assume(onBehalf != address(user));
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);
@@ -541,7 +541,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
     function testShouldBorrowWhenEverythingElsePaused(uint256 amount, address onBehalf, address receiver) public {
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundAddressNotZero(receiver);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 

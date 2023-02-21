@@ -401,8 +401,8 @@ contract IntegrationTest is ForkTest {
         return onBehalf;
     }
 
-    function _boundAddressNotZero(address input) internal view override returns (address output) {
-        output = super._boundAddressNotZero(input);
+    function _boundReceiver(address input) internal view returns (address output) {
+        output = _boundAddressNotZero(input);
         // The Link contract cannot receive LINK tokens.
         vm.assume(output != link);
     }

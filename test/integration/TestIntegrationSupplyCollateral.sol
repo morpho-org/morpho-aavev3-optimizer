@@ -21,7 +21,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     function testShouldSupplyCollateral(uint256 amount, address onBehalf) public {
         SupplyCollateralTest memory test;
 
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
@@ -77,7 +77,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     function testShouldNotSupplyCollateralWhenSupplyCapExceeded(uint256 supplyCap, uint256 amount, address onBehalf)
         public
     {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
@@ -97,7 +97,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     }
 
     function testShouldUpdateIndexesAfterSupplyCollateral(uint256 amount, address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
@@ -120,7 +120,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     }
 
     function testShouldRevertSupplyCollateralZero(address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -143,7 +143,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         _assumeNotUnderlying(underlying);
 
         amount = _boundAmount(amount);
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user.supplyCollateral(underlying, amount, onBehalf);
@@ -151,7 +151,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
     function testShouldRevertSupplyCollateralWhenSupplyCollateralPaused(uint256 amount, address onBehalf) public {
         amount = _boundAmount(amount);
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
@@ -166,7 +166,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     }
 
     function testShouldSupplyCollateralWhenEverythingElsePaused(uint256 amount, address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         morpho.setIsPausedForAllMarkets(true);
 

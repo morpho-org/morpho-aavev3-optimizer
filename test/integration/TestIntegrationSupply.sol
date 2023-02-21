@@ -120,7 +120,7 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldSupplyPoolOnly(uint256 amount, address onBehalf) public {
         SupplyTest memory test;
 
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
@@ -151,7 +151,7 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldSupplyP2POnly(uint256 supplyCap, uint256 amount, address onBehalf) public {
         SupplyTest memory test;
 
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
@@ -187,7 +187,7 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldSupplyPoolWhenP2PDisabled(uint256 amount, address onBehalf) public {
         SupplyTest memory test;
 
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
@@ -220,7 +220,7 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldSupplyP2PWhenBorrowDelta(uint256 amount, address onBehalf) public {
         SupplyTest memory test;
 
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
@@ -254,7 +254,7 @@ contract TestIntegrationSupply is IntegrationTest {
     {
         SupplyTest memory test;
 
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
@@ -303,7 +303,7 @@ contract TestIntegrationSupply is IntegrationTest {
         uint256 supplyCap,
         uint256 promoted
     ) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
@@ -325,7 +325,7 @@ contract TestIntegrationSupply is IntegrationTest {
     }
 
     function testShouldUpdateIndexesAfterSupply(uint256 amount, address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
@@ -348,7 +348,7 @@ contract TestIntegrationSupply is IntegrationTest {
     }
 
     function testShouldRevertSupplyZero(address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -369,7 +369,7 @@ contract TestIntegrationSupply is IntegrationTest {
         _assumeNotUnderlying(underlying);
 
         amount = _boundAmount(amount);
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user.supply(underlying, amount, onBehalf);
@@ -377,7 +377,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
     function testShouldRevertSupplyWhenSupplyPaused(uint256 amount, address onBehalf) public {
         amount = _boundAmount(amount);
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
@@ -392,7 +392,7 @@ contract TestIntegrationSupply is IntegrationTest {
     }
 
     function testShouldSupplyWhenEverythingElsePaused(uint256 amount, address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         morpho.setIsPausedForAllMarkets(true);
 
