@@ -63,7 +63,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.SupplyRepayVars memory vars = _executeSupply(underlying, amount, from, onBehalf, maxIterations, indexes);
 
-        _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
+        _POOL.repayToPool(underlying, vars.toRepay);
         _POOL.supplyToPool(underlying, vars.toSupply);
 
         return amount;
@@ -146,7 +146,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.SupplyRepayVars memory vars =
             _executeRepay(underlying, amount, repayer, onBehalf, _defaultIterations.repay, indexes);
 
-        _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
+        _POOL.repayToPool(underlying, vars.toRepay);
         _POOL.supplyToPool(underlying, vars.toSupply);
 
         return amount;
@@ -256,7 +256,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
             underlyingCollateral, vars.seized, borrower, liquidator, collateralIndexes.supply.poolIndex
         );
 
-        _POOL.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, repayVars.toRepay);
+        _POOL.repayToPool(underlyingBorrowed, repayVars.toRepay);
         _POOL.supplyToPool(underlyingBorrowed, repayVars.toSupply);
         _POOL.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.seized);
 

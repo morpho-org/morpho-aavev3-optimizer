@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import {IAToken} from "../interfaces/aave/IAToken.sol";
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
+import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";
 
 import {Constants} from "./Constants.sol";
 
@@ -26,10 +27,16 @@ library PoolLib {
         pool.borrow(underlying, amount, Constants.VARIABLE_INTEREST_MODE, Constants.NO_REFERRAL_CODE, address(this));
     }
 
-    function repayToPool(IPool pool, address underlying, address variableDebtToken, uint256 amount) internal {
-        if (amount == 0 || IVariableDebtToken(variableDebtToken).scaledBalanceOf(address(this)) == 0) return;
+    function repayToPool(IPool pool, address underlying, uint256 amount) internal {
+        if (amount == 0) return;
 
-        pool.repay(underlying, amount, Constants.VARIABLE_INTEREST_MODE, address(this)); // Reverts if debt is 0.
+        try pool.repay(underlying, amount, Constants.VARIABLE_INTEREST_MODE, address(this)) {}
+        catch Error(string memory reason) {
+            require(
+                keccak256(abi.encodePacked(reason)) == keccak256(abi.encodePacked(AaveErrors.NO_DEBT_OF_SELECTED_TYPE)),
+                reason
+            );
+        }
     }
 
     function withdrawFromPool(IPool pool, address underlying, address aToken, uint256 amount) internal {
