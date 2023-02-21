@@ -304,8 +304,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             market.deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
         vars.toRepay += matchedBorrowDelta;
 
+        // Updates the P2P total for the repay fee calulation. Events are emitted in the decreaseP2P step.
+        market.deltas.borrow.scaledP2PTotal =
+            market.deltas.borrow.scaledP2PTotal.zeroFloorSub(matchedBorrowDelta.rayDiv(indexes.borrow.p2pIndex));
+
         // Repay the fee.
-        amount = market.deltas.repayFee(amount, matchedBorrowDelta, indexes);
+        amount = market.deltas.repayFee(amount, indexes);
 
         /* Transfer repay */
 

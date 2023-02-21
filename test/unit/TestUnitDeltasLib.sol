@@ -136,59 +136,39 @@ contract TestUnitDeltasLib is Test {
         assertEq(deltas.borrow.scaledP2PTotal, totalP2PBorrow.zeroFloorSub(demoted.rayDiv(indexes.borrow.p2pIndex)));
     }
 
-    function testRepayFeeShouldReturnZeroIfAmountIsZero(
-        uint256 totalP2PSupply,
-        uint256 totalP2PBorrow,
-        uint256 matchedBorrowDelta
-    ) public {
+    function testRepayFeeShouldReturnZeroIfAmountIsZero(uint256 totalP2PSupply, uint256 totalP2PBorrow) public {
         totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
         totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
-        matchedBorrowDelta = bound(matchedBorrowDelta, 0, MAX_AMOUNT);
         uint256 amount = 0;
         deltas.supply.scaledP2PTotal = totalP2PSupply;
         deltas.borrow.scaledP2PTotal = totalP2PBorrow;
-        uint256 fee = DeltasLib.repayFee(deltas, amount, matchedBorrowDelta, indexes);
+        uint256 fee = DeltasLib.repayFee(deltas, amount, indexes);
         assertEq(fee, 0);
         assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply);
-        assertEq(
-            deltas.borrow.scaledP2PTotal,
-            totalP2PBorrow.zeroFloorSub(matchedBorrowDelta.rayDiv(indexes.borrow.p2pIndex))
-        );
+        assertEq(deltas.borrow.scaledP2PTotal, totalP2PBorrow);
     }
 
-    function testRepayFee(
-        uint256 amount,
-        uint256 totalP2PSupply,
-        uint256 totalP2PBorrow,
-        uint256 matchedBorrowDelta,
-        uint256 supplyDelta
-    ) public {
+    function testRepayFee(uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow, uint256 supplyDelta) public {
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
         totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT).rayDiv(indexes.supply.p2pIndex);
         totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT).rayDiv(indexes.borrow.p2pIndex);
         supplyDelta =
             bound(supplyDelta, 0, totalP2PSupply).rayMul(indexes.supply.p2pIndex).rayDiv(indexes.supply.poolIndex);
-        matchedBorrowDelta = bound(matchedBorrowDelta, 0, totalP2PBorrow.rayMul(indexes.borrow.p2pIndex));
 
         deltas.supply.scaledP2PTotal = totalP2PSupply;
         deltas.borrow.scaledP2PTotal = totalP2PBorrow;
         deltas.supply.scaledDelta = supplyDelta;
 
-        uint256 expectedBorrowDeltaInP2PUnits = matchedBorrowDelta.rayDiv(indexes.borrow.p2pIndex);
-
-        uint256 expectedFee = (totalP2PBorrow - expectedBorrowDeltaInP2PUnits).rayMul(indexes.borrow.p2pIndex)
-            .zeroFloorSub(
+        uint256 expectedFee = (totalP2PBorrow).rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
             totalP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(supplyDelta.rayMul(indexes.supply.poolIndex))
         );
         expectedFee = Math.min(amount, expectedFee);
-        uint256 toProcess = DeltasLib.repayFee(deltas, amount, matchedBorrowDelta, indexes);
+        uint256 toProcess = DeltasLib.repayFee(deltas, amount, indexes);
         assertEq(toProcess, amount - expectedFee, "expected fee");
         assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply, "supply total");
         assertEq(
             deltas.borrow.scaledP2PTotal,
-            totalP2PBorrow.zeroFloorSub(
-                matchedBorrowDelta.rayDiv(indexes.borrow.p2pIndex) + expectedFee.rayDivDown(indexes.borrow.p2pIndex)
-            ),
+            totalP2PBorrow.zeroFloorSub(expectedFee.rayDivDown(indexes.borrow.p2pIndex)),
             "borrow total"
         );
     }
