@@ -165,9 +165,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         if (borrower == address(0)) revert Errors.AddressIsZero();
 
-        if (!borrowMarket.isCreated() || !collateralMarket.isCreated()) {
-            revert Errors.MarketNotCreated();
-        }
+        if (!borrowMarket.isCreated() || !collateralMarket.isCreated()) revert Errors.MarketNotCreated();
         if (collateralMarket.isLiquidateCollateralPaused()) revert Errors.LiquidateCollateralIsPaused();
         if (borrowMarket.isLiquidateBorrowPaused()) revert Errors.LiquidateBorrowIsPaused();
     }
