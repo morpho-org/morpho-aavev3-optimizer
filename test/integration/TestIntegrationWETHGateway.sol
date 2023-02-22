@@ -17,6 +17,12 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         wethGateway = new WETHGateway(address(morpho));
     }
 
+    /// @dev Assumes the receiver is able to receive ETH without reverting.
+    function _assumeReceiver(address receiver) internal {
+        (bool success,) = receiver.call("");
+        vm.assume(success);
+    }
+
     function invariantWETHAllowance() public {
         assertEq(ERC20(weth).allowance(address(wethGateway), address(morpho)), type(uint256).max);
     }
@@ -76,6 +82,8 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testWithdrawETH(uint256 amount, uint256 toWithdraw, address receiver) public {
+        _assumeReceiver(receiver);
+
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
         toWithdraw = bound(toWithdraw, 1, amount);
         deal(address(this), amount);
@@ -104,6 +112,8 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testWithdrawCollateralETH(uint256 amount, uint256 toWithdraw, address receiver) public {
+        _assumeReceiver(receiver);
+
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
         toWithdraw = bound(toWithdraw, 1, amount);
         deal(address(this), amount);
@@ -135,6 +145,8 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testBorrowETH(uint256 amount, address receiver) public {
+        _assumeReceiver(receiver);
+
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
         deal(address(this), amount);
 
