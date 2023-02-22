@@ -5,7 +5,7 @@ import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationMorphoSetters is IntegrationTest {
     function testSetIsClaimRewardsPausedRevertIfCallerNotOwner(address caller, bool isPaused) public {
-        vm.assume(caller != Morpho(address(morpho)).owner());
+        vm.assume(caller != address(this));
 
         vm.startPrank(caller);
         vm.expectRevert("Ownable: caller is not the owner");
