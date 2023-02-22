@@ -398,7 +398,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
-    function testShouldRevertWhenLiquidateCollateralIsPaused(address borrower, uint256 amount) public {
+    function testShouldRevertWhenLiquidateBorrowIsPaused(address borrower, uint256 amount) public {
         borrower = _boundAddressNotZero(borrower);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
@@ -416,7 +416,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
-    function testShouldRevertWhenLiquidateBorrowIsPaused(address borrower, uint256 amount) public {
+    function testShouldRevertWhenLiquidateCollateralIsPaused(address borrower, uint256 amount) public {
         borrower = _boundAddressNotZero(borrower);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
