@@ -65,7 +65,7 @@ contract ForkTest is BaseTest {
     PoolAdminMock internal poolAdmin;
     PriceOracleSentinelMock oracleSentinel;
 
-    uint256 snapshotId = type(uint256).max;
+    uint256 internal snapshotId = type(uint256).max;
 
     constructor() {
         _initConfig();

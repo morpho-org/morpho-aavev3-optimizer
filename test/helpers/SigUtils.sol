@@ -18,6 +18,11 @@ contract SigUtils {
         DOMAIN_SEPARATOR = _DOMAIN_SEPARATOR;
     }
 
+    /// @dev Computes the hash of the fully encoded EIP-712 message for the domain, which can be used to recover the signer
+    function getTypedDataHash(Authorization memory authorization) public view returns (bytes32) {
+        return keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, getStructHash(authorization)));
+    }
+
     function getStructHash(Authorization memory authorization) internal pure returns (bytes32) {
         return keccak256(
             abi.encode(
@@ -29,10 +34,5 @@ contract SigUtils {
                 authorization.deadline
             )
         );
-    }
-
-    // @dev Computes the hash of the fully encoded EIP-712 message for the domain, which can be used to recover the signer
-    function getTypedDataHash(Authorization memory authorization) public view returns (bytes32) {
-        return keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, getStructHash(authorization)));
     }
 }
