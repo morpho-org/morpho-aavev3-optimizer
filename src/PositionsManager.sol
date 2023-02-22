@@ -246,7 +246,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
             underlyingBorrowed, underlyingCollateral, amount, borrower, collateralIndexes.supply.poolIndex
         );
 
-        if (amount == 0) return (0, 0);
+        if (amount == 0) revert Errors.AmountIsZero();
 
         ERC20Permit2(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
 
