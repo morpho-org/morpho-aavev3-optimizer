@@ -11,6 +11,7 @@ import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.s
 
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
+import {RewardsManagerMock} from "test/mocks/RewardsManagerMock.sol";
 import {UserMock} from "test/mocks/UserMock.sol";
 import "./ForkTest.sol";
 
@@ -36,6 +37,8 @@ contract IntegrationTest is ForkTest {
 
     Morpho internal morphoImpl;
     TransparentUpgradeableProxy internal morphoProxy;
+
+    RewardsManagerMock internal rewardsManagerMock;
 
     UserMock internal user;
     UserMock internal promoter1;
@@ -91,6 +94,8 @@ contract IntegrationTest is ForkTest {
         morpho = Morpho(payable(address(morphoProxy)));
 
         morpho.initialize(address(positionsManager), Types.Iterations({repay: 10, withdraw: 10}));
+
+        rewardsManagerMock = new RewardsManagerMock();
     }
 
     function _initUser() internal returns (UserMock newUser) {
