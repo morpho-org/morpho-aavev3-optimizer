@@ -128,7 +128,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @notice Implements the repay logic.
     /// @param underlying The address of the underlying asset to borrow.
     /// @param amount The amount of `underlying` to repay.
-    /// @param repayer The address that repays the underlying
+    /// @param repayer The address that repays the underlying.
     /// @param onBehalf The address whose position will be repaid.
     /// @return The amount repaid.
     function repayLogic(address underlying, uint256 amount, address repayer, address onBehalf)
