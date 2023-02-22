@@ -20,6 +20,7 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {UserConfiguration} from "@aave-v3-core/protocol/libraries/configuration/UserConfiguration.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
@@ -43,6 +44,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using EnumerableSet for EnumerableSet.AddressSet;
     using LogarithmicBuckets for LogarithmicBuckets.Buckets;
 
+    using UserConfiguration for DataTypes.UserConfigurationMap;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /// @dev Validates the manager's permission.
@@ -170,6 +172,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         if (collateralMarket.isLiquidateCollateralPaused()) revert Errors.LiquidateCollateralIsPaused();
         if (borrowMarket.isLiquidateBorrowPaused()) revert Errors.LiquidateBorrowIsPaused();
+
+        if (
+            _POOL.getConfiguration(underlyingCollateral).getLiquidationThreshold() == 0
+                || _POOL.getUserConfiguration(address(this)).isUsingAsCollateral(
+                    _POOL.getReserveData(underlyingCollateral).id
+                )
+        ) {
+            revert Errors.AssetNotUsedAsCollateral();
+        }
 
         if (borrowMarket.isDeprecated()) return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
 

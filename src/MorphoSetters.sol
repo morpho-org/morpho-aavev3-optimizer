@@ -74,6 +74,12 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         emit Events.TreasuryVaultSet(treasuryVault);
     }
 
+    /// @notice Sets the `underlying` asset as collateral or not.
+    /// @dev Note that it is possible to set an asset whose market is not created yet on the protocol.
+    function setAssetAsCollateral(address underlying, bool isCollateral) external onlyOwner {
+        _POOL.setUserUseReserveAsCollateral(underlying, isCollateral);
+    }
+
     /// @notice Sets the `underlying`'s reserve factor to `newReserveFactor` (in bps).
     function setReserveFactor(address underlying, uint16 newReserveFactor)
         external
