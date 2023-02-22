@@ -29,12 +29,12 @@ contract IntegrationTest is ForkTest {
     uint256 internal constant MIN_USD_AMOUNT = 0.01e8; // 0.01$
     uint256 internal constant MAX_USD_AMOUNT = 500_000_000e8; // 500m$
 
-    IMorpho internal morpho;
+    Morpho internal morpho;
     IPositionsManager internal positionsManager;
 
     ProxyAdmin internal proxyAdmin;
 
-    IMorpho internal morphoImpl;
+    Morpho internal morphoImpl;
     TransparentUpgradeableProxy internal morphoProxy;
 
     UserMock internal user;
