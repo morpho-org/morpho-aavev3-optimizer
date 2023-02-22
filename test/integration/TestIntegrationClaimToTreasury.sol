@@ -33,7 +33,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
         uint256 lengthUnderlyings;
 
         for (uint256 i = 0; i < marketsNotCreated.length; ++i) {
-            if (morpho.market(marketNotCreated[i]).aToken == address(0)) {
+            if (morpho.market(marketsNotCreated[i]).aToken == address(0)) {
                 underlyings[lengthUnderlyings] = marketsNotCreated[i];
                 deal(marketsNotCreated[i], address(morpho), amounts[lengthUnderlyings]);
                 ++lengthUnderlyings;
