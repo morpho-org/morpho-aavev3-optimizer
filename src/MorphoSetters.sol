@@ -74,10 +74,19 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         emit Events.TreasuryVaultSet(treasuryVault);
     }
 
-    /// @notice Sets the `underlying` asset as collateral or not.
+    /// @notice Sets the `underlying` asset as collateral or not on the pool.
     /// @dev Note that it is possible to set an asset whose market is not created yet on the protocol.
-    function setAssetAsCollateral(address underlying, bool isCollateral) external onlyOwner {
+    function setAssetIsCollateralOnPool(address underlying, bool isCollateral) external onlyOwner {
         _POOL.setUserUseReserveAsCollateral(underlying, isCollateral);
+        if (!isCollateral && _market[underlying].isCreated()) _market[underlying].setAssetIsCollateral(isCollateral);
+    }
+
+    function setAssetIsCollateral(address underlying, bool isCollateral)
+        external
+        onlyOwner
+        isMarketCreated(underlying)
+    {
+        _market[underlying].setAssetIsCollateral(isCollateral);
     }
 
     /// @notice Sets the `underlying`'s reserve factor to `newReserveFactor` (in bps).

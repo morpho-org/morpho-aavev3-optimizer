@@ -101,7 +101,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.validateSupplyCollateral(dai, 1, address(1));
     }
 
-    function testValidateSupplyCollateral() public view {
+    function testValidateSupplyCollateral() public {
+        _market[dai].isCollateral = true;
         this.validateSupplyCollateral(dai, 1, address(1));
     }
 
@@ -195,6 +196,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfDeprecatedBorrow() public {
+        _market[dai].isCollateral = true;
         _userCollaterals[address(this)].add(dai);
         _userBorrows[address(this)].add(dai);
         _market[dai].pauseStatuses.isDeprecated = true;
@@ -203,6 +205,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldRevertIfSentinelDisallows() public {
+        _market[dai].isCollateral = true;
+
         uint256 amount = 1e18;
         (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
@@ -221,6 +225,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldRevertIfBorrowerHealthy() public {
+        _market[dai].isCollateral = true;
+
         uint256 amount = 1e18;
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
@@ -234,6 +240,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfBelowMinThreshold(uint256 amount) public {
+        _market[dai].isCollateral = true;
+
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
         (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
@@ -250,6 +258,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldReturnDefaultCloseFactorIfAboveMinThreshold(uint256 amount) public {
+        _market[dai].isCollateral = true;
+
         // Min amount needs to be high enough to have a precise enough price for this test
         amount = bound(amount, 1e12, MAX_AMOUNT);
         (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();

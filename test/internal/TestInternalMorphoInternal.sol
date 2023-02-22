@@ -278,6 +278,8 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
     function testLiquidityDataCollateral(uint256 amount) public {
         amount = bound(amount, 0, 1_000_000 ether);
 
+        _market[dai].isCollateral = true;
+
         _marketBalances[dai].collateral[address(1)] = amount.rayDivUp(_market[dai].indexes.supply.poolIndex);
 
         DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
