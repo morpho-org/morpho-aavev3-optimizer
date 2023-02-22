@@ -68,7 +68,7 @@ contract TestIntegrationMarketIdle is IntegrationTest {
         DataTypes.ReserveData memory reserve = pool.getReserveData(dai);
         Types.Indexes256 memory indexes = morpho.updatedIndexes(dai);
 
-        // Cannot check data in this case because there can be a roudning error in the idle supply by 1. See note below.
+        // Cannot check data in this case because there can be a rounding error in the idle supply by 1. See note below.
         vm.expectEmit(true, true, true, false);
         emit Events.IdleSupplyUpdated(testMarket.underlying, _market.idleSupply + expectedIdleIncrease);
 

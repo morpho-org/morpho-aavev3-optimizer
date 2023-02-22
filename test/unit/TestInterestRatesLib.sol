@@ -269,7 +269,7 @@ contract TestUnitInterestRatesLib is BaseTest {
         assertGe(actualP2PIndex, MIN_INDEX, "too low p2pIndex");
     }
 
-    function testComputeP2PIndexNonZeroDeltaNonZeroP2P(
+    function testComputeP2PIndexNonZeroDeltaZeroProportionIdleNonZeroP2P(
         uint256 poolGrowthFactor,
         uint256 p2pGrowthFactor,
         uint256 lastPoolIndex,
