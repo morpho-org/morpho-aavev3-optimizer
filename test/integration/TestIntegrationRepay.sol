@@ -8,10 +8,6 @@ contract TestIntegrationRepay is IntegrationTest {
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
 
-    function _boundAmount(uint256 amount) internal view returns (uint256) {
-        return bound(amount, 1, type(uint256).max);
-    }
-
     struct RepayTest {
         uint256 borrowed;
         uint256 repaid;
@@ -26,7 +22,7 @@ contract TestIntegrationRepay is IntegrationTest {
     function testShouldRepayPoolOnly(uint256 amount, address onBehalf) public {
         RepayTest memory test;
 
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
@@ -37,8 +33,7 @@ contract TestIntegrationRepay is IntegrationTest {
             uint256 promoted = _promoteBorrow(promoter1, market, test.borrowed.percentMul(50_00)); // 50% peer-to-peer.
             amount = test.borrowed - promoted;
 
-            _borrowNoCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+            _borrowWithoutCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
 
             test.balanceBefore = user.balanceOf(market.underlying);
             test.morphoSupplyBefore = market.supplyOf(address(morpho));
@@ -102,7 +97,7 @@ contract TestIntegrationRepay is IntegrationTest {
     function testShouldRepayAllBorrow(uint256 amount, address onBehalf) public {
         RepayTest memory test;
 
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
@@ -113,8 +108,7 @@ contract TestIntegrationRepay is IntegrationTest {
             uint256 promoted = _promoteBorrow(promoter1, market, test.borrowed.percentMul(50_00)); // 50% peer-to-peer.
             amount = bound(amount, test.borrowed + 1, type(uint256).max);
 
-            _borrowNoCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+            _borrowWithoutCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
 
             test.balanceBefore = user.balanceOf(market.underlying);
             test.morphoSupplyBefore = market.supplyOf(address(morpho));
@@ -183,7 +177,7 @@ contract TestIntegrationRepay is IntegrationTest {
     {
         RepayTest memory test;
 
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
@@ -194,8 +188,7 @@ contract TestIntegrationRepay is IntegrationTest {
             test.borrowed = _promoteBorrow(promoter1, market, test.borrowed); // 100% peer-to-peer.
             amount = bound(amount, test.borrowed + 1, type(uint256).max);
 
-            _borrowNoCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+            _borrowWithoutCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
 
             supplyCap = _boundSupplyCapExceeded(market, test.borrowed, supplyCap);
             _setSupplyCap(market, supplyCap);
@@ -229,8 +222,11 @@ contract TestIntegrationRepay is IntegrationTest {
 
             // Assert Morpho getters.
             assertEq(morpho.borrowBalance(market.underlying, onBehalf), 0, "borrow != 0");
-            assertEq(
-                morpho.supplyBalance(market.underlying, address(promoter1)), test.borrowed, "promoterSupply != borrowed"
+            assertApproxEqAbs(
+                morpho.supplyBalance(market.underlying, address(promoter1)),
+                test.borrowed,
+                2,
+                "promoterSupply != borrowed"
             );
 
             // Assert Morpho's position on pool.
@@ -262,14 +258,14 @@ contract TestIntegrationRepay is IntegrationTest {
             );
             assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
             assertEq(test.morphoMarket.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
-            assertApproxGeAbs(test.morphoMarket.idleSupply, test.borrowed, 1, "idleSupply != borrowed");
+            assertApproxEqAbs(test.morphoMarket.idleSupply, test.borrowed, 1, "idleSupply != borrowed");
         }
     }
 
     function testShouldRepayAllP2PBorrowWhenDemotedZero(uint256 amount, address onBehalf) public {
         RepayTest memory test;
 
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
@@ -280,8 +276,7 @@ contract TestIntegrationRepay is IntegrationTest {
             test.borrowed = _promoteBorrow(promoter1, market, test.borrowed); // 100% peer-to-peer.
             amount = bound(amount, test.borrowed + 1, type(uint256).max);
 
-            _borrowNoCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+            _borrowWithoutCollateral(onBehalf, market, test.borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
 
             // Set the max iterations to 0 upon repay to skip demotion and fallback to supply delta.
             morpho.setDefaultIterations(Types.Iterations({repay: 0, withdraw: 10}));
@@ -319,8 +314,11 @@ contract TestIntegrationRepay is IntegrationTest {
 
             // Assert Morpho getters.
             assertEq(morpho.borrowBalance(market.underlying, onBehalf), 0, "borrow != 0");
-            assertEq(
-                morpho.supplyBalance(market.underlying, address(promoter1)), test.borrowed, "promoterSupply != borrowed"
+            assertApproxEqAbs(
+                morpho.supplyBalance(market.underlying, address(promoter1)),
+                test.borrowed,
+                2,
+                "promoterSupply != borrowed"
             );
 
             // Assert Morpho's position on pool.
@@ -343,15 +341,16 @@ contract TestIntegrationRepay is IntegrationTest {
             );
 
             // Assert Morpho's market state.
-            assertApproxGeAbs(
+            assertApproxEqAbs(
                 test.morphoMarket.deltas.supply.scaledDelta.rayMul(test.indexes.supply.poolIndex),
                 test.borrowed,
                 1,
                 "supplyDelta != borrowed"
             );
-            assertEq(
+            assertApproxEqAbs(
                 test.morphoMarket.deltas.supply.scaledP2PTotal.rayMul(test.indexes.supply.p2pIndex),
                 test.borrowed,
+                1,
                 "totalSupplyP2P != borrowed"
             );
             assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
@@ -360,8 +359,38 @@ contract TestIntegrationRepay is IntegrationTest {
         }
     }
 
+    function testShouldUpdateIndexesAfterRepay(uint256 amount, address onBehalf, address receiver) public {
+        RepayTest memory test;
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+
+            amount = _boundBorrow(market, amount);
+
+            _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS); // 100% pool.
+            vm.warp(block.timestamp + 1);
+
+            Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
+
+            user.approve(market.underlying, type(uint256).max);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
+
+            test.repaid = user.repay(market.underlying, type(uint256).max, onBehalf);
+
+            _assertMarketUpdatedIndexes(morpho.market(market.underlying), futureIndexes);
+        }
+    }
+
     function testShouldRevertRepayZero(address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -379,12 +408,10 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldRevertRepayWhenMarketNotCreated(address underlying, uint256 amount, address onBehalf) public {
-        for (uint256 i; i < allUnderlyings.length; ++i) {
-            vm.assume(underlying != allUnderlyings[i]);
-        }
+        _assumeNotUnderlying(underlying);
 
         amount = _boundAmount(amount);
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user.repay(underlying, amount, onBehalf);
@@ -392,7 +419,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
     function testShouldRevertRepayWhenRepayPaused(uint256 amount, address onBehalf) public {
         amount = _boundAmount(amount);
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
@@ -408,7 +435,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
     function testShouldRepayWhenEverythingElsePaused(uint256 borrowed, uint256 amount, address onBehalf) public {
         amount = _boundAmount(amount);
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
@@ -417,8 +444,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
             borrowed = _boundBorrow(market, borrowed);
 
-            _borrowNoCollateral(onBehalf, market, borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+            _borrowWithoutCollateral(onBehalf, market, borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
 
             morpho.setIsPausedForAllMarkets(true);
             morpho.setIsRepayPaused(market.underlying, false);

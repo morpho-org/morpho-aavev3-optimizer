@@ -20,7 +20,7 @@ contract TestIntegrationGetters is IntegrationTest {
             user.approve(market.underlying, supplied);
             user.supply(market.underlying, supplied);
             if (market.isBorrowable) {
-                _borrowNoCollateral(
+                _borrowWithoutCollateral(
                     address(user), market, supplied, address(user), address(user), DEFAULT_MAX_ITERATIONS
                 );
             }
@@ -57,7 +57,7 @@ contract TestIntegrationGetters is IntegrationTest {
             user.approve(market.underlying, supplied);
             user.supply(market.underlying, supplied);
             if (market.isBorrowable) {
-                _borrowNoCollateral(
+                _borrowWithoutCollateral(
                     address(user), market, supplied, address(user), address(user), DEFAULT_MAX_ITERATIONS
                 );
             }

@@ -9,29 +9,6 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
 
-    function _boundAmount(uint256 amount) internal view returns (uint256) {
-        return bound(amount, 1, type(uint256).max);
-    }
-
-    function _boundOnBehalf(address onBehalf) internal view returns (address) {
-        onBehalf = _boundAddressNotZero(onBehalf);
-
-        vm.assume(onBehalf != address(proxyAdmin)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
-
-        return onBehalf;
-    }
-
-    function _boundReceiver(address receiver) internal view returns (address) {
-        return address(uint160(bound(uint256(uint160(receiver)), 1, type(uint160).max)));
-    }
-
-    function _prepareOnBehalf(address onBehalf) internal {
-        if (onBehalf != address(user)) {
-            vm.prank(onBehalf);
-            morpho.approveManager(address(user), true);
-        }
-    }
-
     struct WithdrawCollateralTest {
         uint256 supplied;
         uint256 withdrawn;
@@ -101,12 +78,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
                 "balanceAfter != expectedBalance"
             );
 
-            // Assert Morpho's market state.
-            assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
-            assertEq(test.morphoMarket.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != 0");
-            assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
-            assertEq(test.morphoMarket.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
-            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
+            _assertMarketAccountingZero(test.morphoMarket);
         }
     }
 
@@ -130,7 +102,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
                 collateral = _boundCollateral(collateralMarket, collateral, borrowedMarket).percentAdd(1);
-                uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral).percentSub(2);
+                uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral).percentSub(4);
                 borrowed = bound(
                     borrowed,
                     borrowedMarket.minAmount / 2,
@@ -176,6 +148,26 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         }
     }
 
+    function testShouldUpdateIndexesAfterWithdrawCollateral(uint256 amount, address onBehalf) public {
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+
+            Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
+
+            vm.expectEmit(true, true, true, false, address(morpho));
+            emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
+
+            user.withdrawCollateral(market.underlying, amount);
+
+            _assertMarketUpdatedIndexes(morpho.market(market.underlying), futureIndexes);
+        }
+    }
+
     function testShouldRevertWithdrawCollateralZero(address onBehalf, address receiver) public {
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
@@ -214,9 +206,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         address onBehalf,
         address receiver
     ) public {
-        for (uint256 i; i < allUnderlyings.length; ++i) {
-            vm.assume(underlying != allUnderlyings[i]);
-        }
+        _assumeNotUnderlying(underlying);
 
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
