@@ -132,11 +132,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 address borrowedUnderlying =
                     borrowableUnderlyings[(borrowedIndex + indexShift) % borrowableUnderlyings.length];
 
-                (test.repaid, test.seized) =
-                    user.liquidate(borrowedUnderlying, collateralMarket.underlying, borrower, toRepay);
-
-                assertEq(test.repaid, 0);
-                assertEq(test.seized, 0);
+                vm.expectRevert(Errors.AmountIsZero.selector);
+                user.liquidate(borrowedUnderlying, collateralMarket.underlying, borrower, toRepay);
             }
         }
     }
