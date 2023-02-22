@@ -26,7 +26,7 @@ contract IntegrationTest is ForkTest {
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
 
     // AaveV3 base currency is USD, 8 decimals on all L2s.
-    uint256 internal constant MIN_USD_AMOUNT = 0.01e8; // 0.01$
+    uint256 internal constant MIN_USD_AMOUNT = 10e8; // 10$
     uint256 internal constant MAX_USD_AMOUNT = 500_000_000e8; // 500m$
 
     IMorpho internal morpho;
@@ -173,7 +173,7 @@ contract IntegrationTest is ForkTest {
 
     modifier bypassSupplyCap(TestMarket storage market, uint256 amount) {
         uint256 supplyCapBefore = market.supplyCap;
-        bool disableSupplyCap = amount <= type(uint256).max - supplyCapBefore;
+        bool disableSupplyCap = amount < type(uint256).max - supplyCapBefore;
         if (disableSupplyCap) _setSupplyCap(market, 0);
 
         _;
@@ -243,6 +243,25 @@ contract IntegrationTest is ForkTest {
         );
     }
 
+    /// @dev Borrows from `user` on behalf of `onBehalf`, with collateral.
+    function _borrowWithCollateral(
+        address borrower,
+        TestMarket storage collateralMarket,
+        TestMarket storage borrowedMarket,
+        uint256 amount,
+        address onBehalf,
+        address receiver,
+        uint256 maxIterations
+    ) internal returns (uint256 supplied, uint256 borrowed) {
+        vm.startPrank(borrower);
+        uint256 collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount);
+        deal(collateralMarket.underlying, borrower, collateral);
+        ERC20(collateralMarket.underlying).approve(address(morpho), collateral);
+        supplied = morpho.supplyCollateral(collateralMarket.underlying, collateral, borrower);
+        borrowed = morpho.borrow(borrowedMarket.underlying, amount, onBehalf, receiver, maxIterations);
+        vm.stopPrank();
+    }
+
     /// @dev Borrows from `user` on behalf of `onBehalf`, without collateral.
     function _borrowWithoutCollateral(
         address borrower,
@@ -291,6 +310,7 @@ contract IntegrationTest is ForkTest {
         bypassSupplyCap(market, amount)
         returns (uint256)
     {
+        if (amount == 0) return 0;
         promoter.approve(market.underlying, amount);
         return promoter.supply(market.underlying, amount);
     }
@@ -374,14 +394,22 @@ contract IntegrationTest is ForkTest {
         return onBehalf;
     }
 
-    function _boundReceiver(address receiver) internal view returns (address) {
-        return address(uint160(bound(uint256(uint160(receiver)), 1, type(uint160).max)));
+    function _boundReceiver(address input) internal view returns (address output) {
+        output = _boundAddressNotZero(input);
+        // The Link contract cannot receive LINK tokens.
+        vm.assume(output != link);
     }
 
     function _prepareOnBehalf(address onBehalf) internal {
         if (onBehalf != address(user)) {
             vm.prank(onBehalf);
             morpho.approveManager(address(user), true);
+        }
+    }
+
+    function _assumeNotUnderlying(address input) internal view {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.assume(input != allUnderlyings[i]);
         }
     }
 
