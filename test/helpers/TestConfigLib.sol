@@ -15,6 +15,7 @@ library TestConfigLib {
     string public constant ADDRESSES_PROVIDER_PATH = "$.addressesProvider";
     string public constant WRAPPED_NATIVE_PATH = "$.wrappedNative";
     string public constant MARKETS_PATH = "$.markets";
+    string public constant MARKETS_NOT_CREATED_PATH = "$.marketsNotCreated";
 
     function getAddress(TestConfig storage config, string memory key) internal view returns (address) {
         return config.json.readAddress(string.concat("$.", key));
@@ -34,5 +35,9 @@ library TestConfigLib {
 
     function getWrappedNative(TestConfig storage config) internal view returns (address) {
         return getAddress(config, config.json.readString(WRAPPED_NATIVE_PATH));
+    }
+
+    function getMarketsNotCreated(TestConfig storage config) internal view returns (address[] memory) {
+        return config.json.readAddressArray(MARKETS_NOT_CREATED_PATH);
     }
 }

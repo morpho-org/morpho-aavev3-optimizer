@@ -48,15 +48,6 @@ contract IntegrationTest is ForkTest {
     address[] internal collateralUnderlyings;
     address[] internal borrowableUnderlyings;
 
-    // Morpho Labs choses arbitrarily Matic, The Graph, Rocket Pool(governance token), Kucoin Token and TUSD.
-    address[5] internal addressesMarketNotCreated = [
-        0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0,
-        0xc944E90C64B2c07662A292be6244BDf05Cda44a7,
-        0xD33526068D116cE69F19A9ee46F0bd304F21A51f,
-        0xf34960d9d60be18cC1D5Afc1A6F012A723a28811,
-        0x0000000000085d4780B73119b644AE5ecd22b376
-    ];
-
     function setUp() public virtual override {
         _deploy();
 

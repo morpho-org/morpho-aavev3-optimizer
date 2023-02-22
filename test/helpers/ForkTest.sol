@@ -52,6 +52,7 @@ contract ForkTest is BaseTest {
     address internal weth;
     address internal wNative;
     address[] internal allUnderlyings;
+    address[] internal marketsNotCreated;
 
     IPool internal pool;
     IACLManager internal aclManager;
@@ -100,6 +101,8 @@ contract ForkTest is BaseTest {
         return config;
     }
 
+    // @dev Morpho Labs choses arbitrarily Matic, The Graph, Rocket Pool(governance token), Kucoin Token and TUSD in ethereum-mainnet config
+    // for marketsNotCreated.
     function _loadConfig() internal {
         string memory rpcAlias = config.getRpcAlias();
         Chain memory chain = getChain(rpcAlias);
@@ -124,6 +127,7 @@ contract ForkTest is BaseTest {
         wNative = config.getWrappedNative();
 
         allUnderlyings = pool.getReservesList();
+        marketsNotCreated = config.getMarketsNotCreated();
     }
 
     function _label() internal virtual {

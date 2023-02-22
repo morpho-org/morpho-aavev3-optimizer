@@ -24,18 +24,18 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
 
     // @dev The test assumes that at least one the five tokens used is not listed on Morpho, otherwise the test is useless.
     // Morpho Labs choses arbitrarily Matic, The Graph, Rocket Pool(governance token), Kucoin Token and TUSD.
-    function testClaimToTreasuryShouldPassIfMarketNotCreated(uint256[] calldata amounts) public {
+    function testShouldClaimToTreasuryIfMarketNotCreated(uint256[] calldata amounts) public {
         vm.assume(amounts.length >= allUnderlyings.length);
 
-        address[] memory underlyings = new address[](addressesMarketNotCreated.length);
+        address[] memory underlyings = new address[](marketsNotCreated.length);
 
         address treasuryVault = address(1);
         uint256 lengthUnderlyings;
 
-        for (uint256 i = 0; i < addressesMarketNotCreated.length; ++i) {
-            if (morpho.market(addressesMarketNotCreated[i]).aToken == address(0)) {
-                underlyings[lengthUnderlyings] = addressesMarketNotCreated[i];
-                deal(addressesMarketNotCreated[i], address(morpho), amounts[lengthUnderlyings]);
+        for (uint256 i = 0; i < marketsNotCreated.length; ++i) {
+            if (morpho.market(marketNotCreated[i]).aToken == address(0)) {
+                underlyings[lengthUnderlyings] = marketsNotCreated[i];
+                deal(marketsNotCreated[i], address(morpho), amounts[lengthUnderlyings]);
                 ++lengthUnderlyings;
             }
         }
@@ -54,8 +54,8 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
         uint256[] calldata claimedAmounts,
         uint256[] calldata balanceAmounts
     ) public {
-        address[] memory underlyingsAddresses;
-        uint256[] memory beforeBalanceTreasury = new uint256[](underlyings.length);
+        address[] memory underlyings;
+        uint256[] memory beforeBalanceTreasury = new uint256[](allUnderlyings.length);
         address treasuryVault = address(1);
         vm.assume(claimedAmounts.length >= allUnderlyings.length);
         vm.assume(balanceAmounts.length >= allUnderlyings.length);
@@ -65,7 +65,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
             deal(allUnderlyings[i], address(morpho), balanceAmounts[i]);
             beforeBalanceTreasury[i] = ERC20(allUnderlyings[i]).balanceOf(treasuryVault);
         }
-        morpho.claimToTreasury(underlyingsAddresses, claimedAmounts);
+        morpho.claimToTreasury(underlyings, claimedAmounts);
 
         for (uint256 i = 0; i < allUnderlyings.length; ++i) {
             assertEq(
