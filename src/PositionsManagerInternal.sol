@@ -178,16 +178,16 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             revert Errors.UnauthorizedLiquidate();
         }
 
-        if (healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD) {
+        if (healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD) {
             address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
 
             if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
             {
                 revert Errors.UnauthorizedLiquidate();
             }
-
-            return Constants.DEFAULT_CLOSE_FACTOR;
         }
+
+        if (healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD) return Constants.DEFAULT_CLOSE_FACTOR;
 
         return Constants.MAX_CLOSE_FACTOR;
     }
