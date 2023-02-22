@@ -282,7 +282,7 @@ contract TestUnitInterestRatesLib is BaseTest {
         p2pGrowthFactor = bound(p2pGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
         lastPoolIndex = bound(lastPoolIndex, MIN_INDEX, MAX_INDEX);
         lastP2PIndex = bound(lastP2PIndex, MIN_INDEX, MAX_INDEX);
-        delta = bound(delta, 1, p2pAmount);
+        delta = bound(delta, 1, MAX_DELTA);
         p2pAmount = bound(p2pAmount, 1, MAX_TOTAL_P2P);
         proportionIdle = bound(proportionIdle, 0, MAX_PROPORTION_IDLE);
 
