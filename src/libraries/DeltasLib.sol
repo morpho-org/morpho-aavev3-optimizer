@@ -67,7 +67,6 @@ library DeltasLib {
         Types.MarketSideIndexes256 memory demotedIndexes = borrowSide ? indexes.borrow : indexes.supply;
         Types.MarketSideIndexes256 memory counterIndexes = borrowSide ? indexes.supply : indexes.borrow;
 
-        // zeroFloorSub as the last decimal might flip.
         demotedDelta.scaledP2PTotal = demotedDelta.scaledP2PTotal.zeroFloorSub(demoted.rayDiv(demotedIndexes.p2pIndex));
         counterDelta.scaledP2PTotal = counterDelta.scaledP2PTotal.zeroFloorSub(amount.rayDiv(counterIndexes.p2pIndex));
 
