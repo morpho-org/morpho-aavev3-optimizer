@@ -126,4 +126,8 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
     function liquidate(address underlyingBorrowed, address underlyingCollateral, address user, uint256 amount)
         external
         returns (uint256 repaid, uint256 seized);
+
+    function claimRewards(address[] calldata assets, address onBehalf)
+        external
+        returns (address[] memory rewardTokens, uint256[] memory claimedAmounts);
 }

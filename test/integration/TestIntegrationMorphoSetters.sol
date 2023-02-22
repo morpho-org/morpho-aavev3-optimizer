@@ -4,11 +4,12 @@ pragma solidity ^0.8.0;
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationMorphoSetters is IntegrationTest {
-    function testSetIsClaimRewardsPausedRevertIfCallerNotOwner(address caller) public {
-        vm.assume(caller != morpho.owner());
-        vm.prank(caller);
+    function testSetIsClaimRewardsPausedRevertIfCallerNotOwner(address caller, bool isPaused) public {
+        vm.assume(caller != Morpho(address(morpho)).owner());
+
+        vm.startPrank(caller);
         vm.expectRevert("Ownable: caller is not the owner");
-        morpho.setIsClaimRewardsPaused(true);
+        morpho.setIsClaimRewardsPaused(isPaused);
     }
 
     function testSetIsClaimRewardsPaused(bool isPaused) public {
