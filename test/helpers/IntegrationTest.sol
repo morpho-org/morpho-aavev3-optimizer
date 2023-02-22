@@ -180,7 +180,7 @@ contract IntegrationTest is ForkTest {
 
     /// @dev Calculates the underlying amount that can be borrowed on the given market on AaveV3, reaching the borrow cap.
     function _borrowGap(TestMarket storage market) internal view returns (uint256) {
-        return market.borrowCap.zeroFloorSub(market.totalBorrow());
+        return market.borrowGap();
     }
 
     /// @dev Sets the borrow cap of AaveV3 to the given input.
