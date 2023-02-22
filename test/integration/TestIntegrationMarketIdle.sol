@@ -32,7 +32,9 @@ contract TestIntegrationMarketIdle is IntegrationTest {
         public
     {
         TestMarket storage testMarket = testMarkets[dai];
-        supplyGap = _setSupplyGap(testMarket, bound(supplyGap, (10 ** testMarket.decimals), testMarket.maxAmount));
+        supplyGap = _setSupplyGap(
+            testMarket, bound(supplyGap, testMarket.minAmount + (10 ** testMarket.decimals), testMarket.maxAmount)
+        );
 
         _market.aToken = testMarket.aToken;
         _market.idleSupply = bound(_market.idleSupply, 0, testMarket.maxAmount);
