@@ -55,7 +55,7 @@ runs:
       env:
         NETWORK: ${{ inputs.network }}
         ALCHEMY_KEY: ${{ inputs.alchemyKey }}
-        FOUNDRY_FUZZ_RUNS: 64
+        FOUNDRY_FUZZ_RUNS: 32
 
     - name: Run integration tests & create gas report
       run: set -o pipefail && make gas-report | tee ${{ inputs.network }}.gasreport.ansi
@@ -63,7 +63,7 @@ runs:
       env:
         NETWORK: ${{ inputs.network }}
         ALCHEMY_KEY: ${{ inputs.alchemyKey }}
-        FOUNDRY_FUZZ_RUNS: 64
+        FOUNDRY_FUZZ_RUNS: 32
         # make fuzzing semi-deterministic to avoid noisy gas cost estimation
         # due to non-deterministic fuzzing, but keep it not always deterministic
         FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}

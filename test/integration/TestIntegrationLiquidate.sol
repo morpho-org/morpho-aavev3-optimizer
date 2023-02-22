@@ -78,21 +78,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 address collateralUnderlying =
                     collateralUnderlyings[(collateralIndex + indexShift) % collateralUnderlyings.length];
 
-                (test.repaid, test.seized) =
-                    user.liquidate(borrowedMarket.underlying, collateralUnderlying, borrower, toRepay);
-
-                assertEq(test.seized, 0, "seized");
-
-                _assertLiquidation(
-                    borrowedMarket,
-                    testMarkets[collateralUnderlying],
-                    borrower,
-                    toRepay,
-                    borrowBalance,
-                    0,
-                    test.repaid,
-                    test.seized
-                );
+                vm.expectRevert(Errors.AmountIsZero.selector);
+                user.liquidate(borrowedMarket.underlying, collateralUnderlying, borrower, toRepay);
             }
         }
     }
@@ -132,11 +119,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 address borrowedUnderlying =
                     borrowableUnderlyings[(borrowedIndex + indexShift) % borrowableUnderlyings.length];
 
-                (test.repaid, test.seized) =
-                    user.liquidate(borrowedUnderlying, collateralMarket.underlying, borrower, toRepay);
-
-                assertEq(test.repaid, 0);
-                assertEq(test.seized, 0);
+                vm.expectRevert(Errors.AmountIsZero.selector);
+                user.liquidate(borrowedUnderlying, collateralMarket.underlying, borrower, toRepay);
             }
         }
     }
