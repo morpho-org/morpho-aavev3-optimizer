@@ -55,9 +55,7 @@ contract IntegrationTest is ForkTest {
             _createMarket(allUnderlyings[i], 0, 33_33);
         }
 
-        // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() always return true.
-        _deposit(testMarkets[weth], 1e12, address(morpho));
-        _deposit(testMarkets[dai], 1e12, address(morpho));
+        _setAllAssetsAsCollateral();
 
         _forward(1); // All markets are outdated in Morpho's storage.
 
@@ -152,6 +150,18 @@ contract IntegrationTest is ForkTest {
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
     }
 
+    function _setAllAssetsAsCollateral() internal {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            _setAssetAsCollateral(testMarkets[allUnderlyings[i]]);
+        }
+    }
+
+    function _setAssetAsCollateral(TestMarket storage market) internal {
+        // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() return true.
+        _deposit(market, (10 ** market.decimals) / 1e6, address(morpho));
+        morpho.setAssetIsCollateral(market.underlying, true);
+    }
+
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
     function _supplyGap(TestMarket storage market) internal view returns (uint256) {
         return market.supplyCap.zeroFloorSub(market.totalSupply() + _accruedToTreasury(market.underlying));
@@ -186,7 +196,7 @@ contract IntegrationTest is ForkTest {
         internal
         bypassSupplyCap(market, amount)
     {
-        deal(market.underlying, address(this), amount);
+        deal(market.underlying, address(this), type(uint256).max);
         ERC20(market.underlying).approve(address(pool), amount);
         pool.deposit(market.underlying, amount, onBehalf, 0);
     }
