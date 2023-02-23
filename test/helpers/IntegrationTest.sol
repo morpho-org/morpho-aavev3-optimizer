@@ -252,12 +252,13 @@ contract IntegrationTest is ForkTest {
         address onBehalf,
         address receiver,
         uint256 maxIterations
-    ) internal returns (uint256 supplied, uint256 borrowed) {
-        vm.startPrank(borrower);
-        uint256 collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount);
+    ) internal returns (uint256 collateral, uint256 borrowed) {
+        collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount);
         deal(collateralMarket.underlying, borrower, collateral);
+
+        vm.startPrank(borrower);
         ERC20(collateralMarket.underlying).approve(address(morpho), collateral);
-        supplied = morpho.supplyCollateral(collateralMarket.underlying, collateral, borrower);
+        collateral = morpho.supplyCollateral(collateralMarket.underlying, collateral, borrower);
         borrowed = morpho.borrow(borrowedMarket.underlying, amount, onBehalf, receiver, maxIterations);
         vm.stopPrank();
     }
