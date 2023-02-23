@@ -191,6 +191,13 @@ contract IntegrationTest is ForkTest {
         pool.deposit(market.underlying, amount, onBehalf, 0);
     }
 
+    /// @dev Deposits the given amount of tokens on behalf of the given address, on AaveV3.
+    function _depositSimple(address underlying, uint256 amount, address onBehalf) internal {
+        deal(underlying, address(this), amount);
+        ERC20(underlying).approve(address(pool), amount);
+        pool.deposit(underlying, amount, onBehalf, 0);
+    }
+
     /// @dev Bounds the input supply cap of AaveV3 so that it is exceeded after having deposited a given amount
     function _boundSupplyCapExceeded(TestMarket storage market, uint256 amount, uint256 supplyCap)
         internal

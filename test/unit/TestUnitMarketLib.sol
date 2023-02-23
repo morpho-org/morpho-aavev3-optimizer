@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Types} from "src/libraries/Types.sol";
+import {Events} from "src/libraries/Events.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
 
 import {Test} from "@forge-std/Test.sol";
@@ -58,5 +59,14 @@ contract TestUnitMarketLib is Test {
         assertEq(market.indexes.supply.p2pIndex, indexes.supply.p2pIndex);
         assertEq(market.indexes.borrow.poolIndex, indexes.borrow.poolIndex);
         assertEq(market.indexes.borrow.p2pIndex, indexes.borrow.p2pIndex);
+    }
+
+    function testSetAssetIsCollateral(bool isCollateral) public {
+        vm.expectEmit(true, false, false, false);
+        emit Events.IsCollateralSet(market.underlying, isCollateral);
+
+        market.setAssetIsCollateral(isCollateral);
+
+        assertEq(market.isCollateral, isCollateral);
     }
 }
