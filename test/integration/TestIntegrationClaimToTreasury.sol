@@ -17,8 +17,6 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
     using WadRayMath for uint256;
 
     function testClaimToTreasuryShouldRevertIfTreasuryVaultIsZero(uint256[] calldata amounts) public {
-        address[] memory claimedUnderlyings;
-
         vm.expectRevert(Errors.AddressIsZero.selector);
         morpho.claimToTreasury(underlyings, amounts);
     }
