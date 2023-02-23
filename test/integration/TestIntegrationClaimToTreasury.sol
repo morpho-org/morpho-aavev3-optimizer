@@ -21,7 +21,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
         morpho.claimToTreasury(underlyings, amounts);
     }
 
-    function testShouldClaimToTreasuryIfMarketNotCreated(address treasuryVault, uint256[] calldata amounts) public {
+    function testShouldNotClaimToTreasuryIfMarketNotCreated(address treasuryVault, uint256[] calldata amounts) public {
         vm.assume(treasuryVault != address(morpho));
 
         address[] memory claimedUnderlyings = new address[](amounts.length);
@@ -44,6 +44,13 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
                 string.concat("Incorrect contract balance:", Strings.toString(i))
             );
         }
+    }
+
+    function testClaimToTreasuryShouldRevertIfNotOwner(uint256[] calldata amounts, address caller) public {
+        vm.assume(caller != address(this));
+        vm.prank(caller);
+        vm.expectRevert();
+        morpho.claimToTreasury(allUnderlyings, amounts);
     }
 
     function testClaimToTreasuryShouldPassIfZeroUnderlyings(
