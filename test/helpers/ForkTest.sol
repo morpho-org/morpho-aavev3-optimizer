@@ -213,4 +213,22 @@ contract ForkTest is BaseTest {
 
         return (reserve.accruedToTreasury + newAccruedToTreasury);
     }
+
+    function _setSupplyGap(address underlying, uint256 supplyGap) internal returns (uint256) {
+        DataTypes.ReserveConfigurationMap memory reserveConfig = pool.getConfiguration(underlying);
+
+        uint256 tokenUnit = 10 ** reserveConfig.getDecimals();
+        uint256 totalSupplyToCap = _totalSupplyToCap(underlying);
+        uint256 newSupplyCap = (totalSupplyToCap + supplyGap) / tokenUnit;
+
+        poolAdmin.setSupplyCap(underlying, newSupplyCap);
+        return newSupplyCap * tokenUnit - totalSupplyToCap;
+    }
+
+    function _totalSupplyToCap(address underlying) internal view returns (uint256) {
+        DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
+        return (IAToken(reserve.aTokenAddress).scaledTotalSupply() + _accruedToTreasury(underlying)).rayMul(
+            pool.getReserveNormalizedIncome(underlying)
+        );
+    }
 }
