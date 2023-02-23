@@ -158,19 +158,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (market.isWithdrawCollateralPaused()) revert Errors.WithdrawCollateralIsPaused();
     }
 
-    /// @dev Authorizes a liquidate action.
-    function _authorizeLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
+    /// @dev Validates a liquidate action.
+    function _validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
         internal
         view
-        returns (uint256)
     {
-        if (borrower == address(0)) revert Errors.AddressIsZero();
-
         Types.Market storage borrowMarket = _market[underlyingBorrowed];
         Types.Market storage collateralMarket = _market[underlyingCollateral];
 
-        if (!collateralMarket.isCreated() || !borrowMarket.isCreated()) revert Errors.MarketNotCreated();
+        if (borrower == address(0)) revert Errors.AddressIsZero();
 
+        if (!borrowMarket.isCreated() || !collateralMarket.isCreated()) revert Errors.MarketNotCreated();
         if (collateralMarket.isLiquidateCollateralPaused()) revert Errors.LiquidateCollateralIsPaused();
         if (borrowMarket.isLiquidateBorrowPaused()) revert Errors.LiquidateBorrowIsPaused();
 
@@ -181,8 +179,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             !collateralMarket.isCollateral
                 && !_POOL.getUserConfiguration(address(this)).isUsingAsCollateral(_POOL.getReserveData(underlyingCollateral).id)
         ) revert Errors.AssetNotUsedAsCollateral();
+    }
 
-        if (borrowMarket.isDeprecated()) return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
+    /// @dev Authorizes a liquidate action.
+    function _authorizeLiquidate(address underlyingBorrowed, address borrower) internal view returns (uint256) {
+        if (_market[underlyingBorrowed].isDeprecated()) return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
 
         uint256 healthFactor = _getUserHealthFactor(borrower);
         if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {

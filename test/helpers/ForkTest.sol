@@ -182,7 +182,8 @@ contract ForkTest is BaseTest {
         snapshotId = vm.snapshot();
     }
 
-    /// @dev Calculates the amount accrued to AaveV3's treasury.
+    /// @dev Calculates the amount accrued to AaveV3's treasury
+    /// @return The scaled treasury amount (to scale by pool supply index)
     function _accruedToTreasury(address underlying) internal view returns (uint256) {
         DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
         uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
@@ -210,6 +211,6 @@ contract ForkTest is BaseTest {
         uint256 newAccruedToTreasury =
             accruedTotalDebt.percentMul(reserve.configuration.getReserveFactor()).rayDiv(poolSupplyIndex);
 
-        return (reserve.accruedToTreasury + newAccruedToTreasury).rayMul(poolSupplyIndex);
+        return (reserve.accruedToTreasury + newAccruedToTreasury);
     }
 }
