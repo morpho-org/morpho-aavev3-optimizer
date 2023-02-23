@@ -18,8 +18,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 seized;
     }
 
-    function testShouldNotLiquidateHealthyUser(address borrower, uint256 amount, uint256 toRepay) public {
+    function testShouldNotLiquidateHealthyUser(address borrower, uint256 borrowed, uint256 toRepay) public {
         borrower = _boundAddressNotZero(borrower);
+        toRepay = bound(toRepay, 1, type(uint256).max);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -28,12 +29,10 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundBorrow(borrowedMarket, amount);
-                (, uint256 borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                borrowed = _boundBorrow(borrowedMarket, borrowed);
+                (, borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
-
-                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -45,11 +44,12 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
     function testShouldNotSeizeCollateralOfUserNotOnCollateralMarket(
         address borrower,
-        uint256 amount,
+        uint256 borrowed,
         uint256 toRepay,
         uint256 indexShift
     ) public {
         borrower = _boundAddressNotZero(borrower);
+        toRepay = bound(toRepay, 1, type(uint256).max);
         indexShift = bound(indexShift, 1, collateralUnderlyings.length - 1);
 
         LiquidateTest memory test;
@@ -61,15 +61,13 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundBorrow(borrowedMarket, amount);
-                (, uint256 borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                borrowed = _boundBorrow(borrowedMarket, borrowed);
+                (, borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
                     _overrideCollateral(borrowedMarket, collateralMarket, borrower);
-
-                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -84,18 +82,19 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     morpho.collateralBalance(collateralUnderlying, borrower), 0, "liquidatedCollateralBalance != 0"
                 );
 
-                _assertLiquidation(test, borrowedMarket, collateralMarket, borrower);
+                _assertDefaultLiquidation(test, borrowedMarket, collateralMarket, borrower);
             }
         }
     }
 
     function testShouldNotLiquidateUserNotInBorrowMarket(
         address borrower,
-        uint256 amount,
+        uint256 borrowed,
         uint256 toRepay,
         uint256 indexShift
     ) public {
         borrower = _boundAddressNotZero(borrower);
+        toRepay = bound(toRepay, 1, type(uint256).max);
         indexShift = bound(indexShift, 1, borrowableUnderlyings.length - 1);
 
         LiquidateTest memory test;
@@ -107,15 +106,13 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundBorrow(borrowedMarket, amount);
-                (, uint256 borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                borrowed = _boundBorrow(borrowedMarket, borrowed);
+                (, borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
                     _overrideCollateral(borrowedMarket, collateralMarket, borrower);
-
-                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -131,8 +128,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
-    function testLiquidateUnhealthyUser(address borrower, uint256 amount, uint256 promoted, uint256 toRepay) public {
+    function testLiquidateUnhealthyUser(address borrower, uint256 borrowed, uint256 promoted, uint256 toRepay) public {
         borrower = _boundAddressNotZero(borrower);
+        toRepay = bound(toRepay, 1, type(uint256).max);
 
         LiquidateTest memory test;
 
@@ -143,17 +141,16 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundBorrow(borrowedMarket, amount);
-                (, uint256 borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                borrowed = _boundBorrow(borrowedMarket, borrowed);
+                (, borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
-                _promoteBorrow(promoter1, borrowedMarket, bound(promoted, 0, borrowed));
+                promoted = bound(promoted, 0, borrowed);
+                _promoteBorrow(promoter1, borrowedMarket, promoted);
 
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
                     _overrideCollateral(borrowedMarket, collateralMarket, borrower);
-
-                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -162,18 +159,19 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 (test.repaid, test.seized) =
                     user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
 
-                _assertLiquidation(test, borrowedMarket, collateralMarket, borrower);
+                _assertDefaultLiquidation(test, borrowedMarket, collateralMarket, borrower);
             }
         }
     }
 
     function testLiquidateUnhealthyUserWhenSupplyCapExceeded(
         address borrower,
-        uint256 amount,
+        uint256 borrowed,
         uint256 toRepay,
         uint256 supplyCap
     ) public {
         borrower = _boundAddressNotZero(borrower);
+        toRepay = bound(toRepay, 1, type(uint256).max);
 
         LiquidateTest memory test;
 
@@ -184,9 +182,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundBorrow(borrowedMarket, amount);
-                (, uint256 borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                borrowed = _boundBorrow(borrowedMarket, borrowed);
+                (, borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
                 _promoteBorrow(promoter1, borrowedMarket, borrowed); // 100% peer-to-peer.
@@ -197,8 +195,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
                     _overrideCollateral(borrowedMarket, collateralMarket, borrower);
 
-                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
-
                 user.approve(borrowedMarket.underlying, toRepay);
 
                 _assertEvents(address(user), borrower, collateralMarket, borrowedMarket);
@@ -206,13 +202,14 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 (test.repaid, test.seized) =
                     user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
 
-                _assertLiquidation(test, borrowedMarket, collateralMarket, borrower);
+                _assertDefaultLiquidation(test, borrowedMarket, collateralMarket, borrower);
             }
         }
     }
 
-    function testLiquidateUnhealthyUserWhenDemotedZero(address borrower, uint256 amount, uint256 toRepay) public {
+    function testLiquidateUnhealthyUserWhenDemotedZero(address borrower, uint256 borrowed, uint256 toRepay) public {
         borrower = _boundAddressNotZero(borrower);
+        toRepay = bound(toRepay, 1, type(uint256).max);
 
         LiquidateTest memory test;
 
@@ -223,9 +220,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundBorrow(borrowedMarket, amount);
-                (, uint256 borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                borrowed = _boundBorrow(borrowedMarket, borrowed);
+                (, borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
                 _promoteBorrow(promoter1, borrowedMarket, borrowed); // 100% peer-to-peer.
@@ -236,8 +233,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
                     _overrideCollateral(borrowedMarket, collateralMarket, borrower);
 
-                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
-
                 user.approve(borrowedMarket.underlying, toRepay);
 
                 _assertEvents(address(user), borrower, collateralMarket, borrowedMarket);
@@ -245,12 +240,12 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 (test.repaid, test.seized) =
                     user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
 
-                _assertLiquidation(test, borrowedMarket, collateralMarket, borrower);
+                _assertDefaultLiquidation(test, borrowedMarket, collateralMarket, borrower);
             }
         }
     }
 
-    function testLiquidateAnyUserOnDeprecatedMarket(address borrower, uint256 amount, uint256 toRepay) public {
+    function testPartialLiquidateUserOnDeprecatedMarket(address borrower, uint256 borrowed, uint256 toRepay) public {
         borrower = _boundAddressNotZero(borrower);
 
         LiquidateTest memory test;
@@ -262,18 +257,17 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundBorrow(borrowedMarket, amount);
-                (, uint256 borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                borrowed = _boundBorrow(borrowedMarket, borrowed);
+                (, borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
+                toRepay = bound(toRepay, 1, borrowed - 1);
 
                 test.borrowedBalanceBefore = morpho.borrowBalance(borrowedMarket.underlying, borrower);
                 test.collateralBalanceBefore = morpho.collateralBalance(collateralMarket.underlying, borrower);
 
                 morpho.setIsBorrowPaused(borrowedMarket.underlying, true);
                 morpho.setIsDeprecated(borrowedMarket.underlying, true);
-
-                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -282,13 +276,15 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 (test.repaid, test.seized) =
                     user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
 
-                _assertLiquidation(test, borrowedMarket, collateralMarket, borrower);
+                _assertDefaultLiquidation(test, borrowedMarket, collateralMarket, borrower);
             }
         }
     }
 
-    function testShouldUpdateIndexesAfterLiquidate(address borrower, uint256 amount, uint256 toRepay) public {
+    function testFullLiquidateUserOnDeprecatedMarket(address borrower, uint256 borrowed, uint256 toRepay) public {
         borrower = _boundAddressNotZero(borrower);
+
+        LiquidateTest memory test;
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -297,15 +293,54 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                amount = _boundBorrow(borrowedMarket, amount);
-                (, uint256 borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, amount, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                borrowed = _boundBorrow(borrowedMarket, borrowed);
+                (, borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
+                toRepay = bound(toRepay, borrowed, type(uint256).max);
+
+                test.borrowedBalanceBefore = morpho.borrowBalance(borrowedMarket.underlying, borrower);
+                test.collateralBalanceBefore = morpho.collateralBalance(collateralMarket.underlying, borrower);
+
+                morpho.setIsBorrowPaused(borrowedMarket.underlying, true);
+                morpho.setIsDeprecated(borrowedMarket.underlying, true);
+
+                user.approve(borrowedMarket.underlying, toRepay);
+
+                _assertEvents(address(user), borrower, collateralMarket, borrowedMarket);
+
+                (test.repaid, test.seized) =
+                    user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
+
+                assertEq(morpho.borrowBalance(borrowedMarket.underlying, borrower), 0, "borrowBalanceAfter != 0");
+                assertEq(
+                    morpho.collateralBalance(collateralMarket.underlying, borrower) + test.seized,
+                    test.collateralBalanceBefore,
+                    "collateralBalanceAfter != collateralBalanceBefore - seized"
+                );
+            }
+        }
+    }
+
+    function testShouldUpdateIndexesAfterLiquidate(address borrower, uint256 borrowed, uint256 toRepay) public {
+        borrower = _boundAddressNotZero(borrower);
+        toRepay = bound(toRepay, 1, type(uint256).max);
+
+        for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
+            for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+                _revert();
+
+                TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
+                TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
+
+                borrowed = _boundBorrow(borrowedMarket, borrowed);
+                (, borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                );
+
                 vm.warp(block.timestamp + 1);
 
                 _overrideCollateral(borrowedMarket, collateralMarket, borrower);
-
-                toRepay = bound(toRepay, Math.min(MIN_AMOUNT, borrowed), borrowed);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -402,21 +437,24 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
-    function _assertLiquidation(
+    function _assertDefaultLiquidation(
         LiquidateTest memory test,
         TestMarket storage borrowedMarket,
         TestMarket storage collateralMarket,
         address borrower
     ) internal {
+        assertLe(test.repaid, test.borrowedBalanceBefore.percentMul(Constants.DEFAULT_CLOSE_FACTOR));
+
         assertApproxEqAbs(
             morpho.borrowBalance(borrowedMarket.underlying, borrower) + test.repaid,
             test.borrowedBalanceBefore,
-            1,
+            2,
             "borrowBalanceAfter != borrowedBalanceBefore - repaid"
         );
-        assertEq(
+        assertApproxEqAbs(
             morpho.collateralBalance(collateralMarket.underlying, borrower) + test.seized,
             test.collateralBalanceBefore,
+            1,
             "collateralBalanceAfter != collateralBalanceBefore - seized"
         );
     }
