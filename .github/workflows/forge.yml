@@ -126,15 +126,6 @@ jobs:
         with:
           match: src/Morpho.sol
           report: ${{ inputs.network }}.gasreport.ansi
-          header: |
-            # Morpho-AaveV3 gas diff (${{ inputs.network }})
-
-      - name: Add gas diff to sticky comment
-        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          delete: ${{ !steps.gas_diff.outputs.markdown }} # delete the comment in case changes no longer impacts gas costs
-          message: ${{ steps.gas_diff.outputs.markdown }}
 
   coverage:
     needs:
