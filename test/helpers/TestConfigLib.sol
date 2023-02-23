@@ -10,13 +10,12 @@ struct TestConfig {
 library TestConfigLib {
     using stdJson for string;
 
-    string public constant RPC_ALIAS_PATH = "$.rpcAlias";
-    string public constant FORK_BLOCK_NUMBER_PATH = "$.forkBlockNumber";
-    string public constant ADDRESSES_PROVIDER_PATH = "$.addressesProvider";
-    string public constant WRAPPED_NATIVE_PATH = "$.wrappedNative";
-    string public constant MARKETS_PATH = "$.markets";
-    string public constant MARKETS_NOT_CREATED_PATH = "$.marketsNotCreated";
-
+    string internal constant RPC_ALIAS_PATH = "$.rpcAlias";
+    string internal constant FORK_BLOCK_NUMBER_PATH = "$.forkBlockNumber";
+    string internal constant ADDRESSES_PROVIDER_PATH = "$.addressesProvider";
+    string internal constant WRAPPED_NATIVE_PATH = "$.wrappedNative";
+    string internal constant MARKETS_PATH = "$.markets";
+    string internal constant MARKETS_NOT_CREATED_PATH = "$.marketsNotCreated";
 
     function getAddress(TestConfig storage config, string memory key) internal view returns (address) {
         return config.json.readAddress(string.concat("$.", key));
