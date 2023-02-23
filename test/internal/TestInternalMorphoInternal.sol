@@ -275,11 +275,23 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         assertEq(units, 10 ** poolDecimals, "units not equal to pool decimals 2");
     }
 
+    function testCollateralDataNoCollateral(uint256 amount) public {
+        amount = bound(amount, 0, 1_000_000 ether);
+
+        _marketBalances[dai].collateral[address(1)] = amount.rayDivUp(_market[dai].indexes.supply.poolIndex);
+
+        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
+
+        (uint256 borrowable, uint256 maxDebt) = _collateralData(dai, vars);
+        assertEq(borrowable, 0, "borrowable != 0");
+        assertEq(maxDebt, 0, "maxDebt != 0");
+    }
+
     function testLiquidityDataCollateral(uint256 amount) public {
         amount = bound(amount, 0, 1_000_000 ether);
 
         _market[dai].isCollateral = true;
-
         _marketBalances[dai].collateral[address(1)] = amount.rayDivUp(_market[dai].indexes.supply.poolIndex);
 
         DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);

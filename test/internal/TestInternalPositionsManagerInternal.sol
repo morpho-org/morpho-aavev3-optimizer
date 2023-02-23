@@ -101,6 +101,11 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.validateSupplyCollateral(dai, 1, address(1));
     }
 
+    function testValidateSupplyCollateralShouldRevertIfNotCollateral() public {
+        vm.expectRevert(abi.encodeWithSelector(Errors.AssetNotUsedAsCollateral.selector));
+        this.validateSupplyCollateral(dai, 1, address(1));
+    }
+
     function testValidateSupplyCollateral() public {
         _market[dai].isCollateral = true;
         this.validateSupplyCollateral(dai, 1, address(1));
@@ -193,6 +198,32 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         vm.expectRevert(abi.encodeWithSelector(Errors.LiquidateBorrowIsPaused.selector));
         this.authorizeLiquidate(dai, usdc, address(this));
+    }
+
+    function testAuthorizeLiquidateIfAssetNotEnabledCollateralOnMorphoAndOnPool() public {
+        _market[dai].isCollateral = false;
+        _POOL.setUserUseReserveAsCollateral(usdc, false);
+
+        vm.expectRevert(abi.encodeWithSelector(Errors.AssetNotUsedAsCollateral.selector));
+        this.authorizeLiquidate(dai, usdc, address(this));
+    }
+
+    function testAuthorizeLiquidateShouldPassIfCollateralAssetOnlyEnabledOnPool() public {
+        _POOL.setUserUseReserveAsCollateral(usdc, true);
+
+        _userCollaterals[address(this)].add(dai);
+        _userBorrows[address(this)].add(dai);
+        _market[dai].pauseStatuses.isDeprecated = true;
+        this.authorizeLiquidate(dai, dai, address(this));
+    }
+
+    function testAuthorizeLiquidateShouldPassIfCollateralAssetOnlyEnabledOnMorpho() public {
+        _market[dai].isCollateral = true;
+
+        _userCollaterals[address(this)].add(dai);
+        _userBorrows[address(this)].add(dai);
+        _market[dai].pauseStatuses.isDeprecated = true;
+        this.authorizeLiquidate(dai, dai, address(this));
     }
 
     function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfDeprecatedBorrow() public {
