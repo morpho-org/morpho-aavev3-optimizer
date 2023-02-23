@@ -224,7 +224,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testAuthorizeLiquidateShouldRevertIfSentinelDisallows(address borrower, uint256 healthFactor) public {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, Constants.MIN_LIQUIDATION_THRESHOLD, Constants.DEFAULT_LIQUIDATION_THRESHOLD);
+        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MIN_HF, Constants.DEFAULT_LIQUIDATION_MAX_HF);
 
         _setHealthFactor(borrower, dai, healthFactor);
 
@@ -236,7 +236,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testAuthorizeLiquidateShouldRevertIfBorrowerHealthy(address borrower, uint256 healthFactor) public {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_THRESHOLD + 1, type(uint128).max);
+        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF + 1, type(uint128).max);
 
         _setHealthFactor(borrower, dai, healthFactor);
 
@@ -248,7 +248,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         public
     {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, 0, Constants.MIN_LIQUIDATION_THRESHOLD);
+        healthFactor = bound(healthFactor, 0, Constants.DEFAULT_LIQUIDATION_MIN_HF);
 
         _setHealthFactor(borrower, dai, healthFactor);
 
@@ -262,7 +262,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     ) public {
         borrower = _boundAddressNotZero(borrower);
         healthFactor =
-            bound(healthFactor, Constants.MIN_LIQUIDATION_THRESHOLD + 1, Constants.DEFAULT_LIQUIDATION_THRESHOLD - 1);
+            bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MIN_HF + 1, Constants.DEFAULT_LIQUIDATION_MAX_HF - 1);
 
         _setHealthFactor(borrower, dai, healthFactor);
 

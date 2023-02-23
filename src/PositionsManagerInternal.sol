@@ -174,11 +174,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (borrowMarket.isDeprecated()) return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
 
         uint256 healthFactor = _getUserHealthFactor(borrower);
-        if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+        if (healthFactor >= Constants.DEFAULT_LIQUIDATION_MAX_HF) {
             revert Errors.UnauthorizedLiquidate();
         }
 
-        if (healthFactor >= Constants.MIN_LIQUIDATION_THRESHOLD) {
+        if (healthFactor >= Constants.DEFAULT_LIQUIDATION_MIN_HF) {
             address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
 
             if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
@@ -187,7 +187,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             }
         }
 
-        if (healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD) return Constants.DEFAULT_CLOSE_FACTOR;
+        if (healthFactor > Constants.DEFAULT_LIQUIDATION_MIN_HF) return Constants.DEFAULT_CLOSE_FACTOR;
 
         return Constants.MAX_CLOSE_FACTOR;
     }
