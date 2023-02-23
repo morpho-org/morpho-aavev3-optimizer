@@ -6,21 +6,10 @@ import "test/helpers/IntegrationTest.sol";
 contract TestIntegrationClaimRewards is IntegrationTest {
     address[] internal assets = [testMarkets[dai].aToken, testMarkets[dai].variableDebtToken];
 
-    function setUp() public override {
-        super.setUp();
-
-        morpho.setRewardsManager(address(rewardsManagerMock));
-    }
-
     function testClaimRewardsRevertIfPaused() public {
         morpho.setIsClaimRewardsPaused(true);
 
         vm.expectRevert(Errors.ClaimRewardsPaused.selector);
-        morpho.claimRewards(assets, address(this));
-    }
-
-    function testClaimRewardsIfNotPaused() public {
-        vm.expectRevert(RewardsManagerMock.ForcedRevert.selector);
         morpho.claimRewards(assets, address(this));
     }
 }

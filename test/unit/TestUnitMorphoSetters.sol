@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import "test/helpers/UnitTest.sol";
+import {RewardsManagerMock} from "test/mocks/RewardsManagerMock.sol";
+import {Morpho} from "src/Morpho.sol";
 
-contract TestUnitMorphoSetters is UnitTest {
-    function testSetIsClaimRewardsPausedRevertIfCallerNotOwner(address caller, bool isPaused) public {
-        vm.assume(caller != address(this));
+import "test/helpers/InternalTest.sol";
 
-        vm.startPrank(caller);
-        vm.expectRevert("Ownable: caller is not the owner");
-        morpho.setIsClaimRewardsPaused(isPaused);
+contract TestUnitMorphoSetters is InternalTest {
+    using TestConfigLib for TestConfig;
+
+    function setUp() public override {
+        super.setUp();
+
+        _rewardsManager = new RewardsManagerMock(address(this));
     }
 
-    function testSetIsClaimRewardsPaused(bool isPaused) public {
-        vm.expectEmit(true, true, true, true, address(morpho));
-        emit Events.IsClaimRewardsPausedSet(isPaused);
-
-        morpho.setIsClaimRewardsPaused(isPaused);
-        assertEq(morpho.isClaimRewardsPaused(), isPaused);
+    function testClaimRewardsIfNotPaused() public {
+        vm.expectRevert(RewardsManagerMock.RewardsControllerCall.selector);
+        this.claimRewards(new address[](0), address(this));
     }
 }

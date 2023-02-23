@@ -11,10 +11,9 @@ import {PoolLib} from "src/libraries/PoolLib.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
 import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
 
-import {MorphoInternal, MorphoStorage} from "src/MorphoInternal.sol";
 import "test/helpers/InternalTest.sol";
 
-contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
+contract TestInternalMorphoInternal is InternalTest {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using PoolLib for IPool;

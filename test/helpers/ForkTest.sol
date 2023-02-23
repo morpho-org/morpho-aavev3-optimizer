@@ -16,6 +16,7 @@ import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
+import {RewardsControllerMock} from "test/mocks/RewardsControllerMock.sol";
 import {PriceOracleSentinelMock} from "test/mocks/PriceOracleSentinelMock.sol";
 import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
 import {PoolAdminMock} from "test/mocks/PoolAdminMock.sol";
@@ -62,7 +63,8 @@ contract ForkTest is BaseTest {
     address internal aclAdmin;
     AaveOracleMock internal oracle;
     PoolAdminMock internal poolAdmin;
-    PriceOracleSentinelMock oracleSentinel;
+    PriceOracleSentinelMock internal oracleSentinel;
+    RewardsControllerMock internal rewardsController;
 
     uint256 internal snapshotId = type(uint256).max;
 
@@ -73,6 +75,7 @@ contract ForkTest is BaseTest {
         _mockPoolAdmin();
         _mockOracle();
         _mockOracleSentinel();
+        _mockRewardsController();
 
         _setBalances(address(this), type(uint256).max);
     }
@@ -166,6 +169,10 @@ contract ForkTest is BaseTest {
 
         vm.prank(aclAdmin);
         addressesProvider.setPriceOracleSentinel(address(oracleSentinel));
+    }
+
+    function _mockRewardsController() internal {
+        rewardsController = new RewardsControllerMock();
     }
 
     function _setBalances(address user, uint256 balance) internal {
