@@ -25,6 +25,7 @@ contract TestIntegrationUpgrade is IntegrationTest {
     // isManaging
     // userNonce
 
+    // Excludes positions manager.
     struct StorageToCheck {
         address owner;
         address pool;
@@ -34,7 +35,6 @@ contract TestIntegrationUpgrade is IntegrationTest {
         Types.Market market;
         address[] marketsCreated;
         Types.Iterations defaultIterations;
-        address positionsManager;
         address rewardsManager;
         address treasuryVault;
         bool isClaimRewardsPaused;
@@ -42,73 +42,6 @@ contract TestIntegrationUpgrade is IntegrationTest {
         UserStorageToCheck supplier2;
         UserStorageToCheck borrower1;
         UserStorageToCheck borrower2;
-    }
-
-    function _populateStorageToCheck() internal returns (StorageToCheck memory s) {
-        s.owner = Ownable(address(morpho)).owner();
-        s.pool = morpho.POOL();
-        s.addressesProvider = morpho.ADDRESSES_PROVIDER();
-        s.domainSeparator = morpho.DOMAIN_SEPARATOR();
-        s.eModeCategoryId = morpho.E_MODE_CATEGORY_ID();
-        s.market = morpho.market(dai);
-        s.marketsCreated = morpho.marketsCreated();
-        s.defaultIterations = morpho.defaultIterations();
-        s.positionsManager = morpho.positionsManager();
-        s.rewardsManager = morpho.rewardsManager();
-        s.treasuryVault = morpho.treasuryVault();
-        s.isClaimRewardsPaused = morpho.isClaimRewardsPaused();
-        s.supplier1 = _populateUserStorageToCheck(address(supplier1));
-        s.supplier2 = _populateUserStorageToCheck(address(supplier2));
-        s.borrower1 = _populateUserStorageToCheck(address(borrower1));
-        s.borrower2 = _populateUserStorageToCheck(address(borrower2));
-    }
-
-    function _populateUserStorageToCheck(address user) internal returns (UserStorageToCheck memory u) {
-        u.scaledPoolSupplyBalance = morpho.scaledPoolSupplyBalance(dai, user);
-        u.scaledPoolBorrowBalance = morpho.scaledPoolBorrowBalance(dai, user);
-        u.scaledP2PSupplyBalance = morpho.scaledP2PSupplyBalance(dai, user);
-        u.scaledP2PBorrowBalance = morpho.scaledP2PBorrowBalance(dai, user);
-        u.scaledCollateralBalance = morpho.scaledCollateralBalance(dai, user);
-        u.userCollaterals = morpho.userCollaterals(user);
-        u.userBorrows = morpho.userBorrows(user);
-    }
-
-    function _assertStorageEq(StorageToCheck memory s1, StorageToCheck memory s2) internal {
-        assertEq(s1.owner, s2.owner, "owner");
-        assertEq(s1.pool, s2.pool, "pool");
-        assertEq(s1.addressesProvider, s2.addressesProvider, "addressesProvider");
-        assertEq(s1.domainSeparator, s2.domainSeparator, "domainSeparator");
-        assertEq(s1.eModeCategoryId, s2.eModeCategoryId, "eModeCategoryId");
-        // Checking that the underlying slot matches should suffice for now.
-        assertEq(s1.market.underlying, s2.market.underlying, "market.underlying");
-        for (uint256 i; i < s1.marketsCreated.length; i++) {
-            assertEq(s1.marketsCreated[i], s2.marketsCreated[i], string.concat("marketsCreated", i.toString()));
-        }
-        assertEq(s1.defaultIterations.repay, s2.defaultIterations.repay, "defaultIterations.repay");
-        assertEq(s1.defaultIterations.withdraw, s2.defaultIterations.withdraw, "defaultIterations.withdraw");
-        assertEq(s1.positionsManager, s2.positionsManager, "positionsManager");
-        assertEq(s1.rewardsManager, s2.rewardsManager, "rewardsManager");
-        assertEq(s1.treasuryVault, s2.treasuryVault, "treasuryVault");
-        assertEq(s1.isClaimRewardsPaused, s2.isClaimRewardsPaused, "isClaimRewardsPaused");
-
-        _assertUserStorageEq(s1.supplier1, s2.supplier1);
-        _assertUserStorageEq(s1.supplier2, s2.supplier2);
-        _assertUserStorageEq(s1.borrower1, s2.borrower1);
-        _assertUserStorageEq(s1.borrower2, s2.borrower2);
-    }
-
-    function _assertUserStorageEq(UserStorageToCheck memory u1, UserStorageToCheck memory u2) internal {
-        assertEq(u1.scaledPoolSupplyBalance, u2.scaledPoolSupplyBalance, "scaledPoolSupplyBalance");
-        assertEq(u1.scaledPoolBorrowBalance, u2.scaledPoolBorrowBalance, "scaledPoolBorrowBalance");
-        assertEq(u1.scaledP2PSupplyBalance, u2.scaledP2PSupplyBalance, "scaledP2PSupplyBalance");
-        assertEq(u1.scaledP2PBorrowBalance, u2.scaledP2PBorrowBalance, "scaledP2PBorrowBalance");
-        assertEq(u1.scaledCollateralBalance, u2.scaledCollateralBalance, "scaledCollateralBalance");
-        for (uint256 i; i < u1.userCollaterals.length; i++) {
-            assertEq(u1.userCollaterals[i], u2.userCollaterals[i], string.concat("userCollaterals", i.toString()));
-        }
-        for (uint256 i; i < u1.userBorrows.length; i++) {
-            assertEq(u1.userBorrows[i], u2.userBorrows[i], string.concat("userBorrows", i.toString()));
-        }
     }
 
     function setUp() public virtual override {
@@ -142,17 +75,108 @@ contract TestIntegrationUpgrade is IntegrationTest {
         borrower2.borrow(dai, 300 * daiTokenUnit);
     }
 
-    function testOnlyProxyAdminCanUpgradeMorpho() public {
-        StorageToCheck memory s1 = _populateStorageToCheck();
-        // morpho.upgradeMorpho(address(newMorpho));
-        StorageToCheck memory s2 = _populateStorageToCheck();
-        _assertStorageEq(s1, s2);
+    function testUpgradeMorphoFailsIfNotProxyAdminOwner() public {
+        Morpho newMorphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(address(1));
+        proxyAdmin.upgrade(TransparentUpgradeableProxy(payable(address(morpho))), address(newMorphoImpl));
     }
 
-    function testOnlyProxyAdminCanUpgradePositionsManager() public {
+    function testUpgradeMorpho() public {
+        address positionsManagerBefore = morpho.positionsManager();
         StorageToCheck memory s1 = _populateStorageToCheck();
-        // morpho.upgradePositionsManager(address(newPositionsManager));
+
+        Morpho newMorphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID);
+        proxyAdmin.upgrade(TransparentUpgradeableProxy(payable(address(morpho))), address(newMorphoImpl));
+
+        StorageToCheck memory s2 = _populateStorageToCheck();
+
+        _assertStorageEq(s1, s2);
+        assertEq(positionsManagerBefore, morpho.positionsManager(), "positions manager");
+        assertFalse(address(newMorphoImpl) == address(morphoImpl), "not new morpho impl");
+    }
+
+    function testUpgradePositionsManagerFailsIfNotOwner() public {
+        positionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(address(1));
+        morpho.setPositionsManager(address(positionsManager));
+    }
+
+    function testUpgradePositionsManager() public {
+        StorageToCheck memory s1 = _populateStorageToCheck();
+
+        PositionsManager newPositionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID);
+        morpho.setPositionsManager(address(newPositionsManager));
+
         StorageToCheck memory s2 = _populateStorageToCheck();
         _assertStorageEq(s1, s2);
+        assertFalse(morpho.positionsManager() == address(positionsManager), "not new positions manager");
+    }
+
+    function _populateStorageToCheck() internal view returns (StorageToCheck memory s) {
+        s.owner = Ownable(address(morpho)).owner();
+        s.pool = morpho.POOL();
+        s.addressesProvider = morpho.ADDRESSES_PROVIDER();
+        s.domainSeparator = morpho.DOMAIN_SEPARATOR();
+        s.eModeCategoryId = morpho.E_MODE_CATEGORY_ID();
+        s.market = morpho.market(dai);
+        s.marketsCreated = morpho.marketsCreated();
+        s.defaultIterations = morpho.defaultIterations();
+        s.rewardsManager = morpho.rewardsManager();
+        s.treasuryVault = morpho.treasuryVault();
+        s.isClaimRewardsPaused = morpho.isClaimRewardsPaused();
+        s.supplier1 = _populateUserStorageToCheck(address(supplier1));
+        s.supplier2 = _populateUserStorageToCheck(address(supplier2));
+        s.borrower1 = _populateUserStorageToCheck(address(borrower1));
+        s.borrower2 = _populateUserStorageToCheck(address(borrower2));
+    }
+
+    function _populateUserStorageToCheck(address user) internal view returns (UserStorageToCheck memory u) {
+        u.scaledPoolSupplyBalance = morpho.scaledPoolSupplyBalance(dai, user);
+        u.scaledPoolBorrowBalance = morpho.scaledPoolBorrowBalance(dai, user);
+        u.scaledP2PSupplyBalance = morpho.scaledP2PSupplyBalance(dai, user);
+        u.scaledP2PBorrowBalance = morpho.scaledP2PBorrowBalance(dai, user);
+        u.scaledCollateralBalance = morpho.scaledCollateralBalance(dai, user);
+        u.userCollaterals = morpho.userCollaterals(user);
+        u.userBorrows = morpho.userBorrows(user);
+    }
+
+    function _assertStorageEq(StorageToCheck memory s1, StorageToCheck memory s2) internal {
+        assertEq(s1.owner, s2.owner, "owner");
+        assertEq(s1.pool, s2.pool, "pool");
+        assertEq(s1.addressesProvider, s2.addressesProvider, "addressesProvider");
+        assertEq(s1.domainSeparator, s2.domainSeparator, "domainSeparator");
+        assertEq(s1.eModeCategoryId, s2.eModeCategoryId, "eModeCategoryId");
+        // Checking that the underlying slot matches should suffice for now.
+        assertEq(s1.market.underlying, s2.market.underlying, "market.underlying");
+        for (uint256 i; i < s1.marketsCreated.length; i++) {
+            assertEq(s1.marketsCreated[i], s2.marketsCreated[i], string.concat("marketsCreated", i.toString()));
+        }
+        assertEq(s1.defaultIterations.repay, s2.defaultIterations.repay, "defaultIterations.repay");
+        assertEq(s1.defaultIterations.withdraw, s2.defaultIterations.withdraw, "defaultIterations.withdraw");
+        assertEq(s1.rewardsManager, s2.rewardsManager, "rewardsManager");
+        assertEq(s1.treasuryVault, s2.treasuryVault, "treasuryVault");
+        assertEq(s1.isClaimRewardsPaused, s2.isClaimRewardsPaused, "isClaimRewardsPaused");
+
+        _assertUserStorageEq(s1.supplier1, s2.supplier1);
+        _assertUserStorageEq(s1.supplier2, s2.supplier2);
+        _assertUserStorageEq(s1.borrower1, s2.borrower1);
+        _assertUserStorageEq(s1.borrower2, s2.borrower2);
+    }
+
+    function _assertUserStorageEq(UserStorageToCheck memory u1, UserStorageToCheck memory u2) internal {
+        assertEq(u1.scaledPoolSupplyBalance, u2.scaledPoolSupplyBalance, "scaledPoolSupplyBalance");
+        assertEq(u1.scaledPoolBorrowBalance, u2.scaledPoolBorrowBalance, "scaledPoolBorrowBalance");
+        assertEq(u1.scaledP2PSupplyBalance, u2.scaledP2PSupplyBalance, "scaledP2PSupplyBalance");
+        assertEq(u1.scaledP2PBorrowBalance, u2.scaledP2PBorrowBalance, "scaledP2PBorrowBalance");
+        assertEq(u1.scaledCollateralBalance, u2.scaledCollateralBalance, "scaledCollateralBalance");
+        for (uint256 i; i < u1.userCollaterals.length; i++) {
+            assertEq(u1.userCollaterals[i], u2.userCollaterals[i], string.concat("userCollaterals", i.toString()));
+        }
+        for (uint256 i; i < u1.userBorrows.length; i++) {
+            assertEq(u1.userBorrows[i], u2.userBorrows[i], string.concat("userBorrows", i.toString()));
+        }
     }
 }
