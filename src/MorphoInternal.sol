@@ -176,6 +176,7 @@ abstract contract MorphoInternal is MorphoStorage {
         returns (uint256)
     {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+
         return marketBalances.scaledPoolSupplyBalance(user).rayMulDown(indexes.supply.poolIndex)
             + marketBalances.scaledP2PSupplyBalance(user).rayMulDown(indexes.supply.p2pIndex);
     }
@@ -187,6 +188,7 @@ abstract contract MorphoInternal is MorphoStorage {
         returns (uint256)
     {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+
         return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.borrow.poolIndex)
             + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.borrow.p2pIndex);
     }

@@ -26,7 +26,7 @@ contract IntegrationTest is ForkTest {
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
 
     // AaveV3 base currency is USD, 8 decimals on all L2s.
-    uint256 internal constant MIN_USD_AMOUNT = 0.01e8; // 0.01$
+    uint256 internal constant MIN_USD_AMOUNT = 10e8; // 10$
     uint256 internal constant MAX_USD_AMOUNT = 500_000_000e8; // 500m$
 
     IMorpho internal morpho;
@@ -173,7 +173,7 @@ contract IntegrationTest is ForkTest {
 
     modifier bypassSupplyCap(TestMarket storage market, uint256 amount) {
         uint256 supplyCapBefore = market.supplyCap;
-        bool disableSupplyCap = amount <= type(uint256).max - supplyCapBefore;
+        bool disableSupplyCap = amount < type(uint256).max - supplyCapBefore;
         if (disableSupplyCap) _setSupplyCap(market, 0);
 
         _;
@@ -250,8 +250,27 @@ contract IntegrationTest is ForkTest {
         );
     }
 
+    /// @dev Borrows from `user` on behalf of `onBehalf`, with collateral.
+    function _borrowWithCollateral(
+        address borrower,
+        TestMarket storage collateralMarket,
+        TestMarket storage borrowedMarket,
+        uint256 amount,
+        address onBehalf,
+        address receiver,
+        uint256 maxIterations
+    ) internal returns (uint256 supplied, uint256 borrowed) {
+        vm.startPrank(borrower);
+        uint256 collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount);
+        deal(collateralMarket.underlying, borrower, collateral);
+        ERC20(collateralMarket.underlying).approve(address(morpho), collateral);
+        supplied = morpho.supplyCollateral(collateralMarket.underlying, collateral, borrower);
+        borrowed = morpho.borrow(borrowedMarket.underlying, amount, onBehalf, receiver, maxIterations);
+        vm.stopPrank();
+    }
+
     /// @dev Borrows from `user` on behalf of `onBehalf`, without collateral.
-    function _borrowNoCollateral(
+    function _borrowWithoutCollateral(
         address borrower,
         TestMarket storage market,
         uint256 amount,
@@ -282,7 +301,6 @@ contract IntegrationTest is ForkTest {
         try promoter.borrow(market.underlying, amount) returns (uint256 borrowed) {
             amount = borrowed;
 
-            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
             _deposit(market, market.minBorrowCollateral(market, amount), address(morpho)); // Make Morpho able to borrow again with some collateral.
         } catch {
             amount = 0;
@@ -299,6 +317,7 @@ contract IntegrationTest is ForkTest {
         bypassSupplyCap(market, amount)
         returns (uint256)
     {
+        if (amount == 0) return 0;
         promoter.approve(market.underlying, amount);
         return promoter.supply(market.underlying, amount);
     }
@@ -312,8 +331,7 @@ contract IntegrationTest is ForkTest {
         amount = _promoteBorrow(promoter, market, amount); // 100% peer-to-peer.
 
         address onBehalf = address(hacker);
-        _borrowNoCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-        market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+        _borrowWithoutCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
 
         // Set the supply cap as exceeded.
         _setSupplyCap(market, market.totalSupply() / (10 ** market.decimals));
@@ -333,8 +351,7 @@ contract IntegrationTest is ForkTest {
         amount = _promoteBorrow(promoter, market, amount); // 100% peer-to-peer.
 
         address onBehalf = address(hacker);
-        _borrowNoCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-        market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+        _borrowWithoutCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
 
         Types.Iterations memory iterations = morpho.defaultIterations();
 
@@ -365,11 +382,65 @@ contract IntegrationTest is ForkTest {
         // Set the max iterations to 0 upon withdraw to skip demotion and fallback to borrow delta.
         morpho.setDefaultIterations(Types.Iterations({repay: 10, withdraw: 0}));
 
-        hacker.withdraw(market.underlying, amount);
-        market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+        hacker.withdraw(market.underlying, amount, 0);
 
         morpho.setDefaultIterations(iterations);
 
         return amount;
+    }
+
+    function _boundAmount(uint256 amount) internal view returns (uint256) {
+        return bound(amount, 1, type(uint256).max);
+    }
+
+    function _boundOnBehalf(address onBehalf) internal view returns (address) {
+        onBehalf = _boundAddressNotZero(onBehalf);
+
+        vm.assume(onBehalf != address(proxyAdmin)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target.
+
+        return onBehalf;
+    }
+
+    function _boundReceiver(address input) internal view returns (address output) {
+        output = _boundAddressNotZero(input);
+        // The Link contract cannot receive LINK tokens.
+        vm.assume(output != link);
+    }
+
+    function _prepareOnBehalf(address onBehalf) internal {
+        if (onBehalf != address(user)) {
+            vm.prank(onBehalf);
+            morpho.approveManager(address(user), true);
+        }
+    }
+
+    function _assumeNotUnderlying(address input) internal view {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.assume(input != allUnderlyings[i]);
+        }
+    }
+
+    function _assertMarketUpdatedIndexes(Types.Market memory market, Types.Indexes256 memory futureIndexes) internal {
+        assertEq(market.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
+        assertEq(
+            market.indexes.supply.poolIndex, futureIndexes.supply.poolIndex, "poolSupplyIndex != futurePoolSupplyIndex"
+        );
+        assertEq(
+            market.indexes.borrow.poolIndex, futureIndexes.borrow.poolIndex, "poolBorrowIndex != futurePoolBorrowIndex"
+        );
+        assertEq(
+            market.indexes.supply.p2pIndex, futureIndexes.supply.p2pIndex, "p2pSupplyIndex != futureP2PSupplyIndex"
+        );
+        assertEq(
+            market.indexes.borrow.p2pIndex, futureIndexes.borrow.p2pIndex, "p2pBorrowIndex != futureP2PBorrowIndex"
+        );
+    }
+
+    function _assertMarketAccountingZero(Types.Market memory market) internal {
+        assertEq(market.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
+        assertEq(market.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != 0");
+        assertEq(market.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
+        assertEq(market.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
+        assertEq(market.idleSupply, 0, "idleSupply != 0");
     }
 }
