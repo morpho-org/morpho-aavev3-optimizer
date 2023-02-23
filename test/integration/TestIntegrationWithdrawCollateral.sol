@@ -78,7 +78,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
                 "balanceAfter != expectedBalance"
             );
 
-            _assertMarketState(test.morphoMarket);
+            _assertMarketAccountingZero(test.morphoMarket);
         }
     }
 
@@ -102,7 +102,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
                 collateral = _boundCollateral(collateralMarket, collateral, borrowedMarket).percentAdd(1);
-                uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral).percentSub(2);
+                uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral).percentSub(4);
                 borrowed = bound(
                     borrowed,
                     borrowedMarket.minAmount / 2,
@@ -164,7 +164,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
             user.withdrawCollateral(market.underlying, amount);
 
-            _assertUpdateIndexes(morpho.market(market.underlying), futureIndexes);
+            _assertMarketUpdatedIndexes(morpho.market(market.underlying), futureIndexes);
         }
     }
 

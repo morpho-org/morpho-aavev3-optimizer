@@ -273,7 +273,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         (uint256 newAmount, uint256 newOnPool) = _addToPool(amount, onPool, poolIndex);
         assertEq(newAmount, amount);
-        assertEq(newOnPool, onPool + amount.rayDiv(poolIndex));
+        assertEq(newOnPool, onPool + amount.rayDivDown(poolIndex));
     }
 
     function testSubFromPool(uint256 amount, uint256 onPool, uint256 poolIndex) public {
@@ -287,7 +287,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         assertEq(toProcess, amount - expectedToRepayOrWithdraw);
         assertEq(toRepayOrWithdraw, expectedToRepayOrWithdraw);
-        assertEq(newOnPool, onPool.zeroFloorSub(expectedToRepayOrWithdraw.rayDiv(poolIndex)));
+        assertEq(newOnPool, onPool.zeroFloorSub(expectedToRepayOrWithdraw.rayDivUp(poolIndex)));
     }
 
     function testPromoteSuppliersRoutine(uint256 amount, uint256 maxLoops) public {
@@ -336,42 +336,38 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         assertEq(maxLoopsLeft, expectedMaxLoopsLeft, "maxLoopsLeft");
     }
 
-    function validatePermission(address owner, address manager) external view {
+    function validatePermission(address owner, address manager) public view {
         _validatePermission(owner, manager);
     }
 
-    function validateSupply(address underlying, uint256 amount, address onBehalf) external view {
+    function validateSupply(address underlying, uint256 amount, address onBehalf) public view {
         _validateSupply(underlying, amount, onBehalf);
     }
 
-    function validateSupplyCollateral(address underlying, uint256 amount, address onBehalf) external view {
+    function validateSupplyCollateral(address underlying, uint256 amount, address onBehalf) public view {
         _validateSupplyCollateral(underlying, amount, onBehalf);
     }
 
-    function validateBorrow(address underlying, uint256 amount, address borrower, address receiver) external view {
+    function validateBorrow(address underlying, uint256 amount, address borrower, address receiver) public view {
         _validateBorrow(underlying, amount, borrower, receiver);
     }
 
-    function validateRepay(address underlying, uint256 amount, address onBehalf) external view {
+    function validateRepay(address underlying, uint256 amount, address onBehalf) public view {
         _validateRepay(underlying, amount, onBehalf);
     }
 
-    function validateWithdraw(address underlying, uint256 amount, address user, address to) external view {
+    function validateWithdraw(address underlying, uint256 amount, address user, address to) public view {
         _validateWithdraw(underlying, amount, user, to);
     }
 
     function validateWithdrawCollateral(address underlying, uint256 amount, address supplier, address receiver)
-        external
+        public
         view
     {
         _validateWithdrawCollateral(underlying, amount, supplier, receiver);
     }
 
-    function authorizeLiquidate(address collateral, address borrow, address liquidator)
-        external
-        view
-        returns (uint256)
-    {
+    function authorizeLiquidate(address collateral, address borrow, address liquidator) public view returns (uint256) {
         return _authorizeLiquidate(collateral, borrow, liquidator);
     }
 }

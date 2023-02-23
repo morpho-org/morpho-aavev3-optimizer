@@ -56,8 +56,8 @@ library MarketSideDeltaLib {
         uint256 scaledDelta = delta.scaledDelta;
         if (scaledDelta == 0) return (amount, 0);
 
-        uint256 decreased = Math.min(scaledDelta.rayMul(poolIndex), amount); // In underlying.
-        uint256 newScaledDelta = scaledDelta.zeroFloorSub(decreased.rayDiv(poolIndex));
+        uint256 decreased = Math.min(scaledDelta.rayMulUp(poolIndex), amount); // In underlying.
+        uint256 newScaledDelta = scaledDelta.zeroFloorSub(decreased.rayDivDown(poolIndex));
 
         delta.scaledDelta = newScaledDelta;
 
