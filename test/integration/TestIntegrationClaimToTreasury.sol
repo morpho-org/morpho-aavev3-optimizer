@@ -7,6 +7,7 @@ import {PoolLib} from "src/libraries/PoolLib.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
+import {ERC20 as OZERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationClaimToTreasury is IntegrationTest {
@@ -16,37 +17,34 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
     using WadRayMath for uint256;
 
     function testClaimToTreasuryShouldRevertIfTreasuryVaultIsZero(uint256[] calldata amounts) public {
-        address[] memory underlyings;
+        address[] memory claimedUnderlyings;
 
         vm.expectRevert(Errors.AddressIsZero.selector);
         morpho.claimToTreasury(underlyings, amounts);
     }
 
-    // @dev The test assumes that at least one the five tokens used is not listed on Morpho, otherwise the test is useless.
-    // Morpho Labs choses arbitrarily Matic, The Graph, Rocket Pool(governance token), Kucoin Token and TUSD.
-    function testShouldClaimToTreasuryIfMarketNotCreated(uint256[] calldata amounts) public {
-        vm.assume(amounts.length >= allUnderlyings.length);
+    function testShouldClaimToTreasuryIfMarketNotCreated(address treasuryVault, uint256[] calldata amounts) public {
+        vm.assume(treasuryVault != address(morpho));
 
-        address[] memory underlyings = new address[](marketsNotCreated.length);
+        address[] memory claimedUnderlyings = new address[](amounts.length);
 
-        address treasuryVault = address(1);
-        uint256 lengthUnderlyings;
+        for (uint256 i; i < amounts.length; ++i) {
+            OZERC20 marketNotCreated =
+            new OZERC20(string.concat("MarketNotCreated", Strings.toString(i)), string.concat("ma3-", Strings.toString(i)));
 
-        for (uint256 i = 0; i < marketsNotCreated.length; ++i) {
-            if (morpho.market(marketsNotCreated[i]).aToken == address(0)) {
-                underlyings[lengthUnderlyings] = marketsNotCreated[i];
-                deal(marketsNotCreated[i], address(morpho), amounts[lengthUnderlyings]);
-                ++lengthUnderlyings;
-            }
+            claimedUnderlyings[i] = address(marketNotCreated);
+            deal(address(marketNotCreated), address(morpho), amounts[i]);
         }
 
         morpho.setTreasuryVault(treasuryVault);
-        morpho.claimToTreasury(underlyings, amounts);
+        morpho.claimToTreasury(claimedUnderlyings, amounts);
 
-        for (uint256 i = 0; i < underlyings.length; ++i) {
-            if (underlyings[i] != address(0)) {
-                assertEq(amounts[i], ERC20(underlyings[i]).balanceOf(address(morpho)), "Incorrect contract balance");
-            }
+        for (uint256 i; i < claimedUnderlyings.length; ++i) {
+            assertEq(
+                amounts[i],
+                ERC20(claimedUnderlyings[i]).balanceOf(address(morpho)),
+                string.concat("Incorrect contract balance:", Strings.toString(i))
+            );
         }
     }
 
