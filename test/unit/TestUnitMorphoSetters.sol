@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import "test/helpers/IntegrationTest.sol";
+import "test/helpers/UnitTest.sol";
 
-contract TestIntegrationMorphoSetters is IntegrationTest {
+contract TestUnitMorphoSetters is UnitTest {
     function testSetIsClaimRewardsPausedRevertIfCallerNotOwner(address caller, bool isPaused) public {
         vm.assume(caller != address(this));
 
