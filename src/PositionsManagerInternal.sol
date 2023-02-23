@@ -179,9 +179,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // This can be helpful in case the pool sets an asset's LTV to 0.
         if (
             !collateralMarket.isCollateral
-                && _POOL.getUserConfiguration(address(this)).isUsingAsCollateral(
-                    _POOL.getReserveData(underlyingCollateral).id
-                )
+                && !_POOL.getUserConfiguration(address(this)).isUsingAsCollateral(_POOL.getReserveData(underlyingCollateral).id)
         ) revert Errors.AssetNotUsedAsCollateral();
 
         if (borrowMarket.isDeprecated()) return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
