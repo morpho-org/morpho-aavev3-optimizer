@@ -1,19 +1,43 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-contract RewardsManagerMock {
-    error ForcedRevert();
+import {IMorpho} from "src/interfaces/IMorpho.sol";
+import {IRewardsManager} from "src/interfaces/IRewardsManager.sol";
 
-    function claimRewards(address[] calldata assets, address)
-        external
-        pure
-        returns (address[] memory rewardsList, uint256[] memory claimedAmounts)
-    {
-        rewardsList = new address[](assets.length);
-        claimedAmounts = new uint256[](assets.length);
+contract RewardsManagerMock is IRewardsManager {
+    error RewardsControllerCall();
+
+    address public immutable POOL;
+    address public immutable MORPHO;
+
+    constructor(address morpho) {
+        MORPHO = morpho;
+        POOL = IMorpho(morpho).POOL();
     }
 
     function REWARDS_CONTROLLER() external pure returns (address) {
-        revert ForcedRevert();
+        revert RewardsControllerCall();
     }
+
+    function getAllUserRewards(address[] calldata assets, address user)
+        external
+        view
+        returns (address[] memory rewardsList, uint256[] memory unclaimedAmounts)
+    {}
+    function getUserRewards(address[] calldata assets, address user, address reward) external view returns (uint256) {}
+
+    function getUserAccruedRewards(address[] calldata assets, address user, address reward)
+        external
+        view
+        returns (uint256 totalAccrued)
+    {}
+
+    function getUserAssetIndex(address user, address asset, address reward) external view returns (uint256) {}
+
+    function claimRewards(address[] calldata assets, address user)
+        external
+        returns (address[] memory rewardsList, uint256[] memory claimedAmounts)
+    {}
+
+    function updateUserRewards(address user, address asset, uint256 userBalance) external {}
 }
