@@ -1,0 +1,168 @@
+name: Forge
+
+on:
+  workflow_call:
+    inputs:
+      network:
+        description: The network on which to run the forge test suite.
+        required: true
+        type: string
+      unit-fuzz-runs:
+        description: The number of fuzz rounds to perform for each fuzzing unit test.
+        required: false
+        default: 16384
+        type: number
+      internal-fuzz-runs:
+        description: The number of fuzz rounds to perform for each fuzzing unit test.
+        required: false
+        default: 32
+        type: number
+      integration-fuzz-runs:
+        description: The number of fuzz rounds to perform for each fuzzing unit test.
+        required: false
+        default: 32
+        type: number
+      coverageThreshold:
+        description: The coverage threshold below which to fail the action.
+        required: false
+        type: number
+    secrets:
+      MACHINE_USER_PRIVATE_KEY:
+        required: true
+      ALCHEMY_KEY:
+        required: false
+      CODECOV_TOKEN:
+        required: false
+
+env:
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  build:
+    name: Compilation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
+
+      - name: Install Foundry
+        uses: onbjerg/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Build contracts & check sizes
+        run: make contracts # don't use compilation cache
+
+  test-unit:
+    needs: build
+
+    name: Unit tests (${{ inputs.network }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
+
+      - uses: ./.github/actions/install
+
+      - name: Run unit tests
+        run: make test-unit
+        env:
+          NETWORK: ${{ inputs.network }}
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
+          FOUNDRY_FUZZ_RUNS: ${{ inputs.unit-fuzz-runs }}
+          FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
+
+  test-internal:
+    needs: build
+
+    name: Internal tests (${{ inputs.network }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
+
+      - uses: ./.github/actions/install
+
+      - name: Run internal tests
+        run: make test-internal
+        env:
+          NETWORK: ${{ inputs.network }}
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
+          FOUNDRY_FUZZ_RUNS: ${{ inputs.internal-fuzz-runs }}
+          FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
+
+  test-integration:
+    needs: build
+
+    name: Integration tests (${{ inputs.network }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
+
+      - uses: ./.github/actions/install
+
+      - name: Run integration tests & create gas report
+        run: set -o pipefail && make gas-report | tee ${{ inputs.network }}.gasreport.ansi
+        env:
+          NETWORK: ${{ inputs.network }}
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
+          FOUNDRY_FUZZ_RUNS: ${{ inputs.integration-fuzz-runs }}
+          FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
+
+      - name: Compare gas reports
+        uses: Rubilmax/foundry-gas-diff@v3.13.4
+        id: gas_diff
+        with:
+          match: src/Morpho.sol
+          report: ${{ inputs.network }}.gasreport.ansi
+
+  coverage:
+    needs:
+      - test-unit
+      - test-internal
+      - test-integration
+    if: inputs.coverageThreshold != ''
+
+    name: Coverage (${{ inputs.network }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
+
+      - uses: ./.github/actions/install
+
+      - name: Install lcov
+        if: ${{ inputs.codecovToken != '' }}
+        run: sudo apt-get install -y lcov
+
+      - name: Generate lcov coverage report
+        run: make coverage
+        env:
+          NETWORK: ${{ inputs.network }}
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
+
+      - name: Check coverage threshold
+        run: npx lcov-total lcov.info --gte=${{ inputs.coverageThreshold }}
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          name: morpho-aave-v3-${{ inputs.network }}
+          files: lcov.info
