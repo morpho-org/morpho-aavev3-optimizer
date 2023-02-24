@@ -187,7 +187,33 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         wethGateway.repayETH{value: toRepay}(address(this));
 
         assertEq(repayer.balance, 0);
-        assertApproxEqAbs(morpho.borrowBalance(weth, address(this)), toBorrow - toRepay, 2, "repay != expected");
+        assertApproxEqAbs(
+            morpho.borrowBalance(weth, address(this)), toBorrow - toRepay, 2, "borrow balance != expected"
+        );
+    }
+
+    function testRepayETHWithExcess(uint256 amount, uint256 toRepay, address onBehalf, address repayer) public {
+        amount = bound(amount, MIN_AMOUNT, type(uint96).max);
+        deal(address(this), amount);
+
+        _supplyCollateralETH(address(this), amount);
+        assertGt(morpho.collateralBalance(weth, address(this)), 0);
+
+        morpho.approveManager(address(wethGateway), true);
+
+        uint256 toBorrow = amount / 2;
+        wethGateway.borrowETH(toBorrow, onBehalf, MAX_ITERATIONS);
+
+        uint256 borrowBalance = morpho.borrowBalance(weth, address(this));
+
+        toRepay = bound(toRepay, borrowBalance + 10, type(uint96).max);
+        deal(repayer, toRepay);
+        vm.prank(repayer);
+        wethGateway.repayETH{value: toRepay}(address(this));
+
+        uint256 excess = toRepay - borrowBalance;
+        assertEq(repayer.balance, excess);
+        assertApproxEqAbs(morpho.borrowBalance(weth, address(this)), 0, 2, "borrow balance != 0");
     }
 
     function _supplyETH(address onBehalf, uint256 amount) internal {

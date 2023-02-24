@@ -66,7 +66,8 @@ contract WETHGateway {
     /// @notice Wraps `msg.value` ETH in WETH and repays `onBehalf`'s debt on Morpho.
     function repayETH(address onBehalf) external payable {
         _wrapETH(msg.value);
-        _MORPHO.repay(_WETH, msg.value, onBehalf);
+        uint256 excess = msg.value - _MORPHO.repay(_WETH, msg.value, onBehalf);
+        _unwrapAndTransferETH(excess, msg.sender);
     }
 
     /// @notice Withdraws WETH up to `amount` on behalf of `msg.sender`, unwraps it to WETH and sends it to `receiver`.
