@@ -18,9 +18,15 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 seized;
     }
 
-    function testShouldNotLiquidateHealthyUser(address borrower, uint256 borrowed, uint256 toRepay) public {
+    function testShouldNotLiquidateHealthyUser(
+        address borrower,
+        uint256 borrowed,
+        uint256 toRepay,
+        uint256 healthFactor
+    ) public {
         borrower = _boundAddressNotZero(borrower);
         toRepay = bound(toRepay, 1, type(uint256).max);
+        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentAdd(1), type(uint96).max);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -34,6 +40,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
+                _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
+
                 user.approve(borrowedMarket.underlying, toRepay);
 
                 vm.expectRevert(Errors.UnauthorizedLiquidate.selector);
@@ -46,11 +54,17 @@ contract TestIntegrationLiquidate is IntegrationTest {
         address borrower,
         uint256 borrowed,
         uint256 toRepay,
-        uint256 indexShift
+        uint256 indexShift,
+        uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
         toRepay = bound(toRepay, 1, type(uint256).max);
         indexShift = bound(indexShift, 1, collateralUnderlyings.length - 1);
+        healthFactor = bound(
+            healthFactor,
+            Constants.MIN_LIQUIDATION_THRESHOLD.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
+        );
 
         LiquidateTest memory test;
 
@@ -67,7 +81,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 );
 
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-                    _overrideCollateral(borrowedMarket, collateralMarket, borrower);
+                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -91,11 +105,17 @@ contract TestIntegrationLiquidate is IntegrationTest {
         address borrower,
         uint256 borrowed,
         uint256 toRepay,
-        uint256 indexShift
+        uint256 indexShift,
+        uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
         toRepay = bound(toRepay, 1, type(uint256).max);
         indexShift = bound(indexShift, 1, borrowableUnderlyings.length - 1);
+        healthFactor = bound(
+            healthFactor,
+            Constants.MIN_LIQUIDATION_THRESHOLD.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
+        );
 
         LiquidateTest memory test;
 
@@ -112,7 +132,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 );
 
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-                    _overrideCollateral(borrowedMarket, collateralMarket, borrower);
+                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -128,9 +148,20 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
-    function testLiquidateUnhealthyUser(address borrower, uint256 borrowed, uint256 promoted, uint256 toRepay) public {
+    function testLiquidateUnhealthyUserWhenSentinelAllows(
+        address borrower,
+        uint256 borrowed,
+        uint256 promoted,
+        uint256 toRepay,
+        uint256 healthFactor
+    ) public {
         borrower = _boundAddressNotZero(borrower);
         toRepay = bound(toRepay, 1, type(uint256).max);
+        healthFactor = bound(
+            healthFactor,
+            Constants.MIN_LIQUIDATION_THRESHOLD.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
+        );
 
         LiquidateTest memory test;
 
@@ -150,7 +181,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 _promoteBorrow(promoter1, borrowedMarket, promoted);
 
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-                    _overrideCollateral(borrowedMarket, collateralMarket, borrower);
+                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -164,14 +195,59 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
+    function testShouldNotLiquidateUnhealthyUserWhenSentinelDisallows(
+        address borrower,
+        uint256 borrowed,
+        uint256 toRepay,
+        uint256 healthFactor
+    ) public {
+        borrower = _boundAddressNotZero(borrower);
+        toRepay = bound(toRepay, 1, type(uint256).max);
+        healthFactor = bound(
+            healthFactor,
+            Constants.MIN_LIQUIDATION_THRESHOLD.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
+        );
+
+        oracleSentinel.setLiquidationAllowed(false);
+
+        LiquidateTest memory test;
+
+        for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
+            for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+                _revert();
+
+                TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
+                TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
+
+                borrowed = _boundBorrow(borrowedMarket, borrowed);
+                (, borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                );
+
+                (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
+                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
+
+                vm.expectRevert(Errors.UnauthorizedLiquidate.selector);
+                user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
+            }
+        }
+    }
+
     function testLiquidateUnhealthyUserWhenSupplyCapExceeded(
         address borrower,
         uint256 borrowed,
         uint256 toRepay,
-        uint256 supplyCap
+        uint256 supplyCap,
+        uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
         toRepay = bound(toRepay, 1, type(uint256).max);
+        healthFactor = bound(
+            healthFactor,
+            Constants.MIN_LIQUIDATION_THRESHOLD.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
+        );
 
         LiquidateTest memory test;
 
@@ -193,7 +269,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 _setSupplyCap(borrowedMarket, supplyCap);
 
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-                    _overrideCollateral(borrowedMarket, collateralMarket, borrower);
+                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -207,9 +283,19 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
-    function testLiquidateUnhealthyUserWhenDemotedZero(address borrower, uint256 borrowed, uint256 toRepay) public {
+    function testLiquidateUnhealthyUserWhenDemotedZero(
+        address borrower,
+        uint256 borrowed,
+        uint256 toRepay,
+        uint256 healthFactor
+    ) public {
         borrower = _boundAddressNotZero(borrower);
         toRepay = bound(toRepay, 1, type(uint256).max);
+        healthFactor = bound(
+            healthFactor,
+            Constants.MIN_LIQUIDATION_THRESHOLD.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
+        );
 
         LiquidateTest memory test;
 
@@ -231,7 +317,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 morpho.setDefaultIterations(Types.Iterations({repay: 0, withdraw: 10}));
 
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-                    _overrideCollateral(borrowedMarket, collateralMarket, borrower);
+                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -245,8 +331,14 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
-    function testPartialLiquidateUserOnDeprecatedMarket(address borrower, uint256 borrowed, uint256 toRepay) public {
+    function testPartialLiquidateAnyUserOnDeprecatedMarket(
+        address borrower,
+        uint256 borrowed,
+        uint256 toRepay,
+        uint256 healthFactor
+    ) public {
         borrower = _boundAddressNotZero(borrower);
+        healthFactor = bound(healthFactor, 1, type(uint96).max);
 
         LiquidateTest memory test;
 
@@ -281,8 +373,14 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
-    function testFullLiquidateUserOnDeprecatedMarket(address borrower, uint256 borrowed, uint256 toRepay) public {
+    function testFullLiquidateAnyUserOnDeprecatedMarket(
+        address borrower,
+        uint256 borrowed,
+        uint256 toRepay,
+        uint256 healthFactor
+    ) public {
         borrower = _boundAddressNotZero(borrower);
+        healthFactor = bound(healthFactor, 1, type(uint96).max);
 
         LiquidateTest memory test;
 
@@ -322,9 +420,15 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
-    function testShouldUpdateIndexesAfterLiquidate(address borrower, uint256 borrowed, uint256 toRepay) public {
+    function testShouldUpdateIndexesAfterLiquidate(
+        address borrower,
+        uint256 borrowed,
+        uint256 toRepay,
+        uint256 healthFactor
+    ) public {
         borrower = _boundAddressNotZero(borrower);
         toRepay = bound(toRepay, 1, type(uint256).max);
+        healthFactor = bound(healthFactor, 1, Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1));
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -340,7 +444,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
                 vm.warp(block.timestamp + 1);
 
-                _overrideCollateral(borrowedMarket, collateralMarket, borrower);
+                _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -478,14 +582,15 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function _overrideCollateral(
         TestMarket storage borrowedMarket,
         TestMarket storage collateralMarket,
-        address borrower
+        address borrower,
+        uint256 healthFactor
     ) internal returns (uint256 borrowBalance, uint256 collateralBalance) {
         stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
             collateralMarket.underlying
         ).with_key(borrower).checked_write(
-            morpho.scaledCollateralBalance(collateralMarket.underlying, borrower).percentSub(
+            morpho.scaledCollateralBalance(collateralMarket.underlying, borrower).percentMul(
                 collateralMarket.ltv.percentDiv(collateralMarket.lt)
-            )
+            ).wadMul(healthFactor)
         );
 
         borrowBalance = morpho.borrowBalance(borrowedMarket.underlying, borrower);
