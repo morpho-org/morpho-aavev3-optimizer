@@ -6,6 +6,7 @@ on:
       network:
         description: The network on which to run the forge test suite.
         required: true
+        type: string
       unitFuzzRuns:
         description: The number of fuzz rounds to perform for each fuzzing unit test.
         required: false
@@ -24,6 +25,7 @@ on:
       coverageThreshold:
         description: The coverage threshold below which to fail the action.
         required: false
+        type: number
     secrets:
       MACHINE_USER_PRIVATE_KEY:
         required: true
