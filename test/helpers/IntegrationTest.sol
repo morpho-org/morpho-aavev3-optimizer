@@ -52,7 +52,7 @@ contract IntegrationTest is ForkTest {
         _deploy();
 
         for (uint256 i; i < allUnderlyings.length; ++i) {
-            _createMarket(allUnderlyings[i], 0, 33_33);
+            _createTestMarket(allUnderlyings[i], 0, 33_33);
         }
 
         // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() always return true.
@@ -142,7 +142,7 @@ contract IntegrationTest is ForkTest {
         vm.label(reserve.stableDebtTokenAddress, string.concat("sd", market.symbol));
     }
 
-    function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
+    function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         (TestMarket storage market,) = _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
         underlyings.push(underlying);
