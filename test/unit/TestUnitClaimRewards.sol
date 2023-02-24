@@ -2,11 +2,10 @@
 pragma solidity ^0.8.0;
 
 import {RewardsManagerMock} from "test/mocks/RewardsManagerMock.sol";
-import {Morpho} from "src/Morpho.sol";
 
 import "test/helpers/InternalTest.sol";
 
-contract TestUnitMorphoSetters is InternalTest {
+contract TestUnitClaimRewards is InternalTest {
     using TestConfigLib for TestConfig;
 
     function setUp() public override {
