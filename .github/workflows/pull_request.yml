@@ -2,9 +2,6 @@ name: Pull request
 
 on:
   pull_request:
-    branches-ignore: # already triggered by push
-      - main
-      - dev
     paths:
       - lib/**
       - src/**
@@ -14,6 +11,8 @@ on:
 
 jobs:
   test-ethereum-mainnet:
+    if: github.head_ref != 'main' && github.head_ref != 'dev' # already triggered by push
+
     name: Tests (ethereum-mainnet)
 
     uses: morpho-dao/morpho-aave-v3/.github/workflows/forge.yml@main
