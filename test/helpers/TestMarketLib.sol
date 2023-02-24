@@ -37,22 +37,6 @@ library TestMarketLib {
 
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
-    /// @dev Disables the same block borrow/repay limitation by resetting the previous index of the given user on AaveV3.
-    /// https://github.com/aave/aave-v3-core/blob/bb625723211944a7325b505caf6199edf4b8ed2a/contracts/protocol/tokenization/base/IncentivizedERC20.sol#L41-L50
-    /// The check was removed in commit https://github.com/aave/aave-v3-core/commit/b1d94da8c4de795e94a7ff5c1429a98854cb2b65 but the change is not deployed at test block.
-    function _resetPreviousIndex(address variableDebtToken, address user) private {
-        bytes32 slot = keccak256(abi.encode(user, 56));
-        vm.store(
-            variableDebtToken,
-            slot,
-            vm.load(variableDebtToken, slot) & 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff
-        );
-    }
-
-    function resetPreviousIndex(TestMarket storage market, address user) internal {
-        _resetPreviousIndex(market.variableDebtToken, user);
-    }
-
     /// @dev Returns the quantity that can be borrowed/withdrawn from the market.
     function liquidity(TestMarket storage market) internal view returns (uint256) {
         return ERC20(market.underlying).balanceOf(market.aToken);
