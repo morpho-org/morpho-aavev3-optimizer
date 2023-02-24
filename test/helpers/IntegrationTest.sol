@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {IPositionsManager} from "src/interfaces/IPositionsManager.sol";
+import {IRewardsManager} from "src/interfaces/IRewardsManager.sol";
 
 import {TestMarket, TestMarketLib} from "test/helpers/TestMarketLib.sol";
 
@@ -11,7 +12,7 @@ import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.s
 
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
-import {RewardsManagerMock} from "test/mocks/RewardsManagerMock.sol";
+import {RewardsManager} from "src/RewardsManager.sol";
 import {UserMock} from "test/mocks/UserMock.sol";
 import "./ForkTest.sol";
 
@@ -32,13 +33,12 @@ contract IntegrationTest is ForkTest {
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
+    IRewardsManager internal rewardsManager;
 
     ProxyAdmin internal proxyAdmin;
 
     IMorpho internal morphoImpl;
     TransparentUpgradeableProxy internal morphoProxy;
-
-    RewardsManagerMock internal rewardsManagerMock;
 
     UserMock internal user;
     UserMock internal promoter1;
@@ -95,7 +95,9 @@ contract IntegrationTest is ForkTest {
 
         morpho.initialize(address(positionsManager), Types.Iterations({repay: 10, withdraw: 10}));
 
-        rewardsManagerMock = new RewardsManagerMock();
+        rewardsManager = new RewardsManager(address(rewardsController), address(morpho), address(pool));
+
+        morpho.setRewardsManager(address(rewardsManager));
     }
 
     function _initUser() internal returns (UserMock newUser) {
