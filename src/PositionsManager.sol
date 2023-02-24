@@ -231,11 +231,13 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         address borrower,
         address liquidator
     ) external returns (uint256, uint256) {
+        _validateLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
+
         Types.Indexes256 memory borrowIndexes = _updateIndexes(underlyingBorrowed);
         Types.Indexes256 memory collateralIndexes = _updateIndexes(underlyingCollateral);
 
         Types.LiquidateVars memory vars;
-        vars.closeFactor = _authorizeLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
+        vars.closeFactor = _authorizeLiquidate(underlyingBorrowed, borrower);
 
         amount = Math.min(
             _getUserBorrowBalanceFromIndexes(underlyingBorrowed, borrower, borrowIndexes).percentMul(vars.closeFactor), // Max liquidatable debt.

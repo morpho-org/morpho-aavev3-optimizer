@@ -52,7 +52,7 @@ contract IntegrationTest is ForkTest {
         _deploy();
 
         for (uint256 i; i < allUnderlyings.length; ++i) {
-            _createMarket(allUnderlyings[i], 0, 33_33);
+            _createTestMarket(allUnderlyings[i], 0, 33_33);
         }
 
         // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() always return true.
@@ -142,7 +142,7 @@ contract IntegrationTest is ForkTest {
         vm.label(reserve.stableDebtTokenAddress, string.concat("sd", market.symbol));
     }
 
-    function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
+    function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         (TestMarket storage market,) = _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
         underlyings.push(underlying);
@@ -152,9 +152,16 @@ contract IntegrationTest is ForkTest {
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
     }
 
+    /// @dev Returns the total supply used towards the supply cap.
+    function _totalSupplyToCap(TestMarket storage market) internal view returns (uint256) {
+        return (IAToken(market.aToken).scaledTotalSupply() + _accruedToTreasury(market.underlying)).rayMul(
+            pool.getReserveNormalizedIncome(market.underlying)
+        );
+    }
+
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
     function _supplyGap(TestMarket storage market) internal view returns (uint256) {
-        return market.supplyCap.zeroFloorSub(market.totalSupply() + _accruedToTreasury(market.underlying));
+        return market.supplyCap.zeroFloorSub(_totalSupplyToCap(market));
     }
 
     /// @dev Sets the supply cap of AaveV3 to the given input.
@@ -164,11 +171,30 @@ contract IntegrationTest is ForkTest {
         poolAdmin.setSupplyCap(market.underlying, supplyCap);
     }
 
+    /// @dev Sets the supply gap of AaveV3 to the given input.
+    /// @return The new supply gap after rounding since supply caps on AAVE are only granular up to the token's decimals.
+    function _setSupplyGap(TestMarket storage market, uint256 supplyGap) internal returns (uint256) {
+        _setSupplyCap(market, (_totalSupplyToCap(market) + supplyGap) / (10 ** market.decimals));
+        return _supplyGap(market);
+    }
+
+    /// @dev Calculates the underlying amount that can be borrowed on the given market on AaveV3, reaching the borrow cap.
+    function _borrowGap(TestMarket storage market) internal view returns (uint256) {
+        return market.borrowGap();
+    }
+
     /// @dev Sets the borrow cap of AaveV3 to the given input.
     function _setBorrowCap(TestMarket storage market, uint256 borrowCap) internal {
         market.borrowCap = borrowCap > 0 ? borrowCap * 10 ** market.decimals : type(uint256).max;
 
         poolAdmin.setBorrowCap(market.underlying, borrowCap);
+    }
+
+    /// @dev Sets the borrow gap of AaveV3 to the given input.
+    /// @return The new borrow gap after rounding since supply caps on AAVE are only granular up to the token's decimals.
+    function _setBorrowGap(TestMarket storage market, uint256 borrowGap) internal returns (uint256) {
+        _setBorrowCap(market, (market.totalBorrow() + borrowGap) / (10 ** market.decimals));
+        return _borrowGap(market);
     }
 
     modifier bypassSupplyCap(TestMarket storage market, uint256 amount) {
@@ -197,11 +223,7 @@ contract IntegrationTest is ForkTest {
         view
         returns (uint256)
     {
-        return bound(
-            supplyCap,
-            1,
-            (market.totalSupply() + _accruedToTreasury(market.underlying) + amount) / (10 ** market.decimals)
-        );
+        return bound(supplyCap, 1, (_totalSupplyToCap(market) + amount) / (10 ** market.decimals));
     }
 
     /// @dev Bounds the input borrow cap of AaveV3 so that it is exceeded after having deposited a given amount

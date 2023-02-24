@@ -112,6 +112,7 @@ library InterestRatesLib {
         // p2pGrowthFactor * (1 - proportionDelta - proportionIdle) +
         // poolGrowthFactor * proportionDelta +
         // idleGrowthFactor * proportionIdle)
+        // Notice that the idleGrowthFactor is always equal to 1 (no interests accumulated).
         return lastIndexes.p2pIndex.rayMul(
             p2pGrowthFactor.rayMul(WadRayMath.RAY - proportionDelta - proportionIdle)
                 + poolGrowthFactor.rayMul(proportionDelta) + proportionIdle
