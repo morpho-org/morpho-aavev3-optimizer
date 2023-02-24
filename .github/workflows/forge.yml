@@ -134,7 +134,7 @@ jobs:
       - test-unit
       - test-internal
       - test-integration
-    if: secrets.CODECOV_TOKEN != ''
+    if: ${{ secrets.CODECOV_TOKEN != '' }}
 
     name: Coverage (${{ inputs.network }})
     runs-on: ubuntu-latest
