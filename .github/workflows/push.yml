@@ -1,0 +1,18 @@
+name: Push
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  test-ethereum-mainnet:
+    name: Tests (ethereum-mainnet)
+
+    uses: morpho-dao/morpho-aave-v3/.github/workflows/forge.yml@main
+    with:
+      network: ethereum-mainnet
+      internalFuzzRuns: 64
+      integrationFuzzRuns: 64
+    secrets: inherit
