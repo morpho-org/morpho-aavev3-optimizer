@@ -35,37 +35,41 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertEq(ERC20(weth).balanceOf(address(wethGateway)), 0);
     }
 
-    function testCannotSendETHToWETHGateway(uint256 amount) public {
-        vm.expectRevert(abi.encodeWithSelector(WETHGateway.OnlyWETH.selector));
+    function testCannotSendETHToWETHGateway(uint96 amount) public {
+        vm.expectRevert(WETHGateway.OnlyWETH.selector);
         payable(wethGateway).transfer(amount);
     }
 
     function testSupplyETH(uint256 amount, address onBehalf) public {
-        vm.assume(onBehalf != address(0));
+        onBehalf = _boundAddressNotZero(onBehalf);
         assertEq(morpho.supplyBalance(weth, onBehalf), 0);
 
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
 
+        uint256 balanceBefore = address(this).balance;
         uint256 onBehalfBalanceBefore = onBehalf.balance;
+
         _supplyETH(onBehalf, amount);
 
-        if (onBehalf != address(this)) assertEq(onBehalf.balance, onBehalfBalanceBefore);
-        assertEq(address(this).balance, 0);
-        assertApproxEqAbs(morpho.supplyBalance(weth, onBehalf), amount, 1, "supply != amount");
+        if (onBehalf != address(this)) assertEq(onBehalf.balance, onBehalfBalanceBefore, "onBehalfBalance");
+        assertEq(address(this).balance + amount, balanceBefore, "balanceAfter != balanceBefore - amount");
+        assertApproxEqAbs(morpho.supplyBalance(weth, onBehalf), amount, 1, "supplyBalance != amount");
     }
 
     function testSupplyCollateralETH(uint256 amount, address onBehalf) public {
-        vm.assume(onBehalf != address(0));
+        onBehalf = _boundAddressNotZero(onBehalf);
         assertEq(morpho.collateralBalance(weth, onBehalf), 0);
 
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
 
+        uint256 balanceBefore = address(this).balance;
         uint256 onBehalfBalanceBefore = onBehalf.balance;
+
         _supplyCollateralETH(onBehalf, amount);
 
-        if (onBehalf != address(this)) assertEq(onBehalf.balance, onBehalfBalanceBefore);
-        assertEq(address(this).balance, 0);
-        assertApproxEqAbs(morpho.collateralBalance(weth, onBehalf), amount, 1);
+        if (onBehalf != address(this)) assertEq(onBehalf.balance, onBehalfBalanceBefore, "onBehalfBalance");
+        assertEq(address(this).balance + amount, balanceBefore, "balanceAfter != balanceBefore - amount");
+        assertApproxEqAbs(morpho.collateralBalance(weth, onBehalf), amount, 1, "collateralBalance != amount");
     }
 
     function testCannotWithdrawIfWETHGatewayNotManager(uint256 amount) public {
@@ -77,23 +81,30 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         wethGateway.withdrawETH(amount, address(this), MAX_ITERATIONS);
     }
 
-    function testWithdrawETH(uint256 amount, uint256 toWithdraw, address receiver) public {
+    function testWithdrawETH(uint256 collateral, uint256 toWithdraw, address receiver) public {
         _assumeReceiver(receiver);
 
-        amount = bound(amount, MIN_AMOUNT, type(uint96).max);
-        toWithdraw = bound(toWithdraw, 1, amount);
+        collateral = bound(collateral, MIN_AMOUNT, type(uint96).max);
+        toWithdraw = bound(toWithdraw, 1, collateral);
 
-        _supplyETH(address(this), amount);
+        _supplyETH(address(this), collateral);
         assertGt(morpho.supplyBalance(weth, address(this)), 0);
 
         morpho.approveManager(address(wethGateway), true);
 
-        uint256 balanceBefore = receiver.balance;
+        uint256 balanceBefore = address(this).balance;
+        uint256 receiverBalanceBefore = receiver.balance;
+
         wethGateway.withdrawETH(toWithdraw, receiver, MAX_ITERATIONS);
 
-        if (receiver != address(this)) assertEq(address(this).balance, 0);
-        assertApproxEqAbs(morpho.supplyBalance(weth, address(this)), amount - toWithdraw, 2, "supply != expected");
-        assertApproxEqAbs(receiver.balance, balanceBefore + toWithdraw, 1);
+        if (receiver != address(this)) assertEq(address(this).balance, balanceBefore);
+        assertApproxEqAbs(receiver.balance, receiverBalanceBefore + toWithdraw, 1);
+        assertApproxEqAbs(
+            morpho.supplyBalance(weth, address(this)),
+            collateral - toWithdraw,
+            2,
+            "collateralBalance != collateral - toWithdraw"
+        );
     }
 
     function testCannotWithdrawCollateralIfWETHGatewayNotManager(uint256 amount) public {
@@ -105,25 +116,30 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         wethGateway.withdrawCollateralETH(amount, address(this));
     }
 
-    function testWithdrawCollateralETH(uint256 amount, uint256 toWithdraw, address receiver) public {
+    function testWithdrawCollateralETH(uint256 collateral, uint256 toWithdraw, address receiver) public {
         _assumeReceiver(receiver);
 
-        amount = bound(amount, MIN_AMOUNT, type(uint96).max);
-        toWithdraw = bound(toWithdraw, 1, amount);
+        collateral = bound(collateral, MIN_AMOUNT, type(uint96).max);
+        toWithdraw = bound(toWithdraw, 1, collateral);
 
-        _supplyCollateralETH(address(this), amount);
+        _supplyCollateralETH(address(this), collateral);
         assertGt(morpho.collateralBalance(weth, address(this)), 0);
 
         morpho.approveManager(address(wethGateway), true);
 
-        uint256 balanceBefore = receiver.balance;
+        uint256 balanceBefore = address(this).balance;
+        uint256 receiverBalanceBefore = receiver.balance;
+
         wethGateway.withdrawCollateralETH(toWithdraw, receiver);
 
-        if (receiver != address(this)) assertEq(address(this).balance, 0);
+        if (receiver != address(this)) assertEq(address(this).balance, balanceBefore);
+        assertApproxEqAbs(receiver.balance, receiverBalanceBefore + toWithdraw, 1);
         assertApproxEqAbs(
-            morpho.collateralBalance(weth, address(this)), amount - toWithdraw, 2, "collateral != expected"
+            morpho.collateralBalance(weth, address(this)),
+            collateral - toWithdraw,
+            2,
+            "collateralBalance != collateral - toWithdraw"
         );
-        assertApproxEqAbs(receiver.balance, balanceBefore + toWithdraw, 1);
     }
 
     function testCannotBorrowIfWETHGatewayNotManager(uint256 amount) public {
