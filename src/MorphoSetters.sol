@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import {IMorphoSetters} from "./interfaces/IMorpho.sol";
 import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
+import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
@@ -48,14 +49,18 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     /* SETTERS */
 
     /// @notice Sets `_defaultIterations` to `defaultIterations`.
-    function setDefaultIterations(Types.Iterations calldata defaultIterations) external onlyOwner {
+    /// @dev Visibility is public to be callable in the initialize function.
+    function setDefaultIterations(Types.Iterations calldata defaultIterations) public onlyOwner {
         _defaultIterations = defaultIterations;
         emit Events.DefaultIterationsSet(defaultIterations.repay, defaultIterations.withdraw);
     }
 
     /// @notice Sets `_positionsManager` to `positionsManager`.
-    function setPositionsManager(address positionsManager) external onlyOwner {
-        if (positionsManager == address(0)) revert Errors.AddressIsZero();
+    /// @dev Visibility is public to be callable in the initialize function.
+    function setPositionsManager(address positionsManager) public onlyOwner {
+        if (IPositionsManager(positionsManager).E_MODE_CATEGORY_ID() != _E_MODE_CATEGORY_ID) {
+            revert Errors.InconsistentEMode();
+        }
         _positionsManager = positionsManager;
         emit Events.PositionsManagerSet(positionsManager);
     }

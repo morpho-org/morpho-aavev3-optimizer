@@ -2,10 +2,11 @@
 pragma solidity >=0.5.0;
 
 interface IPositionsManager {
+    function E_MODE_CATEGORY_ID() external view returns (uint256);
+
     function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxIterations)
         external
         returns (uint256 supplied);
-
     function supplyCollateralLogic(address underlying, uint256 amount, address from, address onBehalf)
         external
         returns (uint256 supplied);

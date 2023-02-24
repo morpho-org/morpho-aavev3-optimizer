@@ -44,6 +44,11 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
     /* EXTERNAL */
 
+    /// @notice Returns the e-mode category ID of the PositionsManager.
+    function E_MODE_CATEGORY_ID() external view returns (uint256) {
+        return _E_MODE_CATEGORY_ID;
+    }
+
     /// @notice Implements the supply logic.
     /// @param underlying The address of the underlying asset to supply.
     /// @param amount The amount of `underlying` to supply.

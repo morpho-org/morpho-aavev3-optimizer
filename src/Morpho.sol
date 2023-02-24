@@ -39,16 +39,14 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @notice Initializes the contract.
     /// @param newPositionsManager The address of the `_positionsManager` to set.
     /// @param newDefaultIterations The `_defaultIterations` to set.
-    function initialize(address newPositionsManager, Types.Iterations memory newDefaultIterations)
+    function initialize(address newPositionsManager, Types.Iterations calldata newDefaultIterations)
         external
         initializer
     {
         __Ownable_init_unchained();
 
-        _positionsManager = newPositionsManager;
-        _defaultIterations = newDefaultIterations;
-        emit Events.DefaultIterationsSet(newDefaultIterations.repay, newDefaultIterations.withdraw);
-        emit Events.PositionsManagerSet(newPositionsManager);
+        setPositionsManager(newPositionsManager);
+        setDefaultIterations(newDefaultIterations);
 
         _POOL.setUserEMode(_E_MODE_CATEGORY_ID);
         emit Events.EModeSet(_E_MODE_CATEGORY_ID);
