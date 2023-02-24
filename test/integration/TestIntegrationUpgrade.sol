@@ -148,8 +148,90 @@ contract TestIntegrationUpgrade is IntegrationTest {
         assertEq(s1.addressesProvider, s2.addressesProvider, "addressesProvider");
         assertEq(s1.domainSeparator, s2.domainSeparator, "domainSeparator");
         assertEq(s1.eModeCategoryId, s2.eModeCategoryId, "eModeCategoryId");
-        // Checking that the underlying slot matches should suffice for now.
+
+        assertEq(
+            s1.market.indexes.supply.poolIndex, s2.market.indexes.supply.poolIndex, "market.indexes.supply.poolIndex"
+        );
+        assertEq(s1.market.indexes.supply.p2pIndex, s2.market.indexes.supply.p2pIndex, "market.indexes.supply.p2pIndex");
+        assertEq(
+            s1.market.indexes.borrow.poolIndex, s2.market.indexes.borrow.poolIndex, "market.indexes.borrow.poolIndex"
+        );
+        assertEq(s1.market.indexes.borrow.p2pIndex, s2.market.indexes.borrow.p2pIndex, "market.indexes.borrow.p2pIndex");
+        assertEq(
+            s1.market.deltas.supply.scaledDelta, s2.market.deltas.supply.scaledDelta, "market.deltas.supply.scaledDelta"
+        );
+        assertEq(
+            s1.market.deltas.supply.scaledP2PTotal,
+            s2.market.deltas.supply.scaledP2PTotal,
+            "market.deltas.supply.scaledP2PTotal"
+        );
+        assertEq(
+            s1.market.deltas.borrow.scaledDelta, s2.market.deltas.borrow.scaledDelta, "market.deltas.borrow.scaledDelta"
+        );
+        assertEq(
+            s1.market.deltas.borrow.scaledP2PTotal,
+            s2.market.deltas.borrow.scaledP2PTotal,
+            "market.deltas.borrow.scaledP2PTotal"
+        );
         assertEq(s1.market.underlying, s2.market.underlying, "market.underlying");
+        assertEq(
+            s1.market.pauseStatuses.isP2PDisabled,
+            s2.market.pauseStatuses.isP2PDisabled,
+            "market.pauseStatuses.isP2PDisabled"
+        );
+        assertEq(
+            s1.market.pauseStatuses.isSupplyPaused,
+            s2.market.pauseStatuses.isSupplyPaused,
+            "market.pauseStatuses.isSupplyPaused"
+        );
+        assertEq(
+            s1.market.pauseStatuses.isSupplyCollateralPaused,
+            s2.market.pauseStatuses.isSupplyCollateralPaused,
+            "market.pauseStatuses.isSupplyCollateralPaused"
+        );
+        assertEq(
+            s1.market.pauseStatuses.isBorrowPaused,
+            s2.market.pauseStatuses.isBorrowPaused,
+            "market.pauseStatuses.isBorrowPaused"
+        );
+        assertEq(
+            s1.market.pauseStatuses.isWithdrawPaused,
+            s2.market.pauseStatuses.isWithdrawPaused,
+            "market.pauseStatuses.isWithdrawPaused"
+        );
+        assertEq(
+            s1.market.pauseStatuses.isWithdrawCollateralPaused,
+            s2.market.pauseStatuses.isWithdrawCollateralPaused,
+            "market.pauseStatuses.isWithdrawCollateralPaused"
+        );
+        assertEq(
+            s1.market.pauseStatuses.isRepayPaused,
+            s2.market.pauseStatuses.isRepayPaused,
+            "market.pauseStatuses.isRepayPaused"
+        );
+        assertEq(
+            s1.market.pauseStatuses.isLiquidateCollateralPaused,
+            s2.market.pauseStatuses.isLiquidateCollateralPaused,
+            "market.pauseStatuses.isLiquidateCollateralPaused"
+        );
+        assertEq(
+            s1.market.pauseStatuses.isLiquidateBorrowPaused,
+            s2.market.pauseStatuses.isLiquidateBorrowPaused,
+            "market.pauseStatuses.isLiquidateBorrowPaused"
+        );
+        assertEq(
+            s1.market.pauseStatuses.isDeprecated,
+            s2.market.pauseStatuses.isDeprecated,
+            "market.pauseStatuses.isDeprecated"
+        );
+        assertEq(s1.market.variableDebtToken, s2.market.variableDebtToken, "market.variableDebtToken");
+        assertEq(s1.market.lastUpdateTimestamp, s2.market.lastUpdateTimestamp, "market.lastUpdateTimestamp");
+        assertEq(s1.market.reserveFactor, s2.market.reserveFactor, "market.reserveFactor");
+        assertEq(s1.market.p2pIndexCursor, s2.market.p2pIndexCursor, "market.p2pIndexCursor");
+        assertEq(s1.market.aToken, s2.market.aToken, "market.aToken");
+        assertEq(s1.market.stableDebtToken, s2.market.stableDebtToken, "market.stableDebtToken");
+        assertEq(s1.market.idleSupply, s2.market.idleSupply, "market.idleSupply");
+
         for (uint256 i; i < s1.marketsCreated.length; i++) {
             assertEq(s1.marketsCreated[i], s2.marketsCreated[i], string.concat("marketsCreated", i.toString()));
         }
