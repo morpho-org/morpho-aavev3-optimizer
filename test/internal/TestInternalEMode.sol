@@ -169,6 +169,24 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         assertEq(expectedPrice, realPrice, "expectedPrice != realPrice");
     }
 
+    function testAssetPriceEModeWithPriceSourceZero(
+        address underlying,
+        uint256 underlyingPrice,
+        uint256 underlyingPriceEMode
+    ) public {
+        bool isInEMode = true;
+        underlying = _boundAddressNotZero(underlying);
+        underlyingPriceEMode = bound(underlyingPriceEMode, 1, type(uint256).max);
+        underlyingPrice = bound(underlyingPrice, 0, type(uint256).max);
+
+        oracle.setAssetPrice(underlying, underlyingPrice);
+        oracle.setAssetPrice(address(0), underlyingPriceEMode);
+
+        uint256 price = _getAssetPrice(underlying, oracle, isInEMode, address(0));
+
+        assertEq(price, underlyingPrice, "price != expected price");
+    }
+
     function testAssetPriceNonEMode(
         address underlying,
         address priceSourceEMode,

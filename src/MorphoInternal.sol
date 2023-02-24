@@ -528,7 +528,7 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256)
     {
-        if (isInEMode) {
+        if (isInEMode && priceSource != address(0)) {
             uint256 eModePrice = oracle.getAssetPrice(priceSource);
 
             if (eModePrice != 0) return eModePrice;
