@@ -7,17 +7,17 @@ on:
         description: The network on which to run the forge test suite.
         required: true
         type: string
-      unitFuzzRuns:
+      unit-fuzz-runs:
         description: The number of fuzz rounds to perform for each fuzzing unit test.
         required: false
         default: 16384
         type: number
-      internalFuzzRuns:
+      internal-fuzz-runs:
         description: The number of fuzz rounds to perform for each fuzzing unit test.
         required: false
         default: 32
         type: number
-      integrationFuzzRuns:
+      integration-fuzz-runs:
         description: The number of fuzz rounds to perform for each fuzzing unit test.
         required: false
         default: 32
@@ -75,7 +75,7 @@ jobs:
         env:
           NETWORK: ${{ inputs.network }}
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
-          FOUNDRY_FUZZ_RUNS: ${{ input.unitFuzzRuns }}
+          FOUNDRY_FUZZ_RUNS: ${{ inputs.unit-fuzz-runs }}
           FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
 
   test-internal:
@@ -97,7 +97,7 @@ jobs:
         env:
           NETWORK: ${{ inputs.network }}
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
-          FOUNDRY_FUZZ_RUNS: ${{ input.internalFuzzRuns }}
+          FOUNDRY_FUZZ_RUNS: ${{ inputs.internal-fuzz-runs }}
           FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
 
   test-integration:
@@ -119,7 +119,7 @@ jobs:
         env:
           NETWORK: ${{ inputs.network }}
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
-          FOUNDRY_FUZZ_RUNS: ${{ input.integrationFuzzRuns }}
+          FOUNDRY_FUZZ_RUNS: ${{ inputs.integration-fuzz-runs }}
           FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
 
       - name: Compare gas reports
