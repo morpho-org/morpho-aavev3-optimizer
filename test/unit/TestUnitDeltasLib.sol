@@ -150,9 +150,10 @@ contract TestUnitDeltasLib is Test {
 
     function testRepayFee(uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow, uint256 supplyDelta) public {
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
-        totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
-        totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
-        supplyDelta = bound(supplyDelta, 0, totalP2PSupply);
+        totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT).rayDiv(indexes.supply.p2pIndex);
+        totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT).rayDiv(indexes.borrow.p2pIndex);
+        supplyDelta =
+            bound(supplyDelta, 0, totalP2PSupply).rayMul(indexes.supply.p2pIndex).rayDiv(indexes.supply.poolIndex);
 
         deltas.supply.scaledP2PTotal = totalP2PSupply;
         deltas.borrow.scaledP2PTotal = totalP2PBorrow;
@@ -167,7 +168,7 @@ contract TestUnitDeltasLib is Test {
         assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply, "supply total");
         assertEq(
             deltas.borrow.scaledP2PTotal,
-            totalP2PBorrow.zeroFloorSub(expectedFee.rayDiv(indexes.borrow.p2pIndex)),
+            totalP2PBorrow.zeroFloorSub(expectedFee.rayDivDown(indexes.borrow.p2pIndex)),
             "borrow total"
         );
     }
