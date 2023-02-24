@@ -96,14 +96,14 @@ contract TestIntegrationUpgrade is IntegrationTest {
         assertFalse(address(newMorphoImpl) == address(morphoImpl), "not new morpho impl");
     }
 
-    function testUpgradePositionsManagerFailsIfNotOwner() public {
+    function testSetPositionsManagerFailsIfNotOwner() public {
         positionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID);
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(address(1));
         morpho.setPositionsManager(address(positionsManager));
     }
 
-    function testUpgradePositionsManager() public {
+    function testSetPositionsManager() public {
         StorageToCheck memory s1 = _populateStorageToCheck();
 
         PositionsManager newPositionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID);
