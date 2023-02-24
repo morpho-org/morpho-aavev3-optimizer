@@ -36,7 +36,6 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testCannotSendETHToWETHGateway(uint256 amount) public {
-        deal(address(this), amount);
         vm.expectRevert(abi.encodeWithSelector(WETHGateway.OnlyWETH.selector));
         payable(wethGateway).transfer(amount);
     }
@@ -46,7 +45,6 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertEq(morpho.supplyBalance(weth, onBehalf), 0);
 
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
-        deal(address(this), amount);
 
         uint256 onBehalfBalanceBefore = onBehalf.balance;
         _supplyETH(onBehalf, amount);
@@ -61,7 +59,6 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertEq(morpho.collateralBalance(weth, onBehalf), 0);
 
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
-        deal(address(this), amount);
 
         uint256 onBehalfBalanceBefore = onBehalf.balance;
         _supplyCollateralETH(onBehalf, amount);
@@ -73,7 +70,6 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
     function testCannotWithdrawIfWETHGatewayNotManager(uint256 amount) public {
         amount = bound(amount, 1, type(uint96).max);
-        deal(address(this), amount);
 
         _supplyETH(address(this), amount);
 
@@ -86,7 +82,6 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
         toWithdraw = bound(toWithdraw, 1, amount);
-        deal(address(this), amount);
 
         _supplyETH(address(this), amount);
         assertGt(morpho.supplyBalance(weth, address(this)), 0);
@@ -103,7 +98,6 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
     function testCannotWithdrawCollateralIfWETHGatewayNotManager(uint256 amount) public {
         amount = bound(amount, 1, type(uint96).max);
-        deal(address(this), amount);
 
         _supplyCollateralETH(address(this), amount);
 
@@ -116,7 +110,6 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
         toWithdraw = bound(toWithdraw, 1, amount);
-        deal(address(this), amount);
 
         _supplyCollateralETH(address(this), amount);
         assertGt(morpho.collateralBalance(weth, address(this)), 0);
@@ -135,7 +128,6 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
     function testCannotBorrowIfWETHGatewayNotManager(uint256 amount) public {
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
-        deal(address(this), amount);
 
         _supplyCollateralETH(address(this), amount);
         assertGt(morpho.collateralBalance(weth, address(this)), 0);
@@ -148,7 +140,6 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         _assumeReceiver(receiver);
 
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
-        deal(address(this), amount);
 
         _supplyCollateralETH(address(this), amount);
         assertGt(morpho.collateralBalance(weth, address(this)), 0);
@@ -166,7 +157,6 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
     function testRepayETH(uint256 amount, uint256 toRepay, address onBehalf, address repayer) public {
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
-        deal(address(this), amount);
 
         _supplyCollateralETH(address(this), amount);
         assertGt(morpho.collateralBalance(weth, address(this)), 0);
