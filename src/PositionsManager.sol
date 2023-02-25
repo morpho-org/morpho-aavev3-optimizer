@@ -44,7 +44,12 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
     /* EXTERNAL */
 
-    /// @notice Returns the e-mode category ID of the PositionsManager.
+    /// @notice Returns the addresses provider address.
+    function ADDRESSES_PROVIDER() external view returns (address) {
+        return address(_ADDRESSES_PROVIDER);
+    }
+
+    /// @notice Returns the e-mode category ID.
     function E_MODE_CATEGORY_ID() external view returns (uint256) {
         return _E_MODE_CATEGORY_ID;
     }

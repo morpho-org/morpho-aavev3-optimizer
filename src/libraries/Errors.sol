@@ -43,4 +43,6 @@ library Errors {
     error SignatureExpired();
 
     error ExceedsBorrowCap();
+
+    error InconsistentAddressesProvider();
 }

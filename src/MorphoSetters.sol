@@ -61,6 +61,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         if (IPositionsManager(positionsManager).E_MODE_CATEGORY_ID() != _E_MODE_CATEGORY_ID) {
             revert Errors.InconsistentEMode();
         }
+        if (IPositionsManager(positionsManager).ADDRESSES_PROVIDER() != address(_ADDRESSES_PROVIDER)) {
+            revert Errors.InconsistentAddressesProvider();
+        }
         _positionsManager = positionsManager;
         emit Events.PositionsManagerSet(positionsManager);
     }
