@@ -24,6 +24,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
     uint256 daiTokenUnit;
 
     function setUp() public virtual override {
+        super.setUp();
+
         _defaultIterations = Types.Iterations(10, 10);
 
         _createMarket(dai, 0, 3_333);

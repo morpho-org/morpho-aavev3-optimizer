@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import {IMorpho} from "./interfaces/IMorpho.sol";
 import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
+import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewardsController.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -27,29 +28,30 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     using SafeTransferLib for ERC20;
     using Permit2Lib for ERC20Permit2;
 
-    /* CONSTRUCTOR */
-
-    /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
-    /// @param addressesProvider The address of the pool addresses provider.
-    /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
-    constructor(address addressesProvider, uint8 eModeCategoryId) MorphoStorage(addressesProvider, eModeCategoryId) {}
-
     /* INITIALIZER */
 
     /// @notice Initializes the contract.
+    /// @param addressesProvider The address of the pool addresses provider.
+    /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
     /// @param newPositionsManager The address of the `_positionsManager` to set.
     /// @param newDefaultIterations The `_defaultIterations` to set.
-    function initialize(address newPositionsManager, Types.Iterations memory newDefaultIterations)
-        external
-        initializer
-    {
+    function initialize(
+        address addressesProvider,
+        uint8 eModeCategoryId,
+        address newPositionsManager,
+        Types.Iterations memory newDefaultIterations
+    ) external initializer {
         __Ownable_init_unchained();
+
+        _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
+        _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
 
         _positionsManager = newPositionsManager;
         _defaultIterations = newDefaultIterations;
         emit Events.DefaultIterationsSet(newDefaultIterations.repay, newDefaultIterations.withdraw);
         emit Events.PositionsManagerSet(newPositionsManager);
 
+        _E_MODE_CATEGORY_ID = eModeCategoryId;
         _POOL.setUserEMode(_E_MODE_CATEGORY_ID);
         emit Events.EModeSet(_E_MODE_CATEGORY_ID);
     }

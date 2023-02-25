@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import "forge-std/Script.sol";
+import "@forge-std/Script.sol";
 
 import {Types} from "src/libraries/Types.sol";
 
@@ -68,16 +68,17 @@ contract Deploy is Script {
     }
 
     function _deploy() internal {
-        positionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID);
-        morphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID);
+        positionsManager = new PositionsManager();
+        morphoImpl = new Morpho();
 
         proxyAdmin = new ProxyAdmin();
         morphoProxy = new TransparentUpgradeableProxy(
-            payable(address(morphoImpl)), 
-            address(proxyAdmin), 
+            payable(address(morphoImpl)),
+            address(proxyAdmin),
             abi.encodeWithSelector(
-                morphoImpl.initialize.selector, 
-                address(positionsManager), 
+                morphoImpl.initialize.selector,
+                address(addressesProvider), E_MODE_CATEGORY_ID,
+                address(positionsManager),
                 Types.Iterations({repay: 10, withdraw: 10})));
         morpho = Morpho(payable(address(morphoProxy)));
     }

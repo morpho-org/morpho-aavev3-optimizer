@@ -17,13 +17,11 @@ import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2
 /// @custom:contact security@morpho.xyz
 /// @notice The storage shared by Morpho's contracts.
 abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
-    /* IMMUTABLES */
-
-    IPool internal immutable _POOL; // The address of the pool.
-    IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER; // The address of the pool addresses provider.
-    uint8 internal immutable _E_MODE_CATEGORY_ID; // The e-mode category of the deployed Morpho.
-
     /* STORAGE */
+
+    IPool internal _POOL; // The address of the pool.
+    IPoolAddressesProvider internal _ADDRESSES_PROVIDER; // The address of the pool addresses provider.
+    uint8 internal _E_MODE_CATEGORY_ID; // The e-mode category of the deployed Morpho.
 
     address[] internal _marketsCreated; // Keeps track of the created markets.
     mapping(address => Types.Market) internal _market; // The market data.
@@ -42,14 +40,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
 
     /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
-    /// @param addressesProvider The address of the pool addresses provider.
-    /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
-    constructor(address addressesProvider, uint8 eModeCategoryId) {
+    constructor() {
         _disableInitializers();
-
-        _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
-        _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
-
-        _E_MODE_CATEGORY_ID = eModeCategoryId;
     }
 }

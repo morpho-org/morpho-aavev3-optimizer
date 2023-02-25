@@ -38,10 +38,6 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    /* CONSTRUCTOR */
-
-    constructor(address addressesProvider, uint8 eModeCategoryId) MorphoStorage(addressesProvider, eModeCategoryId) {}
-
     /* EXTERNAL */
 
     /// @notice Implements the supply logic.

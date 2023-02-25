@@ -69,7 +69,12 @@ interface IMorphoSetters {
 }
 
 interface IMorpho is IMorphoGetters, IMorphoSetters {
-    function initialize(address newPositionsManager, Types.Iterations memory newDefaultIterations) external;
+    function initialize(
+        address addressesProvider,
+        uint8 eModeCategoryId,
+        address newPositionsManager,
+        Types.Iterations memory newDefaultIterations
+    ) external;
 
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
         external
