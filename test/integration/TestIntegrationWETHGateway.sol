@@ -165,6 +165,8 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testRepayETH(uint256 amount, uint256 toRepay, address onBehalf, address repayer) public {
+        _assumeReceiver(onBehalf);
+
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
         deal(address(this), amount);
 
