@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {IPositionsManager} from "src/interfaces/IPositionsManager.sol";
+import {IRewardsManager} from "src/interfaces/IRewardsManager.sol";
 
 import {TestMarket, TestMarketLib} from "test/helpers/TestMarketLib.sol";
 
@@ -11,6 +12,7 @@ import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.s
 
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
+import {RewardsManager} from "src/RewardsManager.sol";
 import {UserMock} from "test/mocks/UserMock.sol";
 import "./ForkTest.sol";
 
@@ -31,6 +33,7 @@ contract IntegrationTest is ForkTest {
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
+    IRewardsManager internal rewardsManager;
 
     ProxyAdmin internal proxyAdmin;
 
@@ -91,6 +94,10 @@ contract IntegrationTest is ForkTest {
         morpho = Morpho(payable(address(morphoProxy)));
 
         morpho.initialize(address(positionsManager), Types.Iterations({repay: 10, withdraw: 10}));
+
+        rewardsManager = new RewardsManager(address(rewardsController), address(morpho), address(pool));
+
+        morpho.setRewardsManager(address(rewardsManager));
     }
 
     function _initUser() internal returns (UserMock newUser) {
@@ -212,7 +219,7 @@ contract IntegrationTest is ForkTest {
         internal
         bypassSupplyCap(market, amount)
     {
-        deal(market.underlying, address(this), amount);
+        _deal(market.underlying, address(this), amount);
         ERC20(market.underlying).approve(address(pool), amount);
         pool.deposit(market.underlying, amount, onBehalf, 0);
     }
@@ -274,12 +281,13 @@ contract IntegrationTest is ForkTest {
         address onBehalf,
         address receiver,
         uint256 maxIterations
-    ) internal returns (uint256 supplied, uint256 borrowed) {
+    ) internal returns (uint256 collateral, uint256 borrowed) {
+        collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount);
+        _deal(collateralMarket.underlying, borrower, collateral);
+
         vm.startPrank(borrower);
-        uint256 collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount);
-        deal(collateralMarket.underlying, borrower, collateral);
         ERC20(collateralMarket.underlying).approve(address(morpho), collateral);
-        supplied = morpho.supplyCollateral(collateralMarket.underlying, collateral, borrower);
+        collateral = morpho.supplyCollateral(collateralMarket.underlying, collateral, borrower);
         borrowed = morpho.borrow(borrowedMarket.underlying, amount, onBehalf, receiver, maxIterations);
         vm.stopPrank();
     }

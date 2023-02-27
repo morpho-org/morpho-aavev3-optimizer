@@ -16,6 +16,7 @@ import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
+import {RewardsControllerMock} from "test/mocks/RewardsControllerMock.sol";
 import {PriceOracleSentinelMock} from "test/mocks/PriceOracleSentinelMock.sol";
 import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
 import {PoolAdminMock} from "test/mocks/PoolAdminMock.sol";
@@ -25,6 +26,7 @@ contract ForkTest is BaseTest {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
     using TestConfigLib for TestConfig;
+    using SafeTransferLib for ERC20;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /* STRUCTS */
@@ -58,11 +60,13 @@ contract ForkTest is BaseTest {
     IPoolConfigurator internal poolConfigurator;
     IPoolDataProvider internal poolDataProvider;
     IPoolAddressesProvider internal addressesProvider;
+    address internal morphoDao;
 
     address internal aclAdmin;
     AaveOracleMock internal oracle;
     PoolAdminMock internal poolAdmin;
-    PriceOracleSentinelMock oracleSentinel;
+    PriceOracleSentinelMock internal oracleSentinel;
+    RewardsControllerMock internal rewardsController;
 
     uint256 internal snapshotId = type(uint256).max;
 
@@ -73,7 +77,9 @@ contract ForkTest is BaseTest {
         _mockPoolAdmin();
         _mockOracle();
         _mockOracleSentinel();
+        _mockRewardsController();
 
+        deal(address(this), type(uint128).max);
         _setBalances(address(this), type(uint96).max);
     }
 
@@ -109,6 +115,7 @@ contract ForkTest is BaseTest {
 
         addressesProvider = IPoolAddressesProvider(config.getAddressesProvider());
         pool = IPool(addressesProvider.getPool());
+        morphoDao = config.getMorphoDao();
 
         aclAdmin = addressesProvider.getACLAdmin();
         aclManager = IACLManager(addressesProvider.getACLManager());
@@ -168,12 +175,38 @@ contract ForkTest is BaseTest {
         addressesProvider.setPriceOracleSentinel(address(oracleSentinel));
     }
 
+    function _mockRewardsController() internal {
+        rewardsController = new RewardsControllerMock();
+    }
+
     function _setBalances(address user, uint256 balance) internal {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             address underlying = allUnderlyings[i];
 
             deal(underlying, user, balance / (10 ** (18 - ERC20(underlying).decimals())));
         }
+    }
+
+    /// @dev Avoids to revert because of AAVE token snapshots: https://github.com/aave/aave-token-v2/blob/master/contracts/token/base/GovernancePowerDelegationERC20.sol#L174
+
+    function _deal(address underlying, address user, uint256 amount) internal {
+        if (amount == 0) return;
+
+        if (underlying == weth) deal(weth, weth.balance + amount); // Refill wrapped Ether.
+
+        if (underlying == aave) {
+            uint256 balance = ERC20(underlying).balanceOf(user);
+
+            if (amount > balance) ERC20(underlying).safeTransfer(user, amount - balance);
+            if (amount < balance) {
+                vm.prank(user);
+                ERC20(underlying).safeTransfer(address(this), balance - amount);
+            }
+
+            return;
+        }
+
+        deal(underlying, user, amount);
     }
 
     /// @dev Reverts the fork to its initial fork state.
@@ -212,6 +245,24 @@ contract ForkTest is BaseTest {
             accruedTotalDebt.percentMul(reserve.configuration.getReserveFactor()).rayDiv(poolSupplyIndex);
 
         return (reserve.accruedToTreasury + newAccruedToTreasury);
+    }
+
+    function _setSupplyGap(address underlying, uint256 supplyGap) internal returns (uint256) {
+        DataTypes.ReserveConfigurationMap memory reserveConfig = pool.getConfiguration(underlying);
+
+        uint256 tokenUnit = 10 ** reserveConfig.getDecimals();
+        uint256 totalSupplyToCap = _totalSupplyToCap(underlying);
+        uint256 newSupplyCap = (totalSupplyToCap + supplyGap) / tokenUnit;
+
+        poolAdmin.setSupplyCap(underlying, newSupplyCap);
+        return newSupplyCap * tokenUnit - totalSupplyToCap;
+    }
+
+    function _totalSupplyToCap(address underlying) internal view returns (uint256) {
+        DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
+        return (IAToken(reserve.aTokenAddress).scaledTotalSupply() + _accruedToTreasury(underlying)).rayMul(
+            pool.getReserveNormalizedIncome(underlying)
+        );
     }
 
     // @dev  Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.

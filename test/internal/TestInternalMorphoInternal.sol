@@ -11,10 +11,9 @@ import {PoolLib} from "src/libraries/PoolLib.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
 import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
 
-import {MorphoInternal, MorphoStorage} from "src/MorphoInternal.sol";
 import "test/helpers/InternalTest.sol";
 
-contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
+contract TestInternalMorphoInternal is InternalTest {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using PoolLib for IPool;
@@ -138,7 +137,11 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateInDS(address(0), user, marketBalances.poolSuppliers, marketBalances.p2pSuppliers, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateInDS(
+            address(0), user, marketBalances.poolSuppliers, marketBalances.p2pSuppliers, onPool, inP2P, head
+        );
+        assertEq(newOnPool, onPool);
+        assertEq(newInP2P, inP2P);
         _assertMarketBalances(marketBalances, user, onPool, inP2P, 0, 0, 0);
     }
 
@@ -148,7 +151,11 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateInDS(address(0), user, marketBalances.poolBorrowers, marketBalances.p2pBorrowers, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateInDS(
+            address(0), user, marketBalances.poolBorrowers, marketBalances.p2pBorrowers, onPool, inP2P, head
+        );
+        assertEq(newOnPool, onPool);
+        assertEq(newInP2P, inP2P);
         _assertMarketBalances(marketBalances, user, 0, 0, onPool, inP2P, 0);
     }
 
@@ -158,10 +165,18 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         inP2P = bound(inP2P, 0, Constants.DUST_THRESHOLD);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateInDS(address(0), user, marketBalances.poolSuppliers, marketBalances.p2pSuppliers, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateInDS(
+            address(0), user, marketBalances.poolSuppliers, marketBalances.p2pSuppliers, onPool, inP2P, head
+        );
         _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
+        assertEq(newOnPool, 0);
+        assertEq(newInP2P, 0);
 
-        _updateInDS(address(0), user, marketBalances.poolBorrowers, marketBalances.p2pBorrowers, onPool, inP2P, head);
+        (newOnPool, newInP2P) = _updateInDS(
+            address(0), user, marketBalances.poolBorrowers, marketBalances.p2pBorrowers, onPool, inP2P, head
+        );
+        assertEq(newOnPool, 0);
+        assertEq(newInP2P, 0);
         _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
     }
 
@@ -193,6 +208,7 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         _updateBorrowerInDS(dai, user, onPool, inP2P, head);
         _assertMarketBalances(marketBalances, user, 0, 0, onPool, inP2P, 0);
+        assertTrue(_userBorrows[user].contains(dai), "userBorrow");
     }
 
     function testUpdateBorrowerInDSWithDust(address user, uint256 onPool, uint256 inP2P, bool head) public {
@@ -203,6 +219,7 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         _updateBorrowerInDS(dai, user, onPool, inP2P, head);
         _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
+        assertFalse(_userBorrows[user].contains(dai), "userBorrow");
     }
 
     function testGetUserSupplyBalanceFromIndexes(
