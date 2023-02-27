@@ -76,6 +76,21 @@ contract TestUnitMarketSideDeltaLib is Test {
         assertEq(delta.scaledP2PTotal, scaledP2PTotal);
     }
 
+    function testDecreaseDeltaZeroAmount(address underlying, uint256 scaledDelta, uint256 scaledP2PTotal) public {
+        scaledP2PTotal = bound(scaledP2PTotal, 0, MAX_AMOUNT);
+        scaledDelta = bound(scaledDelta, 0, MAX_AMOUNT);
+
+        delta.scaledDelta = scaledDelta;
+        delta.scaledP2PTotal = scaledP2PTotal;
+
+        (uint256 toProcess, uint256 toWithdraw) = delta.decreaseDelta(underlying, 0, marketSideIndex.poolIndex, false);
+
+        assertEq(toProcess, 0);
+        assertEq(toWithdraw, 0);
+        assertEq(delta.scaledDelta, scaledDelta);
+        assertEq(delta.scaledP2PTotal, scaledP2PTotal);
+    }
+
     function testDecreaseDeltaWhenDeltaIsZero(address underlying, uint256 scaledP2PTotal) public {
         scaledP2PTotal = bound(scaledP2PTotal, 0, MAX_AMOUNT);
 
