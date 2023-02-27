@@ -46,6 +46,7 @@ contract WETHGateway is IWETHGateway {
     }
 
     /// @notice Wraps `msg.value` ETH in WETH and supplies them to Morpho on behalf of `onBehalf`.
+    /// @return The actual amount supplied (in wei).
     function supplyETH(address onBehalf, uint256 maxIterations) external payable returns (uint256) {
         _wrapETH(msg.value);
 
@@ -53,6 +54,7 @@ contract WETHGateway is IWETHGateway {
     }
 
     /// @notice Wraps `msg.value` ETH in WETH and supplies them as collateral to Morpho on behalf of `onBehalf`.
+    /// @return The actual amount supplied as collateral (in wei).
     function supplyCollateralETH(address onBehalf) external payable returns (uint256) {
         _wrapETH(msg.value);
 
@@ -61,12 +63,14 @@ contract WETHGateway is IWETHGateway {
 
     /// @notice Borrows WETH on behalf of `msg.sender`, unwraps the ETH and sends them to `receiver`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
+    /// @return borrowed The actual amount borrowed (in wei).
     function borrowETH(uint256 amount, address receiver, uint256 maxIterations) external returns (uint256 borrowed) {
         borrowed = _MORPHO.borrow(_WETH, amount, msg.sender, address(this), maxIterations);
         _unwrapAndTransferETH(borrowed, receiver);
     }
 
     /// @notice Wraps `msg.value` ETH in WETH and repays `onBehalf`'s debt on Morpho.
+    /// @return repaid The actual amount repaid (in wei).
     function repayETH(address onBehalf) external payable returns (uint256 repaid) {
         _wrapETH(msg.value);
 
@@ -78,6 +82,7 @@ contract WETHGateway is IWETHGateway {
 
     /// @notice Withdraws WETH up to `amount` on behalf of `msg.sender`, unwraps it to WETH and sends it to `receiver`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
+    /// @return withdrawn The actual amount withdrawn (in wei).
     function withdrawETH(uint256 amount, address receiver, uint256 maxIterations)
         external
         returns (uint256 withdrawn)
@@ -88,6 +93,7 @@ contract WETHGateway is IWETHGateway {
 
     /// @notice Withdraws WETH as collateral up to `amount` on behalf of `msg.sender`, unwraps it to WETH and sends it to `receiver`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
+    /// @return withdrawn The actual collateral amount withdrawn (in wei).
     function withdrawCollateralETH(uint256 amount, address receiver) external returns (uint256 withdrawn) {
         withdrawn = _MORPHO.withdrawCollateral(_WETH, amount, msg.sender, address(this));
         _unwrapAndTransferETH(withdrawn, receiver);

@@ -40,7 +40,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     function testCannotSendETHToWETHGateway(uint256 amount) public {
         deal(address(this), amount);
         vm.expectRevert(abi.encodeWithSelector(WETHGateway.OnlyWETH.selector));
-        payable(wethGateway).transfer(amount);
+        payable(address(wethGateway)).transfer(amount);
     }
 
     function testSupplyETH(uint256 amount, address onBehalf) public {
