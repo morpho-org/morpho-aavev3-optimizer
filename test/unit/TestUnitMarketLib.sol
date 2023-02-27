@@ -307,7 +307,7 @@ contract TestUnitMarketLib is Test {
     }
 
     function testSetAssetIsCollateral(bool isCollateral) public {
-        vm.expectEmit(true, false, false, false);
+        vm.expectEmit(true, true, true, true);
         emit Events.IsCollateralSet(market.underlying, isCollateral);
 
         market.setAssetIsCollateral(isCollateral);
