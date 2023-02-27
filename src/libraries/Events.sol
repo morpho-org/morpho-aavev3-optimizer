@@ -92,6 +92,8 @@ library Events {
 
     event IsCollateralSet(address indexed underlying, bool isCollateral);
 
+    event IsClaimRewardsPausedSet(bool isPaused);
+
     event IsSupplyPausedSet(address indexed underlying, bool isPaused);
 
     event IsSupplyCollateralPausedSet(address indexed underlying, bool isPaused);

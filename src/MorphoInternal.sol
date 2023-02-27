@@ -344,6 +344,7 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param onPool The new scaled balance on pool of the `user`.
     /// @param inP2P The new scaled balance in peer-to-peer of the `user`.
     /// @param demoting Whether the update is happening during a demoting process or not.
+    /// @return The actual new scaled balance on pool and in peer-to-peer of the `user` after accounting for dust.
     function _updateInDS(
         address poolToken,
         address user,
@@ -352,7 +353,7 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 onPool,
         uint256 inP2P,
         bool demoting
-    ) internal {
+    ) internal returns (uint256, uint256) {
         if (onPool <= Constants.DUST_THRESHOLD) onPool = 0;
         if (inP2P <= Constants.DUST_THRESHOLD) inP2P = 0;
 
@@ -369,6 +370,7 @@ abstract contract MorphoInternal is MorphoStorage {
         }
 
         if (inP2P != formerInP2P) p2pBuckets.update(user, inP2P, true);
+        return (onPool, inP2P);
     }
 
     /// @dev Updates a `user`'s supply position in the data structure.
@@ -402,7 +404,7 @@ abstract contract MorphoInternal is MorphoStorage {
     function _updateBorrowerInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
         internal
     {
-        _updateInDS(
+        (onPool, inP2P) = _updateInDS(
             _market[underlying].variableDebtToken,
             user,
             _marketBalances[underlying].poolBorrowers,

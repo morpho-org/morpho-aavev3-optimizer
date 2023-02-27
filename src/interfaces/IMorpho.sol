@@ -55,7 +55,7 @@ interface IMorphoSetters {
 
     function setAssetIsCollateralOnPool(address underlying, bool isCollateral) external;
     function setAssetIsCollateral(address underlying, bool isCollateral) external;
-    function setIsP2PDisabled(address underlying, bool isP2PDisabled) external;
+    function setIsClaimRewardsPaused(bool isPaused) external;
     function setIsPaused(address underlying, bool isPaused) external;
     function setIsPausedForAllMarkets(bool isPaused) external;
     function setIsSupplyPaused(address underlying, bool isPaused) external;
@@ -66,6 +66,7 @@ interface IMorphoSetters {
     function setIsWithdrawCollateralPaused(address underlying, bool isPaused) external;
     function setIsLiquidateBorrowPaused(address underlying, bool isPaused) external;
     function setIsLiquidateCollateralPaused(address underlying, bool isPaused) external;
+    function setIsP2PDisabled(address underlying, bool isP2PDisabled) external;
     function setIsDeprecated(address underlying, bool isDeprecated) external;
 }
 
@@ -127,4 +128,8 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
     function liquidate(address underlyingBorrowed, address underlyingCollateral, address user, uint256 amount)
         external
         returns (uint256 repaid, uint256 seized);
+
+    function claimRewards(address[] calldata assets, address onBehalf)
+        external
+        returns (address[] memory rewardTokens, uint256[] memory claimedAmounts);
 }
