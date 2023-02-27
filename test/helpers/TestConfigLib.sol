@@ -15,6 +15,7 @@ library TestConfigLib {
     string internal constant ADDRESSES_PROVIDER_PATH = "$.addressesProvider";
     string internal constant WRAPPED_NATIVE_PATH = "$.wrappedNative";
     string internal constant MARKETS_PATH = "$.markets";
+    string internal constant MORPHO_DAO_PATH = "$.morphoDao";
 
     function getAddress(TestConfig storage config, string memory key) internal view returns (address) {
         return config.json.readAddress(string.concat("$.", key));
@@ -34,5 +35,9 @@ library TestConfigLib {
 
     function getWrappedNative(TestConfig storage config) internal view returns (address) {
         return getAddress(config, config.json.readString(WRAPPED_NATIVE_PATH));
+    }
+
+    function getMorphoDao(TestConfig storage config) internal view returns (address) {
+        return getAddress(config, config.json.readString(MORPHO_DAO_PATH));
     }
 }
