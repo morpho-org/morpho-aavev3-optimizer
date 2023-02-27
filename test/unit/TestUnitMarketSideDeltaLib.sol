@@ -107,7 +107,7 @@ contract TestUnitMarketSideDeltaLib is Test {
     function testDecreaseDeltaBorrow(address underlying, uint256 amount, uint256 scaledDelta, uint256 scaledP2PTotal)
         public
     {
-        amount = bound(amount, 0, MAX_AMOUNT);
+        amount = bound(amount, 1, MAX_AMOUNT);
         scaledP2PTotal = bound(scaledP2PTotal, 0, MAX_AMOUNT);
         scaledDelta = bound(scaledDelta, 1, MAX_AMOUNT);
 
@@ -132,7 +132,7 @@ contract TestUnitMarketSideDeltaLib is Test {
     function testDecreaseDeltaSupply(address underlying, uint256 amount, uint256 scaledDelta, uint256 scaledP2PTotal)
         public
     {
-        amount = bound(amount, 0, MAX_AMOUNT);
+        amount = bound(amount, 1, MAX_AMOUNT);
         scaledP2PTotal = bound(scaledP2PTotal, 0, MAX_AMOUNT);
         scaledDelta = bound(scaledDelta, 1, MAX_AMOUNT);
 
