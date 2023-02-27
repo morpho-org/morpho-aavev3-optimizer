@@ -51,12 +51,12 @@ contract WETHGateway {
     }
 
     /// @notice Returns the address of the Morpho DAO.
-    function MORPHO_DAO() external view returns (address) {
+    function MORPHO_DAO() external pure returns (address) {
         return _MORPHO_DAO;
     }
 
-    function skim() external {
-        _MORPHO_DAO.safeTransferETH(address(this).balance);
+    function skim(address underlying) external {
+        ERC20(underlying).safeTransfer(_MORPHO_DAO, ERC20(underlying).balanceOf(address(this)));
     }
 
     /// @notice Wraps `msg.value` ETH in WETH and supplies them to Morpho on behalf of `onBehalf`.

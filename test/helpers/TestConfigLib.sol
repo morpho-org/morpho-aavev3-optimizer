@@ -33,11 +33,11 @@ library TestConfigLib {
         return config.json.readAddress(ADDRESSES_PROVIDER_PATH);
     }
 
-    function getWrappedNative(TestConfig storage config) internal view returns (address) {
-        return getAddress(config, config.json.readString(WRAPPED_NATIVE_PATH));
+    function getMorphoDao(TestConfig storage config) internal view returns (address) {
+        return config.json.readAddress(MORPHO_DAO_PATH);
     }
 
-    function getMorphoDao(TestConfig storage config) internal view returns (address) {
-        return getAddress(config, config.json.readString(MORPHO_DAO_PATH));
+    function getWrappedNative(TestConfig storage config) internal view returns (address) {
+        return getAddress(config, config.json.readString(WRAPPED_NATIVE_PATH));
     }
 }
