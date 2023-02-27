@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IWETH} from "../interfaces/IWETH.sol";
-import {IMorpho} from "../interfaces/IMorpho.sol";
+import {IWETH} from "src/interfaces/IWETH.sol";
+import {IMorpho} from "src/interfaces/IMorpho.sol";
+
+import {Errors} from "src/libraries/Errors.sol";
 
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 
@@ -28,6 +30,8 @@ contract WETHGateway {
     /* CONSTRUCTOR */
 
     constructor(address morpho) {
+        if (morpho == address(0)) revert Errors.AddressIsZero();
+
         _MORPHO = IMorpho(morpho);
         ERC20(_WETH).safeApprove(morpho, type(uint256).max);
     }
