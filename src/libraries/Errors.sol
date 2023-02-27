@@ -28,6 +28,7 @@ library Errors {
     error BorrowNotPaused();
 
     error BorrowingNotEnabled();
+    error SentinelBorrowingNotEnabled();
     error InconsistentEMode();
     error UnauthorizedBorrow();
 

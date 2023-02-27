@@ -133,6 +133,13 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.authorizeBorrow(dai, 1);
     }
 
+    function testAuthorizeBorrowShouldRevertIfBorrowingNotEnabledWithSentinel() public {
+        oracleSentinel.setBorrowAllowed(false);
+
+        vm.expectRevert(Errors.SentinelBorrowingNotEnabled.selector);
+        this.authorizeBorrow(dai, 1);
+    }
+
     function testValidateRepayShouldRevertIfRepayPaused() public {
         _market[dai].pauseStatuses.isRepayPaused = true;
 

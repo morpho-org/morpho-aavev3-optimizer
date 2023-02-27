@@ -106,6 +106,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) internal view {
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
+
+        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
+        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
+            revert Errors.SentinelBorrowingNotEnabled();
+        }
+
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
             revert Errors.InconsistentEMode();
         }
