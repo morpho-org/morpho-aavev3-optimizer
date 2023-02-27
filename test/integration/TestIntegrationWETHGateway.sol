@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
+import {IWETHGateway} from "src/interfaces/IWETHGateway.sol";
+
 import {WETHGateway} from "src/extensions/WETHGateway.sol";
 
 import "test/helpers/IntegrationTest.sol";
@@ -9,7 +11,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     uint256 internal constant MIN_AMOUNT = 1e9;
     uint256 internal constant MAX_ITERATIONS = 10;
 
-    WETHGateway internal wethGateway;
+    IWETHGateway internal wethGateway;
 
     function setUp() public override {
         super.setUp();

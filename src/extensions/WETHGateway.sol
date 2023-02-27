@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import {IWETH} from "src/interfaces/IWETH.sol";
 import {IMorpho} from "src/interfaces/IMorpho.sol";
+import {IWETHGateway} from "src/interfaces/IWETHGateway.sol";
 
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 
@@ -10,7 +11,7 @@ import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
 /// @notice A contract allowing to wrap and unwrap ETH when interacting with Morpho.
-contract WETHGateway {
+contract WETHGateway is IWETHGateway {
     using SafeTransferLib for ERC20;
 
     /* ERRORS */
