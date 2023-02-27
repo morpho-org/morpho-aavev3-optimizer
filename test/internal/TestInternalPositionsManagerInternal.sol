@@ -205,14 +205,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.validateLiquidate(usdc, dai, address(this));
     }
 
-    function testValidateLiquidateIfAssetNotEnabledCollateralOnMorphoAndOnPool() public {
-        _market[dai].isCollateral = false;
-        _POOL.setUserUseReserveAsCollateral(usdc, false);
-
-        vm.expectRevert(abi.encodeWithSelector(Errors.AssetNotCollateral.selector));
-        this.validateLiquidate(dai, usdc, address(this));
-    }
-
     function testValidateLiquidate() public view {
         this.validateLiquidate(dai, usdc, address(this));
     }

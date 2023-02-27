@@ -171,14 +171,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (!borrowMarket.isCreated() || !collateralMarket.isCreated()) revert Errors.MarketNotCreated();
         if (collateralMarket.isLiquidateCollateralPaused()) revert Errors.LiquidateCollateralIsPaused();
         if (borrowMarket.isLiquidateBorrowPaused()) revert Errors.LiquidateBorrowIsPaused();
-
-        // Revert only if the collateral is not enabled as collateral on Morpho AND on the pool.
-        // This way Morpho can disable an asset as collateral on Morpho side only and still be able to liquidate unhealthy positions using this asset as collateral.
-        // This can be helpful in case the pool sets an asset's LTV to 0.
-        if (
-            !collateralMarket.isCollateral
-                && !_POOL.getUserConfiguration(address(this)).isUsingAsCollateral(_POOL.getReserveData(underlyingCollateral).id)
-        ) revert Errors.AssetNotCollateral();
     }
 
     /// @dev Authorizes a liquidate action.
