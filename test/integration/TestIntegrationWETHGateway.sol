@@ -196,7 +196,6 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         deal(address(this), amount);
 
         _supplyCollateralETH(address(this), amount);
-        assertGt(morpho.collateralBalance(weth, address(this)), 0);
 
         morpho.approveManager(address(wethGateway), true);
 

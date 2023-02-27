@@ -94,6 +94,12 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         _market[underlying].setP2PIndexCursor(p2pIndexCursor);
     }
 
+    /// @notice Sets the claim rewards pause status to `isPaused`.
+    function setIsClaimRewardsPaused(bool isPaused) external onlyOwner {
+        _isClaimRewardsPaused = isPaused;
+        emit Events.IsClaimRewardsPausedSet(isPaused);
+    }
+
     /// @notice Sets the supply pause status to `isPaused` on the `underlying` market.
     function setIsSupplyPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
         _market[underlying].setIsSupplyPaused(isPaused);
