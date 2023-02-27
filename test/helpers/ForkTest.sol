@@ -214,6 +214,24 @@ contract ForkTest is BaseTest {
         return (reserve.accruedToTreasury + newAccruedToTreasury);
     }
 
+    function _setSupplyGap(address underlying, uint256 supplyGap) internal returns (uint256) {
+        DataTypes.ReserveConfigurationMap memory reserveConfig = pool.getConfiguration(underlying);
+
+        uint256 tokenUnit = 10 ** reserveConfig.getDecimals();
+        uint256 totalSupplyToCap = _totalSupplyToCap(underlying);
+        uint256 newSupplyCap = (totalSupplyToCap + supplyGap) / tokenUnit;
+
+        poolAdmin.setSupplyCap(underlying, newSupplyCap);
+        return newSupplyCap * tokenUnit - totalSupplyToCap;
+    }
+
+    function _totalSupplyToCap(address underlying) internal view returns (uint256) {
+        DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
+        return (IAToken(reserve.aTokenAddress).scaledTotalSupply() + _accruedToTreasury(underlying)).rayMul(
+            pool.getReserveNormalizedIncome(underlying)
+        );
+    }
+
     // @dev  Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
     // https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/pool/PoolConfigurator.sol#L369-L376
     function _getLtvLt(address underlying, uint8 eModeCategoryId)
