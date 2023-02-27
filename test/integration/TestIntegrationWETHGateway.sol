@@ -14,7 +14,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     function setUp() public override {
         super.setUp();
 
-        wethGateway = new WETHGateway(address(morpho));
+        wethGateway = new WETHGateway(address(morpho), MORPHO_DAO);
     }
 
     /// @dev Assumes the receiver is able to receive ETH without reverting.
@@ -35,15 +35,27 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertEq(ERC20(weth).balanceOf(address(wethGateway)), 0);
     }
 
-    function testShouldNotPassMorphoZeroAddress() public {
+    function testShouldNotPassMorphoZeroAddress(address morphoDao) public {
         vm.expectRevert(Errors.AddressIsZero.selector);
-        new WETHGateway(address(0));
+        new WETHGateway(address(0), morphoDao);
+    }
+
+    function testShouldNotPassMorphoDaoZeroAddress(address morpho) public {
+        vm.expectRevert(Errors.AddressIsZero.selector);
+        new WETHGateway(morpho, address(0));
     }
 
     function testCannotSendETHToWETHGateway(uint256 amount) public {
         deal(address(this), amount);
         vm.expectRevert(abi.encodeWithSelector(WETHGateway.OnlyWETH.selector));
         payable(wethGateway).transfer(amount);
+    }
+
+    function testShouldSkim(uint256 amount) public {
+        deal(MORPHO_DAO, amount);
+        wethGateway.skim();
+
+        assertEq(MORPHO_DAO.balance, amount);
     }
 
     function testSupplyETH(uint256 amount, address onBehalf) public {

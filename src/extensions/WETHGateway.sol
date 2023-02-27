@@ -12,6 +12,7 @@ import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 /// @notice A contract allowing to wrap and unwrap ETH when interacting with Morpho.
 contract WETHGateway {
     using SafeTransferLib for ERC20;
+    using SafeTransferLib for address;
 
     /* ERRORS */
 
@@ -26,26 +27,38 @@ contract WETHGateway {
     /* IMMUTABLES */
 
     IMorpho internal immutable _MORPHO;
+    address internal immutable _MORPHO_DAO;
 
     /* CONSTRUCTOR */
 
-    constructor(address morpho) {
+    constructor(address morpho, address morphoDao) {
         if (morpho == address(0)) revert AddressIsZero();
+        if (morphoDao == address(0)) revert AddressIsZero();
 
         _MORPHO = IMorpho(morpho);
+        _MORPHO_DAO = morphoDao;
         ERC20(_WETH).safeApprove(morpho, type(uint256).max);
     }
 
     /* EXTERNAL */
 
-    /// @notice Returns the address of the WETH address.
+    /// @notice Returns the address of the WETH contract.
     function WETH() external pure returns (address) {
         return _WETH;
     }
 
-    /// @notice Returns the address of the Morpho address.
+    /// @notice Returns the address of the Morpho protocol.
     function MORPHO() external view returns (address) {
         return address(_MORPHO);
+    }
+
+    /// @notice Returns the address of the Morpho DAO.
+    function MORPHO_DAO() external view returns (address) {
+        return _MORPHO_DAO;
+    }
+
+    function skim() external {
+        _MORPHO_DAO.safeTransferETH(address(this).balance);
     }
 
     /// @notice Wraps `msg.value` ETH in WETH and supplies them to Morpho on behalf of `onBehalf`.
