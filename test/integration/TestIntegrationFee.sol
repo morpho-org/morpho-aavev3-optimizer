@@ -39,7 +39,7 @@ contract TestIntegrationFee is IntegrationTest {
         }
     }
 
-    function testRepayFeeShouldBeZeroWithBorrowDelta(uint16 reserveFactor, uint256 amount) public {
+    function testRepayFeeShouldBeZeroWithDeltaOnly(uint16 reserveFactor, uint256 amount) public {
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
 
