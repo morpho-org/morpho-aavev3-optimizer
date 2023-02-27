@@ -17,6 +17,8 @@ contract WETHGateway {
 
     error OnlyWETH();
 
+    error AddressIsZero();
+
     /* CONSTANTS */
 
     address internal constant _WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -28,6 +30,8 @@ contract WETHGateway {
     /* CONSTRUCTOR */
 
     constructor(address morpho) {
+        if (morpho == address(0)) revert AddressIsZero();
+
         _MORPHO = IMorpho(morpho);
         ERC20(_WETH).safeApprove(morpho, type(uint256).max);
     }
