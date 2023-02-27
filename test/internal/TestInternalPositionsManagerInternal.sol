@@ -102,7 +102,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testValidateSupplyCollateralShouldRevertIfNotCollateral() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.AssetNotUsedAsCollateral.selector));
+        vm.expectRevert(abi.encodeWithSelector(Errors.AssetNotCollateral.selector));
         this.validateSupplyCollateral(dai, 1, address(1));
     }
 
@@ -209,7 +209,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _market[dai].isCollateral = false;
         _POOL.setUserUseReserveAsCollateral(usdc, false);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.AssetNotUsedAsCollateral.selector));
+        vm.expectRevert(abi.encodeWithSelector(Errors.AssetNotCollateral.selector));
         this.validateLiquidate(dai, usdc, address(this));
     }
 

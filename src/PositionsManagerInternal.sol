@@ -92,7 +92,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _validateSupplyCollateral(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
         if (market.isSupplyCollateralPaused()) revert Errors.SupplyCollateralIsPaused();
-        if (!market.isCollateral) revert Errors.AssetNotUsedAsCollateral();
+        if (!market.isCollateral) revert Errors.AssetNotCollateral();
     }
 
     /// @dev Validates a borrow action.
@@ -178,7 +178,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (
             !collateralMarket.isCollateral
                 && !_POOL.getUserConfiguration(address(this)).isUsingAsCollateral(_POOL.getReserveData(underlyingCollateral).id)
-        ) revert Errors.AssetNotUsedAsCollateral();
+        ) revert Errors.AssetNotCollateral();
     }
 
     /// @dev Authorizes a liquidate action.
