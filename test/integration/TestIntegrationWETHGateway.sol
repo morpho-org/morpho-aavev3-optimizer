@@ -35,6 +35,11 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertEq(ERC20(weth).balanceOf(address(wethGateway)), 0);
     }
 
+    function testShouldNotPassMorphoZeroAddress() public {
+        vm.expectRevert(Errors.AddressIsZero.selector);
+        new WETHGateway(address(0));
+    }
+
     function testCannotSendETHToWETHGateway(uint256 amount) public {
         deal(address(this), amount);
         vm.expectRevert(abi.encodeWithSelector(WETHGateway.OnlyWETH.selector));
