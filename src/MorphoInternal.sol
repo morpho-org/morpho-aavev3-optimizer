@@ -342,7 +342,7 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param onPool The new scaled balance on pool of the `user`.
     /// @param inP2P The new scaled balance in peer-to-peer of the `user`.
     /// @param demoting Whether the update is happening during a demoting process or not.
-    /// @return The actual onPool and P2P after accounting for dust.
+    /// @return The actual new scaled balance on pool and in peer-to-peer of the `user` after accounting for dust.
     function _updateInDS(
         address poolToken,
         address user,
