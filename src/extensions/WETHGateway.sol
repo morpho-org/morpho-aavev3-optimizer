@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IWETH} from "../interfaces/IWETH.sol";
-import {IMorpho} from "../interfaces/IMorpho.sol";
+import {IWETH} from "src/interfaces/IWETH.sol";
+import {IMorpho} from "src/interfaces/IMorpho.sol";
 
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 
@@ -45,43 +45,51 @@ contract WETHGateway {
     }
 
     /// @notice Wraps `msg.value` ETH in WETH and supplies them to Morpho on behalf of `onBehalf`.
-    function supplyETH(address onBehalf, uint256 maxIterations) external payable {
+    function supplyETH(address onBehalf, uint256 maxIterations) external payable returns (uint256) {
         _wrapETH(msg.value);
-        _MORPHO.supply(_WETH, msg.value, onBehalf, maxIterations);
+
+        return _MORPHO.supply(_WETH, msg.value, onBehalf, maxIterations);
     }
 
     /// @notice Wraps `msg.value` ETH in WETH and supplies them as collateral to Morpho on behalf of `onBehalf`.
-    function supplyCollateralETH(address onBehalf) external payable {
+    function supplyCollateralETH(address onBehalf) external payable returns (uint256) {
         _wrapETH(msg.value);
-        _MORPHO.supplyCollateral(_WETH, msg.value, onBehalf);
+
+        return _MORPHO.supplyCollateral(_WETH, msg.value, onBehalf);
     }
 
     /// @notice Borrows WETH on behalf of `msg.sender`, unwraps the ETH and sends them to `receiver`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
-    function borrowETH(uint256 amount, address receiver, uint256 maxIterations) external {
-        amount = _MORPHO.borrow(_WETH, amount, msg.sender, address(this), maxIterations);
-        _unwrapAndTransferETH(amount, receiver);
+    function borrowETH(uint256 amount, address receiver, uint256 maxIterations) external returns (uint256 borrowed) {
+        borrowed = _MORPHO.borrow(_WETH, amount, msg.sender, address(this), maxIterations);
+        _unwrapAndTransferETH(borrowed, receiver);
     }
 
     /// @notice Wraps `msg.value` ETH in WETH and repays `onBehalf`'s debt on Morpho.
-    function repayETH(address onBehalf) external payable {
+    function repayETH(address onBehalf) external payable returns (uint256 repaid) {
         _wrapETH(msg.value);
-        uint256 excess = msg.value - _MORPHO.repay(_WETH, msg.value, onBehalf);
-        _unwrapAndTransferETH(excess, msg.sender);
+
+        repaid = _MORPHO.repay(_WETH, msg.value, onBehalf);
+
+        uint256 excess = msg.value - repaid;
+        if (excess > 0) _unwrapAndTransferETH(excess, msg.sender);
     }
 
     /// @notice Withdraws WETH up to `amount` on behalf of `msg.sender`, unwraps it to WETH and sends it to `receiver`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
-    function withdrawETH(uint256 amount, address receiver, uint256 maxIterations) external {
-        amount = _MORPHO.withdraw(_WETH, amount, msg.sender, address(this), maxIterations);
-        _unwrapAndTransferETH(amount, receiver);
+    function withdrawETH(uint256 amount, address receiver, uint256 maxIterations)
+        external
+        returns (uint256 withdrawn)
+    {
+        withdrawn = _MORPHO.withdraw(_WETH, amount, msg.sender, address(this), maxIterations);
+        _unwrapAndTransferETH(withdrawn, receiver);
     }
 
     /// @notice Withdraws WETH as collateral up to `amount` on behalf of `msg.sender`, unwraps it to WETH and sends it to `receiver`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
-    function withdrawCollateralETH(uint256 amount, address receiver) external {
-        amount = _MORPHO.withdrawCollateral(_WETH, amount, msg.sender, address(this));
-        _unwrapAndTransferETH(amount, receiver);
+    function withdrawCollateralETH(uint256 amount, address receiver) external returns (uint256 withdrawn) {
+        withdrawn = _MORPHO.withdrawCollateral(_WETH, amount, msg.sender, address(this));
+        _unwrapAndTransferETH(withdrawn, receiver);
     }
 
     /// @dev Only the WETH contract is allowed to transfer ETH to this contracts.
