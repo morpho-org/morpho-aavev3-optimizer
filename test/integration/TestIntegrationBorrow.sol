@@ -128,7 +128,6 @@ contract TestIntegrationBorrow is IntegrationTest {
             amount = _boundBorrow(market, amount);
 
             test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
-            console2.log("bal0", test.balanceBefore);
 
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
