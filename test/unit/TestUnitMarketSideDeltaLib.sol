@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.17;
+pragma solidity ^0.8.0;
 
 import {MarketSideDeltaLib} from "src/libraries/MarketSideDeltaLib.sol";
 
@@ -38,8 +38,8 @@ contract TestUnitMarketSideDeltaLib is BaseTest {
         bool borrowSide
     ) public {
         indexes = _boundIndexes(indexes);
-        delta.scaledDelta = bound(delta.scaledDelta, 0, MAX_AMOUNT);
-        delta.scaledP2PTotal = bound(delta.scaledP2PTotal, 0, MAX_AMOUNT);
+        delta.scaledDelta = _boundAmount(delta.scaledDelta);
+        delta.scaledP2PTotal = _boundAmount(delta.scaledP2PTotal);
 
         _setUp(delta, indexes);
 

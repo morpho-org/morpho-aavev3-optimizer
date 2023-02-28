@@ -43,7 +43,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.validatePermission(owner, owner);
 
         if (owner != manager) {
-            vm.expectRevert(abi.encodeWithSelector(Errors.PermissionDenied.selector));
+            vm.expectRevert(Errors.PermissionDenied.selector);
             this.validatePermission(owner, manager);
         }
 
@@ -52,23 +52,23 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         _approveManager(owner, manager, false);
         if (owner != manager) {
-            vm.expectRevert(abi.encodeWithSelector(Errors.PermissionDenied.selector));
+            vm.expectRevert(Errors.PermissionDenied.selector);
             this.validatePermission(owner, manager);
         }
     }
 
     function testValidateInputRevertsIfAddressIsZero() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.AddressIsZero.selector));
+        vm.expectRevert(Errors.AddressIsZero.selector);
         _validateInput(dai, 1, address(0));
     }
 
     function testValidateInputRevertsIfAmountIsZero() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.AmountIsZero.selector));
+        vm.expectRevert(Errors.AmountIsZero.selector);
         _validateInput(dai, 0, address(1));
     }
 
     function testValidateInputRevertsIfMarketNotCreated() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.MarketNotCreated.selector));
+        vm.expectRevert(Errors.MarketNotCreated.selector);
         _validateInput(address(0), 1, address(1));
     }
 
@@ -78,7 +78,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testValidateManagerInput() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.AddressIsZero.selector));
+        vm.expectRevert(Errors.AddressIsZero.selector);
         _validateManagerInput(dai, 1, address(1), address(0));
         _validateManagerInput(dai, 1, address(1), address(2));
     }
@@ -86,7 +86,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     function testValidateSupplyShouldRevertIfSupplyPaused() public {
         _market[dai].pauseStatuses.isSupplyPaused = true;
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.SupplyIsPaused.selector));
+        vm.expectRevert(Errors.SupplyIsPaused.selector);
         this.validateSupply(dai, 1, address(1));
     }
 
@@ -97,7 +97,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     function testValidateSupplyCollateralShouldRevertIfSupplyCollateralPaused() public {
         _market[dai].pauseStatuses.isSupplyCollateralPaused = true;
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.SupplyCollateralIsPaused.selector));
+        vm.expectRevert(Errors.SupplyCollateralIsPaused.selector);
         this.validateSupplyCollateral(dai, 1, address(1));
     }
 
@@ -107,7 +107,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testValidateBorrowShouldRevertIfBorrowPaused() public {
         _market[dai].pauseStatuses.isBorrowPaused = true;
-        vm.expectRevert(abi.encodeWithSelector(Errors.BorrowIsPaused.selector));
+        vm.expectRevert(Errors.BorrowIsPaused.selector);
         this.validateBorrow(dai, 1, address(this), address(this));
     }
 
@@ -129,14 +129,14 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         vm.prank(address(poolConfigurator));
         _POOL.setConfiguration(dai, reserveConfig);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.BorrowingNotEnabled.selector));
+        vm.expectRevert(Errors.BorrowingNotEnabled.selector);
         this.authorizeBorrow(dai, 1);
     }
 
     function testValidateRepayShouldRevertIfRepayPaused() public {
         _market[dai].pauseStatuses.isRepayPaused = true;
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.RepayIsPaused.selector));
+        vm.expectRevert(Errors.RepayIsPaused.selector);
         this.validateRepay(dai, 1, address(1));
     }
 
@@ -147,7 +147,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     function testValidateWithdrawShouldRevertIfWithdrawPaused() public {
         _market[dai].pauseStatuses.isWithdrawPaused = true;
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.WithdrawIsPaused.selector));
+        vm.expectRevert(Errors.WithdrawIsPaused.selector);
         this.validateWithdraw(dai, 1, address(this), address(this));
     }
 
@@ -158,7 +158,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     function testValidateWithdrawCollateralShouldRevertIfWithdrawCollateralPaused() public {
         _market[dai].pauseStatuses.isWithdrawCollateralPaused = true;
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.WithdrawCollateralIsPaused.selector));
+        vm.expectRevert(Errors.WithdrawCollateralIsPaused.selector);
         this.validateWithdrawCollateral(dai, 1, address(this), address(this));
     }
 
@@ -170,35 +170,44 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.validateWithdrawCollateral(dai, onPool, address(this), address(this));
     }
 
-    function testAuthorizeLiquidateIfBorrowMarketNotCreated() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.MarketNotCreated.selector));
-        this.authorizeLiquidate(address(420), dai, address(this));
+    function testValidateLiquidateRevertsIfBorrowerIsZero() public {
+        vm.expectRevert(Errors.AddressIsZero.selector);
+        this.validateLiquidate(dai, usdc, address(0));
     }
 
-    function testAuthorizeLiquidateIfCollateralMarketNotCreated() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.MarketNotCreated.selector));
-        this.authorizeLiquidate(dai, address(420), address(this));
+    function testValidateLiquidateRevertsIfBorrowMarketNotCreated() public {
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        this.validateLiquidate(address(420), dai, address(this));
     }
 
-    function testAuthorizeLiquidateIfLiquidateCollateralPaused() public {
-        _market[dai].pauseStatuses.isLiquidateCollateralPaused = true;
-
-        vm.expectRevert(abi.encodeWithSelector(Errors.LiquidateCollateralIsPaused.selector));
-        this.authorizeLiquidate(usdc, dai, address(this));
+    function testValidateLiquidateRevertsIfCollateralMarketNotCreated() public {
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        this.validateLiquidate(dai, address(420), address(this));
     }
 
-    function testAuthorizeLiquidateIfLiquidateBorrowPaused() public {
+    function testValidateLiquidateRevertsIfLiquidateBorrowPaused() public {
         _market[dai].pauseStatuses.isLiquidateBorrowPaused = true;
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.LiquidateBorrowIsPaused.selector));
-        this.authorizeLiquidate(dai, usdc, address(this));
+        vm.expectRevert(Errors.LiquidateBorrowIsPaused.selector);
+        this.validateLiquidate(dai, usdc, address(this));
+    }
+
+    function testValidateLiquidateRevertsIfLiquidateCollateralPaused() public {
+        _market[dai].pauseStatuses.isLiquidateCollateralPaused = true;
+
+        vm.expectRevert(Errors.LiquidateCollateralIsPaused.selector);
+        this.validateLiquidate(usdc, dai, address(this));
+    }
+
+    function testValidateLiquidate() public view {
+        this.validateLiquidate(dai, usdc, address(this));
     }
 
     function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfDeprecatedBorrow() public {
         _userCollaterals[address(this)].add(dai);
         _userBorrows[address(this)].add(dai);
         _market[dai].pauseStatuses.isDeprecated = true;
-        uint256 closeFactor = this.authorizeLiquidate(dai, dai, address(this));
+        uint256 closeFactor = this.authorizeLiquidate(dai, address(this));
         assertEq(closeFactor, Constants.MAX_CLOSE_FACTOR);
     }
 
@@ -216,8 +225,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         oracleSentinel.setLiquidationAllowed(false);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorizedLiquidate.selector));
-        this.authorizeLiquidate(dai, dai, address(this));
+        vm.expectRevert(Errors.UnauthorizedLiquidate.selector);
+        this.authorizeLiquidate(dai, address(this));
     }
 
     function testAuthorizeLiquidateShouldRevertIfBorrowerHealthy() public {
@@ -229,8 +238,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _userBorrows[address(this)].add(dai);
         _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulDown(50_00), 0, true);
 
-        vm.expectRevert(abi.encodeWithSelector(Errors.UnauthorizedLiquidate.selector));
-        this.authorizeLiquidate(dai, dai, address(this));
+        vm.expectRevert(Errors.UnauthorizedLiquidate.selector);
+        this.authorizeLiquidate(dai, address(this));
     }
 
     function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfBelowMinThreshold(uint256 amount) public {
@@ -245,7 +254,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
             dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 11 / 10), 0, true
         );
 
-        uint256 closeFactor = this.authorizeLiquidate(dai, dai, address(this));
+        uint256 closeFactor = this.authorizeLiquidate(dai, address(this));
         assertEq(closeFactor, Constants.MAX_CLOSE_FACTOR);
     }
 
@@ -262,7 +271,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
             dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 1001 / 1000), 0, true
         );
 
-        uint256 closeFactor = this.authorizeLiquidate(dai, dai, address(this));
+        uint256 closeFactor = this.authorizeLiquidate(dai, address(this));
         assertEq(closeFactor, Constants.DEFAULT_CLOSE_FACTOR);
     }
 
@@ -336,42 +345,45 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         assertEq(maxLoopsLeft, expectedMaxLoopsLeft, "maxLoopsLeft");
     }
 
-    function validatePermission(address owner, address manager) external view {
+    function validatePermission(address owner, address manager) public view {
         _validatePermission(owner, manager);
     }
 
-    function validateSupply(address underlying, uint256 amount, address onBehalf) external view {
+    function validateSupply(address underlying, uint256 amount, address onBehalf) public view {
         _validateSupply(underlying, amount, onBehalf);
     }
 
-    function validateSupplyCollateral(address underlying, uint256 amount, address onBehalf) external view {
+    function validateSupplyCollateral(address underlying, uint256 amount, address onBehalf) public view {
         _validateSupplyCollateral(underlying, amount, onBehalf);
     }
 
-    function validateBorrow(address underlying, uint256 amount, address borrower, address receiver) external view {
+    function validateBorrow(address underlying, uint256 amount, address borrower, address receiver) public view {
         _validateBorrow(underlying, amount, borrower, receiver);
     }
 
-    function validateRepay(address underlying, uint256 amount, address onBehalf) external view {
+    function validateRepay(address underlying, uint256 amount, address onBehalf) public view {
         _validateRepay(underlying, amount, onBehalf);
     }
 
-    function validateWithdraw(address underlying, uint256 amount, address user, address to) external view {
+    function validateWithdraw(address underlying, uint256 amount, address user, address to) public view {
         _validateWithdraw(underlying, amount, user, to);
     }
 
     function validateWithdrawCollateral(address underlying, uint256 amount, address supplier, address receiver)
-        external
+        public
         view
     {
         _validateWithdrawCollateral(underlying, amount, supplier, receiver);
     }
 
-    function authorizeLiquidate(address collateral, address borrow, address liquidator)
-        external
+    function validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
+        public
         view
-        returns (uint256)
     {
-        return _authorizeLiquidate(collateral, borrow, liquidator);
+        _validateLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
+    }
+
+    function authorizeLiquidate(address underlyingBorrowed, address borrower) public view returns (uint256) {
+        return _authorizeLiquidate(underlyingBorrowed, borrower);
     }
 }

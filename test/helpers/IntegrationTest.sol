@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {IPositionsManager} from "src/interfaces/IPositionsManager.sol";
+import {IRewardsManager} from "src/interfaces/IRewardsManager.sol";
 
 import {TestMarket, TestMarketLib} from "test/helpers/TestMarketLib.sol";
 
@@ -11,6 +12,7 @@ import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.s
 
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
+import {RewardsManager} from "src/RewardsManager.sol";
 import {UserMock} from "test/mocks/UserMock.sol";
 import "./ForkTest.sol";
 
@@ -26,11 +28,12 @@ contract IntegrationTest is ForkTest {
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
 
     // AaveV3 base currency is USD, 8 decimals on all L2s.
-    uint256 internal constant MIN_USD_AMOUNT = 0.01e8; // 0.01$
+    uint256 internal constant MIN_USD_AMOUNT = 10e8; // 10$
     uint256 internal constant MAX_USD_AMOUNT = 500_000_000e8; // 500m$
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
+    IRewardsManager internal rewardsManager;
 
     ProxyAdmin internal proxyAdmin;
 
@@ -52,7 +55,7 @@ contract IntegrationTest is ForkTest {
         _deploy();
 
         for (uint256 i; i < allUnderlyings.length; ++i) {
-            _createMarket(allUnderlyings[i], 0, 33_33);
+            _createTestMarket(allUnderlyings[i], 0, 33_33);
         }
 
         // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() always return true.
@@ -91,6 +94,10 @@ contract IntegrationTest is ForkTest {
         morpho = Morpho(payable(address(morphoProxy)));
 
         morpho.initialize(address(positionsManager), Types.Iterations({repay: 10, withdraw: 10}));
+
+        rewardsManager = new RewardsManager(address(rewardsController), address(morpho), address(pool));
+
+        morpho.setRewardsManager(address(rewardsManager));
     }
 
     function _initUser() internal returns (UserMock newUser) {
@@ -142,7 +149,7 @@ contract IntegrationTest is ForkTest {
         vm.label(reserve.stableDebtTokenAddress, string.concat("sd", market.symbol));
     }
 
-    function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
+    function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         (TestMarket storage market,) = _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
         underlyings.push(underlying);
@@ -152,9 +159,16 @@ contract IntegrationTest is ForkTest {
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
     }
 
+    /// @dev Returns the total supply used towards the supply cap.
+    function _totalSupplyToCap(TestMarket storage market) internal view returns (uint256) {
+        return (IAToken(market.aToken).scaledTotalSupply() + _accruedToTreasury(market.underlying)).rayMul(
+            pool.getReserveNormalizedIncome(market.underlying)
+        );
+    }
+
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
     function _supplyGap(TestMarket storage market) internal view returns (uint256) {
-        return market.supplyCap.zeroFloorSub(market.totalSupply() + _accruedToTreasury(market.underlying));
+        return market.supplyCap.zeroFloorSub(_totalSupplyToCap(market));
     }
 
     /// @dev Sets the supply cap of AaveV3 to the given input.
@@ -164,6 +178,18 @@ contract IntegrationTest is ForkTest {
         poolAdmin.setSupplyCap(market.underlying, supplyCap);
     }
 
+    /// @dev Sets the supply gap of AaveV3 to the given input.
+    /// @return The new supply gap after rounding since supply caps on AAVE are only granular up to the token's decimals.
+    function _setSupplyGap(TestMarket storage market, uint256 supplyGap) internal returns (uint256) {
+        _setSupplyCap(market, (_totalSupplyToCap(market) + supplyGap) / (10 ** market.decimals));
+        return _supplyGap(market);
+    }
+
+    /// @dev Calculates the underlying amount that can be borrowed on the given market on AaveV3, reaching the borrow cap.
+    function _borrowGap(TestMarket storage market) internal view returns (uint256) {
+        return market.borrowGap();
+    }
+
     /// @dev Sets the borrow cap of AaveV3 to the given input.
     function _setBorrowCap(TestMarket storage market, uint256 borrowCap) internal {
         market.borrowCap = borrowCap > 0 ? borrowCap * 10 ** market.decimals : type(uint256).max;
@@ -171,9 +197,16 @@ contract IntegrationTest is ForkTest {
         poolAdmin.setBorrowCap(market.underlying, borrowCap);
     }
 
+    /// @dev Sets the borrow gap of AaveV3 to the given input.
+    /// @return The new borrow gap after rounding since supply caps on AAVE are only granular up to the token's decimals.
+    function _setBorrowGap(TestMarket storage market, uint256 borrowGap) internal returns (uint256) {
+        _setBorrowCap(market, (market.totalBorrow() + borrowGap) / (10 ** market.decimals));
+        return _borrowGap(market);
+    }
+
     modifier bypassSupplyCap(TestMarket storage market, uint256 amount) {
         uint256 supplyCapBefore = market.supplyCap;
-        bool disableSupplyCap = amount <= type(uint256).max - supplyCapBefore;
+        bool disableSupplyCap = amount < type(uint256).max - supplyCapBefore;
         if (disableSupplyCap) _setSupplyCap(market, 0);
 
         _;
@@ -197,11 +230,7 @@ contract IntegrationTest is ForkTest {
         view
         returns (uint256)
     {
-        return bound(
-            supplyCap,
-            1,
-            (market.totalSupply() + _accruedToTreasury(market.underlying) + amount) / (10 ** market.decimals)
-        );
+        return bound(supplyCap, 1, (_totalSupplyToCap(market) + amount) / (10 ** market.decimals));
     }
 
     /// @dev Bounds the input borrow cap of AaveV3 so that it is exceeded after having deposited a given amount
@@ -243,8 +272,27 @@ contract IntegrationTest is ForkTest {
         );
     }
 
+    /// @dev Borrows from `user` on behalf of `onBehalf`, with collateral.
+    function _borrowWithCollateral(
+        address borrower,
+        TestMarket storage collateralMarket,
+        TestMarket storage borrowedMarket,
+        uint256 amount,
+        address onBehalf,
+        address receiver,
+        uint256 maxIterations
+    ) internal returns (uint256 supplied, uint256 borrowed) {
+        vm.startPrank(borrower);
+        uint256 collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount);
+        deal(collateralMarket.underlying, borrower, collateral);
+        ERC20(collateralMarket.underlying).approve(address(morpho), collateral);
+        supplied = morpho.supplyCollateral(collateralMarket.underlying, collateral, borrower);
+        borrowed = morpho.borrow(borrowedMarket.underlying, amount, onBehalf, receiver, maxIterations);
+        vm.stopPrank();
+    }
+
     /// @dev Borrows from `user` on behalf of `onBehalf`, without collateral.
-    function _borrowNoCollateral(
+    function _borrowWithoutCollateral(
         address borrower,
         TestMarket storage market,
         uint256 amount,
@@ -275,7 +323,6 @@ contract IntegrationTest is ForkTest {
         try promoter.borrow(market.underlying, amount) returns (uint256 borrowed) {
             amount = borrowed;
 
-            market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
             _deposit(market, market.minBorrowCollateral(market, amount), address(morpho)); // Make Morpho able to borrow again with some collateral.
         } catch {
             amount = 0;
@@ -292,6 +339,7 @@ contract IntegrationTest is ForkTest {
         bypassSupplyCap(market, amount)
         returns (uint256)
     {
+        if (amount == 0) return 0;
         promoter.approve(market.underlying, amount);
         return promoter.supply(market.underlying, amount);
     }
@@ -305,8 +353,7 @@ contract IntegrationTest is ForkTest {
         amount = _promoteBorrow(promoter, market, amount); // 100% peer-to-peer.
 
         address onBehalf = address(hacker);
-        _borrowNoCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-        market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+        _borrowWithoutCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
 
         // Set the supply cap as exceeded.
         _setSupplyCap(market, market.totalSupply() / (10 ** market.decimals));
@@ -326,8 +373,7 @@ contract IntegrationTest is ForkTest {
         amount = _promoteBorrow(promoter, market, amount); // 100% peer-to-peer.
 
         address onBehalf = address(hacker);
-        _borrowNoCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
-        market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+        _borrowWithoutCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
 
         Types.Iterations memory iterations = morpho.defaultIterations();
 
@@ -358,11 +404,65 @@ contract IntegrationTest is ForkTest {
         // Set the max iterations to 0 upon withdraw to skip demotion and fallback to borrow delta.
         morpho.setDefaultIterations(Types.Iterations({repay: 10, withdraw: 0}));
 
-        hacker.withdraw(market.underlying, amount);
-        market.resetPreviousIndex(address(morpho)); // Enable borrow/repay in same block.
+        hacker.withdraw(market.underlying, amount, 0);
 
         morpho.setDefaultIterations(iterations);
 
         return amount;
+    }
+
+    function _boundAmount(uint256 amount) internal view override returns (uint256) {
+        return bound(amount, 1, type(uint256).max);
+    }
+
+    function _boundOnBehalf(address onBehalf) internal view returns (address) {
+        onBehalf = _boundAddressNotZero(onBehalf);
+
+        vm.assume(onBehalf != address(proxyAdmin)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target.
+
+        return onBehalf;
+    }
+
+    function _boundReceiver(address input) internal view returns (address output) {
+        output = _boundAddressNotZero(input);
+        // The Link contract cannot receive LINK tokens.
+        vm.assume(output != link);
+    }
+
+    function _prepareOnBehalf(address onBehalf) internal {
+        if (onBehalf != address(user)) {
+            vm.prank(onBehalf);
+            morpho.approveManager(address(user), true);
+        }
+    }
+
+    function _assumeNotUnderlying(address input) internal view {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.assume(input != allUnderlyings[i]);
+        }
+    }
+
+    function _assertMarketUpdatedIndexes(Types.Market memory market, Types.Indexes256 memory futureIndexes) internal {
+        assertEq(market.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
+        assertEq(
+            market.indexes.supply.poolIndex, futureIndexes.supply.poolIndex, "poolSupplyIndex != futurePoolSupplyIndex"
+        );
+        assertEq(
+            market.indexes.borrow.poolIndex, futureIndexes.borrow.poolIndex, "poolBorrowIndex != futurePoolBorrowIndex"
+        );
+        assertEq(
+            market.indexes.supply.p2pIndex, futureIndexes.supply.p2pIndex, "p2pSupplyIndex != futureP2PSupplyIndex"
+        );
+        assertEq(
+            market.indexes.borrow.p2pIndex, futureIndexes.borrow.p2pIndex, "p2pBorrowIndex != futureP2PBorrowIndex"
+        );
+    }
+
+    function _assertMarketAccountingZero(Types.Market memory market) internal {
+        assertEq(market.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
+        assertEq(market.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != 0");
+        assertEq(market.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
+        assertEq(market.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
+        assertEq(market.idleSupply, 0, "idleSupply != 0");
     }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity 0.8.17;
+pragma solidity ^0.8.0;
 
 import {DeltasLib} from "src/libraries/DeltasLib.sol";
 
@@ -9,11 +9,10 @@ contract TestUnitDeltasLib is BaseTest {
     using Math for uint256;
     using WadRayMath for uint256;
 
+    uint256 internal constant MAX_AMOUNT = 1e20 ether;
+
     Types.Deltas internal deltas;
     Types.Indexes256 internal indexes;
-
-    uint256 internal constant MIN_AMOUNT = 1;
-    uint256 internal constant MAX_AMOUNT = 1e20 ether;
 
     function setUp() public {
         indexes = Types.Indexes256(
@@ -32,10 +31,10 @@ contract TestUnitDeltasLib is BaseTest {
     function testIncreaseP2PBorrow(uint256 promoted, uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow)
         public
     {
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
+        amount = bound(amount, 1, MAX_AMOUNT);
         promoted = bound(promoted, 0, amount);
-        totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
-        totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
+        totalP2PSupply = _boundAmount(totalP2PSupply);
+        totalP2PBorrow = _boundAmount(totalP2PBorrow);
         deltas.supply.scaledP2PTotal = totalP2PSupply;
         deltas.borrow.scaledP2PTotal = totalP2PBorrow;
 
@@ -55,10 +54,10 @@ contract TestUnitDeltasLib is BaseTest {
     function testIncreaseP2PSupply(uint256 promoted, uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow)
         public
     {
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
+        amount = bound(amount, 1, MAX_AMOUNT);
         promoted = bound(promoted, 0, amount);
-        totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
-        totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
+        totalP2PSupply = _boundAmount(totalP2PSupply);
+        totalP2PBorrow = _boundAmount(totalP2PBorrow);
         deltas.supply.scaledP2PTotal = totalP2PSupply;
         deltas.borrow.scaledP2PTotal = totalP2PBorrow;
 
@@ -90,10 +89,10 @@ contract TestUnitDeltasLib is BaseTest {
     function testDecreaseP2PSupply(uint256 demoted, uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow)
         public
     {
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
+        amount = bound(amount, 1, MAX_AMOUNT);
         demoted = bound(demoted, 0, amount);
-        totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
-        totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
+        totalP2PSupply = _boundAmount(totalP2PSupply);
+        totalP2PBorrow = _boundAmount(totalP2PBorrow);
         deltas.supply.scaledP2PTotal = totalP2PSupply;
         deltas.borrow.scaledP2PTotal = totalP2PBorrow;
 
@@ -112,10 +111,10 @@ contract TestUnitDeltasLib is BaseTest {
     function testDecreaseP2PBorrow(uint256 demoted, uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow)
         public
     {
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
+        amount = bound(amount, 1, MAX_AMOUNT);
         demoted = bound(demoted, 0, amount);
-        totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
-        totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
+        totalP2PSupply = _boundAmount(totalP2PSupply);
+        totalP2PBorrow = _boundAmount(totalP2PBorrow);
         deltas.supply.scaledP2PTotal = totalP2PSupply;
         deltas.borrow.scaledP2PTotal = totalP2PBorrow;
 
@@ -132,8 +131,8 @@ contract TestUnitDeltasLib is BaseTest {
     }
 
     function testRepayFeeShouldReturnZeroIfAmountIsZero(uint256 totalP2PSupply, uint256 totalP2PBorrow) public {
-        totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
-        totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
+        totalP2PSupply = _boundAmount(totalP2PSupply);
+        totalP2PBorrow = _boundAmount(totalP2PBorrow);
         uint256 amount = 0;
         deltas.supply.scaledP2PTotal = totalP2PSupply;
         deltas.borrow.scaledP2PTotal = totalP2PBorrow;
@@ -144,10 +143,11 @@ contract TestUnitDeltasLib is BaseTest {
     }
 
     function testRepayFee(uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow, uint256 supplyDelta) public {
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
-        totalP2PSupply = bound(totalP2PSupply, 0, MAX_AMOUNT);
-        totalP2PBorrow = bound(totalP2PBorrow, 0, MAX_AMOUNT);
-        supplyDelta = bound(supplyDelta, 0, totalP2PSupply);
+        amount = bound(amount, 1, MAX_AMOUNT);
+        totalP2PSupply = _boundAmount(totalP2PSupply).rayDiv(indexes.supply.p2pIndex);
+        totalP2PBorrow = _boundAmount(totalP2PBorrow).rayDiv(indexes.borrow.p2pIndex);
+        supplyDelta =
+            bound(supplyDelta, 0, totalP2PSupply).rayMul(indexes.supply.p2pIndex).rayDiv(indexes.supply.poolIndex);
 
         deltas.supply.scaledP2PTotal = totalP2PSupply;
         deltas.borrow.scaledP2PTotal = totalP2PBorrow;
@@ -162,19 +162,19 @@ contract TestUnitDeltasLib is BaseTest {
         assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply, "supply total");
         assertEq(
             deltas.borrow.scaledP2PTotal,
-            totalP2PBorrow.zeroFloorSub(expectedFee.rayDiv(indexes.borrow.p2pIndex)),
+            totalP2PBorrow.zeroFloorSub(expectedFee.rayDivDown(indexes.borrow.p2pIndex)),
             "borrow total"
         );
     }
 
     function increaseP2P(address underlying, uint256 promoted, uint256 amount, bool borrowSide)
-        external
+        public
         returns (uint256)
     {
         return DeltasLib.increaseP2P(deltas, underlying, promoted, amount, indexes, borrowSide);
     }
 
-    function decreaseP2P(address underlying, uint256 demoted, uint256 amount, bool borrowSide) external {
+    function decreaseP2P(address underlying, uint256 demoted, uint256 amount, bool borrowSide) public {
         DeltasLib.decreaseP2P(deltas, underlying, demoted, amount, indexes, borrowSide);
     }
 }

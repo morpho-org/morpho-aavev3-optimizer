@@ -90,6 +90,8 @@ library Events {
         address indexed claimer, address indexed onBehalf, address indexed rewardToken, uint256 amountClaimed
     );
 
+    event IsClaimRewardsPausedSet(bool isPaused);
+
     event IsSupplyPausedSet(address indexed underlying, bool isPaused);
 
     event IsSupplyCollateralPausedSet(address indexed underlying, bool isPaused);

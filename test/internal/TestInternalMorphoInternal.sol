@@ -11,10 +11,9 @@ import {PoolLib} from "src/libraries/PoolLib.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
 import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
 
-import {MorphoInternal, MorphoStorage} from "src/MorphoInternal.sol";
 import "test/helpers/InternalTest.sol";
 
-contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
+contract TestInternalMorphoInternal is InternalTest {
     using MarketLib for Types.Market;
     using MarketBalanceLib for Types.MarketBalances;
     using PoolLib for IPool;
@@ -138,7 +137,11 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateInDS(address(0), user, marketBalances.poolSuppliers, marketBalances.p2pSuppliers, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateInDS(
+            address(0), user, marketBalances.poolSuppliers, marketBalances.p2pSuppliers, onPool, inP2P, head
+        );
+        assertEq(newOnPool, onPool);
+        assertEq(newInP2P, inP2P);
         _assertMarketBalances(marketBalances, user, onPool, inP2P, 0, 0, 0);
     }
 
@@ -148,7 +151,11 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateInDS(address(0), user, marketBalances.poolBorrowers, marketBalances.p2pBorrowers, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateInDS(
+            address(0), user, marketBalances.poolBorrowers, marketBalances.p2pBorrowers, onPool, inP2P, head
+        );
+        assertEq(newOnPool, onPool);
+        assertEq(newInP2P, inP2P);
         _assertMarketBalances(marketBalances, user, 0, 0, onPool, inP2P, 0);
     }
 
@@ -158,10 +165,18 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         inP2P = bound(inP2P, 0, Constants.DUST_THRESHOLD);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateInDS(address(0), user, marketBalances.poolSuppliers, marketBalances.p2pSuppliers, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateInDS(
+            address(0), user, marketBalances.poolSuppliers, marketBalances.p2pSuppliers, onPool, inP2P, head
+        );
         _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
+        assertEq(newOnPool, 0);
+        assertEq(newInP2P, 0);
 
-        _updateInDS(address(0), user, marketBalances.poolBorrowers, marketBalances.p2pBorrowers, onPool, inP2P, head);
+        (newOnPool, newInP2P) = _updateInDS(
+            address(0), user, marketBalances.poolBorrowers, marketBalances.p2pBorrowers, onPool, inP2P, head
+        );
+        assertEq(newOnPool, 0);
+        assertEq(newInP2P, 0);
         _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
     }
 
@@ -193,6 +208,7 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         _updateBorrowerInDS(dai, user, onPool, inP2P, head);
         _assertMarketBalances(marketBalances, user, 0, 0, onPool, inP2P, 0);
+        assertTrue(_userBorrows[user].contains(dai), "userBorrow");
     }
 
     function testUpdateBorrowerInDSWithDust(address user, uint256 onPool, uint256 inP2P, bool head) public {
@@ -203,6 +219,7 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         _updateBorrowerInDS(dai, user, onPool, inP2P, head);
         _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
+        assertFalse(_userBorrows[user].contains(dai), "userBorrow");
     }
 
     function testGetUserSupplyBalanceFromIndexes(
@@ -501,55 +518,56 @@ contract TestInternalMorphoInternal is InternalTest, MorphoInternal {
         assertEq(_isManaging[owner][manager], isAllowed);
     }
 
-    struct TestSeizeVars1 {
-        uint256 liquidationBonus;
-        uint256 collateralTokenUnit;
-        uint256 borrowTokenUnit;
-        uint256 borrowPrice;
-        uint256 collateralPrice;
-    }
-
-    struct TestSeizeVars2 {
+    struct TestSeizeVars {
         uint256 amountToSeize;
         uint256 amountToLiquidate;
     }
 
     function testCalculateAmountToSeize(uint256 maxToLiquidate, uint256 collateralAmount) public {
+        Types.AmountToSeizeVars memory vars;
         maxToLiquidate = bound(maxToLiquidate, 0, 1_000_000 ether);
         collateralAmount = bound(collateralAmount, 0, 1_000_000 ether);
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
-        TestSeizeVars1 memory vars;
 
         _marketBalances[dai].collateral[address(1)] = collateralAmount.rayDivUp(indexes.supply.poolIndex);
 
-        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(dai);
-        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = config.getParams();
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == config.getEModeCategory()) {
-            vars.liquidationBonus = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID).liquidationBonus;
-        }
-        (,,, vars.borrowTokenUnit,,) = _POOL.getConfiguration(wbtc).getParams();
+        DataTypes.ReserveConfigurationMap memory borrowConfig = _POOL.getConfiguration(wbtc);
+        DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(dai);
+        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
 
+        (,,, vars.borrowedTokenUnit,,) = borrowConfig.getParams();
+        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = collateralConfig.getParams();
+
+        bool isInCollateralEMode =
+            _E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == collateralConfig.getEModeCategory();
+        vars.borrowedPrice = _getAssetPrice(
+            wbtc,
+            oracle,
+            _E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == borrowConfig.getEModeCategory(),
+            eModeCategory.priceSource
+        );
+        vars.collateralPrice = _getAssetPrice(dai, oracle, isInCollateralEMode, eModeCategory.priceSource);
+
+        if (isInCollateralEMode) vars.liquidationBonus = eModeCategory.liquidationBonus;
+
+        vars.borrowedTokenUnit = 10 ** vars.borrowedTokenUnit;
         vars.collateralTokenUnit = 10 ** vars.collateralTokenUnit;
-        vars.borrowTokenUnit = 10 ** vars.borrowTokenUnit;
 
-        vars.borrowPrice = oracle.getAssetPrice(wbtc);
-        vars.collateralPrice = oracle.getAssetPrice(dai);
-
-        TestSeizeVars2 memory expected;
-        TestSeizeVars2 memory actual;
+        TestSeizeVars memory expected;
+        TestSeizeVars memory actual;
 
         expected.amountToSeize = Math.min(
             (
-                (maxToLiquidate * vars.borrowPrice * vars.collateralTokenUnit)
-                    / (vars.borrowTokenUnit * vars.collateralPrice)
+                (maxToLiquidate * vars.borrowedPrice * vars.collateralTokenUnit)
+                    / (vars.borrowedTokenUnit * vars.collateralPrice)
             ).percentMul(vars.liquidationBonus),
             collateralAmount
         );
         expected.amountToLiquidate = Math.min(
             maxToLiquidate,
             (
-                (collateralAmount * vars.collateralPrice * vars.borrowTokenUnit)
-                    / (vars.borrowPrice * vars.collateralTokenUnit)
+                (collateralAmount * vars.collateralPrice * vars.borrowedTokenUnit)
+                    / (vars.borrowedPrice * vars.collateralTokenUnit)
             ).percentDiv(vars.liquidationBonus)
         );
 

@@ -180,4 +180,12 @@ library Types {
         uint256 closeFactor;
         uint256 seized;
     }
+
+    struct AmountToSeizeVars {
+        uint256 liquidationBonus;
+        uint256 borrowedTokenUnit;
+        uint256 collateralTokenUnit;
+        uint256 borrowedPrice;
+        uint256 collateralPrice;
+    }
 }

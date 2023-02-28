@@ -176,6 +176,7 @@ abstract contract MorphoInternal is MorphoStorage {
         returns (uint256)
     {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+
         return marketBalances.scaledPoolSupplyBalance(user).rayMulDown(indexes.supply.poolIndex)
             + marketBalances.scaledP2PSupplyBalance(user).rayMulDown(indexes.supply.p2pIndex);
     }
@@ -187,6 +188,7 @@ abstract contract MorphoInternal is MorphoStorage {
         returns (uint256)
     {
         Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+
         return marketBalances.scaledPoolBorrowBalance(user).rayMulUp(indexes.borrow.poolIndex)
             + marketBalances.scaledP2PBorrowBalance(user).rayMulUp(indexes.borrow.p2pIndex);
     }
@@ -315,20 +317,15 @@ abstract contract MorphoInternal is MorphoStorage {
             tokenUnit = 10 ** config.getDecimals();
         }
 
-        // If this instance of Morpho isn't in eMode, then vars.eModeCategory is not initalized.
-        // Thus in this case `vars.eModeCategory.priceSource` == `address(0)`.
-        if (vars.eModeCategory.priceSource != address(0) && _E_MODE_CATEGORY_ID == config.getEModeCategory()) {
-            uint256 eModeUnderlyingPrice = vars.oracle.getAssetPrice(vars.eModeCategory.priceSource);
-            underlyingPrice = eModeUnderlyingPrice != 0 ? eModeUnderlyingPrice : vars.oracle.getAssetPrice(underlying);
-        } else {
-            underlyingPrice = vars.oracle.getAssetPrice(underlying);
-        }
+        bool isInEMode = _isInEModeCategory(config);
+        underlyingPrice = _getAssetPrice(underlying, vars.oracle, isInEMode, vars.eModeCategory.priceSource);
 
-        // If a LTV has been reduced to 0 on Aave v3, the other assets of the collateral are frozen.
-        // In response, Morpho disables the asset as collateral and sets its liquidation threshold to 0.
+        // If the LTV is 0 on Aave V3, the asset cannot be used as collateral to borrow upon a breaking withdraw.
+        // In response, Morpho disables the asset as collateral and sets its liquidation threshold
+        // to 0 and the governance should warn users to repay their debt.
         if (config.getLtv() == 0) return (underlyingPrice, 0, 0, tokenUnit);
 
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == config.getEModeCategory()) {
+        if (isInEMode) {
             ltv = vars.eModeCategory.ltv;
             liquidationThreshold = vars.eModeCategory.liquidationThreshold;
         } else {
@@ -345,6 +342,7 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param onPool The new scaled balance on pool of the `user`.
     /// @param inP2P The new scaled balance in peer-to-peer of the `user`.
     /// @param demoting Whether the update is happening during a demoting process or not.
+    /// @return The actual new scaled balance on pool and in peer-to-peer of the `user` after accounting for dust.
     function _updateInDS(
         address poolToken,
         address user,
@@ -353,7 +351,7 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 onPool,
         uint256 inP2P,
         bool demoting
-    ) internal {
+    ) internal returns (uint256, uint256) {
         if (onPool <= Constants.DUST_THRESHOLD) onPool = 0;
         if (inP2P <= Constants.DUST_THRESHOLD) inP2P = 0;
 
@@ -370,6 +368,7 @@ abstract contract MorphoInternal is MorphoStorage {
         }
 
         if (inP2P != formerInP2P) p2pBuckets.update(user, inP2P, true);
+        return (onPool, inP2P);
     }
 
     /// @dev Updates a `user`'s supply position in the data structure.
@@ -403,7 +402,7 @@ abstract contract MorphoInternal is MorphoStorage {
     function _updateBorrowerInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
         internal
     {
-        _updateInDS(
+        (onPool, inP2P) = _updateInDS(
             _market[underlying].variableDebtToken,
             user,
             _marketBalances[underlying].poolBorrowers,
@@ -486,34 +485,62 @@ abstract contract MorphoInternal is MorphoStorage {
         address borrower,
         uint256 poolSupplyIndex
     ) internal view returns (uint256 amountToRepay, uint256 amountToSeize) {
-        amountToRepay = maxToRepay;
+        Types.AmountToSeizeVars memory vars;
+        DataTypes.ReserveConfigurationMap memory borrowedConfig = _POOL.getConfiguration(underlyingBorrowed);
         DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(underlyingCollateral);
-        uint256 liquidationBonus = _E_MODE_CATEGORY_ID != 0
-            && _E_MODE_CATEGORY_ID == collateralConfig.getEModeCategory()
-            ? _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID).liquidationBonus
-            : collateralConfig.getLiquidationBonus();
-        uint256 collateralTokenUnit;
-        uint256 borrowTokenUnit;
 
-        unchecked {
-            collateralTokenUnit = 10 ** collateralConfig.getDecimals();
-            borrowTokenUnit = 10 ** _POOL.getConfiguration(underlyingBorrowed).getDecimals();
-        }
+        DataTypes.EModeCategory memory eModeCategory;
+        if (_E_MODE_CATEGORY_ID != 0) eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
+
+        bool collateralIsInEMode = _isInEModeCategory(collateralConfig);
+        vars.liquidationBonus =
+            collateralIsInEMode ? eModeCategory.liquidationBonus : collateralConfig.getLiquidationBonus();
 
         IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
-        uint256 borrowPrice = oracle.getAssetPrice(underlyingBorrowed);
-        uint256 collateralPrice = oracle.getAssetPrice(underlyingCollateral);
+        vars.borrowedPrice =
+            _getAssetPrice(underlyingBorrowed, oracle, _isInEModeCategory(borrowedConfig), eModeCategory.priceSource);
+        vars.collateralPrice =
+            _getAssetPrice(underlyingCollateral, oracle, collateralIsInEMode, eModeCategory.priceSource);
 
-        amountToSeize = ((amountToRepay * borrowPrice * collateralTokenUnit) / (borrowTokenUnit * collateralPrice))
-            .percentMul(liquidationBonus);
+        unchecked {
+            vars.borrowedTokenUnit = 10 ** borrowedConfig.getDecimals();
+            vars.collateralTokenUnit = 10 ** collateralConfig.getDecimals();
+        }
+
+        amountToRepay = maxToRepay;
+        amountToSeize = (
+            (amountToRepay * vars.borrowedPrice * vars.collateralTokenUnit)
+                / (vars.borrowedTokenUnit * vars.collateralPrice)
+        ).percentMul(vars.liquidationBonus);
 
         uint256 collateralBalance = _getUserCollateralBalanceFromIndex(underlyingCollateral, borrower, poolSupplyIndex);
 
         if (amountToSeize > collateralBalance) {
             amountToSeize = collateralBalance;
             amountToRepay = (
-                (collateralBalance * collateralPrice * borrowTokenUnit) / (borrowPrice * collateralTokenUnit)
-            ).percentDiv(liquidationBonus);
+                (collateralBalance * vars.collateralPrice * vars.borrowedTokenUnit)
+                    / (vars.borrowedPrice * vars.collateralTokenUnit)
+            ).percentDiv(vars.liquidationBonus);
         }
+    }
+
+    /// @dev Returns the underlying price of a given asset or the price of the e-mode price source if the asset is in the e-mode category.
+    function _getAssetPrice(address underlying, IAaveOracle oracle, bool isInEMode, address priceSource)
+        internal
+        view
+        returns (uint256)
+    {
+        if (isInEMode) {
+            uint256 eModePrice = oracle.getAssetPrice(priceSource);
+
+            if (eModePrice != 0) return eModePrice;
+        }
+
+        return oracle.getAssetPrice(underlying);
+    }
+
+    /// @dev Returns whether Morpho is in an e-mode category and the given asset configuration is in the same e-mode category.
+    function _isInEModeCategory(DataTypes.ReserveConfigurationMap memory config) internal view returns (bool) {
+        return _E_MODE_CATEGORY_ID != 0 && config.getEModeCategory() == _E_MODE_CATEGORY_ID;
     }
 }
