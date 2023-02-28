@@ -43,16 +43,16 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     ) external initializer {
         __Ownable_init_unchained();
 
-        _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
-        _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
+        _addressesProvider = IPoolAddressesProvider(addressesProvider);
+        _pool = IPool(_addressesProvider.getPool());
 
         _positionsManager = newPositionsManager;
         _defaultIterations = newDefaultIterations;
         emit Events.DefaultIterationsSet(newDefaultIterations.repay, newDefaultIterations.withdraw);
         emit Events.PositionsManagerSet(newPositionsManager);
 
-        _POOL.setUserEMode(_E_MODE_CATEGORY_ID);
-        _E_MODE_CATEGORY_ID = eModeCategoryId;
+        _pool.setUserEMode(_eModeCategoryId);
+        _eModeCategoryId = eModeCategoryId;
     }
 
     /* EXTERNAL */

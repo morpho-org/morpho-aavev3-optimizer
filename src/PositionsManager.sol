@@ -59,8 +59,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.SupplyRepayVars memory vars = _executeSupply(underlying, amount, from, onBehalf, maxIterations, indexes);
 
-        _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
-        _POOL.supplyToPool(underlying, vars.toSupply);
+        _pool.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
+        _pool.supplyToPool(underlying, vars.toSupply);
 
         return amount;
     }
@@ -84,7 +84,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         _executeSupplyCollateral(underlying, amount, from, onBehalf, indexes.supply.poolIndex);
 
-        _POOL.supplyToPool(underlying, amount);
+        _pool.supplyToPool(underlying, amount);
 
         return amount;
     }
@@ -113,8 +113,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.LiquidityData memory values = _liquidityData(borrower);
         if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
 
-        _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
-        _POOL.borrowFromPool(underlying, vars.toBorrow);
+        _pool.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
+        _pool.borrowFromPool(underlying, vars.toBorrow);
 
         ERC20(underlying).safeTransfer(receiver, amount);
 
@@ -142,8 +142,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.SupplyRepayVars memory vars =
             _executeRepay(underlying, amount, repayer, onBehalf, _defaultIterations.repay, indexes);
 
-        _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
-        _POOL.supplyToPool(underlying, vars.toSupply);
+        _pool.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
+        _pool.supplyToPool(underlying, vars.toSupply);
 
         return amount;
     }
@@ -173,8 +173,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
             underlying, amount, supplier, receiver, Math.max(_defaultIterations.withdraw, maxIterations), indexes
         );
 
-        _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
-        _POOL.borrowFromPool(underlying, vars.toBorrow);
+        _pool.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
+        _pool.borrowFromPool(underlying, vars.toBorrow);
 
         ERC20(underlying).safeTransfer(receiver, amount);
 
@@ -206,7 +206,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
             revert Errors.UnauthorizedWithdraw();
         }
 
-        _POOL.withdrawFromPool(underlying, market.aToken, amount);
+        _pool.withdrawFromPool(underlying, market.aToken, amount);
 
         ERC20(underlying).safeTransfer(receiver, amount);
 
@@ -254,9 +254,9 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
             underlyingCollateral, vars.seized, borrower, liquidator, collateralIndexes.supply.poolIndex
         );
 
-        _POOL.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, repayVars.toRepay);
-        _POOL.supplyToPool(underlyingBorrowed, repayVars.toSupply);
-        _POOL.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.seized);
+        _pool.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, repayVars.toRepay);
+        _pool.supplyToPool(underlyingBorrowed, repayVars.toSupply);
+        _pool.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.seized);
 
         ERC20(underlyingCollateral).safeTransfer(liquidator, vars.seized);
 
