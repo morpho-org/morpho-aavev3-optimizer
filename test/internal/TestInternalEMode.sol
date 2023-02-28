@@ -122,7 +122,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
 
             eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
             (uint256 ltvBound, uint256 ltBound,,) = _getLtvLt(underlying, eModeCategoryId);
-            console.log(ltvBound, ltBound);
+
             address priceSourceEMode = address(1);
             ltv = uint16(bound(ltv, ltvBound + 1, PercentageMath.PERCENTAGE_FACTOR - 1));
             lt = uint16(bound(lt, Math.max(ltv + 1, ltBound + 1), PercentageMath.PERCENTAGE_FACTOR));
