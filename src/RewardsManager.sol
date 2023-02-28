@@ -433,7 +433,8 @@ contract RewardsManager is IRewardsManager, Initializable {
                 _MORPHO.market(IPoolToken(userAssetBalances[i].asset).UNDERLYING_ASSET_ADDRESS());
 
             if (asset == market.aToken) {
-                userAssetBalances[i].balance = _MORPHO.scaledPoolSupplyBalance(market.underlying, user);
+                userAssetBalances[i].balance = _MORPHO.scaledPoolSupplyBalance(market.underlying, user)
+                    + _MORPHO.scaledCollateralBalance(market.underlying, user);
             } else if (asset == market.variableDebtToken) {
                 userAssetBalances[i].balance = _MORPHO.scaledPoolBorrowBalance(market.underlying, user);
             } else {

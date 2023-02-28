@@ -17,6 +17,7 @@ import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
+import {RewardsControllerMock} from "test/mocks/RewardsControllerMock.sol";
 import {PriceOracleSentinelMock} from "test/mocks/PriceOracleSentinelMock.sol";
 import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
 import {PoolAdminMock} from "test/mocks/PoolAdminMock.sol";
@@ -63,7 +64,8 @@ contract ForkTest is BaseTest {
     address internal aclAdmin;
     AaveOracleMock internal oracle;
     PoolAdminMock internal poolAdmin;
-    PriceOracleSentinelMock oracleSentinel;
+    PriceOracleSentinelMock internal oracleSentinel;
+    RewardsControllerMock internal rewardsController;
 
     uint256 internal snapshotId = type(uint256).max;
 
@@ -74,8 +76,9 @@ contract ForkTest is BaseTest {
         _mockPoolAdmin();
         _mockOracle();
         _mockOracleSentinel();
+        _mockRewardsController();
 
-        _setBalances(address(this), type(uint256).max);
+        _setBalances(address(this), type(uint96).max);
     }
 
     function setUp() public virtual {
@@ -169,6 +172,10 @@ contract ForkTest is BaseTest {
         addressesProvider.setPriceOracleSentinel(address(oracleSentinel));
     }
 
+    function _mockRewardsController() internal {
+        rewardsController = new RewardsControllerMock();
+    }
+
     function _setBalances(address user, uint256 balance) internal {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             address underlying = allUnderlyings[i];
@@ -183,7 +190,8 @@ contract ForkTest is BaseTest {
         snapshotId = vm.snapshot();
     }
 
-    /// @dev Calculates the amount accrued to AaveV3's treasury.
+    /// @dev Calculates the amount accrued to AaveV3's treasury
+    /// @return The scaled treasury amount (to scale by pool supply index)
     function _accruedToTreasury(address underlying) internal view returns (uint256) {
         DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
         uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
@@ -211,6 +219,63 @@ contract ForkTest is BaseTest {
         uint256 newAccruedToTreasury =
             accruedTotalDebt.percentMul(reserve.configuration.getReserveFactor()).rayDiv(poolSupplyIndex);
 
-        return (reserve.accruedToTreasury + newAccruedToTreasury).rayMul(poolSupplyIndex);
+        return (reserve.accruedToTreasury + newAccruedToTreasury);
+    }
+
+    function _setSupplyGap(address underlying, uint256 supplyGap) internal returns (uint256) {
+        DataTypes.ReserveConfigurationMap memory reserveConfig = pool.getConfiguration(underlying);
+
+        uint256 tokenUnit = 10 ** reserveConfig.getDecimals();
+        uint256 totalSupplyToCap = _totalSupplyToCap(underlying);
+        uint256 newSupplyCap = (totalSupplyToCap + supplyGap) / tokenUnit;
+
+        poolAdmin.setSupplyCap(underlying, newSupplyCap);
+        return newSupplyCap * tokenUnit - totalSupplyToCap;
+    }
+
+    function _totalSupplyToCap(address underlying) internal view returns (uint256) {
+        DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
+        return (IAToken(reserve.aTokenAddress).scaledTotalSupply() + _accruedToTreasury(underlying)).rayMul(
+            pool.getReserveNormalizedIncome(underlying)
+        );
+    }
+
+    // @dev  Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
+    // https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/pool/PoolConfigurator.sol#L369-L376
+    function _getLtvLt(address underlying, uint8 eModeCategoryId)
+        internal
+        view
+        returns (uint256 ltvBound, uint256 ltBound, uint256 ltvConfig, uint256 ltConfig)
+    {
+        address[] memory reserves = pool.getReservesList();
+        for (uint256 i = 0; i < reserves.length; ++i) {
+            DataTypes.ReserveConfigurationMap memory currentConfig = pool.getConfiguration(reserves[i]);
+            if (eModeCategoryId == currentConfig.getEModeCategory() || underlying == reserves[i]) {
+                ltvBound = uint16(Math.max(ltvBound, currentConfig.getLtv()));
+
+                ltBound = uint16(Math.max(ltBound, currentConfig.getLiquidationThreshold()));
+
+                if (underlying == reserves[i]) {
+                    ltvConfig = uint16(currentConfig.getLtv());
+                    ltConfig = uint16(currentConfig.getLiquidationThreshold());
+                }
+            }
+        }
+    }
+
+    function _setEModeCategoryAsset(
+        DataTypes.EModeCategory memory eModeCategory,
+        address underlying,
+        uint8 eModeCategoryId
+    ) internal {
+        poolAdmin.setEModeCategory(
+            eModeCategoryId,
+            eModeCategory.ltv,
+            eModeCategory.liquidationThreshold,
+            eModeCategory.liquidationBonus,
+            address(1),
+            ""
+        );
+        poolAdmin.setAssetEModeCategory(underlying, eModeCategoryId);
     }
 }

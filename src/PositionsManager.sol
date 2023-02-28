@@ -128,6 +128,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @notice Implements the repay logic.
     /// @param underlying The address of the underlying asset to borrow.
     /// @param amount The amount of `underlying` to repay.
+    /// @param repayer The address that repays the underlying debt.
     /// @param onBehalf The address whose position will be repaid.
     /// @return The amount repaid.
     function repayLogic(address underlying, uint256 amount, address repayer, address onBehalf)
@@ -231,11 +232,13 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         address borrower,
         address liquidator
     ) external returns (uint256, uint256) {
+        _validateLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
+
         Types.Indexes256 memory borrowIndexes = _updateIndexes(underlyingBorrowed);
         Types.Indexes256 memory collateralIndexes = _updateIndexes(underlyingCollateral);
 
         Types.LiquidateVars memory vars;
-        vars.closeFactor = _authorizeLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
+        vars.closeFactor = _authorizeLiquidate(underlyingBorrowed, borrower);
 
         amount = Math.min(
             _getUserBorrowBalanceFromIndexes(underlyingBorrowed, borrower, borrowIndexes).percentMul(vars.closeFactor), // Max liquidatable debt.

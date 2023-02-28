@@ -1,0 +1,21 @@
+name: Pull request
+
+on:
+  pull_request:
+    paths:
+      - lib/**
+      - src/**
+      - foundry.toml
+      - remappings.txt
+      - .github/workflows/pull_request.yml
+
+jobs:
+  test-ethereum-mainnet:
+    if: github.head_ref != 'main' && github.head_ref != 'dev' # already triggered by push
+
+    name: Tests (ethereum-mainnet)
+
+    uses: morpho-dao/morpho-aave-v3/.github/workflows/forge.yml@main
+    with:
+      network: ethereum-mainnet
+    secrets: inherit
