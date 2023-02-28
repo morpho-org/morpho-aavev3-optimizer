@@ -74,11 +74,12 @@ contract TestIntegrationUpgrade is IntegrationTest {
         borrower2.borrow(dai, 300 * daiTokenUnit);
     }
 
-    function testUpgradeMorphoFailsIfNotProxyAdminOwner() public {
+    function testUpgradeMorphoFailsIfNotProxyAdminOwner(address caller) public {
+        vm.assume(caller != address(this));
         Morpho newMorphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID);
 
         vm.expectRevert("Ownable: caller is not the owner");
-        vm.prank(address(1));
+        vm.prank(caller);
         proxyAdmin.upgrade(TransparentUpgradeableProxy(payable(address(morpho))), address(newMorphoImpl));
     }
 
