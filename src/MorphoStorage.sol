@@ -22,6 +22,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     IPool internal immutable _POOL; // The address of the pool.
     IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER; // The address of the pool addresses provider.
     uint8 internal immutable _E_MODE_CATEGORY_ID; // The e-mode category of the deployed Morpho.
+    uint256 internal immutable _LT_LOWER_BOUND; // A lower bound on the liquidation threshold values of all the listed assets.
 
     /* STORAGE */
 
@@ -44,12 +45,13 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
     /// @param addressesProvider The address of the pool addresses provider.
     /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
-    constructor(address addressesProvider, uint8 eModeCategoryId) {
+    constructor(address addressesProvider, uint8 eModeCategoryId, uint256 ltLowerBound) {
         _disableInitializers();
 
         _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
         _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
 
         _E_MODE_CATEGORY_ID = eModeCategoryId;
+        _LT_LOWER_BOUND = ltLowerBound;
     }
 }

@@ -20,6 +20,7 @@ contract Deploy is Script {
     using TestConfigLib for TestConfig;
 
     uint8 internal constant E_MODE_CATEGORY_ID = 0;
+    uint256 internal constant LT_LOWER_BOUND = 10_00;
 
     address internal dai;
     address internal usdc;
@@ -68,8 +69,8 @@ contract Deploy is Script {
     }
 
     function _deploy() internal {
-        positionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID);
-        morphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID);
+        positionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID, LT_LOWER_BOUND);
+        morphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID, LT_LOWER_BOUND);
 
         proxyAdmin = new ProxyAdmin();
         morphoProxy = new TransparentUpgradeableProxy(

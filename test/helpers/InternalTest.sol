@@ -8,5 +8,11 @@ import "./ForkTest.sol";
 contract InternalTest is ForkTest, Morpho {
     using TestConfigLib for TestConfig;
 
-    constructor() Morpho(_initConfig().getAddressesProvider(), uint8(vm.envOr("E_MODE_CATEGORY_ID", uint256(0)))) {}
+    constructor()
+        Morpho(
+            _initConfig().getAddressesProvider(),
+            uint8(vm.envOr("E_MODE_CATEGORY_ID", uint256(0))),
+            uint256(vm.envOr("LT_LOWER_BOUND", uint256(10_00)))
+        )
+    {}
 }

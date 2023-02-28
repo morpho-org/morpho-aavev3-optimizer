@@ -9,6 +9,7 @@ library Errors {
     error MarketNotCreated();
     error MarketAlreadyCreated();
     error MarketIsNotListedOnAave();
+    error MarketLtTooLow();
 
     error AddressIsZero();
     error AmountIsZero();

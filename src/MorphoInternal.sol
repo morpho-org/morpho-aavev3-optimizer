@@ -71,6 +71,9 @@ abstract contract MorphoInternal is MorphoStorage {
 
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
         if (!reserveData.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
+        if (reserveData.configuration.getLiquidationThreshold() < _LT_LOWER_BOUND) {
+            revert Errors.MarketLtTooLow();
+        }
 
         Types.Market storage market = _market[underlying];
 
@@ -281,8 +284,10 @@ abstract contract MorphoInternal is MorphoStorage {
             _assetLiquidityData(underlying, vars);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
-        uint256 collateral = (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex))
+        uint256 rawCollateral = (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex))
             * underlyingPrice / tokenUnit;
+
+        uint256 collateral = ((_LT_LOWER_BOUND - 1) * rawCollateral) / _LT_LOWER_BOUND;
 
         borrowable = collateral.percentMulDown(ltv);
         maxDebt = collateral.percentMulDown(liquidationThreshold);
