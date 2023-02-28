@@ -490,6 +490,23 @@ contract TestIntegrationBorrow is IntegrationTest {
         }
     }
 
+    function testShouldRevertIfBorrowingNotEnableWithSentinel(uint256 amount, address onBehalf, address receiver)
+        public
+    {
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
+        oracleSentinel.setBorrowAllowed(false);
+
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+            vm.expectRevert(Errors.SentinelBorrowingNotEnabled.selector);
+            user.borrow(testMarkets[borrowableUnderlyings[marketIndex]].underlying, amount, onBehalf, receiver);
+        }
+    }
+
     function testShouldRevertBorrowWhenMarketNotCreated(
         address underlying,
         uint256 amount,
