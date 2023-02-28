@@ -426,7 +426,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Executes a supply action.
-
     function _executeSupply(
         address underlying,
         uint256 amount,
