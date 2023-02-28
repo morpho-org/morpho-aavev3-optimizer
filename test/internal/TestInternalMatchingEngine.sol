@@ -75,8 +75,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         amountToPromote = bound(amountToPromote, 0, TOTAL_AMOUNT);
         maxIterations = bound(maxIterations, 0, numSuppliers);
 
-        uint256 expectedPromoted =
-            Math.min(Math.min(amountToPromote, numSuppliers * USER_AMOUNT), maxIterations * USER_AMOUNT);
+        uint256 expectedPromoted = Math.min(amountToPromote, maxIterations * USER_AMOUNT);
         uint256 expectedIterations = Math.min(expectedPromoted.divUp(USER_AMOUNT), maxIterations);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
@@ -113,8 +112,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         amountToPromote = bound(amountToPromote, 0, TOTAL_AMOUNT);
         maxIterations = bound(maxIterations, 0, numBorrowers);
 
-        uint256 expectedPromoted =
-            Math.min(Math.min(amountToPromote, numBorrowers * USER_AMOUNT), maxIterations * USER_AMOUNT);
+        uint256 expectedPromoted = Math.min(amountToPromote, maxIterations * USER_AMOUNT);
         uint256 expectedIterations = Math.min(expectedPromoted.divUp(USER_AMOUNT), maxIterations);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
@@ -151,8 +149,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         amountToDemote = bound(amountToDemote, 0, TOTAL_AMOUNT);
         maxIterations = bound(maxIterations, 0, numSuppliers);
 
-        uint256 expectedDemoted =
-            Math.min(Math.min(amountToDemote, numSuppliers * USER_AMOUNT), maxIterations * USER_AMOUNT);
+        uint256 expectedDemoted = Math.min(amountToDemote, maxIterations * USER_AMOUNT);
         uint256 expectedIterations = Math.min(expectedDemoted.divUp(USER_AMOUNT), maxIterations);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
@@ -188,8 +185,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         amountToDemote = bound(amountToDemote, 0, TOTAL_AMOUNT);
         maxIterations = bound(maxIterations, 0, numBorrowers);
 
-        uint256 expectedDemoted =
-            Math.min(Math.min(amountToDemote, numBorrowers * USER_AMOUNT), maxIterations * USER_AMOUNT);
+        uint256 expectedDemoted = Math.min(amountToDemote, maxIterations * USER_AMOUNT);
         uint256 expectedIterations = Math.min(expectedDemoted.divUp(USER_AMOUNT), maxIterations);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
