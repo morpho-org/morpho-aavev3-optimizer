@@ -377,10 +377,12 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param onPool The new scaled balance on pool of the `user`.
     /// @param inP2P The new scaled balance in peer-to-peer of the `user`.
     /// @param demoting Whether the update is happening during a demoting process or not.
+    /// @return The actual new scaled balance on pool and in peer-to-peer of the `user` after accounting for dust.
     function _updateSupplierInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
         internal
+        returns (uint256, uint256)
     {
-        _updateInDS(
+        return _updateInDS(
             _market[underlying].aToken,
             user,
             _marketBalances[underlying].poolSuppliers,
@@ -399,8 +401,10 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param onPool The new scaled balance on pool of the `user`.
     /// @param inP2P The new scaled balance in peer-to-peer of the `user`.
     /// @param demoting Whether the update is happening during a demoting process or not.
+    /// @return The actual new scaled balance on pool and in peer-to-peer of the `user` after accounting for dust.
     function _updateBorrowerInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting)
         internal
+        returns (uint256, uint256)
     {
         (onPool, inP2P) = _updateInDS(
             _market[underlying].variableDebtToken,
@@ -413,6 +417,7 @@ abstract contract MorphoInternal is MorphoStorage {
         );
         if (onPool == 0 && inP2P == 0) _userBorrows[user].remove(underlying);
         else _userBorrows[user].add(underlying);
+        return (onPool, inP2P);
     }
 
     /// @dev Sets globally the pause status to `isPaused` on the `underlying` market.
