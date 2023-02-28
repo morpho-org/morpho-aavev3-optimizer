@@ -12,7 +12,6 @@ import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 /// @notice A contract allowing to wrap and unwrap ETH when interacting with Morpho.
 contract WETHGateway {
     using SafeTransferLib for ERC20;
-    using SafeTransferLib for address;
 
     /* ERRORS */
 
@@ -55,6 +54,7 @@ contract WETHGateway {
         return _MORPHO_DAO;
     }
 
+    /// @notice Transfers this contract's given ERC20 balance to the Morpho DAO, to avoid having funds stuck.
     function skim(address underlying) external {
         ERC20(underlying).safeTransfer(_MORPHO_DAO, ERC20(underlying).balanceOf(address(this)));
     }
