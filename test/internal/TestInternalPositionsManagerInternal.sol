@@ -232,7 +232,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         oracleSentinel.setLiquidationAllowed(false);
 
-        vm.expectRevert(Errors.UnauthorizedLiquidate.selector);
+        vm.expectRevert(Errors.SentinelLiquidateNotEnabled.selector);
         this.authorizeLiquidate(dai, address(this));
     }
 

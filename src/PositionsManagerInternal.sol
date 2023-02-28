@@ -190,7 +190,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
             {
-                revert Errors.UnauthorizedLiquidate();
+                revert Errors.SentinelLiquidateNotEnabled();
             }
 
             return Constants.DEFAULT_CLOSE_FACTOR;

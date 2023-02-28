@@ -34,6 +34,7 @@ library Errors {
 
     error UnauthorizedWithdraw();
     error UnauthorizedLiquidate();
+    error SentinelLiquidateNotEnabled();
 
     error ExceedsMaxBasisPoints();
 
