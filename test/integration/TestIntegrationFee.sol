@@ -4,10 +4,6 @@ pragma solidity ^0.8.17;
 import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
 import {PoolLib} from "src/libraries/PoolLib.sol";
 
-import {Math} from "@morpho-utils/math/Math.sol";
-import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
-
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationFee is IntegrationTest {
@@ -52,20 +48,20 @@ contract TestIntegrationFee is IntegrationTest {
                 address(user), market, amount, address(user), address(user), DEFAULT_MAX_ITERATIONS
             );
 
-            amount = _increaseBorrowDelta(promoter1, market, amount / 2);
+            amount = _increaseBorrowDelta(promoter1, market, amount);
 
             uint256 beforeBalance = ERC20(market.underlying).balanceOf(address(morpho));
             vm.warp(block.timestamp + (365 days));
 
-            user.approve(market.underlying, 2 * amount);
-            user.repay(market.underlying, 2 * amount);
+            user.approve(market.underlying, type(uint256).max);
+            user.repay(market.underlying, type(uint256).max);
 
             assertEq(beforeBalance, ERC20(market.underlying).balanceOf(address(morpho)), "Fee collected");
         }
     }
 
     function testRepayFeeWithP2POnly(uint16 reserveFactor, uint256 amount) public {
-        for (uint256 marketIndex; marketIndex < 1; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
 
             TestMarket storage testMarket = testMarkets[borrowableUnderlyings[marketIndex]];
@@ -109,14 +105,14 @@ contract TestIntegrationFee is IntegrationTest {
     function testRepayFeeWithBorrowDeltaAndP2P(uint16 reserveFactor, uint256 borrowDeltaAmount, uint256 borrowAmount)
         public
     {
-        for (uint256 marketIndex; marketIndex < 1; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
             TestMarket storage testMarket = testMarkets[borrowableUnderlyings[marketIndex]];
             reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
             morpho.setReserveFactor(testMarket.underlying, reserveFactor);
             borrowDeltaAmount = bound(borrowDeltaAmount, 0, type(uint128).max - 1);
 
-            borrowAmount = bound(borrowAmount, borrowDeltaAmount, type(uint128).max);
+            borrowAmount = bound(borrowAmount, borrowDeltaAmount + 1, type(uint128).max);
             borrowAmount = _boundBorrow(testMarket, borrowAmount);
             borrowAmount = _promoteBorrow(promoter1, testMarket, borrowAmount);
 
@@ -153,6 +149,25 @@ contract TestIntegrationFee is IntegrationTest {
                 beforeBalance + expectedFeeCollected,
                 2,
                 "Wrong amount of fees"
+            );
+        }
+    }
+
+    function testRepayFeeWithBorrowDeltaAndP2PNewComputation(uint256 borrowAmount, uint16 reserveFactor) public {
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+            _revert();
+            TestMarket storage testMarket = testMarkets[borrowableUnderlyings[marketIndex]];
+            reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
+            morpho.setReserveFactor(testMarket.underlying, reserveFactor);
+            borrowDeltaAmount = bound(borrowDeltaAmount, 0, type(uint128).max - 1);
+
+            borrowAmount = bound(borrowAmount, borrowDeltaAmount + 1, type(uint128).max);
+            borrowAmount = _boundBorrow(testMarket, borrowAmount);
+            borrowAmount = _promoteBorrow(promoter1, testMarket, borrowAmount);
+
+            vm.assume(borrowDeltaAmount < borrowAmount);
+            _borrowWithoutCollateral(
+                address(user), testMarket, borrowAmount, address(user), address(user), DEFAULT_MAX_ITERATIONS
             );
         }
     }
