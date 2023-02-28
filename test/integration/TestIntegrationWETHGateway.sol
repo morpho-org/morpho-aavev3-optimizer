@@ -164,10 +164,10 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         uint256 toBorrow = amount / 2;
         uint256 borrowed = wethGateway.borrowETH(toBorrow, receiver, MAX_ITERATIONS);
 
-        assertEq(borrowed, toBorrow);
+        assertEq(borrowed, toBorrow, "borrowed != toBorrow");
         assertGt(morpho.borrowBalance(weth, address(this)), 0);
         assertApproxEqAbs(morpho.borrowBalance(weth, address(this)), toBorrow, 1);
-        assertEq(receiver.balance, balanceBefore + toBorrow);
+        assertEq(receiver.balance, balanceBefore + toBorrow, "balance != expectedBalance");
     }
 
     function testRepayETH(uint256 amount, uint256 toRepay, address onBehalf, address repayer) public {
