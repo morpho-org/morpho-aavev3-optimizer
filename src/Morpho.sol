@@ -249,7 +249,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 usedNonce = _userNonce[signatory]++;
         if (nonce != usedNonce) revert Errors.InvalidNonce();
 
-        emit Events.UserNonceIncremented(manager, signatory, usedNonce);
+        emit Events.UserNonceIncremented(msg.sender, signatory, usedNonce);
 
         _approveManager(signatory, manager, isAllowed);
     }
