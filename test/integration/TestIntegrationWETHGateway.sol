@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {WETHGateway} from "src/extensions/WETHGateway.sol";
+import {ERC20Mock} from "test/mocks/ERC20Mock.sol";
 
 import "test/helpers/IntegrationTest.sol";
 
@@ -43,6 +44,16 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     function testCannotSendETHToWETHGateway(uint96 amount) public {
         vm.expectRevert(WETHGateway.OnlyWETH.selector);
         payable(wethGateway).transfer(amount);
+    }
+
+    function testShouldSkim(uint256 amount) public {
+        ERC20Mock erc20 = new ERC20Mock();
+
+        deal(address(erc20), address(wethGateway), amount);
+        wethGateway.skim(address(erc20));
+
+        assertEq(erc20.balanceOf(address(wethGateway)), 0, "wethGatewayBalance");
+        assertEq(erc20.balanceOf(morphoDao), amount, "morphoDaoBalance");
     }
 
     function testSupplyETH(uint256 amount, address onBehalf) public {
