@@ -305,8 +305,6 @@ contract IntegrationTest is ForkTest {
         vm.prank(borrower);
         borrowed = morpho.borrow(market.underlying, amount, onBehalf, receiver, maxIterations);
 
-        _deposit(market, market.minBorrowCollateral(market, borrowed), address(morpho)); // Make Morpho able to borrow again with some collateral.
-
         oracle.setAssetPrice(market.underlying, market.price);
     }
 
