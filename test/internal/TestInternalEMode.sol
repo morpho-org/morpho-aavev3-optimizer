@@ -31,6 +31,8 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     function setUp() public virtual override {
         super.setUp();
 
+        _eModeCategoryId = 0;
+
         _defaultIterations = Types.Iterations(10, 10);
         _createMarket(dai, 0, 3_333);
         _createMarket(wbtc, 0, 3_333);

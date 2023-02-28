@@ -51,8 +51,8 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         emit Events.DefaultIterationsSet(newDefaultIterations.repay, newDefaultIterations.withdraw);
         emit Events.PositionsManagerSet(newPositionsManager);
 
-        _pool.setUserEMode(_eModeCategoryId);
         _eModeCategoryId = eModeCategoryId;
+        _pool.setUserEMode(_eModeCategoryId);
     }
 
     /* EXTERNAL */
