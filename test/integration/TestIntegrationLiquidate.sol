@@ -234,6 +234,52 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
+    function testFullLiquidateUnhealthyUserWhenSentinelDisallowsButHealthFactorVeryLow(
+        address borrower,
+        uint256 borrowed,
+        uint256 promoted,
+        uint256 toRepay,
+        uint256 healthFactor
+    ) public {
+        borrower = _boundAddressNotZero(borrower);
+        healthFactor = bound(healthFactor, 10, Constants.MIN_LIQUIDATION_THRESHOLD.percentSub(1));
+
+        LiquidateTest memory test;
+
+        for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
+            for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
+                _revert();
+
+                TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
+                TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
+
+                borrowed = _boundBorrow(borrowedMarket, borrowed);
+                (, borrowed) = _borrowWithCollateral(
+                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
+                );
+                toRepay = bound(toRepay, borrowed, type(uint256).max);
+
+                promoted = bound(promoted, 0, borrowed);
+                _promoteBorrow(promoter1, borrowedMarket, promoted);
+
+                (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
+                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
+
+                user.approve(borrowedMarket.underlying, toRepay);
+
+                _assertEvents(address(user), borrower, collateralMarket, borrowedMarket);
+
+                (test.repaid, test.seized) =
+                    user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
+
+                _assertDefaultLiquidation(test, borrowedMarket, collateralMarket, borrower);
+                assertEq(
+                    morpho.collateralBalance(collateralMarket.underlying, borrower), 0, "collateralBalanceAfter != 0"
+                );
+            }
+        }
+    }
+
     function testLiquidateUnhealthyUserWhenSupplyCapExceeded(
         address borrower,
         uint256 borrowed,
@@ -573,7 +619,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         emit Events.Repaid(liquidator, borrower, borrowedMarket.underlying, 0, 0, 0);
 
         vm.expectEmit(true, true, true, false, address(morpho));
-        emit Events.CollateralWithdrawn(address(0), borrower, liquidator, collateralMarket.underlying, 0, 0);
+        emit Events.CollateralWithdrawn(address(user), borrower, liquidator, collateralMarket.underlying, 0, 0);
 
         vm.expectEmit(true, true, true, false, address(morpho));
         emit Events.Liquidated(address(user), borrower, borrowedMarket.underlying, 0, address(0), 0);
