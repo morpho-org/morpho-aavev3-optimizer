@@ -17,22 +17,11 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
         super.setUp();
 
         // Deposit LINK dust so that setting LINK as collateral does not revert on the pool.
-        _depositSimple(link, 1e12, address(morpho));
+        _deposit(link, 1e12, address(morpho));
 
-        morpho.setAssetIsCollateral(dai, false);
-        morpho.setAssetIsCollateral(usdc, false);
-        morpho.setAssetIsCollateral(aave, false);
-        morpho.setAssetIsCollateral(wbtc, false);
-        morpho.setAssetIsCollateral(weth, false);
-
-        vm.startPrank(address(morpho));
-        pool.setUserUseReserveAsCollateral(dai, false);
-        pool.setUserUseReserveAsCollateral(usdc, false);
-        pool.setUserUseReserveAsCollateral(aave, false);
-        pool.setUserUseReserveAsCollateral(wbtc, false);
-        pool.setUserUseReserveAsCollateral(weth, false);
-        pool.setUserUseReserveAsCollateral(link, false);
-        vm.stopPrank();
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            morpho.setAssetIsCollateral(dai, false);
+        }
     }
 
     function testSetAssetIsCollateralShouldRevertWhenMarketNotCreated(address underlying) public {

@@ -27,16 +27,13 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _defaultIterations = Types.Iterations(10, 10);
 
         _createMarket(dai, 0, 3_333);
-        _createMarket(wbtc, 0, 3_333);
         _createMarket(usdc, 0, 3_333);
-        _createMarket(wNative, 0, 3_333);
 
-        _setBalances(address(this), type(uint256).max);
+        _market[dai].isCollateral = true;
+        _market[usdc].isCollateral = true;
 
         _POOL.supplyToPool(dai, 100 ether);
-        _POOL.supplyToPool(wbtc, 1e8);
-        _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(wNative, 1 ether);
+        _POOL.supplyToPool(usdc, 100e6);
     }
 
     function testValidatePermission(address owner, address manager) public {
@@ -107,7 +104,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testValidateSupplyCollateral() public {
-        _market[dai].isCollateral = true;
         this.validateSupplyCollateral(dai, 1, address(1));
     }
 
@@ -219,8 +215,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldPassIfCollateralAssetOnlyEnabledOnMorpho() public {
-        _market[dai].isCollateral = true;
-
         _userCollaterals[address(this)].add(dai);
         _userBorrows[address(this)].add(dai);
         _market[dai].pauseStatuses.isDeprecated = true;
@@ -228,7 +222,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfDeprecatedBorrow() public {
-        _market[dai].isCollateral = true;
         _userCollaterals[address(this)].add(dai);
         _userBorrows[address(this)].add(dai);
         _market[dai].pauseStatuses.isDeprecated = true;
@@ -237,8 +230,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldRevertIfSentinelDisallows() public {
-        _market[dai].isCollateral = true;
-
         uint256 amount = 1e18;
         (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
@@ -257,8 +248,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldRevertIfBorrowerHealthy() public {
-        _market[dai].isCollateral = true;
-
         uint256 amount = 1e18;
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
@@ -272,8 +261,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfBelowMinThreshold(uint256 amount) public {
-        _market[dai].isCollateral = true;
-
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
         (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
@@ -290,8 +277,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldReturnDefaultCloseFactorIfAboveMinThreshold(uint256 amount) public {
-        _market[dai].isCollateral = true;
-
         // Min amount needs to be high enough to have a precise enough price for this test
         amount = bound(amount, 1e12, MAX_AMOUNT);
         (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
