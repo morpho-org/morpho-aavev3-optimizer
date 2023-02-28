@@ -16,23 +16,23 @@ contract TestIntegrationFee is IntegrationTest {
     function testRepayFeeWithReserveFactorIsZero(uint256 amount) public {
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
-            address underlying = borrowableUnderlyings[marketIndex];
-            morpho.setReserveFactor(underlying, 0);
-            TestMarket storage market = testMarkets[underlying];
+            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+            morpho.setReserveFactor(market.underlying, 0);
 
             amount = _boundSupply(market, amount);
-            amount = _promoteSupply(promoter1, market, amount.percentMul(50_00)); // 100% peer-to-peer.
+            amount = _promoteBorrow(promoter1, market, amount.percentMul(50_00)); // 100% peer-to-peer.
 
-            user.approve(market.underlying, amount);
-            user.supply(market.underlying, amount);
+            _borrowWithoutCollateral(
+                address(user), market, amount, address(user), address(user), DEFAULT_MAX_ITERATIONS
+            );
 
-            uint256 beforeBalance = ERC20(underlying).balanceOf(address(morpho));
+            uint256 balanceBefore = ERC20(market.underlying).balanceOf(address(morpho));
             vm.warp(block.timestamp + (365 days));
 
-            promoter1.approve(market.underlying, 2 * amount);
-            promoter1.repay(market.underlying, 2 * amount);
+            user.approve(market.underlying, type(uint256).max);
+            user.repay(market.underlying, type(uint256).max);
 
-            assertEq(beforeBalance, ERC20(underlying).balanceOf(address(morpho)), "Fee collected");
+            assertEq(balanceBefore, ERC20(market.underlying).balanceOf(address(morpho)), "Fee collected != 0");
         }
     }
 
@@ -51,13 +51,13 @@ contract TestIntegrationFee is IntegrationTest {
 
             amount = _increaseBorrowDelta(promoter1, market, amount);
 
-            uint256 beforeBalance = ERC20(market.underlying).balanceOf(address(morpho));
+            uint256 balanceBefore = ERC20(market.underlying).balanceOf(address(morpho));
             vm.warp(block.timestamp + (365 days));
 
             user.approve(market.underlying, type(uint256).max);
             user.repay(market.underlying, type(uint256).max);
 
-            assertEq(beforeBalance, ERC20(market.underlying).balanceOf(address(morpho)), "Fee collected");
+            assertEq(balanceBefore, ERC20(market.underlying).balanceOf(address(morpho)), "Fee collected != 0");
         }
     }
 
@@ -76,28 +76,31 @@ contract TestIntegrationFee is IntegrationTest {
                 address(user), testMarket, amount, address(user), address(user), DEFAULT_MAX_ITERATIONS
             );
 
-            vm.warp(block.timestamp + (365 days));
+            Types.Indexes256 memory lastIndexes = morpho.updatedIndexes(testMarket.underlying);
             Types.Market memory market = morpho.market(testMarket.underlying);
             Types.Deltas memory deltas = market.deltas;
+            uint256 lastBorrowP2PBalance = deltas.borrow.scaledP2PTotal.rayMul(lastIndexes.borrow.p2pIndex)
+                - deltas.borrow.scaledDelta.rayMul(lastIndexes.borrow.poolIndex);
+
+            vm.warp(block.timestamp + (365 days));
+
             Types.Indexes256 memory indexes = morpho.updatedIndexes(testMarket.underlying);
+            uint256 poolBorrowGrowth = indexes.borrow.poolIndex.rayDiv(lastIndexes.borrow.poolIndex);
+            uint256 poolSupplyGrowth = indexes.supply.poolIndex.rayDiv(lastIndexes.supply.poolIndex);
 
-            uint256 beforeBalance = ERC20(testMarket.underlying).balanceOf(address(morpho));
+            uint256 expectedFeeCollected =
+                lastBorrowP2PBalance.rayMul(poolBorrowGrowth.zeroFloorSub(poolSupplyGrowth)).percentMul(reserveFactor);
 
-            uint256 expectedFeeCollected = deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                    deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
-                )
-            );
+            uint256 balanceBefore = ERC20(testMarket.underlying).balanceOf(address(morpho));
 
-            uint256 borrowBalance = morpho.borrowBalance(market.underlying, address(user));
+            user.approve(market.underlying, type(uint256).max);
 
-            user.approve(market.underlying, borrowBalance);
+            user.repay(market.underlying, type(uint256).max);
 
-            user.repay(market.underlying, borrowBalance);
-
-            assertEq(
+            assertApproxEqAbs(
                 ERC20(testMarket.underlying).balanceOf(address(morpho)),
-                beforeBalance + expectedFeeCollected,
+                balanceBefore + expectedFeeCollected,
+                2,
                 "Right amount of fees collected"
             );
         }
@@ -136,14 +139,14 @@ contract TestIntegrationFee is IntegrationTest {
             uint256 expectedFeeCollected =
                 lastBorrowP2PBalance.rayMul(poolBorrowGrowth.zeroFloorSub(poolSupplyGrowth)).percentMul(reserveFactor);
 
-            uint256 beforeBalance = ERC20(testMarket.underlying).balanceOf(address(morpho));
+            uint256 balanceBefore = ERC20(testMarket.underlying).balanceOf(address(morpho));
 
             user.approve(testMarket.underlying, type(uint256).max);
             user.repay(testMarket.underlying, type(uint256).max);
 
             assertApproxEqAbs(
                 ERC20(testMarket.underlying).balanceOf(address(morpho)),
-                beforeBalance + expectedFeeCollected,
+                balanceBefore + expectedFeeCollected,
                 2,
                 "Wrong amount of fees"
             );
