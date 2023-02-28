@@ -69,7 +69,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 assertGt(test.supplied, 0);
                 assertGt(test.borrowed, 0);
 
-                (uint256 borrowBalance,) = _overrideCollateral(borrowedMarket, collateralMarket, borrower);
+                _overrideCollateral(borrowedMarket, collateralMarket, borrower);
 
                 toRepay = bound(toRepay, Math.min(MIN_AMOUNT, test.borrowed), test.borrowed);
 
