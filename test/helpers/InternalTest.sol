@@ -13,6 +13,5 @@ contract InternalTest is ForkTest, Morpho {
 
         _ADDRESSES_PROVIDER = IPoolAddressesProvider(_initConfig().getAddressesProvider());
         _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
-        _E_MODE_CATEGORY_ID = 0;
     }
 }
