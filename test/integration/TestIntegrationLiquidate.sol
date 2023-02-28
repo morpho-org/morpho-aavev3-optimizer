@@ -588,8 +588,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
             collateralMarket.underlying
         ).with_key(borrower).checked_write(
-            morpho.scaledCollateralBalance(collateralMarket.underlying, borrower).percentMul(
-                collateralMarket.ltv.percentDiv(collateralMarket.lt)
+            morpho.scaledCollateralBalance(collateralMarket.underlying, borrower).rayMul(
+                (collateralMarket.ltv - 1).rayDiv(collateralMarket.lt)
             ).wadMul(healthFactor)
         );
 
