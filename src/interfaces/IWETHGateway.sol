@@ -5,6 +5,8 @@ interface IWETHGateway {
     function MORPHO() external view returns (address);
     function WETH() external pure returns (address);
 
+    function skim(address erc20) external;
+
     function supplyETH(address onBehalf, uint256 maxIterations) external payable returns (uint256 supplied);
     function supplyCollateralETH(address onBehalf) external payable returns (uint256 supplied);
     function borrowETH(uint256 amount, address receiver, uint256 maxIterations) external returns (uint256 borrowed);
