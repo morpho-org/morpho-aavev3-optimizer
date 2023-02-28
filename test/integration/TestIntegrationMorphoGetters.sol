@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "test/helpers/IntegrationTest.sol";
 
-contract TestIntegrationGetters is IntegrationTest {
+contract TestIntegrationMorphoGetters is IntegrationTest {
     using WadRayMath for uint256;
 
     function testUpdatedPoolIndexes(uint256 blocks, uint256 supplied, uint256 borrowed) public {
