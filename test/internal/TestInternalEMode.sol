@@ -119,15 +119,15 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     function testIsInEModeCategory(uint8 eModeCategoryId, uint16 lt, uint16 ltv, uint16 liquidationBonus) public {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             address underlying = allUnderlyings[i];
-            (uint256 ltvBound, uint256 ltBound,,) = _getLtvLt(underlying, eModeCategoryId);
 
+            eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
+            (uint256 ltvBound, uint256 ltBound,,) = _getLtvLt(underlying, eModeCategoryId);
+            console.log(ltvBound, ltBound);
             address priceSourceEMode = address(1);
             ltv = uint16(bound(ltv, ltvBound + 1, PercentageMath.PERCENTAGE_FACTOR - 1));
             lt = uint16(bound(lt, Math.max(ltv + 1, ltBound + 1), PercentageMath.PERCENTAGE_FACTOR));
             liquidationBonus = uint16(bound(liquidationBonus, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max));
             vm.assume(uint256(lt).percentMul(liquidationBonus) <= PercentageMath.PERCENTAGE_FACTOR);
-
-            eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
 
             DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
                 ltv: ltv,
