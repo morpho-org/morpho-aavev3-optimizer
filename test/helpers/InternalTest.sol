@@ -8,10 +8,16 @@ import "./ForkTest.sol";
 contract InternalTest is ForkTest, Morpho {
     using TestConfigLib for TestConfig;
 
+    address internal constant POSITIONS_MANAGER = 0xCA11;
+
     function setUp() public virtual override {
         super.setUp();
 
-        _ADDRESSES_PROVIDER = IPoolAddressesProvider(_initConfig().getAddressesProvider());
-        _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
+        this.initialize(
+            _initConfig().getAddressesProvider(),
+            vm.envOr("E_MODE_CATEGORY_ID", uint256(0)),
+            POSITIONS_MANAGER,
+            Types.Iterations({repay: 10, withdraw: 10})
+        );
     }
 }

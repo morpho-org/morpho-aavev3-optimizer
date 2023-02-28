@@ -6,6 +6,10 @@ import "test/helpers/IntegrationTest.sol";
 contract TestIntegrationGetters is IntegrationTest {
     using WadRayMath for uint256;
 
+    function testMorphoEMode() public {
+        assertEq(morpho.E_MODE_CATEGORY_ID(), pool.getUserEMode(address(morphoProxy)));
+    }
+
     function testUpdatedPoolIndexes(uint256 blocks, uint256 supplied, uint256 borrowed) public {
         blocks = _boundBlocks(blocks);
 

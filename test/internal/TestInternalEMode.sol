@@ -31,8 +31,6 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     function setUp() public virtual override {
         super.setUp();
 
-        _E_MODE_CATEGORY_ID = 0;
-
         _defaultIterations = Types.Iterations(10, 10);
         _createMarket(dai, 0, 3_333);
         _createMarket(wbtc, 0, 3_333);
@@ -50,11 +48,6 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         _POOL.supplyToPool(wbtc, 1e8);
         _POOL.supplyToPool(usdc, 1e8);
         _POOL.supplyToPool(wNative, 1 ether);
-    }
-
-    function testInitializeEMode() public {
-        uint256 eModeCategoryId = vm.envOr("E_MODE_CATEGORY_ID", uint256(0));
-        assertEq(_E_MODE_CATEGORY_ID, eModeCategoryId);
     }
 
     struct AssetData {
