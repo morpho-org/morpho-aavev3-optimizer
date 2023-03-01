@@ -287,6 +287,9 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 rawCollateral = (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex))
             * underlyingPrice / tokenUnit;
 
+        // Morpho has a slightly different method of health factor calculation from the underlying pool.
+        // This is to account for a potential rounding error in calculateUserAccountData, see https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/libraries/logic/GenericLogic.sol#L64-L196
+        // To resolve this, Morpho reduces the collateral value by a small amount.
         uint256 collateral = ((_LT_LOWER_BOUND - 1) * rawCollateral) / _LT_LOWER_BOUND;
 
         borrowable = collateral.percentMulDown(ltv);
