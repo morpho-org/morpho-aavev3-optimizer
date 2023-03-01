@@ -129,14 +129,14 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         vm.prank(address(poolConfigurator));
         _POOL.setConfiguration(dai, reserveConfig);
 
-        vm.expectRevert(Errors.BorrowingNotEnabled.selector);
+        vm.expectRevert(Errors.BorrowNotEnabled.selector);
         this.authorizeBorrow(dai, 1);
     }
 
     function testAuthorizeBorrowShouldRevertIfBorrowingNotEnabledWithSentinel() public {
         oracleSentinel.setBorrowAllowed(false);
 
-        vm.expectRevert(Errors.SentinelBorrowingNotEnabled.selector);
+        vm.expectRevert(Errors.SentinelBorrowNotEnabled.selector);
         this.authorizeBorrow(dai, 1);
     }
 

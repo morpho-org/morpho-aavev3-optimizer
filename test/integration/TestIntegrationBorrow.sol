@@ -502,7 +502,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         oracleSentinel.setBorrowAllowed(false);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
-            vm.expectRevert(Errors.SentinelBorrowingNotEnabled.selector);
+            vm.expectRevert(Errors.SentinelBorrowNotEnabled.selector);
             user.borrow(testMarkets[borrowableUnderlyings[marketIndex]].underlying, amount, onBehalf, receiver);
         }
     }

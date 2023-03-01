@@ -27,8 +27,8 @@ library Errors {
     error MarketIsDeprecated();
     error BorrowNotPaused();
 
-    error BorrowingNotEnabled();
-    error SentinelBorrowingNotEnabled();
+    error BorrowNotEnabled();
+    error SentinelBorrowNotEnabled();
     error InconsistentEMode();
     error UnauthorizedBorrow();
 
