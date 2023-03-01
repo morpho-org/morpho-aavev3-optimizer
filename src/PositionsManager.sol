@@ -40,9 +40,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
     /* CONSTRUCTOR */
 
-    constructor(address addressesProvider, uint8 eModeCategoryId, uint256 ltLowerBound)
-        MorphoStorage(addressesProvider, eModeCategoryId, ltLowerBound)
-    {}
+    constructor(address addressesProvider, uint8 eModeCategoryId) MorphoStorage(addressesProvider, eModeCategoryId) {}
 
     /* EXTERNAL */
 

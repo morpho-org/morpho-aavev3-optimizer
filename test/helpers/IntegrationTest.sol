@@ -87,8 +87,8 @@ contract IntegrationTest is ForkTest {
     }
 
     function _deploy() internal {
-        positionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID, LT_LOWER_BOUND);
-        morphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID, LT_LOWER_BOUND);
+        positionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID);
+        morphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID);
 
         proxyAdmin = new ProxyAdmin();
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImpl)), address(proxyAdmin), "");

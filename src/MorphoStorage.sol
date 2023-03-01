@@ -17,12 +17,15 @@ import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2
 /// @custom:contact security@morpho.xyz
 /// @notice The storage shared by Morpho's contracts.
 abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
+    /* CONSTANTS */
+
+    uint256 internal constant _LT_LOWER_BOUND = 10_00; // A lower bound on the liquidation threshold values of all the listed assets.
+
     /* IMMUTABLES */
 
     IPool internal immutable _POOL; // The address of the pool.
     IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER; // The address of the pool addresses provider.
     uint8 internal immutable _E_MODE_CATEGORY_ID; // The e-mode category of the deployed Morpho.
-    uint256 internal immutable _LT_LOWER_BOUND; // A lower bound on the liquidation threshold values of all the listed assets.
 
     /* STORAGE */
 
@@ -45,13 +48,12 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
     /// @param addressesProvider The address of the pool addresses provider.
     /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
-    constructor(address addressesProvider, uint8 eModeCategoryId, uint256 ltLowerBound) {
+    constructor(address addressesProvider, uint8 eModeCategoryId) {
         _disableInitializers();
 
         _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
         _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
 
         _E_MODE_CATEGORY_ID = eModeCategoryId;
-        _LT_LOWER_BOUND = ltLowerBound;
     }
 }

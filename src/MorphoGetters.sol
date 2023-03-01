@@ -46,11 +46,6 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _E_MODE_CATEGORY_ID;
     }
 
-    /// @notice Returns the lower bound of the liquidation threshold of all assets.
-    function LT_LOWER_BOUND() external view returns (uint256) {
-        return _LT_LOWER_BOUND;
-    }
-
     /// @notice Returns the market data.
     function market(address underlying) external view returns (Types.Market memory) {
         return _market[underlying];
