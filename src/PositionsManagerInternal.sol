@@ -104,9 +104,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
     /// @dev Authorizes a borrow action.
     function _authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) internal view {
-        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+        DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
+        if (_eModeCategoryId != 0 && _eModeCategoryId != config.getEModeCategory()) {
             revert Errors.InconsistentEMode();
         }
 
@@ -180,7 +180,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         if (healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD) {
-            address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
+            address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
 
             if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
             {
@@ -322,7 +322,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Handle the supply cap.
         uint256 idleSupplyIncrease;
         (vars.toSupply, idleSupplyIncrease) =
-            market.increaseIdle(underlying, amount, _POOL.getReserveData(underlying), indexes);
+            market.increaseIdle(underlying, amount, _pool.getReserveData(underlying), indexes);
 
         // Demote peer-to-peer suppliers.
         uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxIterations);

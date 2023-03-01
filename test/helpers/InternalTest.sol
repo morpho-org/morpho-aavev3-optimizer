@@ -11,7 +11,7 @@ contract InternalTest is ForkTest, Morpho {
     function setUp() public virtual override {
         super.setUp();
 
-        _ADDRESSES_PROVIDER = IPoolAddressesProvider(_initConfig().getAddressesProvider());
-        _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
+        _addressesProvider = IPoolAddressesProvider(_initConfig().getAddressesProvider());
+        _pool = IPool(_addressesProvider.getPool());
     }
 }
