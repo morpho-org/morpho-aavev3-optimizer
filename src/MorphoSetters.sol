@@ -9,6 +9,9 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {UserConfiguration} from "@aave-v3-core/protocol/libraries/configuration/UserConfiguration.sol";
+
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 /// @title MorphoSetters
@@ -17,6 +20,8 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 /// @notice Abstract contract exposing all setters and governance-related functions.
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     using MarketLib for Types.Market;
+
+    using UserConfiguration for DataTypes.UserConfigurationMap;
 
     /* MODIFIERS */
 
@@ -76,9 +81,11 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
     /// @notice Sets the `underlying` asset as `isCollateral` on the pool, and updates Morpho to not accept the asset as collateral if `isCollateral` is false.
     /// @dev Note that it is possible to set an asset as non-collateral even if the market is not created yet on Morpho.
+    ///      This is needed because an aToken with LTV = 0 can be sent to Morpho and would be set as collateral by default, thus blocking withdrawals from the pool.
     function setAssetIsCollateralOnPool(address underlying, bool isCollateral) external onlyOwner {
-        if (isCollateral && !_market[underlying].isCreated()) revert Errors.MarketNotCreated();
-        if (!isCollateral && _market[underlying].isCreated()) _market[underlying].setAssetIsCollateral(isCollateral);
+        Types.Market storage market = _market[underlying];
+        if (isCollateral && !market.isCreated()) revert Errors.MarketNotCreated();
+        if (!isCollateral && market.isCollateral) revert Errors.AssetIsCollateral();
 
         _POOL.setUserUseReserveAsCollateral(underlying, isCollateral);
     }
@@ -91,7 +98,13 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         isMarketCreated(underlying)
     {
         _market[underlying].setAssetIsCollateral(isCollateral);
-        if (isCollateral) _POOL.setUserUseReserveAsCollateral(underlying, isCollateral);
+
+        if (isCollateral) {
+            if (!_POOL.getUserConfiguration(address(this)).isUsingAsCollateral(_POOL.getReserveData(underlying).id)) {
+                revert Errors.AssetNotCollateral();
+            }
+            _POOL.setUserUseReserveAsCollateral(underlying, isCollateral);
+        }
     }
 
     /// @notice Sets the `underlying`'s reserve factor to `newReserveFactor` (in bps).

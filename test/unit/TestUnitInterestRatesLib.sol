@@ -20,14 +20,12 @@ contract TestUnitInterestRatesLib is BaseTest {
     uint256 internal constant MAX_TOTAL_P2P = 1e9 ether;
 
     function testComputeP2PIndexes(Types.IndexesParams memory indexesParams) public {
-        indexesParams.lastSupplyIndexes.poolIndex =
-            bound(indexesParams.lastSupplyIndexes.poolIndex, MIN_INDEX, MAX_INDEX);
-        indexesParams.lastSupplyIndexes.p2pIndex = bound(indexesParams.lastSupplyIndexes.p2pIndex, MIN_INDEX, MAX_INDEX);
-        indexesParams.lastBorrowIndexes.poolIndex =
-            bound(indexesParams.lastBorrowIndexes.poolIndex, MIN_INDEX, MAX_INDEX);
-        indexesParams.lastBorrowIndexes.p2pIndex = bound(indexesParams.lastBorrowIndexes.p2pIndex, MIN_INDEX, MAX_INDEX);
-        indexesParams.poolSupplyIndex = bound(indexesParams.poolSupplyIndex, MIN_INDEX, MAX_INDEX);
-        indexesParams.poolBorrowIndex = bound(indexesParams.poolBorrowIndex, MIN_INDEX, MAX_INDEX);
+        indexesParams.lastSupplyIndexes.poolIndex = _boundIndex(indexesParams.lastSupplyIndexes.poolIndex);
+        indexesParams.lastSupplyIndexes.p2pIndex = _boundIndex(indexesParams.lastSupplyIndexes.p2pIndex);
+        indexesParams.lastBorrowIndexes.poolIndex = _boundIndex(indexesParams.lastBorrowIndexes.poolIndex);
+        indexesParams.lastBorrowIndexes.p2pIndex = _boundIndex(indexesParams.lastBorrowIndexes.p2pIndex);
+        indexesParams.poolSupplyIndex = _boundIndex(indexesParams.poolSupplyIndex);
+        indexesParams.poolBorrowIndex = _boundIndex(indexesParams.poolBorrowIndex);
         indexesParams.reserveFactor = bound(indexesParams.reserveFactor, 0, MAX_RESERVE_FACTOR);
         indexesParams.p2pIndexCursor = bound(indexesParams.p2pIndexCursor, 0, MAX_P2P_INDEX_CURSOR);
         indexesParams.deltas.supply.scaledDelta = bound(indexesParams.deltas.supply.scaledDelta, 0, MAX_DELTA);
@@ -77,8 +75,8 @@ contract TestUnitInterestRatesLib is BaseTest {
         uint256 p2pIndexCursor,
         uint256 reserveFactor
     ) public {
-        newPoolSupplyIndex = bound(newPoolSupplyIndex, MIN_INDEX, MAX_INDEX);
-        newPoolBorrowIndex = bound(newPoolBorrowIndex, MIN_INDEX, MAX_INDEX);
+        newPoolSupplyIndex = _boundIndex(newPoolSupplyIndex);
+        newPoolBorrowIndex = _boundIndex(newPoolBorrowIndex);
         lastPoolSupplyIndex = bound(lastPoolSupplyIndex, MIN_INDEX, newPoolSupplyIndex);
         lastPoolBorrowIndex = bound(lastPoolBorrowIndex, MIN_INDEX, newPoolBorrowIndex);
         p2pIndexCursor = bound(p2pIndexCursor, 0, MAX_P2P_INDEX_CURSOR);
@@ -142,8 +140,8 @@ contract TestUnitInterestRatesLib is BaseTest {
         uint256 p2pIndexCursor,
         uint256 reserveFactor
     ) public {
-        newPoolSupplyIndex = bound(newPoolSupplyIndex, MIN_INDEX, MAX_INDEX);
-        newPoolBorrowIndex = bound(newPoolBorrowIndex, MIN_INDEX, MAX_INDEX);
+        newPoolSupplyIndex = _boundIndex(newPoolSupplyIndex);
+        newPoolBorrowIndex = _boundIndex(newPoolBorrowIndex);
         lastPoolSupplyIndex = bound(lastPoolSupplyIndex, MIN_INDEX, newPoolSupplyIndex);
         lastPoolBorrowIndex = bound(lastPoolBorrowIndex, MIN_INDEX, newPoolBorrowIndex);
         p2pIndexCursor = bound(p2pIndexCursor, 0, MAX_P2P_INDEX_CURSOR);
@@ -183,8 +181,8 @@ contract TestUnitInterestRatesLib is BaseTest {
     ) public {
         poolGrowthFactor = bound(poolGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
         p2pGrowthFactor = bound(p2pGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
-        lastPoolIndex = bound(lastPoolIndex, MIN_INDEX, MAX_INDEX);
-        lastP2PIndex = bound(lastP2PIndex, MIN_INDEX, MAX_INDEX);
+        lastPoolIndex = _boundIndex(lastPoolIndex);
+        lastP2PIndex = _boundIndex(lastP2PIndex);
         uint256 delta = 0;
         uint256 p2pAmount = 0;
         proportionIdle = bound(proportionIdle, 0, MAX_PROPORTION_IDLE);
@@ -215,8 +213,8 @@ contract TestUnitInterestRatesLib is BaseTest {
     ) public {
         poolGrowthFactor = bound(poolGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
         p2pGrowthFactor = bound(p2pGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
-        lastPoolIndex = bound(lastPoolIndex, MIN_INDEX, MAX_INDEX);
-        lastP2PIndex = bound(lastP2PIndex, MIN_INDEX, MAX_INDEX);
+        lastPoolIndex = _boundIndex(lastPoolIndex);
+        lastP2PIndex = _boundIndex(lastP2PIndex);
         uint256 delta = 0;
         p2pAmount = bound(p2pAmount, 1, MAX_TOTAL_P2P);
         proportionIdle = 0;
@@ -280,8 +278,8 @@ contract TestUnitInterestRatesLib is BaseTest {
     ) public {
         poolGrowthFactor = bound(poolGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
         p2pGrowthFactor = bound(p2pGrowthFactor, MIN_GROWTH_FACTOR, MAX_GROWTH_FACTOR);
-        lastPoolIndex = bound(lastPoolIndex, MIN_INDEX, MAX_INDEX);
-        lastP2PIndex = bound(lastP2PIndex, MIN_INDEX, MAX_INDEX);
+        lastPoolIndex = _boundIndex(lastPoolIndex);
+        lastP2PIndex = _boundIndex(lastP2PIndex);
         delta = bound(delta, 1, MAX_DELTA);
         p2pAmount = bound(p2pAmount, 1, MAX_TOTAL_P2P);
         proportionIdle = bound(proportionIdle, 0, MAX_PROPORTION_IDLE);

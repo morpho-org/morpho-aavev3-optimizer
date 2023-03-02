@@ -186,7 +186,9 @@ contract TestInternalMorphoInternal is InternalTest {
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateSupplierInDS(dai, user, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateSupplierInDS(dai, user, onPool, inP2P, head);
+        assertEq(newOnPool, onPool, "onPool");
+        assertEq(newInP2P, inP2P, "inP2P");
         _assertMarketBalances(marketBalances, user, onPool, inP2P, 0, 0, 0);
     }
 
@@ -196,7 +198,9 @@ contract TestInternalMorphoInternal is InternalTest {
         inP2P = bound(inP2P, 0, Constants.DUST_THRESHOLD);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateSupplierInDS(dai, user, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateSupplierInDS(dai, user, onPool, inP2P, head);
+        assertEq(newOnPool, 0, "onPool");
+        assertEq(newInP2P, 0, "inP2P");
         _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
     }
 
@@ -206,7 +210,9 @@ contract TestInternalMorphoInternal is InternalTest {
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateBorrowerInDS(dai, user, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateBorrowerInDS(dai, user, onPool, inP2P, head);
+        assertEq(newOnPool, onPool, "onPool");
+        assertEq(newInP2P, inP2P, "inP2P");
         _assertMarketBalances(marketBalances, user, 0, 0, onPool, inP2P, 0);
         assertTrue(_userBorrows[user].contains(dai), "userBorrow");
     }
@@ -217,7 +223,9 @@ contract TestInternalMorphoInternal is InternalTest {
         inP2P = bound(inP2P, 0, Constants.DUST_THRESHOLD);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateBorrowerInDS(dai, user, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateBorrowerInDS(dai, user, onPool, inP2P, head);
+        assertEq(newOnPool, 0, "onPool");
+        assertEq(newInP2P, 0, "inP2P");
         _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
         assertFalse(_userBorrows[user].contains(dai), "userBorrow");
     }

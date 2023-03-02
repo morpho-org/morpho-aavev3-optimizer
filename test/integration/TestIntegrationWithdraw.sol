@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
 import "test/helpers/IntegrationTest.sol";
 
@@ -412,15 +412,16 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
-            test.withdrawn = user.withdraw(market.underlying, amount, onBehalf, receiver);
-
-            assertEq(test.withdrawn, 0, "withdrawn != 0");
-            assertEq(ERC20(market.underlying).balanceOf(receiver), test.balanceBefore, "balanceAfter != balanceBefore");
+            vm.expectRevert(Errors.AmountIsZero.selector);
+            user.withdraw(market.underlying, amount, onBehalf, receiver);
         }
     }
 
-    function testShouldUpdateIndexesAfterWithdraw(uint256 amount, address onBehalf) public {
+    function testShouldUpdateIndexesAfterWithdraw(uint256 blocks, uint256 amount, address onBehalf) public {
+        blocks = _boundBlocks(blocks);
         onBehalf = _boundOnBehalf(onBehalf);
+
+        _prepareOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
@@ -429,6 +430,11 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             amount = _boundSupply(market, amount);
 
+            user.approve(market.underlying, amount);
+            user.supply(market.underlying, amount, onBehalf);
+
+            _forward(blocks);
+
             Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
 
             user.approve(market.underlying, amount);
@@ -436,7 +442,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
 
-            user.withdraw(market.underlying, type(uint256).max);
+            user.withdraw(market.underlying, type(uint256).max, onBehalf);
 
             _assertMarketUpdatedIndexes(morpho.market(market.underlying), futureIndexes);
         }
