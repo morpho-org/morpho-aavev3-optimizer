@@ -9,8 +9,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
 
-    uint256 internal constant MIN_AMOUNT = 10_000_000;
-
     struct LiquidateTest {
         uint256 collateralBalanceBefore;
         uint256 borrowedBalanceBefore;
@@ -66,8 +64,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
             Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
         );
 
-        LiquidateTest memory test;
-
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
                 _revert();
@@ -80,23 +76,15 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
-                (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
+                _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
                 address collateralUnderlying =
                     collateralUnderlyings[(collateralIndex + indexShift) % collateralUnderlyings.length];
 
-                (test.repaid, test.seized) =
-                    user.liquidate(borrowedMarket.underlying, collateralUnderlying, borrower, toRepay);
-
-                assertEq(test.seized, 0, "seized != 0");
-                assertEq(
-                    morpho.collateralBalance(collateralUnderlying, borrower), 0, "liquidatedCollateralBalance != 0"
-                );
-
-                _assertDefaultLiquidation(test, borrowedMarket, collateralMarket, borrower);
+                vm.expectRevert(Errors.AmountIsZero.selector);
+                user.liquidate(borrowedMarket.underlying, collateralUnderlying, borrower, toRepay);
             }
         }
     }
@@ -117,8 +105,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
             Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
         );
 
-        LiquidateTest memory test;
-
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
                 _revert();
@@ -131,19 +117,15 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
-                (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
+                _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
                 address borrowedUnderlying =
                     borrowableUnderlyings[(borrowedIndex + indexShift) % borrowableUnderlyings.length];
 
-                (test.repaid, test.seized) =
-                    user.liquidate(borrowedUnderlying, collateralMarket.underlying, borrower, toRepay);
-
-                assertEq(test.repaid, 0);
-                assertEq(test.seized, 0);
+                vm.expectRevert(Errors.AmountIsZero.selector);
+                user.liquidate(borrowedUnderlying, collateralMarket.underlying, borrower, toRepay);
             }
         }
     }
@@ -467,11 +449,13 @@ contract TestIntegrationLiquidate is IntegrationTest {
     }
 
     function testShouldUpdateIndexesAfterLiquidate(
+        uint256 blocks,
         address borrower,
         uint256 borrowed,
         uint256 toRepay,
         uint256 healthFactor
     ) public {
+        blocks = _boundBlocks(blocks);
         borrower = _boundAddressNotZero(borrower);
         toRepay = bound(toRepay, 1, type(uint256).max);
         healthFactor = bound(healthFactor, 1, Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1));
@@ -488,7 +472,10 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
                 );
 
-                vm.warp(block.timestamp + 1);
+                _forward(blocks);
+
+                Types.Indexes256 memory futureCollateralIndexes = morpho.updatedIndexes(collateralMarket.underlying);
+                Types.Indexes256 memory futureBorrowedIndexes = morpho.updatedIndexes(borrowedMarket.underlying);
 
                 _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
 
@@ -503,6 +490,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 }
 
                 user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
+
+                _assertMarketUpdatedIndexes(morpho.market(collateralMarket.underlying), futureCollateralIndexes);
+                _assertMarketUpdatedIndexes(morpho.market(borrowedMarket.underlying), futureBorrowedIndexes);
             }
         }
     }

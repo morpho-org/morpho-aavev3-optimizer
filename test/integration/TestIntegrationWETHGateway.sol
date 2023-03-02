@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
+import {IWETHGateway} from "src/interfaces/IWETHGateway.sol";
+
 import {WETHGateway} from "src/extensions/WETHGateway.sol";
+import {ERC20Mock} from "test/mocks/ERC20Mock.sol";
 
 import "test/helpers/IntegrationTest.sol";
 
@@ -9,7 +12,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     uint256 internal constant MIN_AMOUNT = 1e9;
     uint256 internal constant MAX_ITERATIONS = 10;
 
-    WETHGateway internal wethGateway;
+    IWETHGateway internal wethGateway;
 
     function setUp() public override {
         super.setUp();
@@ -42,7 +45,17 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
     function testCannotSendETHToWETHGateway(uint96 amount) public {
         vm.expectRevert(WETHGateway.OnlyWETH.selector);
-        payable(wethGateway).transfer(amount);
+        payable(address(wethGateway)).transfer(amount);
+    }
+
+    function testShouldSkim(uint256 amount) public {
+        ERC20Mock erc20 = new ERC20Mock();
+
+        deal(address(erc20), address(wethGateway), amount);
+        wethGateway.skim(address(erc20));
+
+        assertEq(erc20.balanceOf(address(wethGateway)), 0, "wethGatewayBalance");
+        assertEq(erc20.balanceOf(morphoDao), amount, "morphoDaoBalance");
     }
 
     function testSupplyETH(uint256 amount, address onBehalf) public {
