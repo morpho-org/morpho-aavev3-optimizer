@@ -434,10 +434,14 @@ contract TestIntegrationBorrow is IntegrationTest {
         }
     }
 
-    function testShouldUpdateIndexesAfterBorrow(uint256 amount, address onBehalf, address receiver) public {
+    function testShouldUpdateIndexesAfterBorrow(uint256 blocks, uint256 amount, address onBehalf, address receiver)
+        public
+    {
+        blocks = _boundBlocks(blocks);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
+        _forward(blocks);
         _prepareOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
