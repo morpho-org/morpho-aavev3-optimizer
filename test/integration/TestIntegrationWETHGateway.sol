@@ -44,7 +44,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testCannotSendETHToWETHGateway(uint96 amount) public {
-        vm.expectRevert(abi.encodeWithSelector(WETHGateway.OnlyWETH.selector));
+        vm.expectRevert(WETHGateway.OnlyWETH.selector);
         payable(address(wethGateway)).transfer(amount);
     }
 
