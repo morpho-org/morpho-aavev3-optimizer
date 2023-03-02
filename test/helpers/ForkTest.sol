@@ -228,33 +228,6 @@ contract ForkTest is BaseTest {
         return reserve.totalSupplyToCap(poolSupplyIndex, poolBorrowIndex);
     }
 
-    /// @dev Returns the total supply used towards the supply cap.
-    function _setSupplyGap(address underlying, uint256 supplyGap) internal returns (uint256) {
-        DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
-        uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
-        uint256 poolBorrowIndex = pool.getReserveNormalizedVariableDebt(underlying);
-
-        poolAdmin.setSupplyCap(
-            underlying,
-            (reserve.totalSupplyToCap(poolSupplyIndex, poolBorrowIndex) + supplyGap)
-                / (10 ** reserve.configuration.getDecimals())
-        );
-
-        return reserve.supplyGap(poolSupplyIndex, poolBorrowIndex);
-    }
-
-    /// @dev Sets the borrow gap of AaveV3 to the given input.
-    /// @return The new borrow gap after rounding since supply caps on AAVE are only granular up to the token's decimals.
-    function _setBorrowGap(address underlying, uint256 borrowGap) internal returns (uint256) {
-        DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
-
-        poolAdmin.setBorrowCap(
-            underlying, (reserve.totalBorrow() + borrowGap) / (10 ** reserve.configuration.getDecimals())
-        );
-
-        return reserve.borrowGap();
-    }
-
     // @dev  Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
     // https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/pool/PoolConfigurator.sol#L369-L376
     function _getLtvLt(address underlying, uint8 eModeCategoryId)
