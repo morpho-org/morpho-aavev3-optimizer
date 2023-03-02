@@ -69,17 +69,18 @@ abstract contract MorphoInternal is MorphoStorage {
     function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         if (underlying == address(0)) revert Errors.AddressIsZero();
 
-        DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
-        if (!reserveData.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
+        DataTypes.ReserveData memory reserve = _POOL.getReserveData(underlying);
+        if (!reserve.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
+        if (reserve.configuration.getSiloedBorrowing()) revert Errors.SiloedBorrowMarket();
 
         Types.Market storage market = _market[underlying];
 
         if (market.isCreated()) revert Errors.MarketAlreadyCreated();
 
         market.underlying = underlying;
-        market.aToken = reserveData.aTokenAddress;
-        market.variableDebtToken = reserveData.variableDebtTokenAddress;
-        market.stableDebtToken = reserveData.stableDebtTokenAddress;
+        market.aToken = reserve.aTokenAddress;
+        market.variableDebtToken = reserve.variableDebtTokenAddress;
+        market.stableDebtToken = reserve.stableDebtTokenAddress;
 
         _marketsCreated.push(underlying);
 

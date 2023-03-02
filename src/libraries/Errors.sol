@@ -9,6 +9,7 @@ library Errors {
     error MarketNotCreated();
     error MarketAlreadyCreated();
     error MarketIsNotListedOnAave();
+    error SiloedBorrowMarket();
 
     error AddressIsZero();
     error AmountIsZero();
