@@ -10,8 +10,6 @@ contract TestUnitMarketSideDeltaLib is BaseTest {
     using WadRayMath for uint256;
     using Math for uint256;
 
-    uint256 internal constant MAX_AMOUNT = 1e20 ether;
-
     Types.MarketSideDelta internal _delta;
     Types.MarketSideIndexes256 internal _indexes;
 

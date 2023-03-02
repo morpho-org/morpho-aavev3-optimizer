@@ -9,8 +9,6 @@ contract TestUnitDeltasLib is BaseTest {
     using Math for uint256;
     using WadRayMath for uint256;
 
-    uint256 internal constant MAX_AMOUNT = 1e20 ether;
-
     Types.Deltas internal deltas;
     Types.Indexes256 internal indexes;
 
@@ -31,7 +29,7 @@ contract TestUnitDeltasLib is BaseTest {
     function testIncreaseP2PBorrow(uint256 promoted, uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow)
         public
     {
-        amount = bound(amount, 1, MAX_AMOUNT);
+        amount = _boundAmountNotZero(amount);
         promoted = bound(promoted, 0, amount);
         totalP2PSupply = _boundAmount(totalP2PSupply);
         totalP2PBorrow = _boundAmount(totalP2PBorrow);
@@ -54,7 +52,7 @@ contract TestUnitDeltasLib is BaseTest {
     function testIncreaseP2PSupply(uint256 promoted, uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow)
         public
     {
-        amount = bound(amount, 1, MAX_AMOUNT);
+        amount = _boundAmountNotZero(amount);
         promoted = bound(promoted, 0, amount);
         totalP2PSupply = _boundAmount(totalP2PSupply);
         totalP2PBorrow = _boundAmount(totalP2PBorrow);
@@ -89,7 +87,7 @@ contract TestUnitDeltasLib is BaseTest {
     function testDecreaseP2PSupply(uint256 demoted, uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow)
         public
     {
-        amount = bound(amount, 1, MAX_AMOUNT);
+        amount = _boundAmountNotZero(amount);
         demoted = bound(demoted, 0, amount);
         totalP2PSupply = _boundAmount(totalP2PSupply);
         totalP2PBorrow = _boundAmount(totalP2PBorrow);
@@ -111,7 +109,7 @@ contract TestUnitDeltasLib is BaseTest {
     function testDecreaseP2PBorrow(uint256 demoted, uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow)
         public
     {
-        amount = bound(amount, 1, MAX_AMOUNT);
+        amount = _boundAmountNotZero(amount);
         demoted = bound(demoted, 0, amount);
         totalP2PSupply = _boundAmount(totalP2PSupply);
         totalP2PBorrow = _boundAmount(totalP2PBorrow);
@@ -143,7 +141,7 @@ contract TestUnitDeltasLib is BaseTest {
     }
 
     function testRepayFee(uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow, uint256 supplyDelta) public {
-        amount = bound(amount, 1, MAX_AMOUNT);
+        amount = _boundAmountNotZero(amount);
         totalP2PSupply = _boundAmount(totalP2PSupply).rayDiv(indexes.supply.p2pIndex);
         totalP2PBorrow = _boundAmount(totalP2PBorrow).rayDiv(indexes.borrow.p2pIndex);
         supplyDelta =
