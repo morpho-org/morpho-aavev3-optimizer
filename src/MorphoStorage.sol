@@ -39,7 +39,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     address internal _treasuryVault; // The address of the treasury vault, recipient of the reserve fee.
     bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
 
-    /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
+    /// @dev The implementation contract disables initialization upon deployment to avoid being hijacked.
     constructor() {
         _disableInitializers();
     }
