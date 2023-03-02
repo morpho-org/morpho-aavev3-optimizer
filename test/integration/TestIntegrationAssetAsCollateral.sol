@@ -131,20 +131,6 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
         assertEq(pool.getUserConfiguration(address(morpho)).isUsingAsCollateral(pool.getReserveData(link).id), false);
     }
 
-    // function testSetAssetIsNotCollateralOnPoolWhenMarketIsCreatedAndIsCollateralOnMorphoAndOnPool() public {
-    //     vm.prank(address(morpho));
-    //     pool.setUserUseReserveAsCollateral(dai, true);
-    //     morpho.setAssetIsCollateral(dai, true);
-
-    //     assertEq(morpho.market(dai).isCollateral, true);
-    //     assertEq(_isUsingAsCollateral(dai), true);
-
-    //     morpho.setAssetIsCollateralOnPool(dai, false);
-
-    //     assertEq(morpho.market(dai).isCollateral, false);
-    //     assertEq(_isUsingAsCollateral(dai), false);
-    // }
-
     function testSetAssetIsNotCollateralOnPoolWhenMarketIsCreatedAndIsNotCollateralOnMorphoOnly() public {
         vm.prank(address(morpho));
         pool.setUserUseReserveAsCollateral(dai, true);

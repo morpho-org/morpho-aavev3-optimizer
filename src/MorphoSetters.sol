@@ -9,6 +9,9 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {UserConfiguration} from "@aave-v3-core/protocol/libraries/configuration/UserConfiguration.sol";
+
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 /// @title MorphoSetters
@@ -17,6 +20,8 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 /// @notice Abstract contract exposing all setters and governance-related functions.
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     using MarketLib for Types.Market;
+
+    using UserConfiguration for DataTypes.UserConfigurationMap;
 
     /* MODIFIERS */
 
@@ -93,7 +98,12 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         isMarketCreated(underlying)
     {
         _market[underlying].setAssetIsCollateral(isCollateral);
-        if (isCollateral) _POOL.setUserUseReserveAsCollateral(underlying, isCollateral);
+        if (isCollateral) {
+            if (_POOL.getUserConfiguration(address(this)).isUsingAsCollateral(_POOL.getReserveData(underlying).id)) {
+                revert Errors.AssetIsCollateral();
+            }
+            _POOL.setUserUseReserveAsCollateral(underlying, isCollateral);
+        }
     }
 
     /// @notice Sets the `underlying`'s reserve factor to `newReserveFactor` (in bps).
