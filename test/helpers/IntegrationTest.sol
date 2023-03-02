@@ -219,7 +219,7 @@ contract IntegrationTest is ForkTest {
         internal
         bypassSupplyCap(market, amount)
     {
-        deal(market.underlying, address(this), amount);
+        _deal(market.underlying, address(this), amount);
         ERC20(market.underlying).approve(address(pool), amount);
         pool.deposit(market.underlying, amount, onBehalf, 0);
     }
@@ -281,13 +281,13 @@ contract IntegrationTest is ForkTest {
         address onBehalf,
         address receiver,
         uint256 maxIterations
-    ) internal returns (uint256 supplied, uint256 borrowed) {
-        uint256 collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount);
-        deal(collateralMarket.underlying, borrower, collateral);
+    ) internal returns (uint256 collateral, uint256 borrowed) {
+        collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount);
+        _deal(collateralMarket.underlying, borrower, collateral);
 
         vm.startPrank(borrower);
         ERC20(collateralMarket.underlying).approve(address(morpho), collateral);
-        supplied = morpho.supplyCollateral(collateralMarket.underlying, collateral, borrower);
+        collateral = morpho.supplyCollateral(collateralMarket.underlying, collateral, borrower);
         borrowed = morpho.borrow(borrowedMarket.underlying, amount, onBehalf, receiver, maxIterations);
         vm.stopPrank();
     }
