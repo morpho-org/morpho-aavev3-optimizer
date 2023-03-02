@@ -17,4 +17,21 @@ contract PoolAdminMock {
     function setBorrowCap(address underlying, uint256 borrowCap) external {
         _POOL_CONFIGURATOR.setBorrowCap(underlying, borrowCap);
     }
+
+    function setEModeCategory(
+        uint8 eModeCategoryId,
+        uint16 ltv,
+        uint16 liquidationThreshold,
+        uint16 liquidationBonus,
+        address priceSourceEMode,
+        string memory label
+    ) external {
+        _POOL_CONFIGURATOR.setEModeCategory(
+            eModeCategoryId, ltv, liquidationThreshold, liquidationBonus, priceSourceEMode, label
+        );
+    }
+
+    function setAssetEModeCategory(address underlying, uint8 eModeCategoryId) external {
+        _POOL_CONFIGURATOR.setAssetEModeCategory(underlying, eModeCategoryId);
+    }
 }
