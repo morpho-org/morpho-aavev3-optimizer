@@ -55,8 +55,8 @@ contract TestUnitMarketSideDeltaLib is BaseTest {
     ) public {
         indexes = _boundIndexes(indexes);
         amount = _boundAmountNotZero(amount);
-        delta.scaledDelta = _boundAmountNotZero(delta.scaledDelta);
-        delta.scaledP2PTotal = _boundAmountNotZero(delta.scaledP2PTotal);
+        delta.scaledDelta = _boundAmount(delta.scaledDelta);
+        delta.scaledP2PTotal = _boundAmount(delta.scaledP2PTotal);
 
         _setUp(delta, indexes);
 
@@ -78,8 +78,8 @@ contract TestUnitMarketSideDeltaLib is BaseTest {
     ) public {
         indexes = _boundIndexes(indexes);
         amount = _boundAmountNotZero(amount);
-        delta.scaledDelta = _boundAmountNotZero(delta.scaledDelta);
-        delta.scaledP2PTotal = _boundAmountNotZero(delta.scaledP2PTotal);
+        delta.scaledDelta = _boundAmount(delta.scaledDelta);
+        delta.scaledP2PTotal = _boundAmount(delta.scaledP2PTotal);
 
         _setUp(delta, indexes);
 
@@ -139,7 +139,7 @@ contract TestUnitMarketSideDeltaLib is BaseTest {
         amount = _boundAmountNotZero(amount);
         indexes = _boundIndexes(indexes);
         delta.scaledDelta = _boundAmountNotZero(delta.scaledDelta);
-        delta.scaledP2PTotal = _boundAmountNotZero(delta.scaledP2PTotal);
+        delta.scaledP2PTotal = _boundAmount(delta.scaledP2PTotal);
 
         _setUp(delta, indexes);
 
@@ -167,7 +167,7 @@ contract TestUnitMarketSideDeltaLib is BaseTest {
         amount = _boundAmountNotZero(amount);
         indexes = _boundIndexes(indexes);
         delta.scaledDelta = _boundAmountNotZero(delta.scaledDelta);
-        delta.scaledP2PTotal = _boundAmountNotZero(delta.scaledP2PTotal);
+        delta.scaledP2PTotal = _boundAmount(delta.scaledP2PTotal);
 
         _setUp(delta, indexes);
 
