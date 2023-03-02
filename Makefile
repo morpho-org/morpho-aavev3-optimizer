@@ -24,7 +24,7 @@ test-unit:
 	@FOUNDRY_MATCH_CONTRACT=TestUnit make test
 
 test:
-	forge test -vvvvv
+	forge test -vvv
 
 
 test-integration-%:
