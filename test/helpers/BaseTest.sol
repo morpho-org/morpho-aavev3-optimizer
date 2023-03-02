@@ -48,7 +48,7 @@ contract BaseTest is Test {
 
     /// @dev Bounds the fuzzing input to a realistic number of blocks.
     function _boundBlocks(uint256 blocks) internal view returns (uint256) {
-        return bound(blocks, 1, type(uint32).max / 4);
+        return bound(blocks, 1, type(uint24).max);
     }
 
     /// @dev Bounds the fuzzing input to a realistic index.
@@ -59,6 +59,11 @@ contract BaseTest is Test {
     /// @dev Bounds the fuzzing input to a realistic amount.
     function _boundAmount(uint256 amount) internal view virtual returns (uint256) {
         return bound(amount, 0, MAX_AMOUNT);
+    }
+
+    /// @dev Bounds the fuzzing input to a realistic amount.
+    function _boundAmountNotZero(uint256 amount) internal view virtual returns (uint256) {
+        return bound(amount, 1, MAX_AMOUNT);
     }
 
     /// @dev Bounds the fuzzing input to a non-zero address.

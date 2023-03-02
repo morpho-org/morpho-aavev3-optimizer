@@ -56,9 +56,9 @@ contract TestUnitMarketSideDeltaLib is BaseTest {
         Types.MarketSideIndexes256 memory indexes
     ) public {
         indexes = _boundIndexes(indexes);
-        amount = bound(amount, 1, MAX_AMOUNT);
-        delta.scaledDelta = bound(delta.scaledDelta, 1, MAX_AMOUNT);
-        delta.scaledP2PTotal = bound(delta.scaledP2PTotal, 1, MAX_AMOUNT);
+        amount = _boundAmountNotZero(amount);
+        delta.scaledDelta = _boundAmountNotZero(delta.scaledDelta);
+        delta.scaledP2PTotal = _boundAmountNotZero(delta.scaledP2PTotal);
 
         _setUp(delta, indexes);
 
@@ -79,9 +79,9 @@ contract TestUnitMarketSideDeltaLib is BaseTest {
         Types.MarketSideIndexes256 memory indexes
     ) public {
         indexes = _boundIndexes(indexes);
-        amount = bound(amount, 1, MAX_AMOUNT);
-        delta.scaledDelta = bound(delta.scaledDelta, 1, MAX_AMOUNT);
-        delta.scaledP2PTotal = bound(delta.scaledP2PTotal, 1, MAX_AMOUNT);
+        amount = _boundAmountNotZero(amount);
+        delta.scaledDelta = _boundAmountNotZero(delta.scaledDelta);
+        delta.scaledP2PTotal = _boundAmountNotZero(delta.scaledP2PTotal);
 
         _setUp(delta, indexes);
 
@@ -95,13 +95,32 @@ contract TestUnitMarketSideDeltaLib is BaseTest {
         assertEq(_delta.scaledP2PTotal, delta.scaledP2PTotal);
     }
 
+    function testDecreaseDeltaZeroAmount(
+        address underlying,
+        Types.MarketSideDelta memory delta,
+        Types.MarketSideIndexes256 memory indexes
+    ) public {
+        indexes = _boundIndexes(indexes);
+        delta.scaledDelta = _boundAmount(delta.scaledDelta);
+        delta.scaledP2PTotal = _boundAmount(delta.scaledP2PTotal);
+
+        _setUp(delta, indexes);
+
+        (uint256 toProcess, uint256 toWithdraw) = _delta.decreaseDelta(underlying, 0, indexes.poolIndex, false);
+
+        assertEq(toProcess, 0);
+        assertEq(toWithdraw, 0);
+        assertEq(_delta.scaledDelta, delta.scaledDelta);
+        assertEq(_delta.scaledP2PTotal, delta.scaledP2PTotal);
+    }
+
     function testDecreaseDeltaWhenDeltaIsZero(
         address underlying,
         uint256 scaledP2PTotal,
         Types.MarketSideIndexes256 memory indexes
     ) public {
         indexes = _boundIndexes(indexes);
-        scaledP2PTotal = bound(scaledP2PTotal, 0, MAX_AMOUNT);
+        scaledP2PTotal = _boundAmount(scaledP2PTotal);
 
         _setUp(Types.MarketSideDelta({scaledDelta: 0, scaledP2PTotal: scaledP2PTotal}), indexes);
 
@@ -119,10 +138,10 @@ contract TestUnitMarketSideDeltaLib is BaseTest {
         Types.MarketSideDelta memory delta,
         Types.MarketSideIndexes256 memory indexes
     ) public {
-        amount = _boundAmount(amount);
+        amount = _boundAmountNotZero(amount);
         indexes = _boundIndexes(indexes);
-        delta.scaledDelta = bound(delta.scaledDelta, 1, MAX_AMOUNT);
-        delta.scaledP2PTotal = bound(delta.scaledP2PTotal, 1, MAX_AMOUNT);
+        delta.scaledDelta = _boundAmountNotZero(delta.scaledDelta);
+        delta.scaledP2PTotal = _boundAmountNotZero(delta.scaledP2PTotal);
 
         _setUp(delta, indexes);
 
@@ -147,10 +166,10 @@ contract TestUnitMarketSideDeltaLib is BaseTest {
         Types.MarketSideDelta memory delta,
         Types.MarketSideIndexes256 memory indexes
     ) public {
-        amount = _boundAmount(amount);
+        amount = _boundAmountNotZero(amount);
         indexes = _boundIndexes(indexes);
-        delta.scaledDelta = bound(delta.scaledDelta, 1, MAX_AMOUNT);
-        delta.scaledP2PTotal = bound(delta.scaledP2PTotal, 1, MAX_AMOUNT);
+        delta.scaledDelta = _boundAmountNotZero(delta.scaledDelta);
+        delta.scaledP2PTotal = _boundAmountNotZero(delta.scaledP2PTotal);
 
         _setUp(delta, indexes);
 
