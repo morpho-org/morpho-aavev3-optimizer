@@ -308,8 +308,7 @@ contract TestInternalMorphoInternal is InternalTest {
         uint256 rawCollateralValue = (
             _getUserCollateralBalanceFromIndex(dai, address(1), _market[dai].indexes.supply.poolIndex)
         ) * underlyingPrice / tokenUnit;
-        uint256 expectedCollateralValue =
-            ((Constants.LT_LOWER_BOUND - 1) * rawCollateralValue) / Constants.LT_LOWER_BOUND;
+        uint256 expectedCollateralValue = collateralValue(rawCollateralValue);
         assertEq(borrowable, expectedCollateralValue.percentMulDown(ltv), "borrowable not equal to expected");
         assertEq(maxDebt, expectedCollateralValue.percentMulDown(liquidationThreshold), "maxDebt not equal to expected");
     }

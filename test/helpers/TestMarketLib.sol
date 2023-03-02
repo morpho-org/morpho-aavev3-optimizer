@@ -5,6 +5,7 @@ import {Constants} from "src/libraries/Constants.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
+import {collateralValue, rawCollateralValue} from "test/helpers/Utils.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 import {Vm} from "@forge-std/Vm.sol";
@@ -85,17 +86,15 @@ library TestMarketLib {
     }
 
     /// @dev Calculates the maximum borrowable quantity collateralized by the given quantity of collateral.
-    function borrowable(TestMarket storage borrowedMarket, TestMarket storage collateralMarket, uint256 collateral)
+    function borrowable(TestMarket storage borrowedMarket, TestMarket storage collateralMarket, uint256 rawCollateral)
         internal
         view
         returns (uint256)
     {
         return (
-            (
-                (collateral * collateralMarket.price * 10 ** borrowedMarket.decimals)
-                    / (borrowedMarket.price * 10 ** collateralMarket.decimals)
-            ) * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
-        ).percentMul(collateralMarket.ltv - 1);
+            collateralValue(rawCollateral).percentMul(collateralMarket.ltv - 1) * collateralMarket.price
+                * 10 ** borrowedMarket.decimals
+        ) / (borrowedMarket.price * 10 ** collateralMarket.decimals);
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt and still be able to borrow.
@@ -104,10 +103,12 @@ library TestMarketLib {
         view
         returns (uint256)
     {
-        return (
-            (amount * borrowedMarket.price * 10 ** collateralMarket.decimals)
-                / (collateralMarket.price * 10 ** borrowedMarket.decimals)
-        ).percentDiv(collateralMarket.ltv - 1) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
+        return rawCollateralValue(
+            (
+                (amount * borrowedMarket.price * 10 ** collateralMarket.decimals)
+                    / (collateralMarket.price * 10 ** borrowedMarket.decimals)
+            ).percentDiv(collateralMarket.ltv - 1)
+        );
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt,
@@ -117,11 +118,11 @@ library TestMarketLib {
         view
         returns (uint256)
     {
-        return (
+        return rawCollateralValue(
             (
                 (amount * borrowedMarket.price * 10 ** collateralMarket.decimals)
                     / (collateralMarket.price * 10 ** borrowedMarket.decimals)
             ).percentDiv(collateralMarket.lt)
-        ) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
+        );
     }
 }

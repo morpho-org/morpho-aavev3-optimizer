@@ -110,10 +110,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
                 );
                 withdrawn = bound(
                     withdrawn,
-                    collateral.zeroFloorSub(
-                        collateralMarket.minCollateral(borrowedMarket, borrowed) * (Constants.LT_LOWER_BOUND - 3)
-                            / Constants.LT_LOWER_BOUND
-                    ),
+                    collateral.zeroFloorSub(collateralMarket.minCollateral(borrowedMarket, borrowed)),
                     type(uint256).max
                 );
 
