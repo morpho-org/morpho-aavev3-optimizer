@@ -11,9 +11,9 @@ interface IWETHGateway {
     function supplyETH(address onBehalf, uint256 maxIterations) external payable returns (uint256 supplied);
     function supplyCollateralETH(address onBehalf) external payable returns (uint256 supplied);
     function borrowETH(uint256 amount, address receiver, uint256 maxIterations) external returns (uint256 borrowed);
-    function withdrawCollateralETH(uint256 amount, address receiver) external returns (uint256 withdrawn);
+    function repayETH(address onBehalf) external payable returns (uint256 repaid);
     function withdrawETH(uint256 amount, address receiver, uint256 maxIterations)
         external
         returns (uint256 withdrawn);
-    function repayETH(address onBehalf) external payable returns (uint256 repaid);
+    function withdrawCollateralETH(uint256 amount, address receiver) external returns (uint256 withdrawn);
 }

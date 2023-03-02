@@ -84,6 +84,17 @@ contract WETHGateway is IWETHGateway {
         _unwrapAndTransferETH(borrowed, receiver);
     }
 
+    /// @notice Wraps `msg.value` ETH in WETH and repays `onBehalf`'s debt on Morpho.
+    /// @return repaid The actual amount repaid (in wei).
+    function repayETH(address onBehalf) external payable returns (uint256 repaid) {
+        _wrapETH(msg.value);
+
+        repaid = _MORPHO.repay(_WETH, msg.value, onBehalf);
+
+        uint256 excess = msg.value - repaid;
+        if (excess > 0) _unwrapAndTransferETH(excess, msg.sender);
+    }
+
     /// @notice Withdraws WETH up to `amount` on behalf of `msg.sender`, unwraps it to WETH and sends it to `receiver`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
     /// @return withdrawn The actual amount withdrawn (in wei).
@@ -101,17 +112,6 @@ contract WETHGateway is IWETHGateway {
     function withdrawCollateralETH(uint256 amount, address receiver) external returns (uint256 withdrawn) {
         withdrawn = _MORPHO.withdrawCollateral(_WETH, amount, msg.sender, address(this));
         _unwrapAndTransferETH(withdrawn, receiver);
-    }
-
-    /// @notice Wraps `msg.value` ETH in WETH and repays `onBehalf`'s debt on Morpho.
-    /// @return repaid The actual amount repaid (in wei).
-    function repayETH(address onBehalf) external payable returns (uint256 repaid) {
-        _wrapETH(msg.value);
-
-        repaid = _MORPHO.repay(_WETH, msg.value, onBehalf);
-
-        uint256 excess = msg.value - repaid;
-        if (excess > 0) _unwrapAndTransferETH(excess, msg.sender);
     }
 
     /// @dev Only the WETH contract is allowed to transfer ETH to this contracts.
