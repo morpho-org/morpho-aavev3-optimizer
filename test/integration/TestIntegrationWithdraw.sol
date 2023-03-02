@@ -409,7 +409,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
             test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
-            vm.expectRevert(Errors.AmountIsZero.selector);
+            vm.expectRevert(Errors.SupplyIsZero.selector);
             user.withdraw(market.underlying, amount, onBehalf, receiver);
         }
     }

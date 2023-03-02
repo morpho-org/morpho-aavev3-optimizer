@@ -140,7 +140,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes), amount);
 
-        if (amount == 0) revert Errors.AmountIsZero();
+        if (amount == 0) revert Errors.DebtIsZero();
 
         ERC20Permit2(underlying).transferFrom2(repayer, address(this), amount);
 
@@ -172,7 +172,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes), amount);
 
-        if (amount == 0) revert Errors.AmountIsZero();
+        if (amount == 0) revert Errors.SupplyIsZero();
 
         Types.BorrowWithdrawVars memory vars = _executeWithdraw(
             underlying, amount, supplier, receiver, Math.max(_defaultIterations.withdraw, maxIterations), indexes
@@ -202,7 +202,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         uint256 poolSupplyIndex = indexes.supply.poolIndex;
         amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, poolSupplyIndex), amount);
 
-        if (amount == 0) revert Errors.AmountIsZero();
+        if (amount == 0) revert Errors.CollateralIsZero();
 
         _executeWithdrawCollateral(underlying, amount, supplier, receiver, poolSupplyIndex);
 
@@ -249,7 +249,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
             underlyingBorrowed, underlyingCollateral, amount, borrower, collateralIndexes.supply.poolIndex
         );
 
-        if (amount == 0 || vars.seized == 0) revert Errors.AmountIsZero();
+        if (amount == 0) revert Errors.DebtIsZero();
+        if (vars.seized == 0) revert Errors.CollateralIsZero();
 
         ERC20Permit2(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
 
