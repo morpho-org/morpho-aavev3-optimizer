@@ -31,7 +31,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
         for (uint256 i; i < amounts.length; ++i) {
             OZERC20 marketNotCreated =
             new OZERC20(string.concat("MarketNotCreated", Strings.toString(i)), string.concat("ma3-", Strings.toString(i)));
-
+            amounts[i] = 1 ether;
             claimedUnderlyings[i] = address(marketNotCreated);
             deal(address(marketNotCreated), address(morpho), amounts[i]);
         }
