@@ -291,11 +291,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Repay borrow on pool.
         (amount, vars.toRepay, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
-        // Repay borrow peer-to-peer.
+        // Repay borrow peer-to-peer
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
 
         _updateBorrowerInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
 
+        // Returning early requires having updated the borrower in the data structure, which in turn requires having updated `inP2P`.
         if (amount == 0) return vars;
 
         Types.Market storage market = _market[underlying];
@@ -363,6 +364,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         _updateSupplierInDS(underlying, supplier, vars.onPool, vars.inP2P, false);
 
+        // Returning early requires having updated the supplier in the data structure, which in turn requires having updated `inP2P`.
         if (amount == 0) return vars;
 
         // Decrease the peer-to-peer idle supply.
