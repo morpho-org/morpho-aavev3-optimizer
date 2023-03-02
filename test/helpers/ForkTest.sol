@@ -223,7 +223,7 @@ contract ForkTest is BaseTest {
     function _totalSupplyToCap(address underlying) internal view returns (uint256) {
         DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
         uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
-        uint256 poolBorrowIndex = pool.getReserveNormalizedIncome(underlying);
+        uint256 poolBorrowIndex = pool.getReserveNormalizedVariableDebt(underlying);
 
         return reserve.totalSupplyToCap(poolSupplyIndex, poolBorrowIndex);
     }
@@ -232,7 +232,7 @@ contract ForkTest is BaseTest {
     function _setSupplyGap(address underlying, uint256 supplyGap) internal returns (uint256) {
         DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
         uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
-        uint256 poolBorrowIndex = pool.getReserveNormalizedIncome(underlying);
+        uint256 poolBorrowIndex = pool.getReserveNormalizedVariableDebt(underlying);
 
         poolAdmin.setSupplyCap(
             underlying,
