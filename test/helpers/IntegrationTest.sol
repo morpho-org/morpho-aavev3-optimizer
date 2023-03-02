@@ -100,7 +100,7 @@ contract IntegrationTest is ForkTest {
             Types.Iterations({repay: 10, withdraw: 10})
         );
 
-        rewardsManager = new RewardsManager(address(rewardsController), address(morpho), address(pool));
+        rewardsManager = new RewardsManager(address(rewardsController), address(morpho));
 
         morpho.setRewardsManager(address(rewardsManager));
     }

@@ -35,10 +35,10 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         _setBalances(address(this), type(uint256).max);
 
-        _POOL.supplyToPool(dai, 100 ether);
-        _POOL.supplyToPool(wbtc, 1e8);
-        _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(wNative, 1 ether);
+        _pool.supplyToPool(dai, 100 ether);
+        _pool.supplyToPool(wbtc, 1e8);
+        _pool.supplyToPool(usdc, 1e8);
+        _pool.supplyToPool(wNative, 1 ether);
     }
 
     function testValidatePermission(address owner, address manager) public {
@@ -124,12 +124,12 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeBorrowShouldRevertIfBorrowingNotEnabled() public {
-        DataTypes.ReserveConfigurationMap memory reserveConfig = _POOL.getConfiguration(dai);
+        DataTypes.ReserveConfigurationMap memory reserveConfig = _pool.getConfiguration(dai);
         reserveConfig.setBorrowingEnabled(false);
         assertFalse(reserveConfig.getBorrowingEnabled());
 
         vm.prank(address(poolConfigurator));
-        _POOL.setConfiguration(dai, reserveConfig);
+        _pool.setConfiguration(dai, reserveConfig);
 
         vm.expectRevert(Errors.BorrowingNotEnabled.selector);
         this.authorizeBorrow(dai, 1);
@@ -215,7 +215,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testAuthorizeLiquidateShouldRevertIfSentinelDisallows() public {
         uint256 amount = 1e18;
-        (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
+        (, uint256 lt,,,,) = _pool.getConfiguration(dai).getParams();
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         _userCollaterals[address(this)].add(dai);
@@ -246,7 +246,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfBelowMinThreshold(uint256 amount) public {
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
-        (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
+        (, uint256 lt,,,,) = _pool.getConfiguration(dai).getParams();
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         _userCollaterals[address(this)].add(dai);
@@ -263,7 +263,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     function testAuthorizeLiquidateShouldReturnDefaultCloseFactorIfAboveMinThreshold(uint256 amount) public {
         // Min amount needs to be high enough to have a precise enough price for this test
         amount = bound(amount, 1e12, MAX_AMOUNT);
-        (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
+        (, uint256 lt,,,,) = _pool.getConfiguration(dai).getParams();
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
 
         _userCollaterals[address(this)].add(dai);

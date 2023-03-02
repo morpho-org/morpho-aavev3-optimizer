@@ -12,7 +12,7 @@ contract RewardsManagerMock is IRewardsManager {
 
     constructor(address morpho) {
         MORPHO = morpho;
-        POOL = IMorpho(morpho).POOL();
+        POOL = IMorpho(morpho).pool();
     }
 
     function REWARDS_CONTROLLER() external pure returns (address) {

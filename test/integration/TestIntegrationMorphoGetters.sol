@@ -7,7 +7,7 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
     using WadRayMath for uint256;
 
     function testMorphoEMode() public {
-        assertEq(morpho.E_MODE_CATEGORY_ID(), pool.getUserEMode(address(morpho)));
+        assertEq(morpho.eModeCategoryId(), pool.getUserEMode(address(morpho)));
     }
 
     function testUpdatedPoolIndexes(uint256 blocks, uint256 supplied, uint256 borrowed) public {

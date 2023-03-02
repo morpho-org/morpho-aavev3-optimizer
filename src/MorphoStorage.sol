@@ -19,9 +19,9 @@ import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2
 abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /* STORAGE */
 
-    IPool internal _POOL; // The address of the pool.
-    IPoolAddressesProvider internal _ADDRESSES_PROVIDER; // The address of the pool addresses provider.
-    uint8 internal _E_MODE_CATEGORY_ID; // The e-mode category of the deployed Morpho.
+    IPool internal _pool; // The address of the pool.
+    IPoolAddressesProvider internal _addressesProvider; // The address of the pool addresses provider.
+    uint8 internal _eModeCategoryId; // The e-mode category of the deployed Morpho.
 
     address[] internal _marketsCreated; // Keeps track of the created markets.
     mapping(address => Types.Market) internal _market; // The market data.
@@ -39,7 +39,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     address internal _treasuryVault; // The address of the treasury vault, recipient of the reserve fee.
     bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
 
-    /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
+    /// @dev The implementation contract disables initialization upon deployment to avoid being hijacked.
     constructor() {
         _disableInitializers();
     }

@@ -33,26 +33,26 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @notice Initializes the contract.
     /// @param addressesProvider The address of the pool addresses provider.
     /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
-    /// @param newPositionsManager The address of the `_positionsManager` to set.
-    /// @param newDefaultIterations The `_defaultIterations` to set.
+    /// @param positionsManager The address of the `_positionsManager` to set.
+    /// @param defaultIterations The `_defaultIterations` to set.
     function initialize(
         address addressesProvider,
         uint8 eModeCategoryId,
-        address newPositionsManager,
-        Types.Iterations memory newDefaultIterations
+        address positionsManager,
+        Types.Iterations memory defaultIterations
     ) external initializer {
         __Ownable_init_unchained();
 
-        _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
-        _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
+        _addressesProvider = IPoolAddressesProvider(addressesProvider);
+        _pool = IPool(_addressesProvider.getPool());
 
-        _positionsManager = newPositionsManager;
-        _defaultIterations = newDefaultIterations;
-        emit Events.DefaultIterationsSet(newDefaultIterations.repay, newDefaultIterations.withdraw);
-        emit Events.PositionsManagerSet(newPositionsManager);
+        _positionsManager = positionsManager;
+        _defaultIterations = defaultIterations;
+        emit Events.DefaultIterationsSet(defaultIterations.repay, defaultIterations.withdraw);
+        emit Events.PositionsManagerSet(positionsManager);
 
-        _E_MODE_CATEGORY_ID = eModeCategoryId;
-        _POOL.setUserEMode(_E_MODE_CATEGORY_ID);
+        _eModeCategoryId = eModeCategoryId;
+        _pool.setUserEMode(_eModeCategoryId);
     }
 
     /* EXTERNAL */

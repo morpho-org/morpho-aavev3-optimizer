@@ -46,22 +46,22 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
 
         _setBalances(address(this), type(uint256).max);
 
-        ERC20(dai).approve(address(_POOL), type(uint256).max);
-        ERC20(wbtc).approve(address(_POOL), type(uint256).max);
-        ERC20(usdc).approve(address(_POOL), type(uint256).max);
-        ERC20(wNative).approve(address(_POOL), type(uint256).max);
+        ERC20(dai).approve(address(_pool), type(uint256).max);
+        ERC20(wbtc).approve(address(_pool), type(uint256).max);
+        ERC20(usdc).approve(address(_pool), type(uint256).max);
+        ERC20(wNative).approve(address(_pool), type(uint256).max);
 
-        _POOL.supplyToPool(dai, 100 ether);
-        _POOL.supplyToPool(wbtc, 1e8);
-        _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(wNative, 1 ether);
+        _pool.supplyToPool(dai, 100 ether);
+        _pool.supplyToPool(wbtc, 1e8);
+        _pool.supplyToPool(usdc, 1e8);
+        _pool.supplyToPool(wNative, 1 ether);
     }
 
     function testLtvLiquidationThresholdPriceSourceEMode(AssetData memory assetData) public {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             address underlying = allUnderlyings[i];
             (uint256 ltvBound, uint256 ltBound, uint256 ltvConfig, uint256 ltConfig) =
-                _getLtvLt(underlying, _E_MODE_CATEGORY_ID);
+                _getLtvLt(underlying, _eModeCategoryId);
 
             assetData.ltEMode = uint16(bound(assetData.ltEMode, ltBound + 1, type(uint16).max));
             assetData.ltvEMode = uint16(bound(assetData.ltvEMode, ltvBound + 1, assetData.ltEMode));
@@ -80,8 +80,8 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
                 priceSource: address(1),
                 label: ""
             });
-            if (_E_MODE_CATEGORY_ID != 0) {
-                _setEModeCategoryAsset(eModeCategory, underlying, _E_MODE_CATEGORY_ID);
+            if (_eModeCategoryId != 0) {
+                _setEModeCategoryAsset(eModeCategory, underlying, _eModeCategoryId);
             }
 
             oracle.setAssetPrice(address(1), assetData.underlyingPriceEMode);
@@ -95,17 +95,17 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
 
             assertEq(
                 uint16(ltv),
-                _E_MODE_CATEGORY_ID != 0 && ltvConfig != 0 ? assetData.ltvEMode : ltvConfig,
+                _eModeCategoryId != 0 && ltvConfig != 0 ? assetData.ltvEMode : ltvConfig,
                 "Loan to value E-mode"
             );
             assertEq(
                 uint16(lt),
-                _E_MODE_CATEGORY_ID != 0 && ltvConfig != 0 ? assetData.ltEMode : ltConfig,
+                _eModeCategoryId != 0 && ltvConfig != 0 ? assetData.ltEMode : ltConfig,
                 "Liquidation Threshold E-Mode"
             );
             assertEq(
                 assetPrice,
-                _E_MODE_CATEGORY_ID != 0 && assetData.underlyingPriceEMode != 0
+                _eModeCategoryId != 0 && assetData.underlyingPriceEMode != 0
                     ? assetData.underlyingPriceEMode
                     : assetData.underlyingPrice,
                 "Underlying Price E-Mode"
@@ -136,9 +136,9 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
 
             _setEModeCategoryAsset(eModeCategory, underlying, eModeCategoryId);
 
-            DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+            DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
 
-            bool expectedIsInEMode = _E_MODE_CATEGORY_ID == eModeCategoryId && _E_MODE_CATEGORY_ID != 0;
+            bool expectedIsInEMode = _eModeCategoryId == eModeCategoryId && _eModeCategoryId != 0;
             bool isInEMode = _isInEModeCategory(config);
 
             assertEq(isInEMode, expectedIsInEMode, "Wrong E-Mode");
@@ -257,9 +257,9 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         indexes.borrow.p2pIndex = bound(indexes.borrow.p2pIndex, 0, type(uint96).max);
         indexes.borrow.poolIndex = bound(indexes.borrow.poolIndex, indexes.borrow.p2pIndex, type(uint96).max);
 
-        // Keep the condition because the test reverts if _E_MODE_CATEGORY_ID == 0
-        if (_E_MODE_CATEGORY_ID != 0) {
-            vm.assume(_E_MODE_CATEGORY_ID != eModeCategoryId);
+        /// Keep the condition because the test reverts if _eModeCategoryId == 0
+        if (_eModeCategoryId != 0) {
+            vm.assume(_eModeCategoryId != eModeCategoryId);
             vm.expectRevert(Errors.InconsistentEMode.selector);
         }
         this.authorizeBorrow(dai, 0, indexes);

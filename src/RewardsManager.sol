@@ -84,16 +84,15 @@ contract RewardsManager is IRewardsManager, Initializable {
     /* CONSTRUCTOR */
 
     /// @notice Initializes immutable variables.
-    /// @param _rewardsController The address of the Aave rewards controller.
-    /// @param _morpho The address of the main Morpho contract.
-    /// @param _pool The address of the Aave _pool.
-    constructor(address _rewardsController, address _morpho, address _pool) {
-        if (_rewardsController == address(0) || _morpho == address(0) || _pool == address(0)) revert AddressIsZero();
+    /// @param rewardsController The address of the Aave rewards controller.
+    /// @param morpho The address of the main Morpho contract.
+    constructor(address rewardsController, address morpho) {
+        if (rewardsController == address(0) || morpho == address(0)) revert AddressIsZero();
         _disableInitializers();
 
-        _REWARDS_CONTROLLER = IRewardsController(_rewardsController);
-        _MORPHO = IMorpho(_morpho);
-        _POOL = IPool(_pool);
+        _REWARDS_CONTROLLER = IRewardsController(rewardsController);
+        _MORPHO = IMorpho(morpho);
+        _POOL = IPool(IMorpho(morpho).pool());
     }
 
     /* EXTERNAL */
