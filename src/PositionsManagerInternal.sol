@@ -106,7 +106,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     /// @dev Authorizes a borrow action.
     function _authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) internal view {
         DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
-        if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
+        if (!config.getBorrowingEnabled()) revert Errors.BorrowNotEnabled();
+
+        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
+        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
+            revert Errors.SentinelBorrowNotEnabled();
+        }
+
         if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
             revert Errors.InconsistentEMode();
         }
@@ -185,7 +191,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
             {
-                revert Errors.UnauthorizedLiquidate();
+                revert Errors.SentinelLiquidateNotEnabled();
             }
 
             return Constants.DEFAULT_CLOSE_FACTOR;
