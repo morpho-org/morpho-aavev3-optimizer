@@ -297,7 +297,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Repay borrow on pool.
         (amount, vars.toRepay, vars.onPool) = _subFromPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
-        // Repay borrow peer-to-peer
+        // Repay borrow peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
 
         _updateBorrowerInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
