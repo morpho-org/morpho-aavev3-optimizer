@@ -360,8 +360,6 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldNotRepayWhenNoBorrow(uint256 amount, address onBehalf) public {
-        RepayTest memory test;
-
         amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
 
