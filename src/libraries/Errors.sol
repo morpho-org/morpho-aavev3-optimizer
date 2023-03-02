@@ -33,7 +33,9 @@ library Errors {
 
     error UnauthorizedWithdraw();
     error UnauthorizedLiquidate();
+
     error AssetNotCollateral();
+    error AssetIsCollateral();
 
     error ExceedsMaxBasisPoints();
 

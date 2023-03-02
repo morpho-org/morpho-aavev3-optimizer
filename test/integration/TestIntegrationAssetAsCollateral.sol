@@ -71,6 +71,16 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
         morpho.setAssetIsCollateralOnPool(link, true);
     }
 
+    function testSetAssetIsCollateralOnPoolShouldRevertWhenMarketIsCollateralOnMorpho() public {
+        morpho.setAssetIsCollateral(dai, true);
+
+        assertEq(morpho.market(dai).isCollateral, true);
+        assertEq(_isUsingAsCollateral(dai), true);
+
+        vm.expectRevert(Errors.AssetIsCollateral.selector);
+        morpho.setAssetIsCollateralOnPool(dai, false);
+    }
+
     function testSetAssetIsCollateralOnPoolWhenMarketIsCreatedAndIsCollateralOnMorphoAndOnPool() public {
         vm.prank(address(morpho));
         pool.setUserUseReserveAsCollateral(dai, true);
@@ -121,19 +131,19 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
         assertEq(pool.getUserConfiguration(address(morpho)).isUsingAsCollateral(pool.getReserveData(link).id), false);
     }
 
-    function testSetAssetIsNotCollateralOnPoolWhenMarketIsCreatedAndIsCollateralOnMorphoAndOnPool() public {
-        vm.prank(address(morpho));
-        pool.setUserUseReserveAsCollateral(dai, true);
-        morpho.setAssetIsCollateral(dai, true);
+    // function testSetAssetIsNotCollateralOnPoolWhenMarketIsCreatedAndIsCollateralOnMorphoAndOnPool() public {
+    //     vm.prank(address(morpho));
+    //     pool.setUserUseReserveAsCollateral(dai, true);
+    //     morpho.setAssetIsCollateral(dai, true);
 
-        assertEq(morpho.market(dai).isCollateral, true);
-        assertEq(_isUsingAsCollateral(dai), true);
+    //     assertEq(morpho.market(dai).isCollateral, true);
+    //     assertEq(_isUsingAsCollateral(dai), true);
 
-        morpho.setAssetIsCollateralOnPool(dai, false);
+    //     morpho.setAssetIsCollateralOnPool(dai, false);
 
-        assertEq(morpho.market(dai).isCollateral, false);
-        assertEq(_isUsingAsCollateral(dai), false);
-    }
+    //     assertEq(morpho.market(dai).isCollateral, false);
+    //     assertEq(_isUsingAsCollateral(dai), false);
+    // }
 
     function testSetAssetIsNotCollateralOnPoolWhenMarketIsCreatedAndIsNotCollateralOnMorphoOnly() public {
         vm.prank(address(morpho));

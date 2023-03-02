@@ -78,8 +78,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     /// @dev Note that it is possible to set an asset as non-collateral even if the market is not created yet on Morpho.
     ///      This is needed because an aToken with LTV = 0 can be sent to Morpho and would be set as collateral by default, thus blocking withdrawals from the pool.
     function setAssetIsCollateralOnPool(address underlying, bool isCollateral) external onlyOwner {
-        if (isCollateral && !_market[underlying].isCreated()) revert Errors.MarketNotCreated();
-        if (!isCollateral && _market[underlying].isCreated()) _market[underlying].setAssetIsCollateral(isCollateral);
+        Types.Market storage market = _market[underlying];
+        if (isCollateral && !market.isCreated()) revert Errors.MarketNotCreated();
+        if (!isCollateral && market.isCollateral) revert Errors.AssetIsCollateral();
 
         _POOL.setUserUseReserveAsCollateral(underlying, isCollateral);
     }
