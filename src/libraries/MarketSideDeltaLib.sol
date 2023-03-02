@@ -53,6 +53,8 @@ library MarketSideDeltaLib {
         uint256 poolIndex,
         bool borrowSide
     ) internal returns (uint256, uint256) {
+        if (amount == 0) return (0, 0);
+
         uint256 scaledDelta = delta.scaledDelta;
         if (scaledDelta == 0) return (amount, 0);
 
