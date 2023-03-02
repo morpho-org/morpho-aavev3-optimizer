@@ -434,10 +434,14 @@ contract TestIntegrationBorrow is IntegrationTest {
         }
     }
 
-    function testShouldUpdateIndexesAfterBorrow(uint256 amount, address onBehalf, address receiver) public {
+    function testShouldUpdateIndexesAfterBorrow(uint256 blocks, uint256 amount, address onBehalf, address receiver)
+        public
+    {
+        blocks = _boundBlocks(blocks);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
+        _forward(blocks);
         _prepareOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
@@ -487,6 +491,23 @@ contract TestIntegrationBorrow is IntegrationTest {
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
             user.borrow(testMarkets[underlyings[marketIndex]].underlying, amount, onBehalf, address(0));
+        }
+    }
+
+    function testShouldRevertIfBorrowingNotEnableWithSentinel(uint256 amount, address onBehalf, address receiver)
+        public
+    {
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
+        oracleSentinel.setBorrowAllowed(false);
+
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+            vm.expectRevert(Errors.SentinelBorrowNotEnabled.selector);
+            user.borrow(testMarkets[borrowableUnderlyings[marketIndex]].underlying, amount, onBehalf, receiver);
         }
     }
 
