@@ -144,5 +144,5 @@ library Events {
 
     event ReserveFeeClaimed(address indexed underlying, uint256 claimed);
 
-    event UserNonceIncremented(address indexed manager, address indexed signatory, uint256 usedNonce);
+    event UserNonceIncremented(address indexed caller, address indexed signatory, uint256 usedNonce);
 }

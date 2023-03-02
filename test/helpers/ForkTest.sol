@@ -60,6 +60,7 @@ contract ForkTest is BaseTest {
     IPoolConfigurator internal poolConfigurator;
     IPoolDataProvider internal poolDataProvider;
     IPoolAddressesProvider internal addressesProvider;
+    address internal morphoDao;
 
     address internal aclAdmin;
     AaveOracleMock internal oracle;
@@ -114,6 +115,7 @@ contract ForkTest is BaseTest {
 
         addressesProvider = IPoolAddressesProvider(config.getAddressesProvider());
         pool = IPool(addressesProvider.getPool());
+        morphoDao = config.getMorphoDao();
 
         aclAdmin = addressesProvider.getACLAdmin();
         aclManager = IACLManager(addressesProvider.getACLManager());

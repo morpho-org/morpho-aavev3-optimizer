@@ -143,7 +143,7 @@ library Types {
         uint256 amount;
         uint256 maxIterations;
         bool borrow;
-        function (address, address, uint256, uint256, bool) updateDS; // This function will be used to update the data-structure.
+        function (address, address, uint256, uint256, bool) returns (uint256, uint256) updateDS; // This function will be used to update the data-structure.
         bool demoting; // True for demote, False for promote.
         function(uint256, uint256, MarketSideIndexes256 memory, uint256)
             pure returns (uint256, uint256, uint256) step; // This function will be used to decide whether to use the algorithm for promoting or for demoting.

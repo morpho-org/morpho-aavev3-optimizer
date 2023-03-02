@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
 import "test/helpers/IntegrationTest.sol";
 
@@ -96,8 +96,11 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         }
     }
 
-    function testShouldUpdateIndexesAfterSupplyCollateral(uint256 amount, address onBehalf) public {
+    function testShouldUpdateIndexesAfterSupplyCollateral(uint256 blocks, uint256 amount, address onBehalf) public {
+        blocks = _boundBlocks(blocks);
         onBehalf = _boundReceiver(onBehalf);
+
+        _forward(blocks);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();

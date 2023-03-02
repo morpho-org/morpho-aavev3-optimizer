@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
 import "test/helpers/IntegrationTest.sol";
 
@@ -359,10 +359,24 @@ contract TestIntegrationRepay is IntegrationTest {
         }
     }
 
-    function testShouldUpdateIndexesAfterRepay(uint256 amount, address onBehalf, address receiver) public {
-        RepayTest memory test;
+    function testShouldNotRepayWhenNoBorrow(uint256 amount, address onBehalf) public {
+        amount = _boundAmount(amount);
         onBehalf = _boundOnBehalf(onBehalf);
-        receiver = _boundReceiver(receiver);
+
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+
+            vm.expectRevert(Errors.AmountIsZero.selector);
+            user.repay(market.underlying, amount, onBehalf);
+        }
+    }
+
+    function testShouldUpdateIndexesAfterRepay(uint256 blocks, uint256 amount, address onBehalf) public {
+        RepayTest memory test;
+        blocks = _boundBlocks(blocks);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         _prepareOnBehalf(onBehalf);
 
@@ -373,8 +387,9 @@ contract TestIntegrationRepay is IntegrationTest {
 
             amount = _boundBorrow(market, amount);
 
-            _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS); // 100% pool.
-            vm.warp(block.timestamp + 1);
+            _borrowWithoutCollateral(address(user), market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS); // 100% pool.
+
+            _forward(blocks);
 
             Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
 
