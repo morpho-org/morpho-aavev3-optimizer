@@ -105,7 +105,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     /// @dev Authorizes a borrow action.
     function _authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) internal view {
         DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
-        if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
+        if (!config.getBorrowingEnabled()) revert Errors.BorrowNotEnabled();
+
+        address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
+        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
+            revert Errors.SentinelBorrowNotEnabled();
+        }
+
         if (_eModeCategoryId != 0 && _eModeCategoryId != config.getEModeCategory()) {
             revert Errors.InconsistentEMode();
         }
@@ -184,7 +190,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
             {
-                revert Errors.UnauthorizedLiquidate();
+                revert Errors.SentinelLiquidateNotEnabled();
             }
 
             return Constants.DEFAULT_CLOSE_FACTOR;
@@ -305,6 +311,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             market.deltas.borrow.decreaseDelta(underlying, amount, indexes.borrow.poolIndex, true);
         vars.toRepay += matchedBorrowDelta;
 
+        // Updates the P2P total for the repay fee calculation. Events are emitted in the decreaseP2P step.
+        market.deltas.borrow.scaledP2PTotal =
+            market.deltas.borrow.scaledP2PTotal.zeroFloorSub(matchedBorrowDelta.rayDiv(indexes.borrow.p2pIndex));
+
         // Repay the fee.
         amount = market.deltas.repayFee(amount, indexes);
 
@@ -331,9 +341,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         market.deltas.supply.increaseDelta(underlying, vars.toSupply - demoted, indexes.supply, false);
 
         // Update the peer-to-peer totals.
-        market.deltas.decreaseP2P(
-            underlying, demoted, vars.toSupply + matchedBorrowDelta + idleSupplyIncrease, indexes, false
-        );
+        market.deltas.decreaseP2P(underlying, demoted, vars.toSupply + idleSupplyIncrease, indexes, false);
     }
 
     /// @dev Performs the accounting of a withdraw action.
