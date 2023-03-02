@@ -240,7 +240,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testAuthorizeLiquidateShouldRevertIfSentinelDisallows(address borrower, uint256 healthFactor) public {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MIN_HF, Constants.DEFAULT_LIQUIDATION_MAX_HF);
+        healthFactor =
+            bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MIN_HF, Constants.DEFAULT_LIQUIDATION_MAX_HF - 1);
 
         _setHealthFactor(borrower, dai, healthFactor);
 
