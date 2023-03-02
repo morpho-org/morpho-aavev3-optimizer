@@ -128,6 +128,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @notice Implements the repay logic.
     /// @param underlying The address of the underlying asset to borrow.
     /// @param amount The amount of `underlying` to repay.
+    /// @param repayer The address that repays the underlying debt.
     /// @param onBehalf The address whose position will be repaid.
     /// @return The amount repaid.
     function repayLogic(address underlying, uint256 amount, address repayer, address onBehalf)
@@ -139,7 +140,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes), amount);
 
-        if (amount == 0) return 0;
+        if (amount == 0) revert Errors.AmountIsZero();
 
         ERC20Permit2(underlying).transferFrom2(repayer, address(this), amount);
 
@@ -171,7 +172,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes), amount);
 
-        if (amount == 0) return 0;
+        if (amount == 0) revert Errors.AmountIsZero();
 
         Types.BorrowWithdrawVars memory vars = _executeWithdraw(
             underlying, amount, supplier, receiver, Math.max(_defaultIterations.withdraw, maxIterations), indexes
@@ -201,7 +202,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         uint256 poolSupplyIndex = indexes.supply.poolIndex;
         amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, poolSupplyIndex), amount);
 
-        if (amount == 0) return 0;
+        if (amount == 0) revert Errors.AmountIsZero();
 
         _executeWithdrawCollateral(underlying, amount, supplier, receiver, poolSupplyIndex);
 
@@ -248,7 +249,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
             underlyingBorrowed, underlyingCollateral, amount, borrower, collateralIndexes.supply.poolIndex
         );
 
-        if (amount == 0) return (0, 0);
+        if (amount == 0 || vars.seized == 0) revert Errors.AmountIsZero();
 
         ERC20Permit2(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
 

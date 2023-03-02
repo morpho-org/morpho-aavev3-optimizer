@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IWETH} from "../interfaces/IWETH.sol";
-import {IMorpho} from "../interfaces/IMorpho.sol";
+import {IWETH} from "src/interfaces/IWETH.sol";
+import {IMorpho} from "src/interfaces/IMorpho.sol";
+import {IWETHGateway} from "src/interfaces/IWETHGateway.sol";
 
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 
@@ -10,16 +11,19 @@ import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
 /// @notice A contract allowing to wrap and unwrap ETH when interacting with Morpho.
-contract WETHGateway {
+contract WETHGateway is IWETHGateway {
     using SafeTransferLib for ERC20;
 
     /* ERRORS */
 
     error OnlyWETH();
 
+    error AddressIsZero();
+
     /* CONSTANTS */
 
     address internal constant _WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address internal constant _MORPHO_DAO = 0xcBa28b38103307Ec8dA98377ffF9816C164f9AFa;
 
     /* IMMUTABLES */
 
@@ -28,59 +32,86 @@ contract WETHGateway {
     /* CONSTRUCTOR */
 
     constructor(address morpho) {
+        if (morpho == address(0)) revert AddressIsZero();
+
         _MORPHO = IMorpho(morpho);
         ERC20(_WETH).safeApprove(morpho, type(uint256).max);
     }
 
     /* EXTERNAL */
 
-    /// @notice Returns the address of the WETH address.
+    /// @notice Returns the address of the WETH contract.
     function WETH() external pure returns (address) {
         return _WETH;
     }
 
-    /// @notice Returns the address of the Morpho address.
+    /// @notice Returns the address of the Morpho protocol.
     function MORPHO() external view returns (address) {
         return address(_MORPHO);
     }
 
+    /// @notice Returns the address of the Morpho DAO.
+    function MORPHO_DAO() external pure returns (address) {
+        return _MORPHO_DAO;
+    }
+
+    /// @notice Transfers this contract's given ERC20 balance to the Morpho DAO, to avoid having funds stuck.
+    function skim(address underlying) external {
+        ERC20(underlying).safeTransfer(_MORPHO_DAO, ERC20(underlying).balanceOf(address(this)));
+    }
+
     /// @notice Wraps `msg.value` ETH in WETH and supplies them to Morpho on behalf of `onBehalf`.
-    function supplyETH(address onBehalf, uint256 maxIterations) external payable {
+    /// @return The actual amount supplied (in wei).
+    function supplyETH(address onBehalf, uint256 maxIterations) external payable returns (uint256) {
         _wrapETH(msg.value);
-        _MORPHO.supply(_WETH, msg.value, onBehalf, maxIterations);
+
+        return _MORPHO.supply(_WETH, msg.value, onBehalf, maxIterations);
     }
 
     /// @notice Wraps `msg.value` ETH in WETH and supplies them as collateral to Morpho on behalf of `onBehalf`.
-    function supplyCollateralETH(address onBehalf) external payable {
+    /// @return The actual amount supplied as collateral (in wei).
+    function supplyCollateralETH(address onBehalf) external payable returns (uint256) {
         _wrapETH(msg.value);
-        _MORPHO.supplyCollateral(_WETH, msg.value, onBehalf);
+
+        return _MORPHO.supplyCollateral(_WETH, msg.value, onBehalf);
     }
 
     /// @notice Borrows WETH on behalf of `msg.sender`, unwraps the ETH and sends them to `receiver`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
-    function borrowETH(uint256 amount, address receiver, uint256 maxIterations) external {
-        amount = _MORPHO.borrow(_WETH, amount, msg.sender, address(this), maxIterations);
-        _unwrapAndTransferETH(amount, receiver);
+    /// @return borrowed The actual amount borrowed (in wei).
+    function borrowETH(uint256 amount, address receiver, uint256 maxIterations) external returns (uint256 borrowed) {
+        borrowed = _MORPHO.borrow(_WETH, amount, msg.sender, address(this), maxIterations);
+        _unwrapAndTransferETH(borrowed, receiver);
     }
 
     /// @notice Wraps `msg.value` ETH in WETH and repays `onBehalf`'s debt on Morpho.
-    function repayETH(address onBehalf) external payable {
+    /// @return repaid The actual amount repaid (in wei).
+    function repayETH(address onBehalf) external payable returns (uint256 repaid) {
         _wrapETH(msg.value);
-        _MORPHO.repay(_WETH, msg.value, onBehalf);
+
+        repaid = _MORPHO.repay(_WETH, msg.value, onBehalf);
+
+        uint256 excess = msg.value - repaid;
+        if (excess > 0) _unwrapAndTransferETH(excess, msg.sender);
     }
 
     /// @notice Withdraws WETH up to `amount` on behalf of `msg.sender`, unwraps it to WETH and sends it to `receiver`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
-    function withdrawETH(uint256 amount, address receiver, uint256 maxIterations) external {
-        amount = _MORPHO.withdraw(_WETH, amount, msg.sender, address(this), maxIterations);
-        _unwrapAndTransferETH(amount, receiver);
+    /// @return withdrawn The actual amount withdrawn (in wei).
+    function withdrawETH(uint256 amount, address receiver, uint256 maxIterations)
+        external
+        returns (uint256 withdrawn)
+    {
+        withdrawn = _MORPHO.withdraw(_WETH, amount, msg.sender, address(this), maxIterations);
+        _unwrapAndTransferETH(withdrawn, receiver);
     }
 
     /// @notice Withdraws WETH as collateral up to `amount` on behalf of `msg.sender`, unwraps it to WETH and sends it to `receiver`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
-    function withdrawCollateralETH(uint256 amount, address receiver) external {
-        amount = _MORPHO.withdrawCollateral(_WETH, amount, msg.sender, address(this));
-        _unwrapAndTransferETH(amount, receiver);
+    /// @return withdrawn The actual collateral amount withdrawn (in wei).
+    function withdrawCollateralETH(uint256 amount, address receiver) external returns (uint256 withdrawn) {
+        withdrawn = _MORPHO.withdrawCollateral(_WETH, amount, msg.sender, address(this));
+        _unwrapAndTransferETH(withdrawn, receiver);
     }
 
     /// @dev Only the WETH contract is allowed to transfer ETH to this contracts.
