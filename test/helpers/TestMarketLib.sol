@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
+import {Constants} from "src/libraries/Constants.sol";
+
 import {Math} from "@morpho-utils/math/Math.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 
@@ -36,7 +38,6 @@ library TestMarketLib {
     using PercentageMath for uint256;
 
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-    uint256 private constant LT_LOWER_BOUND = 10_00;
 
     /// @dev Returns the quantity that can be borrowed/withdrawn from the market.
     function liquidity(TestMarket storage market) internal view returns (uint256) {
@@ -93,7 +94,7 @@ library TestMarketLib {
             (
                 (collateral * collateralMarket.price * 10 ** borrowedMarket.decimals)
                     / (borrowedMarket.price * 10 ** collateralMarket.decimals)
-            ) * (LT_LOWER_BOUND - 1) / LT_LOWER_BOUND
+            ) * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
         ).percentMul(collateralMarket.ltv - 1);
     }
 
@@ -106,7 +107,7 @@ library TestMarketLib {
         return (
             (amount * borrowedMarket.price * 10 ** collateralMarket.decimals)
                 / (collateralMarket.price * 10 ** borrowedMarket.decimals)
-        ).percentDiv(collateralMarket.ltv - 1) * LT_LOWER_BOUND / (LT_LOWER_BOUND - 1);
+        ).percentDiv(collateralMarket.ltv - 1) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt,
@@ -121,6 +122,6 @@ library TestMarketLib {
                 (amount * borrowedMarket.price * 10 ** collateralMarket.decimals)
                     / (collateralMarket.price * 10 ** borrowedMarket.decimals)
             ).percentDiv(collateralMarket.lt)
-        ) * LT_LOWER_BOUND / (LT_LOWER_BOUND - 1);
+        ) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
     }
 }

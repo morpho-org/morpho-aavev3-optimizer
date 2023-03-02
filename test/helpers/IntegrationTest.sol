@@ -25,7 +25,6 @@ contract IntegrationTest is ForkTest {
     using TestMarketLib for TestMarket;
 
     uint8 internal constant E_MODE_CATEGORY_ID = 0;
-    uint256 internal constant LT_LOWER_BOUND = 10_00;
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
 
     // AaveV3 base currency is USD, 8 decimals on all L2s.

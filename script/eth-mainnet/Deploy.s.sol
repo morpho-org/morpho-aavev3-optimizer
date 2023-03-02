@@ -20,7 +20,6 @@ contract Deploy is Script {
     using TestConfigLib for TestConfig;
 
     uint8 internal constant E_MODE_CATEGORY_ID = 0;
-    uint256 internal constant LT_LOWER_BOUND = 10_00;
 
     address internal dai;
     address internal usdc;

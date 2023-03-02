@@ -17,10 +17,6 @@ import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2
 /// @custom:contact security@morpho.xyz
 /// @notice The storage shared by Morpho's contracts.
 abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
-    /* CONSTANTS */
-
-    uint256 internal constant _LT_LOWER_BOUND = 10_00; // A lower bound on the liquidation threshold values of all the listed assets.
-
     /* IMMUTABLES */
 
     IPool internal immutable _POOL; // The address of the pool.
