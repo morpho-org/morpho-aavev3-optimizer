@@ -18,7 +18,7 @@ contract TestUnitMarketSideDeltaLib is BaseTest {
         view
         returns (Types.MarketSideIndexes256 memory)
     {
-        indexes.p2pIndex = _boundIndex(indexes.poolIndex);
+        indexes.p2pIndex = _boundIndex(indexes.p2pIndex);
         indexes.poolIndex = _boundIndex(indexes.poolIndex);
 
         return indexes;
