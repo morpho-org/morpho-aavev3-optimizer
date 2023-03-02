@@ -257,7 +257,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         indexes.borrow.p2pIndex = bound(indexes.borrow.p2pIndex, 0, type(uint96).max);
         indexes.borrow.poolIndex = bound(indexes.borrow.poolIndex, indexes.borrow.p2pIndex, type(uint96).max);
 
-        /// Keep the condition because the test reverts if _eModeCategoryId == 0
+        // Keep the condition because the test reverts if _eModeCategoryId == 0
         if (_eModeCategoryId != 0) {
             vm.assume(_eModeCategoryId != eModeCategoryId);
             vm.expectRevert(Errors.InconsistentEMode.selector);
