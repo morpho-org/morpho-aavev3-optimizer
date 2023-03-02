@@ -22,6 +22,7 @@ contract WETHGateway {
     /* CONSTANTS */
 
     address internal constant _WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address internal constant _MORPHO_DAO = 0xcBa28b38103307Ec8dA98377ffF9816C164f9AFa;
 
     /* IMMUTABLES */
 
@@ -38,14 +39,24 @@ contract WETHGateway {
 
     /* EXTERNAL */
 
-    /// @notice Returns the address of the WETH address.
+    /// @notice Returns the address of the WETH contract.
     function WETH() external pure returns (address) {
         return _WETH;
     }
 
-    /// @notice Returns the address of the Morpho address.
+    /// @notice Returns the address of the Morpho protocol.
     function MORPHO() external view returns (address) {
         return address(_MORPHO);
+    }
+
+    /// @notice Returns the address of the Morpho DAO.
+    function MORPHO_DAO() external pure returns (address) {
+        return _MORPHO_DAO;
+    }
+
+    /// @notice Transfers this contract's given ERC20 balance to the Morpho DAO, to avoid having funds stuck.
+    function skim(address underlying) external {
+        ERC20(underlying).safeTransfer(_MORPHO_DAO, ERC20(underlying).balanceOf(address(this)));
     }
 
     /// @notice Wraps `msg.value` ETH in WETH and supplies them to Morpho on behalf of `onBehalf`.
