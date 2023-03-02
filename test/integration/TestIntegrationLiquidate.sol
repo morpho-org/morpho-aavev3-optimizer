@@ -83,7 +83,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 address collateralUnderlying =
                     collateralUnderlyings[(collateralIndex + indexShift) % collateralUnderlyings.length];
 
-                vm.expectRevert(Errors.AmountIsZero.selector);
+                vm.expectRevert(Errors.CollateralIsZero.selector);
                 user.liquidate(borrowedMarket.underlying, collateralUnderlying, borrower, toRepay);
             }
         }
@@ -124,7 +124,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 address borrowedUnderlying =
                     borrowableUnderlyings[(borrowedIndex + indexShift) % borrowableUnderlyings.length];
 
-                vm.expectRevert(Errors.AmountIsZero.selector);
+                vm.expectRevert(Errors.DebtIsZero.selector);
                 user.liquidate(borrowedUnderlying, collateralMarket.underlying, borrower, toRepay);
             }
         }
