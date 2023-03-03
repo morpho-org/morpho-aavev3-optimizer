@@ -51,6 +51,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
     function testClaimToTreasuryShouldRevertIfNotOwner(uint256[] calldata amounts, address caller) public {
         vm.assume(caller != address(this));
         vm.prank(caller);
+
         vm.expectRevert();
         morpho.claimToTreasury(allUnderlyings, amounts);
     }
