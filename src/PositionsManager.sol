@@ -245,12 +245,15 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
             amount
         );
 
+        // If the check is done later, it is ambiguous whether debt is truly zero or whether there's not enough collateral to cover for 1 dust of debt.
+        if (amount == 0) revert Errors.DebtIsZero();
+
         (amount, vars.seized) = _calculateAmountToSeize(
             underlyingBorrowed, underlyingCollateral, amount, borrower, collateralIndexes.supply.poolIndex
         );
 
-        if (amount == 0) revert Errors.DebtIsZero();
         if (vars.seized == 0) revert Errors.CollateralIsZero();
+        if (amount == 0) revert Errors.DebtIsZero(); // `amount` could still be zero because there's not enough collateral to cover for 1 dust of debt.
 
         ERC20Permit2(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
 
