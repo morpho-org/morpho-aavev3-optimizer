@@ -24,7 +24,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     ) public {
         borrower = _boundAddressNotZero(borrower);
         toRepay = bound(toRepay, 1, type(uint256).max);
-        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentAdd(1), type(uint96).max);
+        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentAdd(1), type(uint96).max);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -55,8 +55,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         toRepay = bound(toRepay, 1, type(uint256).max);
         healthFactor = bound(
             healthFactor,
-            Constants.MIN_LIQUIDATION_THRESHOLD.percentAdd(1),
-            Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
         );
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
@@ -91,8 +91,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         indexShift = bound(indexShift, 1, borrowableUnderlyings.length - 1);
         healthFactor = bound(
             healthFactor,
-            Constants.MIN_LIQUIDATION_THRESHOLD.percentAdd(1),
-            Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
         );
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
@@ -125,8 +125,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(
             healthFactor,
-            Constants.MIN_LIQUIDATION_THRESHOLD.percentAdd(1),
-            Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
         );
 
         LiquidateTest memory test;
@@ -166,8 +166,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         toRepay = bound(toRepay, 1, type(uint256).max);
         healthFactor = bound(
             healthFactor,
-            Constants.MIN_LIQUIDATION_THRESHOLD.percentAdd(1),
-            Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
         );
 
         oracleSentinel.setLiquidationAllowed(false);
@@ -198,7 +198,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, 1e12, Constants.MIN_LIQUIDATION_THRESHOLD.percentSub(1));
+        healthFactor = bound(healthFactor, 1e12, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(1));
 
         LiquidateTest memory test;
 
@@ -236,8 +236,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(
             healthFactor,
-            Constants.MIN_LIQUIDATION_THRESHOLD.percentAdd(1),
-            Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
         );
 
         LiquidateTest memory test;
@@ -278,8 +278,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(
             healthFactor,
-            Constants.MIN_LIQUIDATION_THRESHOLD.percentAdd(1),
-            Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1)
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
         );
 
         LiquidateTest memory test;
@@ -359,7 +359,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     ) public {
         blocks = _boundBlocks(blocks);
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, 1e6, Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1));
+        healthFactor = bound(healthFactor, 1e6, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1));
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
