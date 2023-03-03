@@ -161,6 +161,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     /// @dev Input address zero to get the head of the bucket.
     /// @param underlying The address of the underlying asset.
     /// @param position The position type, either pool or peer-to-peer and either supply or borrow.
+    /// @return The address of the next account in the data structure.
     function getNext(address underlying, Types.Position position, address user) external view returns (address) {
         LogarithmicBuckets.Buckets storage buckets = _getBuckets(underlying, position);
         uint256 userBalance = buckets.valueOf[user];
@@ -172,6 +173,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     /// @notice Returns the buckets mask of the corresponding market side.
     /// @param underlying The address of the underlying asset.
     /// @param position The position type, either pool or peer-to-peer and either supply or borrow.
+    /// @return The buckets mask of the corresponding market side.
     function getBucketsMask(address underlying, Types.Position position) external view returns (uint256) {
         return _getBuckets(underlying, position).bucketsMask;
     }

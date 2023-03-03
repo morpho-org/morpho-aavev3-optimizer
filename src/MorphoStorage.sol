@@ -19,27 +19,52 @@ import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2
 abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /* IMMUTABLES */
 
-    IPool internal immutable _POOL; // The address of the pool.
-    IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER; // The address of the pool addresses provider.
-    uint8 internal immutable _E_MODE_CATEGORY_ID; // The e-mode category of the deployed Morpho.
+    /// @dev The address of the pool.
+    IPool internal immutable _POOL;
+
+    /// @dev The address of the pool addresses provider.
+    IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER;
+
+    /// @dev The e-mode category of the deployed Morpho.
+    uint8 internal immutable _E_MODE_CATEGORY_ID;
 
     /* STORAGE */
 
-    address[] internal _marketsCreated; // Keeps track of the created markets.
-    mapping(address => Types.Market) internal _market; // The market data.
-    mapping(address => Types.MarketBalances) internal _marketBalances; // The market balances data.
-    mapping(address => EnumerableSet.AddressSet) internal _userCollaterals; // The collateral markets entered by a user.
-    mapping(address => EnumerableSet.AddressSet) internal _userBorrows; // The borrow markets entered by a user.
-    mapping(address => mapping(address => bool)) internal _isManaging; // Whether a user is allowed to borrow or withdraw on behalf of another user. delegator => manager => bool
-    mapping(address => uint256) internal _userNonce; // The nonce of a user. Used to prevent replay attacks.
+    /// @dev The created markets.
+    address[] internal _marketsCreated;
 
-    Types.Iterations internal _defaultIterations; // The default iterations values to use in the matching process.
+    /// @dev The market data.
+    mapping(address => Types.Market) internal _market;
 
-    address internal _positionsManager; // The address of the positions manager on which calls are delegated to.
-    IRewardsManager internal _rewardsManager; // The address of the rewards manager to track pool rewards for users.
+    /// @dev The market balances data.
+    mapping(address => Types.MarketBalances) internal _marketBalances;
 
-    address internal _treasuryVault; // The address of the treasury vault, recipient of the reserve fee.
-    bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
+    /// @dev The collateral markets entered by a user.
+    mapping(address => EnumerableSet.AddressSet) internal _userCollaterals;
+
+    /// @dev The borrow markets entered by a user.
+    mapping(address => EnumerableSet.AddressSet) internal _userBorrows;
+
+    /// @dev Whether a user is allowed to borrow or withdraw on behalf of another user. delegator => manager => bool
+    mapping(address => mapping(address => bool)) internal _isManaging;
+
+    /// @dev The nonce of a user. Used to prevent replay attacks.
+    mapping(address => uint256) internal _userNonce;
+
+    /// @dev The default iterations values to use in the matching process.
+    Types.Iterations internal _defaultIterations;
+
+    /// @dev The address of the positions manager on which calls are delegated to.
+    address internal _positionsManager;
+
+    /// @dev The address of the rewards manager to track pool rewards for users.
+    IRewardsManager internal _rewardsManager;
+
+    /// @dev The address of the treasury vault, recipient of the reserve fee.
+    address internal _treasuryVault;
+
+    /// @dev Whether claiming rewards is paused or not.
+    bool internal _isClaimRewardsPaused;
 
     /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
     /// @param addressesProvider The address of the pool addresses provider.
