@@ -19,7 +19,7 @@ contract WETHGateway is IWETHGateway {
     /// @notice Thrown when another address tries to send ETH to the contract.
     error OnlyWETH();
 
-    /// @@notice Thrown when the `morpho` address passed in the constructor is zero.
+    /// @notice Thrown when the `morpho` address passed in the constructor is zero.
     error AddressIsZero();
 
     /* CONSTANTS */
