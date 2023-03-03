@@ -26,10 +26,9 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     function setUp() public virtual override {
         _defaultIterations = Types.Iterations(10, 10);
 
-        _createMarket(dai, 0, 3_333);
-        _createMarket(wbtc, 0, 3_333);
-        _createMarket(usdc, 0, 3_333);
-        _createMarket(wNative, 0, 3_333);
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            _createMarket(allUnderlyings[i], 0, 33_33);
+        }
 
         _setBalances(address(this), type(uint256).max);
 
@@ -218,67 +217,73 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         assertEq(closeFactor, Constants.MAX_CLOSE_FACTOR);
     }
 
-    function testAuthorizeLiquidateShouldRevertIfSentinelDisallows() public {
-        uint256 amount = 1e18;
-        (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
-
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
-        _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(
-            dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 101 / 100), 0, true
+    function _setHealthFactor(address borrower, address underlying, uint256 healthFactor) internal {
+        vm.mockCall(
+            address(oracle),
+            abi.encodeCall(IPriceOracleGetter.getAssetPrice, underlying),
+            abi.encode(10 ** ERC20(underlying).decimals())
         );
+        _market[underlying].setIndexes(
+            Types.Indexes256({
+                supply: Types.MarketSideIndexes256({p2pIndex: WadRayMath.RAY, poolIndex: WadRayMath.RAY}),
+                borrow: Types.MarketSideIndexes256({p2pIndex: WadRayMath.RAY, poolIndex: WadRayMath.RAY})
+            })
+        );
+
+        _userCollaterals[borrower].add(underlying);
+        _marketBalances[underlying].collateral[borrower] =
+            healthFactor.percentDivUp(pool.getConfiguration(underlying).getLiquidationThreshold());
+
+        _userBorrows[borrower].add(underlying);
+        _updateBorrowerInDS(underlying, borrower, 1 ether, 0, true);
+    }
+
+    function testAuthorizeLiquidateShouldRevertIfSentinelDisallows(address borrower, uint256 healthFactor) public {
+        borrower = _boundAddressNotZero(borrower);
+        healthFactor =
+            bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MIN_HF, Constants.DEFAULT_LIQUIDATION_MAX_HF - 1);
+
+        _setHealthFactor(borrower, dai, healthFactor);
 
         oracleSentinel.setLiquidationAllowed(false);
 
         vm.expectRevert(Errors.SentinelLiquidateNotEnabled.selector);
-        this.authorizeLiquidate(dai, address(this));
+        this.authorizeLiquidate(dai, borrower);
     }
 
-    function testAuthorizeLiquidateShouldRevertIfBorrowerHealthy() public {
-        uint256 amount = 1e18;
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+    function testAuthorizeLiquidateShouldRevertIfBorrowerHealthy(address borrower, uint256 healthFactor) public {
+        borrower = _boundAddressNotZero(borrower);
+        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF + 1, type(uint128).max);
 
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
-        _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulDown(50_00), 0, true);
+        _setHealthFactor(borrower, dai, healthFactor);
 
         vm.expectRevert(Errors.UnauthorizedLiquidate.selector);
-        this.authorizeLiquidate(dai, address(this));
+        this.authorizeLiquidate(dai, borrower);
     }
 
-    function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfBelowMinThreshold(uint256 amount) public {
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
-        (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+    function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfBelowMinThreshold(address borrower, uint256 healthFactor)
+        public
+    {
+        borrower = _boundAddressNotZero(borrower);
+        healthFactor = bound(healthFactor, 0, Constants.DEFAULT_LIQUIDATION_MIN_HF);
 
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
-        _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(
-            dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 11 / 10), 0, true
-        );
+        _setHealthFactor(borrower, dai, healthFactor);
 
-        uint256 closeFactor = this.authorizeLiquidate(dai, address(this));
+        uint256 closeFactor = this.authorizeLiquidate(dai, borrower);
         assertEq(closeFactor, Constants.MAX_CLOSE_FACTOR);
     }
 
-    function testAuthorizeLiquidateShouldReturnDefaultCloseFactorIfAboveMinThreshold(uint256 amount) public {
-        // Min amount needs to be high enough to have a precise enough price for this test
-        amount = bound(amount, 1e12, MAX_AMOUNT);
-        (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+    function testAuthorizeLiquidateShouldReturnDefaultCloseFactorIfAboveMinThreshold(
+        address borrower,
+        uint256 healthFactor
+    ) public {
+        borrower = _boundAddressNotZero(borrower);
+        healthFactor =
+            bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MIN_HF + 1, Constants.DEFAULT_LIQUIDATION_MAX_HF - 1);
 
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
-        _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(
-            dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 1001 / 1000), 0, true
-        );
+        _setHealthFactor(borrower, dai, healthFactor);
 
-        uint256 closeFactor = this.authorizeLiquidate(dai, address(this));
+        uint256 closeFactor = this.authorizeLiquidate(dai, borrower);
         assertEq(closeFactor, Constants.DEFAULT_CLOSE_FACTOR);
     }
 
