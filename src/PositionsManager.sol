@@ -207,7 +207,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         _executeWithdrawCollateral(underlying, amount, supplier, receiver, poolSupplyIndex);
 
         // The following check requires accounting to have been performed.
-        if (_getUserHealthFactor(supplier) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+        if (_getUserHealthFactor(supplier) < Constants.DEFAULT_LIQUIDATION_MAX_HF) {
             revert Errors.UnauthorizedWithdraw();
         }
 
