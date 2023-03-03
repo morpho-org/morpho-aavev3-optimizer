@@ -9,6 +9,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
 
+    uint256 internal constant MIN_HF = 1e14;
+
     struct LiquidateTest {
         uint256 collateralBalanceBefore;
         uint256 borrowedBalanceBefore;
@@ -144,6 +146,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
                     _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
 
+                // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
+                _deposit(collateralMarket, test.collateralBalanceBefore, address(morpho));
+
                 user.approve(borrowedMarket.underlying, toRepay);
 
                 _assertEvents(address(user), borrower, collateralMarket, borrowedMarket);
@@ -198,7 +203,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, 1e12, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(1));
+        healthFactor = bound(healthFactor, MIN_HF, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(1));
 
         LiquidateTest memory test;
 
@@ -213,6 +218,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
                     _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
                 toRepay = bound(toRepay, test.borrowedBalanceBefore, type(uint256).max);
+
+                // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
+                _deposit(collateralMarket, test.collateralBalanceBefore, address(morpho));
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -253,6 +261,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
                     _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, WadRayMath.WAD, healthFactor); // 100% peer-to-peer.
+
+                // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
+                _deposit(collateralMarket, test.collateralBalanceBefore, address(morpho));
 
                 supplyCap = _boundSupplyCapExceeded(borrowedMarket, test.borrowedBalanceBefore, supplyCap);
                 _setSupplyCap(borrowedMarket, supplyCap);
@@ -299,6 +310,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 // Set the max iterations to 0 upon repay to skip demotion and fallback to supply delta.
                 morpho.setDefaultIterations(Types.Iterations({repay: 0, withdraw: 10}));
 
+                // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
+                _deposit(collateralMarket, test.collateralBalanceBefore, address(morpho));
+
                 user.approve(borrowedMarket.underlying, toRepay);
 
                 _assertEvents(address(user), borrower, collateralMarket, borrowedMarket);
@@ -319,7 +333,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, 1e12, type(uint96).max);
+        healthFactor = bound(healthFactor, MIN_HF, type(uint96).max);
 
         LiquidateTest memory test;
 
@@ -334,6 +348,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
                     _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
                 toRepay = bound(toRepay, test.borrowedBalanceBefore, type(uint256).max);
+
+                // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
+                _deposit(collateralMarket, test.collateralBalanceBefore, address(morpho));
 
                 morpho.setIsBorrowPaused(borrowedMarket.underlying, true);
                 morpho.setIsDeprecated(borrowedMarket.underlying, true);
@@ -357,9 +374,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 toRepay,
         uint256 healthFactor
     ) public {
-        blocks = _boundBlocks(blocks);
+        blocks = _boundBlocks(blocks) / 32;
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, 1e6, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1));
+        healthFactor = bound(healthFactor, MIN_HF, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(10_00)); // Must be lower because collateral interests may accrue and grow the HF >= 1.
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -368,10 +385,16 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, 0, healthFactor);
                 toRepay = bound(toRepay, borrowedMarket.minAmount, type(uint256).max);
 
+                _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, 0, healthFactor);
+
                 _forward(blocks);
+
+                // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
+                _deposit(
+                    collateralMarket, morpho.collateralBalance(collateralMarket.underlying, borrower), address(morpho)
+                );
 
                 Types.Indexes256 memory futureCollateralIndexes = morpho.updatedIndexes(collateralMarket.underlying);
                 Types.Indexes256 memory futureBorrowedIndexes = morpho.updatedIndexes(borrowedMarket.underlying);
@@ -548,14 +571,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 healthFactor
     ) internal returns (uint256 borrowBalance, uint256 collateralBalance) {
         borrowed = _boundBorrow(borrowedMarket, borrowed);
-
-        uint256 collateral;
-        (collateral, borrowed) = _borrowWithCollateral(
+        (, borrowed) = _borrowWithCollateral(
             borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
         );
-
-        // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
-        _deposit(collateralMarket, collateral, address(morpho));
 
         _promoteBorrow(promoter1, borrowedMarket, borrowed.wadMul(promotionFactor));
 
@@ -566,9 +584,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 (collateralMarket.ltv - 1).rayDiv(collateralMarket.lt)
             ).wadMul(healthFactor)
         );
-
-        Types.LiquidityData memory liquidityData = morpho.liquidityData(borrower);
-        console2.log(healthFactor, liquidityData.maxDebt.wadDiv(liquidityData.debt));
 
         borrowBalance = morpho.borrowBalance(borrowedMarket.underlying, borrower);
         collateralBalance = morpho.collateralBalance(collateralMarket.underlying, borrower);
