@@ -117,6 +117,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         BorrowTest memory test;
 
         onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
