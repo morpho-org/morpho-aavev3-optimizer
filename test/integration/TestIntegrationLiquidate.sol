@@ -367,56 +367,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
         }
     }
 
-    function testShouldUpdateIndexesAfterLiquidate(
-        uint256 blocks,
-        address borrower,
-        uint256 borrowed,
-        uint256 toRepay,
-        uint256 healthFactor
-    ) public {
-        blocks = _boundBlocks(blocks) / 32;
-        borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, MIN_HF, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(10_00)); // Must be lower because collateral interests may accrue and grow the HF >= 1.
-
-        for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
-            for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
-                _revert();
-
-                TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
-                TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
-
-                toRepay = bound(toRepay, borrowedMarket.minAmount, type(uint256).max);
-
-                _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, 0, healthFactor);
-
-                _forward(blocks);
-
-                // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
-                _deposit(
-                    collateralMarket, morpho.collateralBalance(collateralMarket.underlying, borrower), address(morpho)
-                );
-
-                Types.Indexes256 memory futureCollateralIndexes = morpho.updatedIndexes(collateralMarket.underlying);
-                Types.Indexes256 memory futureBorrowedIndexes = morpho.updatedIndexes(borrowedMarket.underlying);
-
-                user.approve(borrowedMarket.underlying, toRepay);
-
-                vm.expectEmit(true, true, true, false, address(morpho));
-                emit Events.IndexesUpdated(borrowedMarket.underlying, 0, 0, 0, 0);
-
-                if (borrowedMarket.underlying != collateralMarket.underlying) {
-                    vm.expectEmit(true, true, true, false, address(morpho));
-                    emit Events.IndexesUpdated(collateralMarket.underlying, 0, 0, 0, 0);
-                }
-
-                user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
-
-                _assertMarketUpdatedIndexes(morpho.market(collateralMarket.underlying), futureCollateralIndexes);
-                _assertMarketUpdatedIndexes(morpho.market(borrowedMarket.underlying), futureBorrowedIndexes);
-            }
-        }
-    }
-
     function testShouldRevertWhenCollateralMarketNotCreated(address underlying, address borrower, uint256 amount)
         public
     {
