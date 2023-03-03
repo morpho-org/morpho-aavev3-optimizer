@@ -97,14 +97,14 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         onlyOwner
         isMarketCreated(underlying)
     {
-        _market[underlying].setAssetIsCollateral(isCollateral);
-
         if (
             isCollateral
                 && !_POOL.getUserConfiguration(address(this)).isUsingAsCollateral(_POOL.getReserveData(underlying).id)
         ) {
             revert Errors.AssetNotCollateral();
         }
+
+        _market[underlying].setAssetIsCollateral(isCollateral);
     }
 
     /// @notice Sets the `underlying`'s reserve factor to `newReserveFactor` (in bps).
