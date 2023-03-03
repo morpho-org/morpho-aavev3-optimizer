@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
 import "test/helpers/IntegrationTest.sol";
 
@@ -491,6 +491,23 @@ contract TestIntegrationBorrow is IntegrationTest {
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
             user.borrow(testMarkets[underlyings[marketIndex]].underlying, amount, onBehalf, address(0));
+        }
+    }
+
+    function testShouldRevertIfBorrowingNotEnableWithSentinel(uint256 amount, address onBehalf, address receiver)
+        public
+    {
+        amount = _boundAmount(amount);
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
+        oracleSentinel.setBorrowAllowed(false);
+
+        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+            vm.expectRevert(Errors.SentinelBorrowNotEnabled.selector);
+            user.borrow(testMarkets[borrowableUnderlyings[marketIndex]].underlying, amount, onBehalf, receiver);
         }
     }
 

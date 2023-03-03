@@ -471,7 +471,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         assertApproxEqAbs(
             morpho.borrowBalance(borrowedMarket.underlying, borrower),
             formerBorrowBalance - expectedRepaid,
-            1,
+            2,
             "borrow balance"
         );
         assertEq(

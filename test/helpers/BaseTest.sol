@@ -7,6 +7,8 @@ import {Errors} from "src/libraries/Errors.sol";
 import {Constants} from "src/libraries/Constants.sol";
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
+
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
@@ -20,6 +22,8 @@ import {Test} from "@forge-std/Test.sol";
 contract BaseTest is Test {
     uint256 internal constant BLOCK_TIME = 12;
     uint256 internal constant DEFAULT_MAX_ITERATIONS = 10;
+
+    uint256 private constant MAX_AMOUNT = 1e20 ether;
 
     /// @dev Asserts a is approximately equal to b, with a maximum absolute difference of DUST_THRESHOLD.
     function assertApproxEqDust(uint256 a, uint256 b, string memory err) internal {
@@ -47,6 +51,21 @@ contract BaseTest is Test {
     /// @dev Bounds the fuzzing input to a realistic number of blocks.
     function _boundBlocks(uint256 blocks) internal view returns (uint256) {
         return bound(blocks, 1, type(uint24).max);
+    }
+
+    /// @dev Bounds the fuzzing input to a realistic index.
+    function _boundIndex(uint256 index) internal view returns (uint256) {
+        return bound(index, WadRayMath.RAY, 20 * WadRayMath.RAY);
+    }
+
+    /// @dev Bounds the fuzzing input to a realistic amount.
+    function _boundAmount(uint256 amount) internal view virtual returns (uint256) {
+        return bound(amount, 0, MAX_AMOUNT);
+    }
+
+    /// @dev Bounds the fuzzing input to a realistic amount.
+    function _boundAmountNotZero(uint256 amount) internal view virtual returns (uint256) {
+        return bound(amount, 1, MAX_AMOUNT);
     }
 
     /// @dev Bounds the fuzzing input to a non-zero address.
