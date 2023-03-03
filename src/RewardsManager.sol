@@ -42,13 +42,19 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     /* IMMUTABLES */
 
-    IRewardsController internal immutable _REWARDS_CONTROLLER; // The rewards controller is supposed not to change depending on the asset.
-    IMorpho internal immutable _MORPHO; // The address of the main Morpho contract.
-    IPool internal immutable _POOL; // The address of the Aave pool.
+    /// @dev The rewards controller is supposed not to change depending on the asset.
+    IRewardsController internal immutable _REWARDS_CONTROLLER;
+
+    /// @dev The address of the Morpho protocol.
+    IMorpho internal immutable _MORPHO;
+
+    /// @dev The address of the Aave pool.
+    IPool internal immutable _POOL;
 
     /* STORAGE */
 
-    mapping(address => mapping(address => RewardData)) internal _localAssetData; // The local data related to a given asset (either aToken or debt token). asset -> reward -> RewardData
+    /// @dev The local data related to a given asset (either aToken or debt token). asset -> reward -> RewardData
+    mapping(address => mapping(address => RewardData)) internal _localAssetData;
 
     /* EVENTS */
 
@@ -138,14 +144,17 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     /* GETTERS */
 
+    /// @notice Returns the pool address.
     function POOL() external view returns (address) {
         return address(_POOL);
     }
 
+    /// @notice Returns the Morpho protocol address.
     function MORPHO() external view returns (address) {
         return address(_MORPHO);
     }
 
+    /// @notice Returns the rewards controller address.
     function REWARDS_CONTROLLER() external view returns (address) {
         return address(_REWARDS_CONTROLLER);
     }
