@@ -6,6 +6,9 @@ import {MatchingEngine} from "src/MatchingEngine.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
 import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
 
+import {BucketDLL} from "@morpho-data-structures/BucketDLL.sol";
+import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
+
 import "test/helpers/InternalTest.sol";
 
 contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
@@ -13,6 +16,9 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
     using MarketBalanceLib for Types.MarketBalances;
     using WadRayMath for uint256;
     using Math for uint256;
+
+    using BucketDLL for BucketDLL.List;
+    using LogarithmicBuckets for LogarithmicBuckets.Buckets;
 
     uint256 internal constant TOTAL_AMOUNT = 20 ether;
     uint256 internal constant USER_AMOUNT = 1 ether;
@@ -79,14 +85,20 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         uint256 expectedIterations = Math.min(expectedPromoted.divUp(USER_AMOUNT), maxIterations);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
+        LogarithmicBuckets.Buckets storage poolSupplierBuckets = marketBalances.poolSuppliers;
+        uint256 bucketId = LogarithmicBuckets.computeBucket(USER_AMOUNT);
+        address addrToMatch;
 
         for (uint256 i; i < numSuppliers; i++) {
             _updateSupplierInDS(dai, vm.addr(i + 1), USER_AMOUNT, 0, true);
         }
 
         for (uint256 i; i < expectedIterations; i++) {
-            vm.expectEmit(false, true, true, false);
-            emit Events.SupplyPositionUpdated(address(0), dai, 0, 0);
+            addrToMatch = addrToMatch == address(0)
+                ? poolSupplierBuckets.getMatch(amountToPromote)
+                : poolSupplierBuckets.buckets[bucketId].getNext(addrToMatch);
+            vm.expectEmit(true, true, true, false);
+            emit Events.SupplyPositionUpdated(addrToMatch, dai, 0, 0);
         }
 
         (uint256 promoted, uint256 iterationsDone) = this.promoteSuppliers(dai, amountToPromote, maxIterations);
@@ -116,14 +128,20 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         uint256 expectedIterations = Math.min(expectedPromoted.divUp(USER_AMOUNT), maxIterations);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
+        LogarithmicBuckets.Buckets storage poolBorrowerBuckets = marketBalances.poolBorrowers;
+        uint256 bucketId = LogarithmicBuckets.computeBucket(USER_AMOUNT);
+        address addrToMatch;
 
         for (uint256 i; i < numBorrowers; i++) {
             _updateBorrowerInDS(dai, vm.addr(i + 1), USER_AMOUNT, 0, true);
         }
 
         for (uint256 i; i < expectedIterations; i++) {
-            vm.expectEmit(false, true, true, false);
-            emit Events.BorrowPositionUpdated(address(0), dai, 0, 0);
+            addrToMatch = addrToMatch == address(0)
+                ? poolBorrowerBuckets.getMatch(amountToPromote)
+                : poolBorrowerBuckets.buckets[bucketId].getNext(addrToMatch);
+            vm.expectEmit(true, true, true, false);
+            emit Events.BorrowPositionUpdated(addrToMatch, dai, 0, 0);
         }
 
         (uint256 promoted, uint256 iterationsDone) = this.promoteBorrowers(dai, amountToPromote, maxIterations);
@@ -153,14 +171,20 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         uint256 expectedIterations = Math.min(expectedDemoted.divUp(USER_AMOUNT), maxIterations);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
+        LogarithmicBuckets.Buckets storage p2pSupplierBuckets = marketBalances.p2pSuppliers;
+        uint256 bucketId = LogarithmicBuckets.computeBucket(USER_AMOUNT);
+        address addrToMatch;
 
         for (uint256 i; i < numSuppliers; i++) {
             _updateSupplierInDS(dai, vm.addr(i + 1), 0, USER_AMOUNT, true);
         }
 
         for (uint256 i; i < expectedIterations; i++) {
-            vm.expectEmit(false, true, true, false);
-            emit Events.SupplyPositionUpdated(address(0), dai, 0, 0);
+            addrToMatch = addrToMatch == address(0)
+                ? p2pSupplierBuckets.getMatch(amountToDemote)
+                : p2pSupplierBuckets.buckets[bucketId].getNext(addrToMatch);
+            vm.expectEmit(true, true, true, false);
+            emit Events.SupplyPositionUpdated(addrToMatch, dai, 0, 0);
         }
 
         uint256 demoted = this.demoteSuppliers(dai, amountToDemote, maxIterations);
@@ -189,14 +213,20 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         uint256 expectedIterations = Math.min(expectedDemoted.divUp(USER_AMOUNT), maxIterations);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
+        LogarithmicBuckets.Buckets storage p2pBorrowerBuckets = marketBalances.p2pBorrowers;
+        uint256 bucketId = LogarithmicBuckets.computeBucket(USER_AMOUNT);
+        address addrToMatch;
 
         for (uint256 i; i < numBorrowers; i++) {
             _updateBorrowerInDS(dai, vm.addr(i + 1), 0, USER_AMOUNT, true);
         }
 
         for (uint256 i; i < expectedIterations; i++) {
-            vm.expectEmit(false, true, true, false);
-            emit Events.BorrowPositionUpdated(address(0), dai, 0, 0);
+            addrToMatch = addrToMatch == address(0)
+                ? p2pBorrowerBuckets.getMatch(amountToDemote)
+                : p2pBorrowerBuckets.buckets[bucketId].getNext(addrToMatch);
+            vm.expectEmit(true, true, true, false);
+            emit Events.BorrowPositionUpdated(addrToMatch, dai, 0, 0);
         }
 
         uint256 demoted = this.demoteBorrowers(dai, amountToDemote, maxIterations);
