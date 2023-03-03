@@ -141,7 +141,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
             test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
-            vm.expectRevert(Errors.AmountIsZero.selector);
+            vm.expectRevert(Errors.CollateralIsZero.selector);
             user.withdrawCollateral(market.underlying, amount, onBehalf, receiver);
         }
     }
