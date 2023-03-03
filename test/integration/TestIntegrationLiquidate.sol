@@ -33,12 +33,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                borrowed = _boundBorrow(borrowedMarket, borrowed);
-                (, borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
-                );
-
-                _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
+                _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, 0, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -56,8 +51,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
-        toRepay = bound(toRepay, 1, type(uint256).max);
         indexShift = bound(indexShift, 1, collateralUnderlyings.length - 1);
+        toRepay = bound(toRepay, 1, type(uint256).max);
         healthFactor = bound(
             healthFactor,
             Constants.MIN_LIQUIDATION_THRESHOLD.percentAdd(1),
@@ -71,12 +66,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                borrowed = _boundBorrow(borrowedMarket, borrowed);
-                (, borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
-                );
-
-                _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
+                _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, 0, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -112,12 +102,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                borrowed = _boundBorrow(borrowedMarket, borrowed);
-                (, borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
-                );
-
-                _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
+                _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, 0, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -154,16 +139,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                borrowed = _boundBorrow(borrowedMarket, borrowed);
-                (, borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
-                );
-
-                promoted = bound(promoted, 0, borrowed);
-                _promoteBorrow(promoter1, borrowedMarket, promoted);
-
+                uint256 promotionFactor = bound(promoted, 0, WadRayMath.WAD);
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
+                    _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -202,13 +180,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                borrowed = _boundBorrow(borrowedMarket, borrowed);
-                (, borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
-                );
-
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
+                    _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, 0, healthFactor);
 
                 vm.expectRevert(Errors.UnauthorizedLiquidate.selector);
                 user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
@@ -235,17 +208,10 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                borrowed = _boundBorrow(borrowedMarket, borrowed);
-                (, borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
-                );
-                toRepay = bound(toRepay, borrowed, type(uint256).max);
-
-                promoted = bound(promoted, 0, borrowed);
-                _promoteBorrow(promoter1, borrowedMarket, promoted);
-
+                uint256 promotionFactor = bound(promoted, 0, WadRayMath.WAD);
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
+                    _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
+                toRepay = bound(toRepay, test.borrowedBalanceBefore, type(uint256).max);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -286,18 +252,11 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                borrowed = _boundBorrow(borrowedMarket, borrowed);
-                (, borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
-                );
-
-                _promoteBorrow(promoter1, borrowedMarket, borrowed); // 100% peer-to-peer.
+                (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
+                    _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, WadRayMath.WAD, healthFactor); // 100% peer-to-peer.
 
                 supplyCap = _boundSupplyCapExceeded(borrowedMarket, borrowed, supplyCap);
                 _setSupplyCap(borrowedMarket, supplyCap);
-
-                (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -334,18 +293,11 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                borrowed = _boundBorrow(borrowedMarket, borrowed);
-                (, borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
-                );
-
-                _promoteBorrow(promoter1, borrowedMarket, borrowed); // 100% peer-to-peer.
+                (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
+                    _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, WadRayMath.WAD, healthFactor); // 100% peer-to-peer.
 
                 // Set the max iterations to 0 upon repay to skip demotion and fallback to supply delta.
                 morpho.setDefaultIterations(Types.Iterations({repay: 0, withdraw: 10}));
-
-                (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-                    _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -362,6 +314,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testPartialLiquidateAnyUserOnDeprecatedMarket(
         address borrower,
         uint256 borrowed,
+        uint256 promoted,
         uint256 toRepay,
         uint256 healthFactor
     ) public {
@@ -377,14 +330,10 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                borrowed = _boundBorrow(borrowedMarket, borrowed);
-                (, borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
-                );
-                toRepay = bound(toRepay, 1, borrowed - 1);
-
-                test.borrowedBalanceBefore = morpho.borrowBalance(borrowedMarket.underlying, borrower);
-                test.collateralBalanceBefore = morpho.collateralBalance(collateralMarket.underlying, borrower);
+                uint256 promotionFactor = bound(promoted, 0, WadRayMath.WAD);
+                (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
+                    _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
+                toRepay = bound(toRepay, 1, test.borrowedBalanceBefore - 1);
 
                 morpho.setIsBorrowPaused(borrowedMarket.underlying, true);
                 morpho.setIsDeprecated(borrowedMarket.underlying, true);
@@ -404,6 +353,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testFullLiquidateAnyUserOnDeprecatedMarket(
         address borrower,
         uint256 borrowed,
+        uint256 promoted,
         uint256 toRepay,
         uint256 healthFactor
     ) public {
@@ -419,14 +369,10 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                borrowed = _boundBorrow(borrowedMarket, borrowed);
-                (, borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
-                );
-                toRepay = bound(toRepay, borrowed, type(uint256).max);
-
-                test.borrowedBalanceBefore = morpho.borrowBalance(borrowedMarket.underlying, borrower);
-                test.collateralBalanceBefore = morpho.collateralBalance(collateralMarket.underlying, borrower);
+                uint256 promotionFactor = bound(promoted, 0, WadRayMath.WAD);
+                (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
+                    _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
+                toRepay = bound(toRepay, test.borrowedBalanceBefore, type(uint256).max);
 
                 morpho.setIsBorrowPaused(borrowedMarket.underlying, true);
                 morpho.setIsDeprecated(borrowedMarket.underlying, true);
@@ -457,8 +403,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     ) public {
         blocks = _boundBlocks(blocks);
         borrower = _boundAddressNotZero(borrower);
-        toRepay = bound(toRepay, 1, type(uint256).max);
-        healthFactor = bound(healthFactor, 1, Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1));
+        healthFactor = bound(healthFactor, 1e6, Constants.DEFAULT_LIQUIDATION_THRESHOLD.percentSub(1));
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -467,17 +412,13 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                borrowed = _boundBorrow(borrowedMarket, borrowed);
-                (, borrowed) = _borrowWithCollateral(
-                    borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
-                );
+                _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, 0, healthFactor);
+                toRepay = bound(toRepay, borrowedMarket.minAmount, type(uint256).max);
 
                 _forward(blocks);
 
                 Types.Indexes256 memory futureCollateralIndexes = morpho.updatedIndexes(collateralMarket.underlying);
                 Types.Indexes256 memory futureBorrowedIndexes = morpho.updatedIndexes(borrowedMarket.underlying);
-
-                _overrideCollateral(borrowedMarket, collateralMarket, borrower, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -615,12 +556,26 @@ contract TestIntegrationLiquidate is IntegrationTest {
         emit Events.Liquidated(address(user), borrower, borrowedMarket.underlying, 0, address(0), 0);
     }
 
-    function _overrideCollateral(
+    function _createPosition(
         TestMarket storage borrowedMarket,
         TestMarket storage collateralMarket,
         address borrower,
+        uint256 borrowed,
+        uint256 promotionFactor,
         uint256 healthFactor
     ) internal returns (uint256 borrowBalance, uint256 collateralBalance) {
+        borrowed = _boundBorrow(borrowedMarket, borrowed);
+
+        uint256 collateral;
+        (collateral, borrowed) = _borrowWithCollateral(
+            borrower, collateralMarket, borrowedMarket, borrowed, borrower, borrower, DEFAULT_MAX_ITERATIONS
+        );
+
+        // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
+        _deposit(collateralMarket, collateral, address(morpho));
+
+        _promoteBorrow(promoter1, borrowedMarket, borrowed.wadMul(promotionFactor));
+
         stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
             collateralMarket.underlying
         ).with_key(borrower).checked_write(
@@ -628,6 +583,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 (collateralMarket.ltv - 1).rayDiv(collateralMarket.lt)
             ).wadMul(healthFactor)
         );
+
+        Types.LiquidityData memory liquidityData = morpho.liquidityData(borrower);
+        console2.log(healthFactor, liquidityData.maxDebt.wadDiv(liquidityData.debt));
 
         borrowBalance = morpho.borrowBalance(borrowedMarket.underlying, borrower);
         collateralBalance = morpho.collateralBalance(collateralMarket.underlying, borrower);
