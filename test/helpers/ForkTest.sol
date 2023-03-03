@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IAToken} from "src/interfaces/aave/IAToken.sol";
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
+import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
 import {IACLManager} from "@aave-v3-core/interfaces/IACLManager.sol";
 import {IPoolConfigurator} from "@aave-v3-core/interfaces/IPoolConfigurator.sol";
 import {IPoolDataProvider} from "@aave-v3-core/interfaces/IPoolDataProvider.sol";

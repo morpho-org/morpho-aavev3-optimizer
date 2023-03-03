@@ -181,20 +181,20 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (_market[underlyingBorrowed].isDeprecated()) return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
 
         uint256 healthFactor = _getUserHealthFactor(borrower);
-        if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+        if (healthFactor >= Constants.DEFAULT_LIQUIDATION_MAX_HF) {
             revert Errors.UnauthorizedLiquidate();
         }
 
-        if (healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD) {
+        if (healthFactor >= Constants.DEFAULT_LIQUIDATION_MIN_HF) {
             address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
 
             if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
             {
                 revert Errors.SentinelLiquidateNotEnabled();
             }
-
-            return Constants.DEFAULT_CLOSE_FACTOR;
         }
+
+        if (healthFactor > Constants.DEFAULT_LIQUIDATION_MIN_HF) return Constants.DEFAULT_CLOSE_FACTOR;
 
         return Constants.MAX_CLOSE_FACTOR;
     }
@@ -233,7 +233,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Supply on pool.
         (vars.toSupply, vars.onPool) = _addToPool(amount, vars.onPool, indexes.supply.poolIndex);
 
-        _updateSupplierInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
+        (vars.onPool, vars.inP2P) = _updateSupplierInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
     }
 
     /// @dev Performs the accounting of a borrow action.
@@ -275,7 +275,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Borrow on pool.
         (vars.toBorrow, vars.onPool) = _addToPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
-        _updateBorrowerInDS(underlying, borrower, vars.onPool, vars.inP2P, false);
+        (vars.onPool, vars.inP2P) = _updateBorrowerInDS(underlying, borrower, vars.onPool, vars.inP2P, false);
     }
 
     /// @dev Performs the accounting of a repay action.
@@ -299,7 +299,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Repay borrow peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
 
-        _updateBorrowerInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
+        (vars.onPool, vars.inP2P) = _updateBorrowerInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
 
         if (amount == 0) return vars;
 
@@ -366,7 +366,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Withdraw supply peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
-        _updateSupplierInDS(underlying, supplier, vars.onPool, vars.inP2P, false);
+        (vars.onPool, vars.inP2P) = _updateSupplierInDS(underlying, supplier, vars.onPool, vars.inP2P, false);
 
         if (amount == 0) return vars;
 

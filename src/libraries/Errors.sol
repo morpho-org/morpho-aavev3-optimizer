@@ -12,6 +12,9 @@ library Errors {
 
     error AddressIsZero();
     error AmountIsZero();
+    error DebtIsZero();
+    error SupplyIsZero();
+    error CollateralIsZero();
     error PermissionDenied();
 
     error SupplyIsPaused();
