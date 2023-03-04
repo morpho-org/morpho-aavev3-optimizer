@@ -9,13 +9,13 @@ library Errors {
     /// @notice Thrown when interacting with a market not created.
     error MarketNotCreated();
 
-    /// @notice Thrown when trying to create a marke already created.
+    /// @notice Thrown when trying to create a market already created.
     error MarketAlreadyCreated();
 
     /// @notice Thrown when trying to create a market that is not listed on Aave.
     error MarketIsNotListedOnAave();
 
-    /// @notice Thrown when the adddress used is the zero address.
+    /// @notice Thrown when the address used is the zero address.
     error AddressIsZero();
 
     /// @notice Thrown when the amount used is zero.
