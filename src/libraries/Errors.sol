@@ -21,34 +21,34 @@ library Errors {
     /// @notice Thrown when the amount used is zero.
     error AmountIsZero();
 
-    /// @notice Thrown when the manager has no approval upon the delegator.
+    /// @notice Thrown when the manager is not approved by the delegator.
     error PermissionDenied();
 
-    /// @notice Thrown when the supply is paused.
+    /// @notice Thrown when supply is paused.
     error SupplyIsPaused();
 
-    /// @notice Thrown when the supply collateral is paused.
+    /// @notice Thrown when supply collateral is paused.
     error SupplyCollateralIsPaused();
 
-    /// @notice Thrown when the borrow is paused.
+    /// @notice Thrown when borrow is paused.
     error BorrowIsPaused();
 
-    /// @notice Thrown when the repay is paused.
+    /// @notice Thrown when repay is paused.
     error RepayIsPaused();
 
-    /// @notice Thrown when the withdraw is paused.
+    /// @notice Thrown when withdraw is paused.
     error WithdrawIsPaused();
 
-    /// @notice Thrown when the withdraw collateral is paused.
+    /// @notice Thrown when withdraw collateral is paused.
     error WithdrawCollateralIsPaused();
 
-    /// @notice Thrown when the liquidate collateral is paused.
+    /// @notice Thrown when liquidate collateral is paused.
     error LiquidateCollateralIsPaused();
 
-    /// @notice Thrown when the liquidate borrow is paused.
+    /// @notice Thrown when liquidate borrow is paused.
     error LiquidateBorrowIsPaused();
 
-    /// @notice Thrown when the claim rewards is paused.
+    /// @notice Thrown when claim rewards is paused.
     error ClaimRewardsPaused();
 
     /// @notice Thrown when the market is deprecated while trying to unpause the borrow.
@@ -60,22 +60,22 @@ library Errors {
     /// @notice Thrown when the market is not enabled on Aave.
     error BorrowNotEnabled();
 
-    /// @notice Thrown when the oracle sentinel is enabled but the borrow is not.
+    /// @notice Thrown when the oracle sentinel is set but the borrow is not enabled.
     error SentinelBorrowNotEnabled();
 
     /// @notice Thrown when borrowing an asset in an e-mode not consistent with Morpho.
     error InconsistentEMode();
 
-    /// @notice Thrown when the borrow is not authorized because of a collateralization ratio too low.
+    /// @notice Thrown when a borrow would leave the user undercollateralized.
     error UnauthorizedBorrow();
 
-    /// @notice Thrown when the withdraw is not authorized because of a collateralization ratio too low.
+    /// @notice Thrown when a withdraw would leave the user undercollateralized.
     error UnauthorizedWithdraw();
 
     /// @notice Thrown when the liquidatation is not authorized because of a collateralization ratio too high.
     error UnauthorizedLiquidate();
 
-    /// @notice Thrown when the oracle sentinel is enabled but the liquidation is not.
+    /// @notice Thrown when the oracle sentinel is set but the liquidation is not enabled.
     error SentinelLiquidateNotEnabled();
 
     /// @notice Thrown when the asset is not a collateral on Aave while trying to set it as collateral on Morpho.
@@ -96,7 +96,7 @@ library Errors {
     /// @notice Thrown when the signatory of the ECDSA signature is invalid.
     error InvalidSignatory();
 
-    /// @notice Trown when the nonce is invalid.
+    /// @notice Thrown when the nonce is invalid.
     error InvalidNonce();
 
     /// @notice Thrown when the signature is expired

@@ -29,7 +29,7 @@ library MarketLib {
     using ReserveDataLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    /// @notice Returns whether `market` is created or not.
+    /// @notice Returns whether the `market` is created or not.
     function isCreated(Types.Market storage market) internal view returns (bool) {
         return market.aToken != address(0);
     }

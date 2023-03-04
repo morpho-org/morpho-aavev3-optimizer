@@ -173,16 +173,16 @@ library Types {
 
     /// @notice Variables used during a borrow or withdraw.
     struct BorrowWithdrawVars {
-        uint256 onPool; // The scaled balance on pool at the end of the process.
-        uint256 inP2P; // The scaled balance in peer-to-peer at the end of the process.
+        uint256 onPool; // The working scaled balance on pool of the user.
+        uint256 inP2P; // The working scaled balance in peer-to-peer of the user.
         uint256 toWithdraw; // The amount to withdraw from the pool (in underlying).
         uint256 toBorrow; // The amount to borrow on the pool (in underlying).
     }
 
     /// @notice Variables used during a supply or repay.
     struct SupplyRepayVars {
-        uint256 onPool; // The scaled balance on pool at the end of the process.
-        uint256 inP2P; // The scaled balance in peer-to-peer at the end of the process.
+        uint256 onPool; // The working scaled balance on pool of the user.
+        uint256 inP2P; // The working scaled balance in peer-to-peer of the user.
         uint256 toSupply; // The amount to supply on the pool (in underlying).
         uint256 toRepay; // The amount to repay on the pool (in underlying).
     }

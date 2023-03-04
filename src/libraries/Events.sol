@@ -110,7 +110,7 @@ library Events {
     /// @param underlyingBorrowed The address of the underlying asset borrowed being repaid.
     /// @param amountLiquidated The amount of `underlyingBorrowed` repaid.
     /// @param underlyingCollateral The address of the collateral underlying seized.
-    /// @param amountSeized The amount of `underlyingCollateral` sized.
+    /// @param amountSeized The amount of `underlyingCollateral` seized.
     event Liquidated(
         address indexed liquidator,
         address indexed borrower,
