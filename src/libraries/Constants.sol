@@ -17,8 +17,8 @@ library Constants {
 
     uint256 internal constant MAX_CLOSE_FACTOR = PercentageMath.PERCENTAGE_FACTOR;
     uint256 internal constant DEFAULT_CLOSE_FACTOR = PercentageMath.HALF_PERCENTAGE_FACTOR;
-    uint256 internal constant DEFAULT_LIQUIDATION_THRESHOLD = WadRayMath.WAD; // Health factor below which the positions can be liquidated.
-    uint256 internal constant MIN_LIQUIDATION_THRESHOLD = 0.95e18; // Health factor below which the positions can be liquidated, whether or not the price oracle sentinel allows the liquidation.
+    uint256 internal constant DEFAULT_LIQUIDATION_MAX_HF = WadRayMath.WAD; // Health factor below which the positions can be liquidated.
+    uint256 internal constant DEFAULT_LIQUIDATION_MIN_HF = 0.95e18; // Health factor below which the positions can be liquidated, whether or not the price oracle sentinel allows the liquidation.
 
     string internal constant EIP712_MSG_PREFIX = "\x19\x01";
     string internal constant EIP712_NAME = "Morpho-AaveV3";
