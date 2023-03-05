@@ -30,6 +30,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
             _createTestMarket(allUnderlyings[i], 0, 33_33);
         }
         // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() always return true.
+        // Necessary for idle supply manipulation.
         _deposit(testMarkets[weth], 1e12, address(morpho));
         _deposit(testMarkets[dai], 1e12, address(morpho));
         _;
