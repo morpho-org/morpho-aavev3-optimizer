@@ -6,13 +6,13 @@ pragma solidity ^0.8.17;
 /// @custom:contact security@morpho.xyz
 /// @notice Library exposing errors used in Morpho.
 library Errors {
-    /// @notice Thrown when interacting with a market not created.
+    /// @notice Thrown when interacting with a market that is not created.
     error MarketNotCreated();
 
-    /// @notice Thrown when trying to create a market already created.
+    /// @notice Thrown when creating a market that is already created.
     error MarketAlreadyCreated();
 
-    /// @notice Thrown when trying to create a market that is not listed on Aave.
+    /// @notice Thrown when creating a market that is not listed on Aave.
     error MarketIsNotListedOnAave();
 
     /// @notice Thrown when the address used is the zero address.
@@ -51,10 +51,10 @@ library Errors {
     /// @notice Thrown when claim rewards is paused.
     error ClaimRewardsPaused();
 
-    /// @notice Thrown when the market is deprecated while trying to unpause the borrow.
+    /// @notice Thrown when unpausing the borrow of a market that is deprecated.
     error MarketIsDeprecated();
 
-    /// @notice Thrown when the market is not paused while trying to deprecate it.
+    /// @notice Thrown when deprecating a market that is not paused.
     error BorrowNotPaused();
 
     /// @notice Thrown when the market is not enabled on Aave.
@@ -78,7 +78,7 @@ library Errors {
     /// @notice Thrown when the oracle sentinel is set but the liquidation is not enabled.
     error SentinelLiquidateNotEnabled();
 
-    /// @notice Thrown when the asset is not a collateral on Aave while trying to set it as collateral on Morpho.
+    /// @notice Thrown when setting a market as collateral on Morpho while it is not a collateral on Aave.
     error AssetNotCollateral();
 
     /// @notice Thrown when the asset is a collateral on Morpho while trying to unset it as collateral on Aave.

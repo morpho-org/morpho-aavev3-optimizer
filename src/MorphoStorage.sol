@@ -19,7 +19,7 @@ import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2
 abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /* IMMUTABLES */
 
-    /// @dev The address of the pool.
+    /// @dev The address of Aave's pool.
     IPool internal immutable _POOL;
 
     /// @dev The address of the pool addresses provider.
@@ -30,7 +30,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
 
     /* STORAGE */
 
-    /// @dev The created markets.
+    /// @dev The list of created markets.
     address[] internal _marketsCreated;
 
     /// @dev The market data.
@@ -45,7 +45,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /// @dev The borrow markets entered by a user.
     mapping(address => EnumerableSet.AddressSet) internal _userBorrows;
 
-    /// @dev Whether a user is allowed to borrow or withdraw on behalf of another user. delegator => manager => bool
+    /// @dev Whether a user is allowed to borrow or withdraw on behalf of another user. delegator => manager => isManaging
     mapping(address => mapping(address => bool)) internal _isManaging;
 
     /// @dev The nonce of a user. Used to prevent replay attacks.

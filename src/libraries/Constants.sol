@@ -12,7 +12,7 @@ library Constants {
     /// @dev The referral code used for Aave.
     uint8 internal constant NO_REFERRAL_CODE = 0;
 
-    /// @dev The interest rate mode used for Aave.
+    /// @dev The variable interest rate mode of Aave.
     uint8 internal constant VARIABLE_INTEREST_MODE = 2;
 
     /// @dev The threshold under which the balance is swept to 0.
