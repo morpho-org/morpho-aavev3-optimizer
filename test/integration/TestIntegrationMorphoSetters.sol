@@ -298,27 +298,324 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.isClaimRewardsPaused(), paused);
     }
 
-    function testSetIsSupplyPaused() public {}
+    function testSetIsSupplyPausedFailsIfNotOwner(address underlying, bool paused) public marketsCreated callNotOwner {
+        morpho.setIsSupplyPaused(underlying, paused);
+    }
 
-    function testSetIsSupplyCollateralPaused() public {}
+    function testSetIsSupplyPausedFailsIfMarketNotCreated(address underlying, bool paused) public {
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        morpho.setIsSupplyPaused(underlying, paused);
+    }
 
-    function testSetIsBorrowPaused() public {}
+    function testSetIsSupplyPaused(uint256 seed, bool paused) public marketsCreated {
+        address underlying = _randomUnderlying(seed);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsSupplyPausedSet(underlying, paused);
+        morpho.setIsSupplyPaused(underlying, paused);
+        assertEq(morpho.market(underlying).pauseStatuses.isSupplyPaused, paused);
+    }
 
-    function testSetIsRepayPaused() public {}
+    function testSetIsSupplyCollateralPausedFailsIfNotOwner(address underlying, bool paused)
+        public
+        marketsCreated
+        callNotOwner
+    {
+        morpho.setIsSupplyCollateralPaused(underlying, paused);
+    }
 
-    function testSetIsWithdrawPaused() public {}
+    function testSetIsSupplyCollateralPausedFailsIfMarketNotCreated(address underlying, bool paused) public {
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        morpho.setIsSupplyCollateralPaused(underlying, paused);
+    }
 
-    function testSetIsWithdrawCollateralPaused() public {}
+    function testSetIsSupplyCollateralPaused(uint256 seed, bool paused) public marketsCreated {
+        address underlying = _randomUnderlying(seed);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsSupplyCollateralPausedSet(underlying, paused);
+        morpho.setIsSupplyCollateralPaused(underlying, paused);
+        assertEq(morpho.market(underlying).pauseStatuses.isSupplyCollateralPaused, paused);
+    }
 
-    function testSetIsLiquidateCollateralPaused() public {}
+    function testSetIsBorrowPausedFailsIfNotOwner(address underlying, bool paused) public marketsCreated callNotOwner {
+        morpho.setIsBorrowPaused(underlying, paused);
+    }
 
-    function testSetIsLiquidateBorrowPaused() public {}
+    function testSetIsBorrowPausedFailsIfMarketNotCreated(address underlying, bool paused) public {
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        morpho.setIsBorrowPaused(underlying, paused);
+    }
 
-    function testSetIsPaused() public {}
+    function testSetIsBorrowPaused(uint256 seed, bool paused) public marketsCreated {
+        address underlying = _randomUnderlying(seed);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsBorrowPausedSet(underlying, paused);
+        morpho.setIsBorrowPaused(underlying, paused);
+        assertEq(morpho.market(underlying).pauseStatuses.isBorrowPaused, paused);
+    }
 
-    function testSetIsPausedForAllMarkets() public {}
+    function testSetIsRepayPausedFailsIfNotOwner(address underlying, bool paused) public marketsCreated callNotOwner {
+        morpho.setIsRepayPaused(underlying, paused);
+    }
 
-    function testSetIsP2PDisabled() public {}
+    function testSetIsRepayPausedFailsIfMarketNotCreated(address underlying, bool paused) public {
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        morpho.setIsRepayPaused(underlying, paused);
+    }
 
-    function testSetIsDeprecated() public {}
+    function testSetIsRepayPaused(uint256 seed, bool paused) public marketsCreated {
+        address underlying = _randomUnderlying(seed);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsRepayPausedSet(underlying, paused);
+        morpho.setIsRepayPaused(underlying, paused);
+        assertEq(morpho.market(underlying).pauseStatuses.isRepayPaused, paused);
+    }
+
+    function testSetIsWithdrawPausedFailsIfNotOwner(address underlying, bool paused)
+        public
+        marketsCreated
+        callNotOwner
+    {
+        morpho.setIsWithdrawPaused(underlying, paused);
+    }
+
+    function testSetIsWithdrawPausedFailsIfMarketNotCreated(address underlying, bool paused) public {
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        morpho.setIsWithdrawPaused(underlying, paused);
+    }
+
+    function testSetIsWithdrawPaused(uint256 seed, bool paused) public marketsCreated {
+        address underlying = _randomUnderlying(seed);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsWithdrawPausedSet(underlying, paused);
+        morpho.setIsWithdrawPaused(underlying, paused);
+        assertEq(morpho.market(underlying).pauseStatuses.isWithdrawPaused, paused);
+    }
+
+    function testSetIsWithdrawCollateralPausedFailsIfNotOwner(address underlying, bool paused)
+        public
+        marketsCreated
+        callNotOwner
+    {
+        morpho.setIsWithdrawCollateralPaused(underlying, paused);
+    }
+
+    function testSetIsWithdrawCollateralPausedFailsIfMarketNotCreated(address underlying, bool paused) public {
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        morpho.setIsWithdrawCollateralPaused(underlying, paused);
+    }
+
+    function testSetIsWithdrawCollateralPaused(uint256 seed, bool paused) public marketsCreated {
+        address underlying = _randomUnderlying(seed);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsWithdrawCollateralPausedSet(underlying, paused);
+        morpho.setIsWithdrawCollateralPaused(underlying, paused);
+        assertEq(morpho.market(underlying).pauseStatuses.isWithdrawCollateralPaused, paused);
+    }
+
+    function testSetIsLiquidateCollateralPausedFailsIfNotOwner(address underlying, bool paused)
+        public
+        marketsCreated
+        callNotOwner
+    {
+        morpho.setIsLiquidateCollateralPaused(underlying, paused);
+    }
+
+    function testSetIsLiquidateCollateralPausedFailsIfMarketNotCreated(address underlying, bool paused) public {
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        morpho.setIsLiquidateCollateralPaused(underlying, paused);
+    }
+
+    function testSetIsLiquidateCollateralPaused(uint256 seed, bool paused) public marketsCreated {
+        address underlying = _randomUnderlying(seed);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsLiquidateCollateralPausedSet(underlying, paused);
+        morpho.setIsLiquidateCollateralPaused(underlying, paused);
+        assertEq(morpho.market(underlying).pauseStatuses.isLiquidateCollateralPaused, paused);
+    }
+
+    function testSetIsLiquidateBorrowPausedFailsIfNotOwner(address underlying, bool paused)
+        public
+        marketsCreated
+        callNotOwner
+    {
+        morpho.setIsLiquidateBorrowPaused(underlying, paused);
+    }
+
+    function testSetIsLiquidateBorrowPausedFailsIfMarketNotCreated(address underlying, bool paused) public {
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        morpho.setIsLiquidateBorrowPaused(underlying, paused);
+    }
+
+    function testSetIsLiquidateBorrowPaused(uint256 seed, bool paused) public marketsCreated {
+        address underlying = _randomUnderlying(seed);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsLiquidateBorrowPausedSet(underlying, paused);
+        morpho.setIsLiquidateBorrowPaused(underlying, paused);
+        assertEq(morpho.market(underlying).pauseStatuses.isLiquidateBorrowPaused, paused);
+    }
+
+    function testSetIsPausedFailsIfNotOwner(address underlying, bool paused) public marketsCreated callNotOwner {
+        morpho.setIsPaused(underlying, paused);
+    }
+
+    function testSetIsPausedFailsIfMarketNotCreated(address underlying, bool paused) public {
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        morpho.setIsPaused(underlying, paused);
+    }
+
+    function testSetIsPaused(uint256 seed, bool isPaused) public marketsCreated {
+        address underlying = _randomUnderlying(seed);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsSupplyPausedSet(underlying, isPaused);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsSupplyCollateralPausedSet(underlying, isPaused);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsRepayPausedSet(underlying, isPaused);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsWithdrawPausedSet(underlying, isPaused);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsWithdrawCollateralPausedSet(underlying, isPaused);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsLiquidateCollateralPausedSet(underlying, isPaused);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsLiquidateBorrowPausedSet(underlying, isPaused);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsBorrowPausedSet(underlying, isPaused);
+
+        morpho.setIsPaused(underlying, isPaused);
+
+        Types.PauseStatuses memory pauseStatuses = morpho.market(underlying).pauseStatuses;
+        assertEq(pauseStatuses.isSupplyPaused, isPaused);
+        assertEq(pauseStatuses.isSupplyCollateralPaused, isPaused);
+        assertEq(pauseStatuses.isRepayPaused, isPaused);
+        assertEq(pauseStatuses.isWithdrawPaused, isPaused);
+        assertEq(pauseStatuses.isWithdrawCollateralPaused, isPaused);
+        assertEq(pauseStatuses.isLiquidateCollateralPaused, isPaused);
+        assertEq(pauseStatuses.isLiquidateBorrowPaused, isPaused);
+        assertEq(pauseStatuses.isBorrowPaused, isPaused);
+    }
+
+    function testSetIsPausedDoesNotSetBorrowPauseIfDeprecated(uint256 seed, bool isPaused) public marketsCreated {
+        address underlying = _randomUnderlying(seed);
+        morpho.setIsBorrowPaused(underlying, true);
+        morpho.setIsDeprecated(underlying, true);
+
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsSupplyPausedSet(underlying, isPaused);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsSupplyCollateralPausedSet(underlying, isPaused);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsRepayPausedSet(underlying, isPaused);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsWithdrawPausedSet(underlying, isPaused);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsWithdrawCollateralPausedSet(underlying, isPaused);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsLiquidateCollateralPausedSet(underlying, isPaused);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsLiquidateBorrowPausedSet(underlying, isPaused);
+
+        morpho.setIsPaused(underlying, isPaused);
+
+        Types.PauseStatuses memory pauseStatuses = morpho.market(underlying).pauseStatuses;
+
+        assertEq(pauseStatuses.isSupplyPaused, isPaused);
+        assertEq(pauseStatuses.isSupplyCollateralPaused, isPaused);
+        assertEq(pauseStatuses.isRepayPaused, isPaused);
+        assertEq(pauseStatuses.isWithdrawPaused, isPaused);
+        assertEq(pauseStatuses.isWithdrawCollateralPaused, isPaused);
+        assertEq(pauseStatuses.isLiquidateCollateralPaused, isPaused);
+        assertEq(pauseStatuses.isLiquidateBorrowPaused, isPaused);
+        assertEq(pauseStatuses.isBorrowPaused, true);
+    }
+
+    function testSetIsPausedForAllMarketsFailsIfNotOwner(bool isPaused) public marketsCreated callNotOwner {
+        morpho.setIsPausedForAllMarkets(isPaused);
+    }
+
+    function testSetIsPausedForAllMarkets(bool isPaused) public marketsCreated {
+        address[] memory markets = morpho.marketsCreated();
+
+        for (uint256 i; i < markets.length; i++) {
+            vm.expectEmit(true, true, true, true);
+            emit Events.IsSupplyPausedSet(markets[i], isPaused);
+            vm.expectEmit(true, true, true, true);
+            emit Events.IsSupplyCollateralPausedSet(markets[i], isPaused);
+            vm.expectEmit(true, true, true, true);
+            emit Events.IsRepayPausedSet(markets[i], isPaused);
+            vm.expectEmit(true, true, true, true);
+            emit Events.IsWithdrawPausedSet(markets[i], isPaused);
+            vm.expectEmit(true, true, true, true);
+            emit Events.IsWithdrawCollateralPausedSet(markets[i], isPaused);
+            vm.expectEmit(true, true, true, true);
+            emit Events.IsLiquidateCollateralPausedSet(markets[i], isPaused);
+            vm.expectEmit(true, true, true, true);
+            emit Events.IsLiquidateBorrowPausedSet(markets[i], isPaused);
+            vm.expectEmit(true, true, true, true);
+            emit Events.IsBorrowPausedSet(markets[i], isPaused);
+        }
+
+        morpho.setIsPausedForAllMarkets(isPaused);
+
+        for (uint256 i; i < markets.length; i++) {
+            Types.PauseStatuses memory pauseStatuses = morpho.market(markets[i]).pauseStatuses;
+            assertEq(pauseStatuses.isSupplyPaused, isPaused);
+            assertEq(pauseStatuses.isSupplyCollateralPaused, isPaused);
+            assertEq(pauseStatuses.isRepayPaused, isPaused);
+            assertEq(pauseStatuses.isWithdrawPaused, isPaused);
+            assertEq(pauseStatuses.isWithdrawCollateralPaused, isPaused);
+            assertEq(pauseStatuses.isLiquidateCollateralPaused, isPaused);
+            assertEq(pauseStatuses.isLiquidateBorrowPaused, isPaused);
+            assertEq(pauseStatuses.isBorrowPaused, isPaused);
+        }
+    }
+
+    function testSetIsP2PDisabledFailsIfNotOwner(address underlying, bool disabled)
+        public
+        marketsCreated
+        callNotOwner
+    {
+        morpho.setIsP2PDisabled(underlying, disabled);
+    }
+
+    function testSetIsP2PDisabledFailsIfMarketNotCreated(address underlying, bool disabled) public {
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        morpho.setIsP2PDisabled(underlying, disabled);
+    }
+
+    function testSetIsP2PDisabled(uint256 seed, bool disabled) public marketsCreated {
+        address underlying = _randomUnderlying(seed);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsP2PDisabledSet(underlying, disabled);
+        morpho.setIsP2PDisabled(underlying, disabled);
+        assertEq(morpho.market(underlying).pauseStatuses.isP2PDisabled, disabled);
+    }
+
+    function testSetIsDeprecatedFailsIfNotOwner(address underlying, bool deprecated)
+        public
+        marketsCreated
+        callNotOwner
+    {
+        morpho.setIsDeprecated(underlying, deprecated);
+    }
+
+    function testSetIsDeprecatedFailsIfMarketNotCreated(address underlying, bool deprecated) public {
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        morpho.setIsDeprecated(underlying, deprecated);
+    }
+
+    function testSetIsDeprecatedFailsIfBorrowNotPaused(uint256 seed, bool deprecated) public marketsCreated {
+        address underlying = _randomUnderlying(seed);
+        vm.expectRevert(Errors.BorrowNotPaused.selector);
+        morpho.setIsDeprecated(underlying, deprecated);
+    }
+
+    function testSetIsDeprecated(uint256 seed, bool deprecated) public marketsCreated {
+        address underlying = _randomUnderlying(seed);
+        morpho.setIsBorrowPaused(underlying, true);
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsDeprecatedSet(underlying, deprecated);
+        morpho.setIsDeprecated(underlying, deprecated);
+        assertEq(morpho.market(underlying).pauseStatuses.isDeprecated, deprecated);
+    }
 }
