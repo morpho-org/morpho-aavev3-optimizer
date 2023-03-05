@@ -33,7 +33,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /// @dev The list of created markets.
     address[] internal _marketsCreated;
 
-    /// @dev The market data.
+    /// @dev The markets data.
     mapping(address => Types.Market) internal _market;
 
     /// @dev The market balances data.
@@ -48,7 +48,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /// @dev Whether a user is allowed to borrow or withdraw on behalf of another user. delegator => manager => isManaging
     mapping(address => mapping(address => bool)) internal _isManaging;
 
-    /// @dev The nonce of a user. Used to prevent replay attacks.
+    /// @dev The nonce of a user. Used to prevent replay attacks with EIP-712 signatures.
     mapping(address => uint256) internal _userNonce;
 
     /// @dev The default iterations values to use in the matching process.

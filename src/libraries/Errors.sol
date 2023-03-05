@@ -81,7 +81,7 @@ library Errors {
     /// @notice Thrown when setting a market as collateral on Morpho while it is not a collateral on Aave.
     error AssetNotCollateral();
 
-    /// @notice Thrown when the asset is a collateral on Morpho while trying to unset it as collateral on Aave.
+    /// @notice Thrown when unsetting a market as collateral on Aave while it is a collateral on Morpho.
     error AssetIsCollateral();
 
     /// @notice Thrown when the value exceeds the maximum basis points value (100% = 10000).

@@ -29,7 +29,8 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     /* CONSTRUCTOR */
 
-    /// @notice The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
+    /// @notice Contract constructor.
+    /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
     /// @param addressesProvider The address of the pool addresses provider.
     /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
     constructor(address addressesProvider, uint8 eModeCategoryId) MorphoStorage(addressesProvider, eModeCategoryId) {}
