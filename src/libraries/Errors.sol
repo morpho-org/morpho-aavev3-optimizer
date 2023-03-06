@@ -9,10 +9,14 @@ library Errors {
     error MarketNotCreated();
     error MarketAlreadyCreated();
     error MarketIsNotListedOnAave();
+    error MarketLtTooLow();
     error SiloedBorrowMarket();
 
     error AddressIsZero();
     error AmountIsZero();
+    error DebtIsZero();
+    error SupplyIsZero();
+    error CollateralIsZero();
     error PermissionDenied();
 
     error SupplyIsPaused();

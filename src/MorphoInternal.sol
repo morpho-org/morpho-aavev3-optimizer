@@ -72,6 +72,9 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.ReserveData memory reserve = _POOL.getReserveData(underlying);
         if (!reserve.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
         if (reserve.configuration.getSiloedBorrowing()) revert Errors.SiloedBorrowMarket();
+        if (reserve.configuration.getLiquidationThreshold() < Constants.LT_LOWER_BOUND) {
+            revert Errors.MarketLtTooLow();
+        }
 
         Types.Market storage market = _market[underlying];
 
@@ -282,8 +285,13 @@ abstract contract MorphoInternal is MorphoStorage {
             _assetLiquidityData(underlying, vars);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
-        uint256 collateral = (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex))
+        uint256 rawCollateral = (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex))
             * underlyingPrice / tokenUnit;
+
+        // Morpho has a slightly different method of health factor calculation from the underlying pool.
+        // This method is used to account for a potential rounding error in calculateUserAccountData, see https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/libraries/logic/GenericLogic.sol#L64-L196
+        // To resolve this, Morpho reduces the collateral value by a small amount.
+        uint256 collateral = ((Constants.LT_LOWER_BOUND - 1) * rawCollateral) / Constants.LT_LOWER_BOUND;
 
         borrowable = collateral.percentMulDown(ltv);
         maxDebt = collateral.percentMulDown(liquidationThreshold);
@@ -474,60 +482,6 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.LiquidityData memory liquidityData = _liquidityData(user);
 
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
-    }
-
-    /// @dev Calculates the amount to seize during a liquidation process.
-    /// @param underlyingBorrowed The address of the underlying borrowed asset.
-    /// @param underlyingCollateral The address of the underlying collateral asset.
-    /// @param maxToRepay The maximum amount of `underlyingBorrowed` to repay.
-    /// @param borrower The address of the borrower being liquidated.
-    /// @param poolSupplyIndex The current pool supply index of the `underlyingCollateral` market.
-    /// @return amountToRepay The amount of `underlyingBorrowed` to repay.
-    /// @return amountToSeize The amount of `underlyingCollateral` to seize.
-    function _calculateAmountToSeize(
-        address underlyingBorrowed,
-        address underlyingCollateral,
-        uint256 maxToRepay,
-        address borrower,
-        uint256 poolSupplyIndex
-    ) internal view returns (uint256 amountToRepay, uint256 amountToSeize) {
-        Types.AmountToSeizeVars memory vars;
-        DataTypes.ReserveConfigurationMap memory borrowedConfig = _POOL.getConfiguration(underlyingBorrowed);
-        DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(underlyingCollateral);
-
-        DataTypes.EModeCategory memory eModeCategory;
-        if (_E_MODE_CATEGORY_ID != 0) eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
-
-        bool collateralIsInEMode = _isInEModeCategory(collateralConfig);
-        vars.liquidationBonus =
-            collateralIsInEMode ? eModeCategory.liquidationBonus : collateralConfig.getLiquidationBonus();
-
-        IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
-        vars.borrowedPrice =
-            _getAssetPrice(underlyingBorrowed, oracle, _isInEModeCategory(borrowedConfig), eModeCategory.priceSource);
-        vars.collateralPrice =
-            _getAssetPrice(underlyingCollateral, oracle, collateralIsInEMode, eModeCategory.priceSource);
-
-        unchecked {
-            vars.borrowedTokenUnit = 10 ** borrowedConfig.getDecimals();
-            vars.collateralTokenUnit = 10 ** collateralConfig.getDecimals();
-        }
-
-        amountToRepay = maxToRepay;
-        amountToSeize = (
-            (amountToRepay * vars.borrowedPrice * vars.collateralTokenUnit)
-                / (vars.borrowedTokenUnit * vars.collateralPrice)
-        ).percentMul(vars.liquidationBonus);
-
-        uint256 collateralBalance = _getUserCollateralBalanceFromIndex(underlyingCollateral, borrower, poolSupplyIndex);
-
-        if (amountToSeize > collateralBalance) {
-            amountToSeize = collateralBalance;
-            amountToRepay = (
-                (collateralBalance * vars.collateralPrice * vars.borrowedTokenUnit)
-                    / (vars.borrowedPrice * vars.collateralTokenUnit)
-            ).percentDiv(vars.liquidationBonus);
-        }
     }
 
     /// @dev Returns the underlying price of a given asset or the price of the e-mode price source if the asset is in the e-mode category.
