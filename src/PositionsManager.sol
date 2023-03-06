@@ -140,7 +140,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes), amount);
 
-        if (amount == 0) revert Errors.AmountIsZero();
+        if (amount == 0) revert Errors.DebtIsZero();
 
         ERC20Permit2(underlying).transferFrom2(repayer, address(this), amount);
 
@@ -172,7 +172,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes), amount);
 
-        if (amount == 0) revert Errors.AmountIsZero();
+        if (amount == 0) revert Errors.SupplyIsZero();
 
         Types.BorrowWithdrawVars memory vars = _executeWithdraw(
             underlying, amount, supplier, receiver, Math.max(_defaultIterations.withdraw, maxIterations), indexes
@@ -202,12 +202,12 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         uint256 poolSupplyIndex = indexes.supply.poolIndex;
         amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, poolSupplyIndex), amount);
 
-        if (amount == 0) revert Errors.AmountIsZero();
+        if (amount == 0) revert Errors.CollateralIsZero();
 
         _executeWithdrawCollateral(underlying, amount, supplier, receiver, poolSupplyIndex);
 
         // The following check requires accounting to have been performed.
-        if (_getUserHealthFactor(supplier) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+        if (_getUserHealthFactor(supplier) < Constants.DEFAULT_LIQUIDATION_MAX_HF) {
             revert Errors.UnauthorizedWithdraw();
         }
 
@@ -245,11 +245,15 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
             amount
         );
 
+        // If the check is done later, it is ambiguous whether debt is truly zero or whether there's not enough collateral to cover for 1 dust of debt.
+        if (amount == 0) revert Errors.DebtIsZero();
+
         (amount, vars.seized) = _calculateAmountToSeize(
             underlyingBorrowed, underlyingCollateral, amount, borrower, collateralIndexes.supply.poolIndex
         );
 
-        if (amount == 0 || vars.seized == 0) revert Errors.AmountIsZero();
+        if (vars.seized == 0) revert Errors.CollateralIsZero();
+        if (amount == 0) revert Errors.DebtIsZero(); // `amount` could still be zero because there's not enough collateral to cover for 1 dust of debt.
 
         ERC20Permit2(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
 

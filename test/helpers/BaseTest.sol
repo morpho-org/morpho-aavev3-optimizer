@@ -6,6 +6,7 @@ import {Events} from "src/libraries/Events.sol";
 import {Errors} from "src/libraries/Errors.sol";
 import {Constants} from "src/libraries/Constants.sol";
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
