@@ -9,7 +9,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
 
-    uint256 internal constant MIN_HF = 1e14;
+    uint256 internal constant MIN_HF = 1e15;
 
     struct LiquidateTest {
         uint256 collateralBalanceBefore;
@@ -26,7 +26,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     ) public {
         borrower = _boundAddressNotZero(borrower);
         toRepay = bound(toRepay, 1, type(uint256).max);
-        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentAdd(1), type(uint72).max);
+        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentAdd(10), type(uint72).max);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -57,8 +57,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         toRepay = bound(toRepay, 1, type(uint256).max);
         healthFactor = bound(
             healthFactor,
-            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
-            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(10),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(10)
         );
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
@@ -93,8 +93,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         indexShift = bound(indexShift, 1, borrowableUnderlyings.length - 1);
         healthFactor = bound(
             healthFactor,
-            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
-            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(10),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(10)
         );
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
@@ -127,8 +127,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(
             healthFactor,
-            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
-            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(10),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(10)
         );
 
         LiquidateTest memory test;
@@ -171,8 +171,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         toRepay = bound(toRepay, 1, type(uint256).max);
         healthFactor = bound(
             healthFactor,
-            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
-            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(10),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(10)
         );
 
         oracleSentinel.setLiquidationAllowed(false);
@@ -244,8 +244,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(
             healthFactor,
-            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
-            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(10),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(10)
         );
 
         LiquidateTest memory test;
@@ -289,8 +289,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(
             healthFactor,
-            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
-            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(10),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(10)
         );
 
         LiquidateTest memory test;
