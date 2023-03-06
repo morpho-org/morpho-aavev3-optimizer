@@ -91,7 +91,6 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     /// @notice Sets the `underlying` asset as `isCollateral` on Morpho, and updates Morpho's collateral status on pool if `isCollateral` is true.
-    /// @dev If the asset is set as collateral, the behavior is propagated to the pool.
     function setAssetIsCollateral(address underlying, bool isCollateral)
         external
         onlyOwner
