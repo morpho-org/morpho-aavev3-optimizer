@@ -6,13 +6,15 @@ import {MarketLib} from "src/libraries/MarketLib.sol";
 import "test/helpers/ForkTest.sol";
 
 contract TestUnitMarketLibIdle is ForkTest {
+    using ReserveDataLib for DataTypes.ReserveData;
+    using ReserveDataTestLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using MarketLib for Types.Market;
     using Math for uint256;
 
     Types.Market internal market;
     uint256 internal daiTokenUnit;
-    uint256 internal constant MAX_AMOUNT = 10_000_000;
+    uint256 internal constant MAX_AMOUNT = 100_000_000;
 
     function setUp() public virtual override {
         super.setUp();
@@ -39,13 +41,24 @@ contract TestUnitMarketLibIdle is ForkTest {
         public
     {
         // Set the supply gap to always be at least 1 underlying unit even if rounded down
-        supplyGap = _setSupplyGap(dai, bound(supplyGap, 2 * daiTokenUnit, MAX_AMOUNT * daiTokenUnit));
-        amount = bound(amount, daiTokenUnit, supplyGap);
+        supplyGap = bound(supplyGap, daiTokenUnit, MAX_AMOUNT * daiTokenUnit);
 
         DataTypes.ReserveData memory reserve = pool.getReserveData(dai);
+        uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(dai);
+        uint256 poolBorrowIndex = pool.getReserveNormalizedVariableDebt(dai);
 
-        _market.indexes.supply.poolIndex = uint128(pool.getReserveNormalizedIncome(dai));
-        _market.indexes.borrow.poolIndex = uint128(pool.getReserveNormalizedVariableDebt(dai));
+        poolAdmin.setSupplyCap(
+            dai,
+            (reserve.totalSupplyToCap(poolSupplyIndex, poolBorrowIndex) + supplyGap).divUp(
+                10 ** reserve.configuration.getDecimals()
+            )
+        );
+
+        supplyGap = reserve.supplyGap(poolSupplyIndex, poolBorrowIndex);
+        amount = bound(amount, daiTokenUnit, supplyGap);
+
+        _market.indexes.supply.poolIndex = uint128(poolSupplyIndex);
+        _market.indexes.borrow.poolIndex = uint128(poolBorrowIndex);
         _market.aToken = reserve.aTokenAddress;
         _market.idleSupply = bound(_market.idleSupply, 0, MAX_AMOUNT * daiTokenUnit);
 
@@ -62,11 +75,21 @@ contract TestUnitMarketLibIdle is ForkTest {
     function testIncreaseIdleWhenSupplyGapIsSmaller(Types.Market memory _market, uint256 amount, uint256 supplyGap)
         public
     {
-        supplyGap = _setSupplyGap(dai, bound(supplyGap, daiTokenUnit, MAX_AMOUNT * daiTokenUnit));
-        // Adding 2 ensures that the amount is greater than the supply cap after rounding down.
-        amount = bound(amount, supplyGap + 2, MAX_AMOUNT * daiTokenUnit);
+        supplyGap = bound(supplyGap, daiTokenUnit, MAX_AMOUNT * daiTokenUnit);
 
         DataTypes.ReserveData memory reserve = pool.getReserveData(dai);
+        uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(dai);
+        uint256 poolBorrowIndex = pool.getReserveNormalizedVariableDebt(dai);
+
+        poolAdmin.setSupplyCap(
+            dai,
+            (reserve.totalSupplyToCap(poolSupplyIndex, poolBorrowIndex) + supplyGap)
+                / (10 ** reserve.configuration.getDecimals())
+        );
+
+        supplyGap = reserve.supplyGap(poolSupplyIndex, poolBorrowIndex);
+        // Adding 2 ensures that the amount is greater than the supply cap after rounding down.
+        amount = bound(amount, supplyGap + 2, type(uint256).max);
 
         _market.indexes.supply.poolIndex = uint128(pool.getReserveNormalizedIncome(dai));
         _market.indexes.borrow.poolIndex = uint128(pool.getReserveNormalizedVariableDebt(dai));
