@@ -25,7 +25,7 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     struct UserAssetBalance {
         address asset; // The rewarded asset (either aToken or debt token).
-        uint256 balance; // The user balance of this asset (in asset decimals).
+        uint256 scaledBalance; // The user scaled balance of this asset (in asset decimals).
         uint256 scaledTotalSupply; // The scaled total supply of this asset.
     }
 
@@ -187,7 +187,7 @@ contract RewardsManager is IRewardsManager, Initializable {
                 unclaimedAmounts[j] +=
                     _localAssetData[userAssetBalances[i].asset][rewardsList[j]].usersData[user].accrued;
 
-                if (userAssetBalances[i].balance == 0) continue;
+                if (userAssetBalances[i].scaledBalance == 0) continue;
 
                 unclaimedAmounts[j] += _getPendingRewards(user, rewardsList[j], userAssetBalances[i]);
             }
@@ -308,7 +308,7 @@ contract RewardsManager is IRewardsManager, Initializable {
             _updateData(
                 user,
                 _userAssetBalances[i].asset,
-                _userAssetBalances[i].balance,
+                _userAssetBalances[i].scaledBalance,
                 _userAssetBalances[i].scaledTotalSupply
             );
         }
@@ -330,7 +330,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         for (uint256 i; i < userAssetBalancesLength; ++i) {
             unclaimedRewards += _localAssetData[_userAssetBalances[i].asset][reward].usersData[user].accrued;
 
-            if (_userAssetBalances[i].balance == 0) continue;
+            if (_userAssetBalances[i].scaledBalance == 0) continue;
 
             unclaimedRewards += _getPendingRewards(user, reward, _userAssetBalances[i]);
         }
@@ -357,7 +357,7 @@ contract RewardsManager is IRewardsManager, Initializable {
             localRewardData, _userAssetBalance.asset, reward, _userAssetBalance.scaledTotalSupply, assetUnit
         );
 
-        return _getRewards(_userAssetBalance.balance, nextIndex, localRewardData.usersData[user].index, assetUnit);
+        return _getRewards(_userAssetBalance.scaledBalance, nextIndex, localRewardData.usersData[user].index, assetUnit);
     }
 
     /// @dev Computes user's accrued rewards on a distribution.
@@ -433,10 +433,10 @@ contract RewardsManager is IRewardsManager, Initializable {
                 _MORPHO.market(IPoolToken(userAssetBalances[i].asset).UNDERLYING_ASSET_ADDRESS());
 
             if (asset == market.aToken) {
-                userAssetBalances[i].balance = _MORPHO.scaledPoolSupplyBalance(market.underlying, user)
+                userAssetBalances[i].scaledBalance = _MORPHO.scaledPoolSupplyBalance(market.underlying, user)
                     + _MORPHO.scaledCollateralBalance(market.underlying, user);
             } else if (asset == market.variableDebtToken) {
-                userAssetBalances[i].balance = _MORPHO.scaledPoolBorrowBalance(market.underlying, user);
+                userAssetBalances[i].scaledBalance = _MORPHO.scaledPoolBorrowBalance(market.underlying, user);
             } else {
                 revert InvalidAsset();
             }
