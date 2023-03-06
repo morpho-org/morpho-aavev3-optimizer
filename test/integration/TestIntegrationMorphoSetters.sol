@@ -184,9 +184,6 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlyings[0]).idleSupply, idleSupply, "idle supply after");
     }
 
-    // TODO
-    function testIncreaseP2PDeltas() public {}
-
     function testSetDefaultIterationsFailsIfNotOwner(uint128 repay, uint128 withdraw) public callNotOwner {
         Types.Iterations memory iterations = Types.Iterations(repay, withdraw);
         morpho.setDefaultIterations(iterations);
