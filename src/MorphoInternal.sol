@@ -71,6 +71,9 @@ abstract contract MorphoInternal is MorphoStorage {
 
         DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
         if (!reserveData.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
+        if (reserveData.configuration.getLiquidationThreshold() < Constants.LT_LOWER_BOUND) {
+            revert Errors.MarketLtTooLow();
+        }
 
         Types.Market storage market = _market[underlying];
 
@@ -281,8 +284,13 @@ abstract contract MorphoInternal is MorphoStorage {
             _assetLiquidityData(underlying, vars);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
-        uint256 collateral = (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex))
+        uint256 rawCollateral = (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex))
             * underlyingPrice / tokenUnit;
+
+        // Morpho has a slightly different method of health factor calculation from the underlying pool.
+        // This method is used to account for a potential rounding error in calculateUserAccountData, see https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/libraries/logic/GenericLogic.sol#L64-L196
+        // To resolve this, Morpho reduces the collateral value by a small amount.
+        uint256 collateral = ((Constants.LT_LOWER_BOUND - 1) * rawCollateral) / Constants.LT_LOWER_BOUND;
 
         borrowable = collateral.percentMulDown(ltv);
         maxDebt = collateral.percentMulDown(liquidationThreshold);
