@@ -37,7 +37,7 @@ contract WETHGateway is IWETHGateway {
 
     /* CONSTRUCTOR */
 
-    /// @notice Constructs the contract.
+    /// @notice Contract constructor.
     /// @param morpho The address of the Morpho protocol.
     constructor(address morpho) {
         if (morpho == address(0)) revert AddressIsZero();

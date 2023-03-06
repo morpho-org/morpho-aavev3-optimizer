@@ -66,6 +66,9 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /// @dev Whether claiming rewards is paused or not.
     bool internal _isClaimRewardsPaused;
 
+    /* CONSTRUCTOR */
+
+    /// @notice Contract constructor.
     /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
     /// @param addressesProvider The address of the pool addresses provider.
     /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
