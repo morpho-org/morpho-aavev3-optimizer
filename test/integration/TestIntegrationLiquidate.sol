@@ -26,7 +26,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     ) public {
         borrower = _boundAddressNotZero(borrower);
         toRepay = bound(toRepay, 1, type(uint256).max);
-        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentAdd(1), type(uint96).max);
+        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentAdd(1), type(uint72).max);
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
             for (uint256 borrowedIndex; borrowedIndex < borrowableUnderlyings.length; ++borrowedIndex) {
@@ -333,7 +333,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, MIN_HF, type(uint96).max);
+        healthFactor = bound(healthFactor, MIN_HF, type(uint72).max);
 
         LiquidateTest memory test;
 
@@ -527,13 +527,12 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
         _promoteBorrow(promoter1, borrowedMarket, borrowed.wadMul(promotionFactor));
 
+        uint256 newScaledCollateralBalance = morpho.scaledCollateralBalance(collateralMarket.underlying, borrower)
+            .rayMul((collateralMarket.ltv - 10).rayDiv(collateralMarket.lt)).wadMul(healthFactor);
+
         stdstore.target(address(morpho)).sig("scaledCollateralBalance(address,address)").with_key(
             collateralMarket.underlying
-        ).with_key(borrower).checked_write(
-            morpho.scaledCollateralBalance(collateralMarket.underlying, borrower).rayMul(
-                (collateralMarket.ltv - 1).rayDiv(collateralMarket.lt)
-            ).wadMul(healthFactor)
-        );
+        ).with_key(borrower).checked_write(newScaledCollateralBalance);
 
         borrowBalance = morpho.borrowBalance(borrowedMarket.underlying, borrower);
         collateralBalance = morpho.collateralBalance(collateralMarket.underlying, borrower);
