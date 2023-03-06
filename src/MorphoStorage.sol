@@ -36,19 +36,19 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /// @dev The markets data.
     mapping(address => Types.Market) internal _market;
 
-    /// @dev The market balances data.
+    /// @dev The markets balances data.
     mapping(address => Types.MarketBalances) internal _marketBalances;
 
-    /// @dev The collateral markets entered by a user.
+    /// @dev The collateral markets entered by users.
     mapping(address => EnumerableSet.AddressSet) internal _userCollaterals;
 
-    /// @dev The borrow markets entered by a user.
+    /// @dev The borrow markets entered by users.
     mapping(address => EnumerableSet.AddressSet) internal _userBorrows;
 
-    /// @dev Whether a user is allowed to borrow or withdraw on behalf of another user. delegator => manager => isManaging
+    /// @dev Users allowances to manage other users' accounts. delegator => manager => isManaging
     mapping(address => mapping(address => bool)) internal _isManaging;
 
-    /// @dev The nonce of a user. Used to prevent replay attacks with EIP-712 signatures.
+    /// @dev The nonce of users. Used to prevent replay attacks with EIP-712 signatures.
     mapping(address => uint256) internal _userNonce;
 
     /// @dev The default iterations values to use in the matching process.

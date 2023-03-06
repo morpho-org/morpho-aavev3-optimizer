@@ -27,7 +27,7 @@ library Constants {
     /// @dev The health factor below which the positions can be liquidated.
     uint256 internal constant DEFAULT_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
 
-    /// @dev The health factor below which the positions can be liquidated, whether or not the price oracle sentinel allows the liquidation.
+    /// @dev The health factor below which the positions can always be liquidated, whether or not the price oracle sentinel allows the liquidation.
     uint256 internal constant MIN_LIQUIDATION_THRESHOLD = 0.95e18;
 
     /// @dev The prefix used for EIP-712 signature.

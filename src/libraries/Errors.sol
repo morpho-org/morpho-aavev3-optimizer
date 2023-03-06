@@ -63,7 +63,7 @@ library Errors {
     /// @notice Thrown when the oracle sentinel is set but the borrow is not enabled.
     error SentinelBorrowNotEnabled();
 
-    /// @notice Thrown when borrowing an asset in an e-mode not consistent with Morpho.
+    /// @notice Thrown when borrowing an asset that is not in Morpho's e-mode category.
     error InconsistentEMode();
 
     /// @notice Thrown when a borrow would leave the user undercollateralized.
