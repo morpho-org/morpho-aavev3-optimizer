@@ -23,9 +23,11 @@ contract TestInternalMorphoInternal is InternalTest {
     using LogarithmicBuckets for LogarithmicBuckets.Buckets;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using Math for uint256;
 
     uint256 internal constant MIN_INDEX = WadRayMath.RAY;
     uint256 internal constant MAX_INDEX = 100 * WadRayMath.RAY;
+    uint256 internal constant MAX_DAI_AMOUNT = 10_000_000 ether; // $10m dollars worth
 
     function setUp() public virtual override {
         super.setUp();
@@ -70,6 +72,83 @@ contract TestInternalMorphoInternal is InternalTest {
         _marketsCreated.push(underlying);
 
         ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
+    }
+
+    function testIncreaseP2PDeltasRevertsIfAmountIsZero(
+        uint256 p2pSupplyTotal,
+        uint256 p2pBorrowTotal,
+        uint256 supplyDelta,
+        uint256 borrowDelta
+    ) public {
+        p2pSupplyTotal = bound(p2pSupplyTotal, 0, MAX_DAI_AMOUNT);
+        p2pBorrowTotal = bound(p2pBorrowTotal, 0, MAX_DAI_AMOUNT);
+        supplyDelta = bound(supplyDelta, 0, p2pSupplyTotal);
+        borrowDelta = bound(borrowDelta, 0, p2pBorrowTotal);
+
+        address underlying = dai;
+        Types.Market storage market = _market[underlying];
+        Types.Deltas storage deltas = market.deltas;
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+
+        deltas.supply.scaledDelta = supplyDelta.rayDivUp(indexes.supply.p2pIndex);
+        deltas.borrow.scaledDelta = borrowDelta.rayDivUp(indexes.borrow.p2pIndex);
+        deltas.supply.scaledP2PTotal = p2pSupplyTotal.rayDivDown(indexes.supply.p2pIndex);
+        deltas.borrow.scaledP2PTotal = p2pBorrowTotal.rayDivDown(indexes.borrow.p2pIndex);
+
+        uint256 amount = 0;
+
+        vm.expectRevert(Errors.AmountIsZero.selector);
+        this.increaseP2PDeltasTest(underlying, amount);
+    }
+
+    function testIncreaseP2PDeltas(
+        uint256 p2pSupplyTotal,
+        uint256 p2pBorrowTotal,
+        uint256 supplyDelta,
+        uint256 borrowDelta,
+        uint256 amount
+    ) public {
+        p2pSupplyTotal = bound(p2pSupplyTotal, 0, MAX_DAI_AMOUNT);
+        p2pBorrowTotal = bound(p2pBorrowTotal, 0, MAX_DAI_AMOUNT);
+        supplyDelta = bound(supplyDelta, 0, p2pSupplyTotal);
+        borrowDelta = bound(borrowDelta, 0, p2pBorrowTotal);
+        amount = bound(amount, 0, MAX_DAI_AMOUNT);
+
+        _POOL.supplyToPool(dai, amount * 2);
+
+        address underlying = dai;
+        Types.Market storage market = _market[underlying];
+        Types.Deltas storage deltas = market.deltas;
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+
+        deltas.supply.scaledDelta = supplyDelta.rayDivUp(indexes.supply.p2pIndex);
+        deltas.borrow.scaledDelta = borrowDelta.rayDivUp(indexes.borrow.p2pIndex);
+        deltas.supply.scaledP2PTotal = p2pSupplyTotal.rayDivDown(indexes.supply.p2pIndex);
+        deltas.borrow.scaledP2PTotal = p2pBorrowTotal.rayDivDown(indexes.borrow.p2pIndex);
+
+        uint256 expectedAmount = Math.min(
+            amount,
+            Math.min(
+                deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                    deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
+                ),
+                deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+                    deltas.borrow.scaledDelta.rayMul(indexes.borrow.poolIndex)
+                )
+            )
+        );
+        vm.assume(expectedAmount > 0);
+
+        uint256 newExpectedSupplyDelta = deltas.supply.scaledDelta + expectedAmount.rayDiv(indexes.supply.poolIndex);
+        uint256 newExpectedBorrowDelta = deltas.borrow.scaledDelta + expectedAmount.rayDiv(indexes.borrow.poolIndex);
+
+        vm.expectEmit(true, true, true, true);
+        emit Events.P2PSupplyDeltaUpdated(underlying, newExpectedSupplyDelta);
+        vm.expectEmit(true, true, true, true);
+        emit Events.P2PBorrowDeltaUpdated(underlying, newExpectedBorrowDelta);
+        vm.expectEmit(true, true, true, true);
+        emit Events.P2PDeltasIncreased(underlying, expectedAmount);
+        this.increaseP2PDeltasTest(underlying, amount);
     }
 
     // More detailed index tests to be in InterestRatesLib tests
@@ -524,5 +603,9 @@ contract TestInternalMorphoInternal is InternalTest {
     function testApproveManager(address owner, address manager, bool isAllowed) public {
         _approveManager(owner, manager, isAllowed);
         assertEq(_isManaging[owner][manager], isAllowed);
+    }
+
+    function increaseP2PDeltasTest(address underlying, uint256 amount) external {
+        _increaseP2PDeltas(underlying, amount);
     }
 }
