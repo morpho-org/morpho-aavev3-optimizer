@@ -16,6 +16,7 @@ contract TestIntegrationFee is IntegrationTest {
     function testRepayFeeWithReserveFactorIsZero(uint256 amount) public {
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
+
             TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
             morpho.setReserveFactor(market.underlying, 0);
 
@@ -111,6 +112,7 @@ contract TestIntegrationFee is IntegrationTest {
     {
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
             _revert();
+
             TestMarket storage testMarket = testMarkets[borrowableUnderlyings[marketIndex]];
             reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
             morpho.setReserveFactor(testMarket.underlying, reserveFactor);
