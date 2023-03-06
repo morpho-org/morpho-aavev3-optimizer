@@ -586,17 +586,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 poolSupplyIndex
     ) internal view returns (uint256 amountToRepay, uint256 amountToSeize) {
         Types.AmountToSeizeVars memory vars;
-        DataTypes.ReserveConfigurationMap memory borrowedConfig = _POOL.getConfiguration(underlyingBorrowed);
-        DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(underlyingCollateral);
+        DataTypes.ReserveConfigurationMap memory borrowedConfig = _pool.getConfiguration(underlyingBorrowed);
+        DataTypes.ReserveConfigurationMap memory collateralConfig = _pool.getConfiguration(underlyingCollateral);
 
         DataTypes.EModeCategory memory eModeCategory;
-        if (_E_MODE_CATEGORY_ID != 0) eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
+        if (_eModeCategoryId != 0) eModeCategory = _pool.getEModeCategoryData(_eModeCategoryId);
 
         bool collateralIsInEMode = _isInEModeCategory(collateralConfig);
         vars.liquidationBonus =
             collateralIsInEMode ? eModeCategory.liquidationBonus : collateralConfig.getLiquidationBonus();
 
-        IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
+        IAaveOracle oracle = IAaveOracle(_addressesProvider.getPriceOracle());
         vars.borrowedPrice =
             _getAssetPrice(underlyingBorrowed, oracle, _isInEModeCategory(borrowedConfig), eModeCategory.priceSource);
         vars.collateralPrice =
