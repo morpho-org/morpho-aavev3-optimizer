@@ -231,8 +231,10 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         );
 
         _userCollaterals[borrower].add(underlying);
-        _marketBalances[underlying].collateral[borrower] =
-            healthFactor.percentDivUp(pool.getConfiguration(underlying).getLiquidationThreshold());
+        uint256 collateral = healthFactor.percentDivDown(pool.getConfiguration(underlying).getLiquidationThreshold());
+        uint256 rawCollateral = (Constants.LT_LOWER_BOUND * collateral) / (Constants.LT_LOWER_BOUND - 1);
+
+        _marketBalances[underlying].collateral[borrower] = rawCollateral;
 
         _userBorrows[borrower].add(underlying);
         _updateBorrowerInDS(underlying, borrower, 1 ether, 0, true);
@@ -240,8 +242,11 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testAuthorizeLiquidateShouldRevertIfSentinelDisallows(address borrower, uint256 healthFactor) public {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor =
-            bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MIN_HF, Constants.DEFAULT_LIQUIDATION_MAX_HF - 1);
+        healthFactor = bound(
+            healthFactor,
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
+        );
 
         _setHealthFactor(borrower, dai, healthFactor);
 
@@ -253,7 +258,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testAuthorizeLiquidateShouldRevertIfBorrowerHealthy(address borrower, uint256 healthFactor) public {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF + 1, type(uint128).max);
+        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentAdd(1), type(uint128).max);
 
         _setHealthFactor(borrower, dai, healthFactor);
 
@@ -265,7 +270,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         public
     {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, 0, Constants.DEFAULT_LIQUIDATION_MIN_HF);
+        healthFactor = bound(healthFactor, 0, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(1));
 
         _setHealthFactor(borrower, dai, healthFactor);
 
@@ -278,8 +283,11 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor =
-            bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MIN_HF + 1, Constants.DEFAULT_LIQUIDATION_MAX_HF - 1);
+        healthFactor = bound(
+            healthFactor,
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
+        );
 
         _setHealthFactor(borrower, dai, healthFactor);
 

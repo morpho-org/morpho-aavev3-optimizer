@@ -507,7 +507,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         ).with_key(borrower).checked_write(
             morpho.scaledCollateralBalance(collateralMarket.underlying, borrower).percentSub(
                 collateralMarket.ltv.percentDiv(collateralMarket.lt)
-            )
+            ) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 3)
         );
 
         borrowBalance = morpho.borrowBalance(borrowedMarket.underlying, borrower);
