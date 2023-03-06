@@ -141,28 +141,35 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
             test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
-            test.withdrawn = user.withdrawCollateral(market.underlying, amount, onBehalf, receiver);
-
-            assertEq(test.withdrawn, 0, "withdrawn != 0");
-            assertEq(ERC20(market.underlying).balanceOf(receiver), test.balanceBefore, "balanceAfter != balanceBefore");
+            vm.expectRevert(Errors.CollateralIsZero.selector);
+            user.withdrawCollateral(market.underlying, amount, onBehalf, receiver);
         }
     }
 
-    function testShouldUpdateIndexesAfterWithdrawCollateral(uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
+    function testShouldUpdateIndexesAfterWithdrawCollateral(uint256 blocks, uint256 amount, address onBehalf) public {
+        blocks = _boundBlocks(blocks);
         onBehalf = _boundOnBehalf(onBehalf);
+
+        _prepareOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
 
             TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
+            amount = _boundSupply(market, amount);
+
+            user.approve(market.underlying, amount);
+            user.supplyCollateral(market.underlying, amount, onBehalf);
+
+            _forward(blocks);
+
             Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
 
             vm.expectEmit(true, true, true, false, address(morpho));
             emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
 
-            user.withdrawCollateral(market.underlying, amount);
+            user.withdrawCollateral(market.underlying, amount, onBehalf);
 
             _assertMarketUpdatedIndexes(morpho.market(market.underlying), futureIndexes);
         }
@@ -271,7 +278,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             amount = _boundSupply(market, amount);
 
             user.approve(market.underlying, amount);
-            user.supplyCollateral(market.underlying, amount);
+            user.supplyCollateral(market.underlying, amount, onBehalf);
 
             morpho.setIsPausedForAllMarkets(true);
             morpho.setIsWithdrawCollateralPaused(market.underlying, false);

@@ -186,7 +186,9 @@ contract TestInternalMorphoInternal is InternalTest {
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateSupplierInDS(dai, user, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateSupplierInDS(dai, user, onPool, inP2P, head);
+        assertEq(newOnPool, onPool, "onPool");
+        assertEq(newInP2P, inP2P, "inP2P");
         _assertMarketBalances(marketBalances, user, onPool, inP2P, 0, 0, 0);
     }
 
@@ -196,7 +198,9 @@ contract TestInternalMorphoInternal is InternalTest {
         inP2P = bound(inP2P, 0, Constants.DUST_THRESHOLD);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateSupplierInDS(dai, user, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateSupplierInDS(dai, user, onPool, inP2P, head);
+        assertEq(newOnPool, 0, "onPool");
+        assertEq(newInP2P, 0, "inP2P");
         _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
     }
 
@@ -206,7 +210,9 @@ contract TestInternalMorphoInternal is InternalTest {
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateBorrowerInDS(dai, user, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateBorrowerInDS(dai, user, onPool, inP2P, head);
+        assertEq(newOnPool, onPool, "onPool");
+        assertEq(newInP2P, inP2P, "inP2P");
         _assertMarketBalances(marketBalances, user, 0, 0, onPool, inP2P, 0);
         assertTrue(_userBorrows[user].contains(dai), "userBorrow");
     }
@@ -217,7 +223,9 @@ contract TestInternalMorphoInternal is InternalTest {
         inP2P = bound(inP2P, 0, Constants.DUST_THRESHOLD);
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
-        _updateBorrowerInDS(dai, user, onPool, inP2P, head);
+        (uint256 newOnPool, uint256 newInP2P) = _updateBorrowerInDS(dai, user, onPool, inP2P, head);
+        assertEq(newOnPool, 0, "onPool");
+        assertEq(newInP2P, 0, "inP2P");
         _assertMarketBalances(marketBalances, user, 0, 0, 0, 0, 0);
         assertFalse(_userBorrows[user].contains(dai), "userBorrow");
     }
@@ -516,65 +524,5 @@ contract TestInternalMorphoInternal is InternalTest {
     function testApproveManager(address owner, address manager, bool isAllowed) public {
         _approveManager(owner, manager, isAllowed);
         assertEq(_isManaging[owner][manager], isAllowed);
-    }
-
-    struct TestSeizeVars {
-        uint256 amountToSeize;
-        uint256 amountToLiquidate;
-    }
-
-    function testCalculateAmountToSeize(uint256 maxToLiquidate, uint256 collateralAmount) public {
-        Types.AmountToSeizeVars memory vars;
-        maxToLiquidate = bound(maxToLiquidate, 0, 1_000_000 ether);
-        collateralAmount = bound(collateralAmount, 0, 1_000_000 ether);
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
-
-        _marketBalances[dai].collateral[address(1)] = collateralAmount.rayDivUp(indexes.supply.poolIndex);
-
-        DataTypes.ReserveConfigurationMap memory borrowConfig = _POOL.getConfiguration(wbtc);
-        DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(dai);
-        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
-
-        (,,, vars.borrowedTokenUnit,,) = borrowConfig.getParams();
-        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = collateralConfig.getParams();
-
-        bool isInCollateralEMode =
-            _E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == collateralConfig.getEModeCategory();
-        vars.borrowedPrice = _getAssetPrice(
-            wbtc,
-            oracle,
-            _E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == borrowConfig.getEModeCategory(),
-            eModeCategory.priceSource
-        );
-        vars.collateralPrice = _getAssetPrice(dai, oracle, isInCollateralEMode, eModeCategory.priceSource);
-
-        if (isInCollateralEMode) vars.liquidationBonus = eModeCategory.liquidationBonus;
-
-        vars.borrowedTokenUnit = 10 ** vars.borrowedTokenUnit;
-        vars.collateralTokenUnit = 10 ** vars.collateralTokenUnit;
-
-        TestSeizeVars memory expected;
-        TestSeizeVars memory actual;
-
-        expected.amountToSeize = Math.min(
-            (
-                (maxToLiquidate * vars.borrowedPrice * vars.collateralTokenUnit)
-                    / (vars.borrowedTokenUnit * vars.collateralPrice)
-            ).percentMul(vars.liquidationBonus),
-            collateralAmount
-        );
-        expected.amountToLiquidate = Math.min(
-            maxToLiquidate,
-            (
-                (collateralAmount * vars.collateralPrice * vars.borrowedTokenUnit)
-                    / (vars.borrowedPrice * vars.collateralTokenUnit)
-            ).percentDiv(vars.liquidationBonus)
-        );
-
-        (actual.amountToLiquidate, actual.amountToSeize) =
-            _calculateAmountToSeize(wbtc, dai, maxToLiquidate, address(1), indexes.supply.poolIndex);
-
-        assertApproxEqAbs(actual.amountToSeize, expected.amountToSeize, 1, "amount to seize not equal");
-        assertApproxEqAbs(actual.amountToLiquidate, expected.amountToLiquidate, 1, "amount to liquidate not equal");
     }
 }
