@@ -48,12 +48,13 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testShouldNotSeizeCollateralOfUserNotOnCollateralMarket(
         address borrower,
         uint256 borrowed,
-        uint256 promoted,
+        uint256 promotionFactor,
         uint256 toRepay,
         uint256 indexShift,
         uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
+        promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         indexShift = bound(indexShift, 1, collateralUnderlyings.length - 1);
         toRepay = bound(toRepay, 1, type(uint256).max);
         healthFactor = bound(
@@ -69,7 +70,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                uint256 promotionFactor = bound(promoted, 0, WadRayMath.WAD);
                 _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
@@ -86,12 +86,13 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testShouldNotLiquidateUserNotInBorrowMarket(
         address borrower,
         uint256 borrowed,
-        uint256 promoted,
+        uint256 promotionFactor,
         uint256 toRepay,
         uint256 indexShift,
         uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
+        promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         toRepay = bound(toRepay, 1, type(uint256).max);
         indexShift = bound(indexShift, 1, borrowableUnderlyings.length - 1);
         healthFactor = bound(
@@ -107,7 +108,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                uint256 promotionFactor = bound(promoted, 0, WadRayMath.WAD);
                 _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
@@ -124,11 +124,12 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testLiquidateUnhealthyUserWhenSentinelAllows(
         address borrower,
         uint256 borrowed,
-        uint256 promoted,
+        uint256 promotionFactor,
         uint256 toRepay,
         uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
+        promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         healthFactor = bound(
             healthFactor,
             Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(10),
@@ -146,7 +147,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                uint256 promotionFactor = bound(promoted, 0, WadRayMath.WAD);
                 toRepay = bound(toRepay, borrowedMarket.minAmount, type(uint256).max);
 
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
@@ -170,11 +170,12 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testShouldNotLiquidateUnhealthyUserWhenSentinelDisallows(
         address borrower,
         uint256 borrowed,
-        uint256 promoted,
+        uint256 promotionFactor,
         uint256 toRepay,
         uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
+        promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         toRepay = bound(toRepay, 1, type(uint256).max);
         healthFactor = bound(
             healthFactor,
@@ -193,7 +194,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                uint256 promotionFactor = bound(promoted, 0, WadRayMath.WAD);
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
                     _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
 
@@ -206,11 +206,12 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testFullLiquidateUnhealthyUserWhenSentinelDisallowsButHealthFactorVeryLow(
         address borrower,
         uint256 borrowed,
-        uint256 promoted,
+        uint256 promotionFactor,
         uint256 toRepay,
         uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
+        promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         healthFactor = bound(healthFactor, MIN_HF, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(1));
 
         oracleSentinel.setLiquidationAllowed(false);
@@ -224,7 +225,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                uint256 promotionFactor = bound(promoted, 0, WadRayMath.WAD);
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
                     _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
                 toRepay = bound(toRepay, test.borrowedBalanceBefore, type(uint256).max);
@@ -338,11 +338,12 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testFullLiquidateAnyUserOnDeprecatedMarket(
         address borrower,
         uint256 borrowed,
-        uint256 promoted,
+        uint256 promotionFactor,
         uint256 toRepay,
         uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
+        promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         healthFactor = bound(healthFactor, MIN_HF, type(uint72).max);
 
         LiquidateTest memory test;
@@ -354,7 +355,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                uint256 promotionFactor = bound(promoted, 0, WadRayMath.WAD);
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
                     _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
                 toRepay = bound(toRepay, test.borrowedBalanceBefore, type(uint256).max);
