@@ -27,7 +27,6 @@ contract TestInternalMorphoInternal is InternalTest {
 
     uint256 internal constant MIN_INDEX = WadRayMath.RAY;
     uint256 internal constant MAX_INDEX = 100 * WadRayMath.RAY;
-    uint256 internal constant MAX_DAI_AMOUNT = 10_000_000 ether; // $10m dollars worth
 
     function setUp() public virtual override {
         super.setUp();
@@ -80,8 +79,8 @@ contract TestInternalMorphoInternal is InternalTest {
         uint256 supplyDelta,
         uint256 borrowDelta
     ) public {
-        p2pSupplyTotal = bound(p2pSupplyTotal, 0, MAX_DAI_AMOUNT);
-        p2pBorrowTotal = bound(p2pBorrowTotal, 0, MAX_DAI_AMOUNT);
+        p2pSupplyTotal = _boundAmount(p2pSupplyTotal);
+        p2pBorrowTotal = _boundAmount(p2pBorrowTotal);
         supplyDelta = bound(supplyDelta, 0, p2pSupplyTotal);
         borrowDelta = bound(borrowDelta, 0, p2pBorrowTotal);
 
@@ -112,7 +111,7 @@ contract TestInternalMorphoInternal is InternalTest {
         p2pBorrowTotal = _boundAmount(p2pBorrowTotal);
         supplyDelta = bound(supplyDelta, 0, p2pSupplyTotal);
         borrowDelta = bound(borrowDelta, 0, p2pBorrowTotal);
-        amount = bound(amount, 0, MAX_DAI_AMOUNT);
+        amount = bound(amount, 0, 10_000_000 ether); // $10m dollars worth
 
         _POOL.supplyToPool(dai, amount * 2);
 
