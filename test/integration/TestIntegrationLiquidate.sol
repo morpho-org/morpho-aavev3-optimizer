@@ -48,6 +48,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testShouldNotSeizeCollateralOfUserNotOnCollateralMarket(
         address borrower,
         uint256 borrowed,
+        uint256 promoted,
         uint256 toRepay,
         uint256 indexShift,
         uint256 healthFactor
@@ -68,7 +69,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, 0, healthFactor);
+                uint256 promotionFactor = bound(promoted, 0, WadRayMath.WAD);
+                _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -84,6 +86,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testShouldNotLiquidateUserNotInBorrowMarket(
         address borrower,
         uint256 borrowed,
+        uint256 promoted,
         uint256 toRepay,
         uint256 indexShift,
         uint256 healthFactor
@@ -104,7 +107,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, 0, healthFactor);
+                uint256 promotionFactor = bound(promoted, 0, WadRayMath.WAD);
+                _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -166,6 +170,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     function testShouldNotLiquidateUnhealthyUserWhenSentinelDisallows(
         address borrower,
         uint256 borrowed,
+        uint256 promoted,
         uint256 toRepay,
         uint256 healthFactor
     ) public {
@@ -188,8 +193,9 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
+                uint256 promotionFactor = bound(promoted, 0, WadRayMath.WAD);
                 (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-                    _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, 0, healthFactor);
+                    _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
 
                 vm.expectRevert(Errors.SentinelLiquidateNotEnabled.selector);
                 user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
