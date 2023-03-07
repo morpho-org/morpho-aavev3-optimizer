@@ -10,7 +10,6 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
     uint16 private constant DEFAULT_RESERVE_FACTOR = 1_000;
     uint16 private constant DEFAULT_P2P_INDEX_CURSOR = 1_000;
     address private constant DEFAULT_PRANKER = address(uint160(uint256(keccak256(abi.encode(42069)))));
-    address private constant DEFAULT_TREASURY = address(uint160(uint256(keccak256(abi.encode(1337)))));
     uint256 private constant MAX_AMOUNT = 1e20 ether;
 
     modifier callNotOwner() {
@@ -138,23 +137,27 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.claimToTreasury(underlyings, amounts);
     }
 
-    function testClaimToTreasuryDoesNothingIfMarketNotCreated(uint256 amount) public {
-        morpho.setTreasuryVault(DEFAULT_TREASURY);
+    function testClaimToTreasuryDoesNothingIfMarketNotCreated(uint256 amount, address treasury) public {
+        vm.assume(treasury != address(0));
+        morpho.setTreasuryVault(treasury);
         address[] memory underlyings = new address[](1);
         underlyings[0] = link;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = amount;
         deal(underlyings[0], address(morpho), amount);
 
-        assertEq(ERC20(underlyings[0]).balanceOf(DEFAULT_TREASURY), 0, "treasury balance before");
+        uint256 treasuryBalanceBefore = ERC20(underlyings[0]).balanceOf(treasury);
 
         morpho.claimToTreasury(underlyings, amounts);
 
         assertEq(amount, ERC20(underlyings[0]).balanceOf(address(morpho)), "morpho balance after");
-        assertEq(ERC20(underlyings[0]).balanceOf(DEFAULT_TREASURY), 0, "treasury balance after");
+        assertEq(ERC20(underlyings[0]).balanceOf(treasury), treasuryBalanceBefore, "treasury balance after");
     }
 
-    function testClaimToTreasury(uint256 seed, uint256 amount, uint256 balance, uint256 idleSupply) public {
+    function testClaimToTreasury(uint256 seed, uint256 amount, uint256 balance, uint256 idleSupply, address treasury)
+        public
+    {
+        vm.assume(treasury != address(0));
         amount = bound(amount, 0, MAX_AMOUNT);
         balance = bound(balance, 0, MAX_AMOUNT);
         idleSupply = bound(idleSupply, 0, MAX_AMOUNT);
@@ -165,7 +168,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = amount;
 
-        morpho.setTreasuryVault(DEFAULT_TREASURY);
+        morpho.setTreasuryVault(treasury);
 
         _increaseIdleSupply(promoter1, testMarkets[underlyings[0]], idleSupply);
         // There might be rounding errors in the increase of idle supply, but this test is out of scope for dealing with that
@@ -173,17 +176,19 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         idleSupply = morpho.market(underlyings[0]).idleSupply;
         balance = Math.max(balance, idleSupply);
 
+        uint256 treasuryBalanceBefore = ERC20(underlyings[0]).balanceOf(treasury);
         uint256 expectedClaimed = Math.min(amount, balance - idleSupply);
 
         deal(underlyings[0], address(morpho), balance);
 
-        assertEq(ERC20(underlyings[0]).balanceOf(DEFAULT_TREASURY), 0, "treasury balance before");
         assertEq(morpho.market(underlyings[0]).idleSupply, idleSupply, "idle supply before");
 
         morpho.claimToTreasury(underlyings, amounts);
 
         assertEq(ERC20(underlyings[0]).balanceOf(address(morpho)), balance - expectedClaimed, "morpho balance after");
-        assertEq(ERC20(underlyings[0]).balanceOf(DEFAULT_TREASURY), expectedClaimed, "treasury balance after");
+        assertEq(
+            ERC20(underlyings[0]).balanceOf(treasury), expectedClaimed + treasuryBalanceBefore, "treasury balance after"
+        );
         assertEq(morpho.market(underlyings[0]).idleSupply, idleSupply, "idle supply after");
     }
 
