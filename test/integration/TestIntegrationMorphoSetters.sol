@@ -29,6 +29,8 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
             TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             morpho.setIsBorrowPaused(market.underlying, true);
+
+            assertEq(morpho.market(market.underlying).pauseStatuses.isBorrowPaused, true);
         }
     }
 
@@ -55,6 +57,8 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
             morpho.setIsBorrowPaused(market.underlying, true);
 
             morpho.setIsDeprecated(market.underlying, isDeprecated);
+
+            assertEq(morpho.market(market.underlying).pauseStatuses.isDeprecated, isDeprecated);
         }
     }
 

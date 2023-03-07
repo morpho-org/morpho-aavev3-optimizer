@@ -131,6 +131,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
             Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(10)
         );
 
+        oracleSentinel.setLiquidationAllowed(true);
+
         LiquidateTest memory test;
 
         for (uint256 collateralIndex; collateralIndex < collateralUnderlyings.length; ++collateralIndex) {
@@ -204,6 +206,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
     ) public {
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(healthFactor, MIN_HF, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(1));
+
+        oracleSentinel.setLiquidationAllowed(false);
 
         LiquidateTest memory test;
 

@@ -104,7 +104,9 @@ library TestMarketLib {
         return (
             (amount * borrowedMarket.price * 10 ** collateralMarket.decimals)
                 / (collateralMarket.price * 10 ** borrowedMarket.decimals)
-        ).percentDiv(collateralMarket.ltv - 10) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
+        )
+            // The quantity of collateral required to open a borrow is over-estimated because of decimals precision (especially in the case WBTC/WETH).
+            .percentDiv(collateralMarket.ltv - 10) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt,
