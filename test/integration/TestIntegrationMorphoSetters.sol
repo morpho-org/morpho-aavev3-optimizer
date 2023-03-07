@@ -25,7 +25,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         _;
     }
 
-    modifier marketsCreated() {
+    modifier createMarkets() {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             _createTestMarket(allUnderlyings[i], 0, 33_33);
         }
@@ -51,15 +51,6 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         p2pIndexCursor = uint16(bound(p2pIndexCursor, 0, PercentageMath.PERCENTAGE_FACTOR));
         vm.expectRevert(Errors.AddressIsZero.selector);
         morpho.createMarket(address(0), reserveFactor, p2pIndexCursor);
-    }
-
-    function _containsUnderlying(address underlying) internal view returns (bool) {
-        for (uint256 i; i < allUnderlyings.length; i++) {
-            if (allUnderlyings[i] == underlying) {
-                return true;
-            }
-        }
-        return false;
     }
 
     function testCreateMarketRevertsIfMarketNotOnAave(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor)
@@ -151,7 +142,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
 
     function testClaimToTreasury(uint256 seed, uint256 amount, uint256 balance, uint256 idleSupply)
         public
-        marketsCreated
+        createMarkets
     {
         amount = bound(amount, 0, MAX_AMOUNT);
         balance = bound(balance, 0, MAX_AMOUNT);
@@ -241,7 +232,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
 
     function testSetReserveFactorFailsIfNotOwner(uint256 seed, uint16 reserveFactor)
         public
-        marketsCreated
+        createMarkets
         callNotOwner
     {
         address underlying = _randomUnderlying(seed);
@@ -253,7 +244,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.setReserveFactor(underlying, reserveFactor);
     }
 
-    function testSetReserveFactor(uint256 seed, uint16 reserveFactor) public marketsCreated {
+    function testSetReserveFactor(uint256 seed, uint16 reserveFactor) public createMarkets {
         reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
         address underlying = _randomUnderlying(seed);
         vm.expectEmit(true, true, true, true);
@@ -264,7 +255,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
 
     function testSetP2PIndexCursorFailsIfNotOwner(uint256 seed, uint16 p2pIndexCursor)
         public
-        marketsCreated
+        createMarkets
         callNotOwner
     {
         address underlying = _randomUnderlying(seed);
@@ -276,7 +267,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.setP2PIndexCursor(underlying, p2pIndexCursor);
     }
 
-    function testSetP2PIndexCursor(uint256 seed, uint16 p2pIndexCursor) public marketsCreated {
+    function testSetP2PIndexCursor(uint256 seed, uint16 p2pIndexCursor) public createMarkets {
         p2pIndexCursor = uint16(bound(p2pIndexCursor, 0, PercentageMath.PERCENTAGE_FACTOR));
         address underlying = _randomUnderlying(seed);
         vm.expectEmit(true, true, true, true);
@@ -296,7 +287,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.isClaimRewardsPaused(), paused);
     }
 
-    function testSetIsSupplyPausedFailsIfNotOwner(address underlying, bool paused) public marketsCreated callNotOwner {
+    function testSetIsSupplyPausedFailsIfNotOwner(address underlying, bool paused) public createMarkets callNotOwner {
         morpho.setIsSupplyPaused(underlying, paused);
     }
 
@@ -305,7 +296,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.setIsSupplyPaused(underlying, paused);
     }
 
-    function testSetIsSupplyPaused(uint256 seed, bool paused) public marketsCreated {
+    function testSetIsSupplyPaused(uint256 seed, bool paused) public createMarkets {
         address underlying = _randomUnderlying(seed);
         vm.expectEmit(true, true, true, true);
         emit Events.IsSupplyPausedSet(underlying, paused);
@@ -315,7 +306,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
 
     function testSetIsSupplyCollateralPausedFailsIfNotOwner(address underlying, bool paused)
         public
-        marketsCreated
+        createMarkets
         callNotOwner
     {
         morpho.setIsSupplyCollateralPaused(underlying, paused);
@@ -326,7 +317,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.setIsSupplyCollateralPaused(underlying, paused);
     }
 
-    function testSetIsSupplyCollateralPaused(uint256 seed, bool paused) public marketsCreated {
+    function testSetIsSupplyCollateralPaused(uint256 seed, bool paused) public createMarkets {
         address underlying = _randomUnderlying(seed);
         vm.expectEmit(true, true, true, true);
         emit Events.IsSupplyCollateralPausedSet(underlying, paused);
@@ -334,7 +325,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).pauseStatuses.isSupplyCollateralPaused, paused);
     }
 
-    function testSetIsBorrowPausedFailsIfNotOwner(address underlying, bool paused) public marketsCreated callNotOwner {
+    function testSetIsBorrowPausedFailsIfNotOwner(address underlying, bool paused) public createMarkets callNotOwner {
         morpho.setIsBorrowPaused(underlying, paused);
     }
 
@@ -343,7 +334,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.setIsBorrowPaused(underlying, paused);
     }
 
-    function testSetIsBorrowPaused(uint256 seed, bool paused) public marketsCreated {
+    function testSetIsBorrowPaused(uint256 seed, bool paused) public createMarkets {
         address underlying = _randomUnderlying(seed);
         vm.expectEmit(true, true, true, true);
         emit Events.IsBorrowPausedSet(underlying, paused);
@@ -351,7 +342,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).pauseStatuses.isBorrowPaused, paused);
     }
 
-    function testSetIsRepayPausedFailsIfNotOwner(address underlying, bool paused) public marketsCreated callNotOwner {
+    function testSetIsRepayPausedFailsIfNotOwner(address underlying, bool paused) public createMarkets callNotOwner {
         morpho.setIsRepayPaused(underlying, paused);
     }
 
@@ -360,7 +351,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.setIsRepayPaused(underlying, paused);
     }
 
-    function testSetIsRepayPaused(uint256 seed, bool paused) public marketsCreated {
+    function testSetIsRepayPaused(uint256 seed, bool paused) public createMarkets {
         address underlying = _randomUnderlying(seed);
         vm.expectEmit(true, true, true, true);
         emit Events.IsRepayPausedSet(underlying, paused);
@@ -370,7 +361,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
 
     function testSetIsWithdrawPausedFailsIfNotOwner(address underlying, bool paused)
         public
-        marketsCreated
+        createMarkets
         callNotOwner
     {
         morpho.setIsWithdrawPaused(underlying, paused);
@@ -381,7 +372,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.setIsWithdrawPaused(underlying, paused);
     }
 
-    function testSetIsWithdrawPaused(uint256 seed, bool paused) public marketsCreated {
+    function testSetIsWithdrawPaused(uint256 seed, bool paused) public createMarkets {
         address underlying = _randomUnderlying(seed);
         vm.expectEmit(true, true, true, true);
         emit Events.IsWithdrawPausedSet(underlying, paused);
@@ -391,7 +382,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
 
     function testSetIsWithdrawCollateralPausedFailsIfNotOwner(address underlying, bool paused)
         public
-        marketsCreated
+        createMarkets
         callNotOwner
     {
         morpho.setIsWithdrawCollateralPaused(underlying, paused);
@@ -402,7 +393,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.setIsWithdrawCollateralPaused(underlying, paused);
     }
 
-    function testSetIsWithdrawCollateralPaused(uint256 seed, bool paused) public marketsCreated {
+    function testSetIsWithdrawCollateralPaused(uint256 seed, bool paused) public createMarkets {
         address underlying = _randomUnderlying(seed);
         vm.expectEmit(true, true, true, true);
         emit Events.IsWithdrawCollateralPausedSet(underlying, paused);
@@ -412,7 +403,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
 
     function testSetIsLiquidateCollateralPausedFailsIfNotOwner(address underlying, bool paused)
         public
-        marketsCreated
+        createMarkets
         callNotOwner
     {
         morpho.setIsLiquidateCollateralPaused(underlying, paused);
@@ -423,7 +414,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.setIsLiquidateCollateralPaused(underlying, paused);
     }
 
-    function testSetIsLiquidateCollateralPaused(uint256 seed, bool paused) public marketsCreated {
+    function testSetIsLiquidateCollateralPaused(uint256 seed, bool paused) public createMarkets {
         address underlying = _randomUnderlying(seed);
         vm.expectEmit(true, true, true, true);
         emit Events.IsLiquidateCollateralPausedSet(underlying, paused);
@@ -433,7 +424,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
 
     function testSetIsLiquidateBorrowPausedFailsIfNotOwner(address underlying, bool paused)
         public
-        marketsCreated
+        createMarkets
         callNotOwner
     {
         morpho.setIsLiquidateBorrowPaused(underlying, paused);
@@ -444,7 +435,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.setIsLiquidateBorrowPaused(underlying, paused);
     }
 
-    function testSetIsLiquidateBorrowPaused(uint256 seed, bool paused) public marketsCreated {
+    function testSetIsLiquidateBorrowPaused(uint256 seed, bool paused) public createMarkets {
         address underlying = _randomUnderlying(seed);
         vm.expectEmit(true, true, true, true);
         emit Events.IsLiquidateBorrowPausedSet(underlying, paused);
@@ -452,7 +443,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).pauseStatuses.isLiquidateBorrowPaused, paused);
     }
 
-    function testSetIsPausedFailsIfNotOwner(address underlying, bool paused) public marketsCreated callNotOwner {
+    function testSetIsPausedFailsIfNotOwner(address underlying, bool paused) public createMarkets callNotOwner {
         morpho.setIsPaused(underlying, paused);
     }
 
@@ -461,7 +452,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.setIsPaused(underlying, paused);
     }
 
-    function testSetIsPaused(uint256 seed, bool isPaused) public marketsCreated {
+    function testSetIsPaused(uint256 seed, bool isPaused) public createMarkets {
         address underlying = _randomUnderlying(seed);
         vm.expectEmit(true, true, true, true);
         emit Events.IsSupplyPausedSet(underlying, isPaused);
@@ -493,7 +484,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(pauseStatuses.isBorrowPaused, isPaused);
     }
 
-    function testSetIsPausedDoesNotSetBorrowPauseIfDeprecated(uint256 seed, bool isPaused) public marketsCreated {
+    function testSetIsPausedDoesNotSetBorrowPauseIfDeprecated(uint256 seed, bool isPaused) public createMarkets {
         address underlying = _randomUnderlying(seed);
         morpho.setIsBorrowPaused(underlying, true);
         morpho.setIsDeprecated(underlying, true);
@@ -527,11 +518,11 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(pauseStatuses.isBorrowPaused, true);
     }
 
-    function testSetIsPausedForAllMarketsFailsIfNotOwner(bool isPaused) public marketsCreated callNotOwner {
+    function testSetIsPausedForAllMarketsFailsIfNotOwner(bool isPaused) public createMarkets callNotOwner {
         morpho.setIsPausedForAllMarkets(isPaused);
     }
 
-    function testSetIsPausedForAllMarkets(bool isPaused) public marketsCreated {
+    function testSetIsPausedForAllMarkets(bool isPaused) public createMarkets {
         address[] memory markets = morpho.marketsCreated();
 
         for (uint256 i; i < markets.length; i++) {
@@ -568,11 +559,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         }
     }
 
-    function testSetIsP2PDisabledFailsIfNotOwner(address underlying, bool disabled)
-        public
-        marketsCreated
-        callNotOwner
-    {
+    function testSetIsP2PDisabledFailsIfNotOwner(address underlying, bool disabled) public createMarkets callNotOwner {
         morpho.setIsP2PDisabled(underlying, disabled);
     }
 
@@ -581,7 +568,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.setIsP2PDisabled(underlying, disabled);
     }
 
-    function testSetIsP2PDisabled(uint256 seed, bool disabled) public marketsCreated {
+    function testSetIsP2PDisabled(uint256 seed, bool disabled) public createMarkets {
         address underlying = _randomUnderlying(seed);
         vm.expectEmit(true, true, true, true);
         emit Events.IsP2PDisabledSet(underlying, disabled);
@@ -591,7 +578,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
 
     function testSetIsDeprecatedFailsIfNotOwner(address underlying, bool deprecated)
         public
-        marketsCreated
+        createMarkets
         callNotOwner
     {
         morpho.setIsDeprecated(underlying, deprecated);
@@ -602,18 +589,27 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.setIsDeprecated(underlying, deprecated);
     }
 
-    function testSetIsDeprecatedFailsIfBorrowNotPaused(uint256 seed, bool deprecated) public marketsCreated {
+    function testSetIsDeprecatedFailsIfBorrowNotPaused(uint256 seed, bool deprecated) public createMarkets {
         address underlying = _randomUnderlying(seed);
         vm.expectRevert(Errors.BorrowNotPaused.selector);
         morpho.setIsDeprecated(underlying, deprecated);
     }
 
-    function testSetIsDeprecated(uint256 seed, bool deprecated) public marketsCreated {
+    function testSetIsDeprecated(uint256 seed, bool deprecated) public createMarkets {
         address underlying = _randomUnderlying(seed);
         morpho.setIsBorrowPaused(underlying, true);
         vm.expectEmit(true, true, true, true);
         emit Events.IsDeprecatedSet(underlying, deprecated);
         morpho.setIsDeprecated(underlying, deprecated);
         assertEq(morpho.market(underlying).pauseStatuses.isDeprecated, deprecated);
+    }
+
+    function _containsUnderlying(address underlying) internal view returns (bool) {
+        for (uint256 i; i < allUnderlyings.length; i++) {
+            if (allUnderlyings[i] == underlying) {
+                return true;
+            }
+        }
+        return false;
     }
 }
