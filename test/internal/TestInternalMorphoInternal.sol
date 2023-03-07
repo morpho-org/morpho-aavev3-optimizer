@@ -37,26 +37,26 @@ contract TestInternalMorphoInternal is InternalTest {
         createTestMarket(usdc, 0, 3_333);
         createTestMarket(wNative, 0, 3_333);
 
-        ERC20(dai).approve(address(_POOL), type(uint256).max);
-        ERC20(wbtc).approve(address(_POOL), type(uint256).max);
-        ERC20(usdc).approve(address(_POOL), type(uint256).max);
-        ERC20(wNative).approve(address(_POOL), type(uint256).max);
+        ERC20(dai).approve(address(_pool), type(uint256).max);
+        ERC20(wbtc).approve(address(_pool), type(uint256).max);
+        ERC20(usdc).approve(address(_pool), type(uint256).max);
+        ERC20(wNative).approve(address(_pool), type(uint256).max);
 
-        _POOL.supplyToPool(dai, 100 ether);
-        _POOL.supplyToPool(wbtc, 1e8);
-        _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(wNative, 1 ether);
+        _pool.supplyToPool(dai, 100 ether);
+        _pool.supplyToPool(wbtc, 1e8);
+        _pool.supplyToPool(usdc, 1e8);
+        _pool.supplyToPool(wNative, 1 ether);
     }
 
     function createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
-        DataTypes.ReserveData memory reserveData = _POOL.getReserveData(underlying);
+        DataTypes.ReserveData memory reserveData = _pool.getReserveData(underlying);
 
         Types.Market storage market = _market[underlying];
 
         Types.Indexes256 memory indexes;
         indexes.supply.p2pIndex = WadRayMath.RAY;
         indexes.borrow.p2pIndex = WadRayMath.RAY;
-        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _POOL.getCurrentPoolIndexes(underlying);
+        (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _pool.getCurrentPoolIndexes(underlying);
 
         market.setIndexes(indexes);
         market.lastUpdateTimestamp = uint32(block.timestamp);
@@ -69,7 +69,7 @@ contract TestInternalMorphoInternal is InternalTest {
 
         _marketsCreated.push(underlying);
 
-        ERC20(underlying).safeApprove(address(_POOL), type(uint256).max);
+        ERC20(underlying).safeApprove(address(_pool), type(uint256).max);
     }
 
     // More detailed index tests to be in InterestRatesLib tests
@@ -283,8 +283,8 @@ contract TestInternalMorphoInternal is InternalTest {
     }
 
     function testAssetLiquidityData() public {
-        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
-        (uint256 poolLtv, uint256 poolLt,, uint256 poolDecimals,,) = _POOL.getConfiguration(dai).getParams();
+        DataTypes.EModeCategory memory eModeCategory = _pool.getEModeCategoryData(0);
+        (uint256 poolLtv, uint256 poolLt,, uint256 poolDecimals,,) = _pool.getConfiguration(dai).getParams();
 
         Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
         (uint256 price, uint256 ltv, uint256 lt, uint256 units) = _assetLiquidityData(dai, vars);
@@ -305,7 +305,7 @@ contract TestInternalMorphoInternal is InternalTest {
 
         _marketBalances[dai].collateral[address(1)] = amount.rayDivUp(_market[dai].indexes.supply.poolIndex);
 
-        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
+        DataTypes.EModeCategory memory eModeCategory = _pool.getEModeCategoryData(0);
         Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
 
         (uint256 borrowable, uint256 maxDebt) = _collateralData(dai, vars);
@@ -334,7 +334,7 @@ contract TestInternalMorphoInternal is InternalTest {
             true
         );
 
-        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
+        DataTypes.EModeCategory memory eModeCategory = _pool.getEModeCategoryData(0);
         Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
@@ -357,7 +357,7 @@ contract TestInternalMorphoInternal is InternalTest {
         _userCollaterals[address(1)].add(wbtc);
         _userCollaterals[address(1)].add(usdc);
 
-        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
+        DataTypes.EModeCategory memory eModeCategory = _pool.getEModeCategoryData(0);
         Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
 
         (uint256 borrowable, uint256 maxDebt) = _totalCollateralData(vars);
@@ -404,7 +404,7 @@ contract TestInternalMorphoInternal is InternalTest {
         _userBorrows[address(1)].add(wbtc);
         _userBorrows[address(1)].add(usdc);
 
-        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
+        DataTypes.EModeCategory memory eModeCategory = _pool.getEModeCategoryData(0);
         Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
         uint256 debt = _totalDebt(vars);
 
@@ -451,7 +451,7 @@ contract TestInternalMorphoInternal is InternalTest {
         _userBorrows[address(1)].add(usdc);
 
         Types.LiquidityData memory liquidityData = _liquidityData(address(1));
-        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(0);
+        DataTypes.EModeCategory memory eModeCategory = _pool.getEModeCategoryData(0);
         Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
 
         (uint256 borrowable, uint256 maxDebt) = _totalCollateralData(vars);
