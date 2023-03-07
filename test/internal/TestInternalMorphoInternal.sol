@@ -108,8 +108,8 @@ contract TestInternalMorphoInternal is InternalTest {
         uint256 borrowDelta,
         uint256 amount
     ) public {
-        p2pSupplyTotal = bound(p2pSupplyTotal, 0, MAX_DAI_AMOUNT);
-        p2pBorrowTotal = bound(p2pBorrowTotal, 0, MAX_DAI_AMOUNT);
+        p2pSupplyTotal = _boundAmount(p2pSupplyTotal);
+        p2pBorrowTotal = _boundAmount(p2pBorrowTotal);
         supplyDelta = bound(supplyDelta, 0, p2pSupplyTotal);
         borrowDelta = bound(borrowDelta, 0, p2pBorrowTotal);
         amount = bound(amount, 0, MAX_DAI_AMOUNT);
