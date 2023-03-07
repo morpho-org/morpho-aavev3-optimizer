@@ -136,7 +136,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
                 emit Events.ReserveFeeClaimed(
                     claimedUnderlyings[i],
                     Math.min(claimedAmounts[i], balanceAmounts[i] - morpho.market(claimedUnderlyings[i]).idleSupply)
-                    );
+                );
             }
             beforeBalanceTreasury[i] = ERC20(claimedUnderlyings[i]).balanceOf(treasuryVault);
         }

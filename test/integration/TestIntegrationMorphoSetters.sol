@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationMorphoSetters is IntegrationTest {
+    using WadRayMath for uint256;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+
     uint16 private constant DEFAULT_RESERVE_FACTOR = 1_000;
     uint16 private constant DEFAULT_P2P_INDEX_CURSOR = 1_000;
     address private constant DEFAULT_PRANKER = address(uint160(uint256(keccak256(abi.encode(42069)))));
@@ -35,6 +38,15 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         _deposit(testMarkets[weth], 1e12, address(morpho));
         _deposit(testMarkets[dai], 1e12, address(morpho));
         _;
+    }
+
+    function testShouldNotCreateSiloedBorrowMarket(uint16 reserveFactor, uint16 p2pIndexCursor) public {
+        DataTypes.ReserveData memory reserve = pool.getReserveData(link);
+        reserve.configuration.setSiloedBorrowing(true);
+        vm.mockCall(address(pool), abi.encodeCall(pool.getReserveData, (link)), abi.encode(reserve));
+
+        vm.expectRevert(Errors.SiloedBorrowMarket.selector);
+        morpho.createMarket(link, reserveFactor, p2pIndexCursor);
     }
 
     function testCreateMarketRevertsIfNotOwner(uint256 seed, uint16 reserveFactor, uint16 p2pIndexCursor)
@@ -96,7 +108,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         vm.expectEmit(true, true, true, true);
         emit Events.IndexesUpdated(
             underlying, expectedPoolSupplyIndex, WadRayMath.RAY, expectedPoolBorrowIndex, WadRayMath.RAY
-            );
+        );
         vm.expectEmit(true, true, true, true);
         emit Events.ReserveFactorSet(underlying, reserveFactor);
         vm.expectEmit(true, true, true, true);
@@ -640,5 +652,58 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
             }
         }
         return false;
+    }
+
+    function testShouldSetBorrowPaused() public {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+
+            morpho.setIsBorrowPaused(market.underlying, true);
+
+            assertEq(morpho.market(market.underlying).pauseStatuses.isBorrowPaused, true);
+        }
+    }
+
+    function testShouldNotSetBorrowNotPausedWhenDeprecated() public {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+
+            morpho.setIsBorrowPaused(market.underlying, true);
+            morpho.setIsDeprecated(market.underlying, true);
+
+            vm.expectRevert(Errors.MarketIsDeprecated.selector);
+            morpho.setIsBorrowPaused(market.underlying, false);
+        }
+    }
+
+    function testShouldSetDeprecatedWhenBorrowPaused(bool isDeprecated) public {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+
+            morpho.setIsBorrowPaused(market.underlying, true);
+
+            morpho.setIsDeprecated(market.underlying, isDeprecated);
+
+            assertEq(morpho.market(market.underlying).pauseStatuses.isDeprecated, isDeprecated);
+        }
+    }
+
+    function testShouldNotSetDeprecatedWhenBorrowNotPaused(bool isDeprecated) public {
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+
+            morpho.setIsBorrowPaused(market.underlying, false);
+
+            vm.expectRevert(Errors.BorrowNotPaused.selector);
+            morpho.setIsDeprecated(market.underlying, isDeprecated);
+        }
     }
 }

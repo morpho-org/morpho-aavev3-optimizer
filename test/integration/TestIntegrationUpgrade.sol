@@ -76,7 +76,7 @@ contract TestIntegrationUpgrade is IntegrationTest {
 
     function testUpgradeMorphoFailsIfNotProxyAdminOwner(address caller) public {
         vm.assume(caller != address(this));
-        Morpho newMorphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID);
+        Morpho newMorphoImpl = new Morpho();
 
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(caller);
@@ -87,7 +87,7 @@ contract TestIntegrationUpgrade is IntegrationTest {
         address positionsManagerBefore = morpho.positionsManager();
         StorageToCheck memory s1 = _populateStorageToCheck();
 
-        Morpho newMorphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID);
+        Morpho newMorphoImpl = new Morpho();
         proxyAdmin.upgrade(TransparentUpgradeableProxy(payable(address(morpho))), address(newMorphoImpl));
 
         StorageToCheck memory s2 = _populateStorageToCheck();
@@ -98,7 +98,7 @@ contract TestIntegrationUpgrade is IntegrationTest {
     }
 
     function testSetPositionsManagerFailsIfNotOwner() public {
-        positionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID);
+        positionsManager = new PositionsManager();
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(address(1));
         morpho.setPositionsManager(address(positionsManager));
@@ -107,7 +107,7 @@ contract TestIntegrationUpgrade is IntegrationTest {
     function testSetPositionsManager() public {
         StorageToCheck memory s1 = _populateStorageToCheck();
 
-        PositionsManager newPositionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID);
+        PositionsManager newPositionsManager = new PositionsManager();
         morpho.setPositionsManager(address(newPositionsManager));
 
         StorageToCheck memory s2 = _populateStorageToCheck();
@@ -117,10 +117,10 @@ contract TestIntegrationUpgrade is IntegrationTest {
 
     function _populateStorageToCheck() internal view returns (StorageToCheck memory s) {
         s.owner = Ownable(address(morpho)).owner();
-        s.pool = morpho.POOL();
-        s.addressesProvider = morpho.ADDRESSES_PROVIDER();
+        s.pool = morpho.pool();
+        s.addressesProvider = morpho.addressesProvider();
         s.domainSeparator = morpho.DOMAIN_SEPARATOR();
-        s.eModeCategoryId = morpho.E_MODE_CATEGORY_ID();
+        s.eModeCategoryId = morpho.eModeCategoryId();
         s.market = morpho.market(dai);
         s.marketsCreated = morpho.marketsCreated();
         s.defaultIterations = morpho.defaultIterations();

@@ -24,6 +24,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     uint256 constant MAX_AMOUNT = type(uint96).max / 2;
 
     function setUp() public virtual override {
+        super.setUp();
+
         _defaultIterations = Types.Iterations(10, 10);
 
         for (uint256 i; i < allUnderlyings.length; ++i) {
@@ -32,10 +34,10 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         _setBalances(address(this), type(uint256).max);
 
-        _POOL.supplyToPool(dai, 100 ether);
-        _POOL.supplyToPool(wbtc, 1e8);
-        _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(wNative, 1 ether);
+        _pool.supplyToPool(dai, 100 ether);
+        _pool.supplyToPool(wbtc, 1e8);
+        _pool.supplyToPool(usdc, 1e8);
+        _pool.supplyToPool(wNative, 1 ether);
     }
 
     function testValidatePermission(address owner, address manager) public {
@@ -121,12 +123,12 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeBorrowShouldRevertIfBorrowingNotEnabled() public {
-        DataTypes.ReserveConfigurationMap memory reserveConfig = _POOL.getConfiguration(dai);
+        DataTypes.ReserveConfigurationMap memory reserveConfig = _pool.getConfiguration(dai);
         reserveConfig.setBorrowingEnabled(false);
         assertFalse(reserveConfig.getBorrowingEnabled());
 
         vm.prank(address(poolConfigurator));
-        _POOL.setConfiguration(dai, reserveConfig);
+        _pool.setConfiguration(dai, reserveConfig);
 
         vm.expectRevert(Errors.BorrowNotEnabled.selector);
         this.authorizeBorrow(dai, 1);
@@ -231,8 +233,10 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         );
 
         _userCollaterals[borrower].add(underlying);
-        _marketBalances[underlying].collateral[borrower] =
-            healthFactor.percentDivUp(pool.getConfiguration(underlying).getLiquidationThreshold());
+        uint256 collateral = healthFactor.percentDivDown(pool.getConfiguration(underlying).getLiquidationThreshold());
+        uint256 rawCollateral = (Constants.LT_LOWER_BOUND * collateral) / (Constants.LT_LOWER_BOUND - 1);
+
+        _marketBalances[underlying].collateral[borrower] = rawCollateral;
 
         _userBorrows[borrower].add(underlying);
         _updateBorrowerInDS(underlying, borrower, 1 ether, 0, true);
@@ -240,8 +244,11 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testAuthorizeLiquidateShouldRevertIfSentinelDisallows(address borrower, uint256 healthFactor) public {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor =
-            bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MIN_HF, Constants.DEFAULT_LIQUIDATION_MAX_HF - 1);
+        healthFactor = bound(
+            healthFactor,
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
+        );
 
         _setHealthFactor(borrower, dai, healthFactor);
 
@@ -253,7 +260,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testAuthorizeLiquidateShouldRevertIfBorrowerHealthy(address borrower, uint256 healthFactor) public {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF + 1, type(uint128).max);
+        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentAdd(1), type(uint128).max);
 
         _setHealthFactor(borrower, dai, healthFactor);
 
@@ -265,7 +272,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         public
     {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor = bound(healthFactor, 0, Constants.DEFAULT_LIQUIDATION_MIN_HF);
+        healthFactor = bound(healthFactor, 0, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(1));
 
         _setHealthFactor(borrower, dai, healthFactor);
 
@@ -278,8 +285,11 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         uint256 healthFactor
     ) public {
         borrower = _boundAddressNotZero(borrower);
-        healthFactor =
-            bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MIN_HF + 1, Constants.DEFAULT_LIQUIDATION_MAX_HF - 1);
+        healthFactor = bound(
+            healthFactor,
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
+        );
 
         _setHealthFactor(borrower, dai, healthFactor);
 
@@ -370,19 +380,18 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         _marketBalances[dai].collateral[address(1)] = collateralAmount.rayDivUp(indexes.supply.poolIndex);
 
-        DataTypes.ReserveConfigurationMap memory borrowConfig = _POOL.getConfiguration(wbtc);
-        DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(dai);
-        DataTypes.EModeCategory memory eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
+        DataTypes.ReserveConfigurationMap memory borrowConfig = _pool.getConfiguration(wbtc);
+        DataTypes.ReserveConfigurationMap memory collateralConfig = _pool.getConfiguration(dai);
+        DataTypes.EModeCategory memory eModeCategory = _pool.getEModeCategoryData(_eModeCategoryId);
 
         (,,, vars.borrowedTokenUnit,,) = borrowConfig.getParams();
         (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = collateralConfig.getParams();
 
-        bool isInCollateralEMode =
-            _E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == collateralConfig.getEModeCategory();
+        bool isInCollateralEMode = _eModeCategoryId != 0 && _eModeCategoryId == collateralConfig.getEModeCategory();
         vars.borrowedPrice = _getAssetPrice(
             wbtc,
             oracle,
-            _E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID == borrowConfig.getEModeCategory(),
+            _eModeCategoryId != 0 && _eModeCategoryId == borrowConfig.getEModeCategory(),
             eModeCategory.priceSource
         );
         vars.collateralPrice = _getAssetPrice(dai, oracle, isInCollateralEMode, eModeCategory.priceSource);

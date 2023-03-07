@@ -4,10 +4,10 @@ pragma solidity >=0.5.0;
 import {Types} from "../libraries/Types.sol";
 
 interface IMorphoGetters {
-    function POOL() external view returns (address);
-    function ADDRESSES_PROVIDER() external view returns (address);
     function DOMAIN_SEPARATOR() external view returns (bytes32);
-    function E_MODE_CATEGORY_ID() external view returns (uint256);
+    function pool() external view returns (address);
+    function addressesProvider() external view returns (address);
+    function eModeCategoryId() external view returns (uint256);
 
     function market(address underlying) external view returns (Types.Market memory);
     function marketsCreated() external view returns (address[] memory);
@@ -69,7 +69,12 @@ interface IMorphoSetters {
 }
 
 interface IMorpho is IMorphoGetters, IMorphoSetters {
-    function initialize(address newPositionsManager, Types.Iterations memory newDefaultIterations) external;
+    function initialize(
+        address addressesProvider,
+        uint8 eModeCategoryId,
+        address newPositionsManager,
+        Types.Iterations memory newDefaultIterations
+    ) external;
 
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
         external
