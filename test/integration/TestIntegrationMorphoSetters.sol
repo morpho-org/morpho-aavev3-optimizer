@@ -17,6 +17,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         promoter2 = _initUser();
         hacker = _initUser();
         morpho.setTreasuryVault(DEFAULT_TREASURY);
+        ForkTest.setUp();
     }
 
     modifier callNotOwner() {
@@ -101,6 +102,36 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         vm.expectEmit(true, true, true, true);
         emit Events.P2PIndexCursorSet(underlying, p2pIndexCursor);
         morpho.createMarket(underlying, reserveFactor, p2pIndexCursor);
+
+        Types.Market memory market = morpho.market(underlying);
+        DataTypes.ReserveData memory reserveData = pool.getReserveData(underlying);
+
+        assertEq(market.indexes.supply.poolIndex, expectedPoolSupplyIndex, "supply pool index");
+        assertEq(market.indexes.supply.p2pIndex, WadRayMath.RAY, "supply p2p index");
+        assertEq(market.indexes.borrow.poolIndex, expectedPoolBorrowIndex, "borrow pool index");
+        assertEq(market.indexes.borrow.p2pIndex, WadRayMath.RAY, "borrow p2p index");
+        assertEq(market.deltas.supply.scaledDelta, 0, "supply scaled delta");
+        assertEq(market.deltas.supply.scaledP2PTotal, 0, "supply scaled p2p total");
+        assertEq(market.deltas.borrow.scaledDelta, 0, "borrow scaled delta");
+        assertEq(market.deltas.borrow.scaledP2PTotal, 0, "borrow scaled p2p total");
+        assertEq(market.underlying, underlying, "underlying");
+        assertFalse(market.pauseStatuses.isP2PDisabled, "is p2p disabled");
+        assertFalse(market.pauseStatuses.isSupplyPaused, "is supply paused");
+        assertFalse(market.pauseStatuses.isSupplyCollateralPaused, "is supply collateral paused");
+        assertFalse(market.pauseStatuses.isBorrowPaused, "is borrow paused");
+        assertFalse(market.pauseStatuses.isWithdrawPaused, "is withdraw paused");
+        assertFalse(market.pauseStatuses.isWithdrawCollateralPaused, "is withdraw collateral paused");
+        assertFalse(market.pauseStatuses.isRepayPaused, "is repay paused");
+        assertFalse(market.pauseStatuses.isLiquidateCollateralPaused, "is liquidate collateral paused");
+        assertFalse(market.pauseStatuses.isLiquidateBorrowPaused, "is liquidate borrow paused");
+        assertFalse(market.pauseStatuses.isDeprecated, "is deprecated");
+        assertEq(market.variableDebtToken, reserveData.variableDebtTokenAddress, "variable debt token");
+        assertEq(market.lastUpdateTimestamp, block.timestamp, "last update timestamp");
+        assertEq(market.reserveFactor, reserveFactor, "reserve factor");
+        assertEq(market.p2pIndexCursor, p2pIndexCursor, "p2p index cursor");
+        assertEq(market.aToken, reserveData.aTokenAddress, "aToken");
+        assertEq(market.stableDebtToken, reserveData.stableDebtTokenAddress, "stable debt token");
+        assertEq(market.idleSupply, 0, "idle supply");
 
         assertEq(ERC20(underlying).allowance(address(morpho), address(pool)), type(uint256).max);
     }
