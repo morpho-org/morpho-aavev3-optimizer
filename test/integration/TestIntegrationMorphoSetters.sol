@@ -4,6 +4,17 @@ pragma solidity ^0.8.0;
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationMorphoSetters is IntegrationTest {
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+
+    function testShouldNotCreateSiloedBorrowMarket() public {
+        DataTypes.ReserveData memory reserve = pool.getReserveData(link);
+        reserve.configuration.setSiloedBorrowing(true);
+        vm.mockCall(address(pool), abi.encodeCall(pool.getReserveData, (link)), abi.encode(reserve));
+
+        vm.expectRevert(Errors.SiloedBorrowMarket.selector);
+        morpho.createMarket(link, 0, 0);
+    }
+
     function testSetIsClaimRewardsPausedRevertIfCallerNotOwner(address caller, bool isPaused) public {
         vm.assume(caller != address(this));
 

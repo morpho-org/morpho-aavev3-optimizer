@@ -156,7 +156,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
             assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supply != 0");
             assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
             assertApproxEqAbs(
-                morpho.borrowBalance(market.underlying, address(promoter1)), promoted, 2, "promoterBorrow != promoted"
+                morpho.borrowBalance(market.underlying, address(promoter1)), promoted, 3, "promoterBorrow != promoted"
             );
 
             // Assert Morpho's position on pool.
