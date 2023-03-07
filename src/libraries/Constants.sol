@@ -13,6 +13,7 @@ library Constants {
     uint8 internal constant VARIABLE_INTEREST_MODE = 2;
 
     uint256 internal constant DUST_THRESHOLD = 1;
+    uint256 internal constant LT_LOWER_BOUND = 10_00; // A lower bound on the liquidation threshold values of all the listed assets.
 
     uint256 internal constant MAX_CLOSE_FACTOR = PercentageMath.PERCENTAGE_FACTOR;
     uint256 internal constant DEFAULT_CLOSE_FACTOR = PercentageMath.HALF_PERCENTAGE_FACTOR;

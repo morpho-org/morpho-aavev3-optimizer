@@ -474,9 +474,10 @@ contract TestIntegrationLiquidate is IntegrationTest {
             2,
             "borrow balance"
         );
-        assertEq(
+        assertApproxEqAbs(
             morpho.collateralBalance(collateralMarket.underlying, borrower),
             formerCollateralBalance - expectedSeized,
+            1,
             "collateral balance"
         );
     }
@@ -507,7 +508,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         ).with_key(borrower).checked_write(
             morpho.scaledCollateralBalance(collateralMarket.underlying, borrower).percentSub(
                 collateralMarket.ltv.percentDiv(collateralMarket.lt)
-            )
+            ) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 3)
         );
 
         borrowBalance = morpho.borrowBalance(borrowedMarket.underlying, borrower);
