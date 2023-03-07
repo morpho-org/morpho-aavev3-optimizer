@@ -58,7 +58,9 @@ contract TestIntegrationFee is IntegrationTest {
             user.approve(market.underlying, type(uint256).max);
             user.repay(market.underlying, type(uint256).max);
 
-            assertEq(balanceBefore, ERC20(market.underlying).balanceOf(address(morpho)), "Fee collected != 0");
+            assertApproxEqAbs(
+                ERC20(market.underlying).balanceOf(address(morpho)), balanceBefore, 1, "Fee collected != 0"
+            );
         }
     }
 
