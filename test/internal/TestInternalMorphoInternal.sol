@@ -141,6 +141,9 @@ contract TestInternalMorphoInternal is InternalTest {
         uint256 newExpectedSupplyDelta = deltas.supply.scaledDelta + expectedAmount.rayDiv(indexes.supply.poolIndex);
         uint256 newExpectedBorrowDelta = deltas.borrow.scaledDelta + expectedAmount.rayDiv(indexes.borrow.poolIndex);
 
+        uint256 aTokenBalanceBefore = ERC20(market.aToken).balanceOf(address(this));
+        uint256 variableDebtTokenBalanceBefore = ERC20(market.variableDebtToken).balanceOf(address(this));
+
         vm.expectEmit(true, true, true, true);
         emit Events.P2PSupplyDeltaUpdated(underlying, newExpectedSupplyDelta);
         vm.expectEmit(true, true, true, true);
@@ -148,6 +151,18 @@ contract TestInternalMorphoInternal is InternalTest {
         vm.expectEmit(true, true, true, true);
         emit Events.P2PDeltasIncreased(underlying, expectedAmount);
         this.increaseP2PDeltasTest(underlying, amount);
+
+        assertApproxEqAbs(
+            aTokenBalanceBefore + expectedAmount, ERC20(market.aToken).balanceOf(address(this)), 1, "aToken balance"
+        );
+        assertApproxEqAbs(
+            variableDebtTokenBalanceBefore + expectedAmount,
+            ERC20(market.variableDebtToken).balanceOf(address(this)),
+            1,
+            "variable debt token balance"
+        );
+        assertEq(deltas.supply.scaledDelta, newExpectedSupplyDelta, "supply delta");
+        assertEq(deltas.borrow.scaledDelta, newExpectedBorrowDelta, "borrow delta");
     }
 
     // More detailed index tests to be in InterestRatesLib tests
