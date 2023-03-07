@@ -5,6 +5,16 @@ import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationMorphoSetters is IntegrationTest {
     using WadRayMath for uint256;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+
+    function testShouldNotCreateSiloedBorrowMarket(uint16 reserveFactor, uint16 p2pIndexCursor) public {
+        DataTypes.ReserveData memory reserve = pool.getReserveData(link);
+        reserve.configuration.setSiloedBorrowing(true);
+        vm.mockCall(address(pool), abi.encodeCall(pool.getReserveData, (link)), abi.encode(reserve));
+
+        vm.expectRevert(Errors.SiloedBorrowMarket.selector);
+        morpho.createMarket(link, reserveFactor, p2pIndexCursor);
+    }
 
     function testSetIsClaimRewardsPausedRevertIfCallerNotOwner(address caller, bool isPaused) public {
         vm.assume(caller != address(this));

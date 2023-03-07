@@ -135,7 +135,7 @@ contract ForkTest is BaseTest {
         weth = config.getAddress("WETH");
         wNative = config.getWrappedNative();
 
-        allUnderlyings = pool.getReservesList();
+        allUnderlyings = [dai, usdc, aave, wbtc, weth];
     }
 
     function _label() internal virtual {
