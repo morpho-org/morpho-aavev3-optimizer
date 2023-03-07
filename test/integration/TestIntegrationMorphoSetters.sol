@@ -162,12 +162,11 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         amounts[0] = amount;
         deal(underlyings[0], address(morpho), amount);
 
-        assertEq(ERC20(underlyings[0]).balanceOf(address(morpho)), amount, "morpho balance before");
         assertEq(ERC20(underlyings[0]).balanceOf(DEFAULT_TREASURY), 0, "treasury balance before");
 
         morpho.claimToTreasury(underlyings, amounts);
 
-        assertEq(ERC20(underlyings[0]).balanceOf(address(morpho)), amount, "morpho balance after");
+        assertEq(amount, ERC20(underlyings[0]).balanceOf(address(morpho)), "morpho balance after");
         assertEq(ERC20(underlyings[0]).balanceOf(DEFAULT_TREASURY), 0, "treasury balance after");
     }
 
@@ -195,7 +194,6 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
 
         deal(underlyings[0], address(morpho), balance);
 
-        assertEq(ERC20(underlyings[0]).balanceOf(address(morpho)), balance, "morpho balance before");
         assertEq(ERC20(underlyings[0]).balanceOf(DEFAULT_TREASURY), 0, "treasury balance before");
         assertEq(morpho.market(underlyings[0]).idleSupply, idleSupply, "idle supply before");
 
