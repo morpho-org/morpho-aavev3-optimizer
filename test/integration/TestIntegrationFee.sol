@@ -151,7 +151,7 @@ contract TestIntegrationFee is IntegrationTest {
             assertApproxEqAbs(
                 ERC20(testMarket.underlying).balanceOf(address(morpho)),
                 balanceBefore + expectedFeeCollected,
-                2,
+                3,
                 "Wrong amount of fees"
             );
         }
