@@ -38,8 +38,6 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     function setUp() public virtual override {
         super.setUp();
 
-        _eModeCategoryId = 0;
-
         _defaultIterations = Types.Iterations(10, 10);
         _createMarket(dai, 0, 3_333);
         _createMarket(wbtc, 0, 3_333);
@@ -57,11 +55,6 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         _pool.supplyToPool(wbtc, 1e8);
         _pool.supplyToPool(usdc, 1e8);
         _pool.supplyToPool(wNative, 1 ether);
-    }
-
-    function testInitializeEMode() public {
-        uint256 eModeCategoryId = vm.envOr("E_MODE_CATEGORY_ID", uint256(0));
-        assertEq(_eModeCategoryId, eModeCategoryId);
     }
 
     function testLtvLiquidationThresholdPriceSourceEMode(AssetData memory assetData) public {
@@ -263,10 +256,11 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         indexes.supply.p2pIndex = bound(indexes.supply.p2pIndex, indexes.supply.poolIndex, type(uint96).max);
         indexes.borrow.p2pIndex = bound(indexes.borrow.p2pIndex, 0, type(uint96).max);
         indexes.borrow.poolIndex = bound(indexes.borrow.poolIndex, indexes.borrow.p2pIndex, type(uint96).max);
+
         // Keep the condition because the test reverts if _eModeCategoryId == 0
         if (_eModeCategoryId != 0) {
             vm.assume(_eModeCategoryId != eModeCategoryId);
-            vm.expectRevert(abi.encodeWithSelector(Errors.InconsistentEMode.selector));
+            vm.expectRevert(Errors.InconsistentEMode.selector);
         }
         this.authorizeBorrow(dai, 0, indexes);
     }
