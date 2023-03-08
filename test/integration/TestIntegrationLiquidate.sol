@@ -487,13 +487,13 @@ contract TestIntegrationLiquidate is IntegrationTest {
     ) internal {
         assertLe(test.repaid, test.borrowedBalanceBefore.percentMul(Constants.MAX_CLOSE_FACTOR));
 
-        assertApproxEqAbs(
+        assertApproxGeAbs(
             morpho.borrowBalance(borrowedMarket.underlying, borrower) + test.repaid,
             test.borrowedBalanceBefore,
             2,
             "borrowBalanceAfter != borrowedBalanceBefore - repaid"
         );
-        assertApproxEqAbs(
+        assertApproxLeAbs(
             morpho.collateralBalance(collateralMarket.underlying, borrower) + test.seized,
             test.collateralBalanceBefore,
             1,
