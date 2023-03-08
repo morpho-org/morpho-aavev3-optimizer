@@ -71,4 +71,10 @@ contract BaseTest is Test {
     function _boundAddressNotZero(address input) internal view virtual returns (address) {
         return address(uint160(bound(uint256(uint160(input)), 1, type(uint160).max)));
     }
+
+    /// @dev Assumes the receiver is able to receive ETH without reverting.
+    function _assumeETHReceiver(address receiver) internal {
+        (bool success,) = receiver.call("");
+        vm.assume(success);
+    }
 }

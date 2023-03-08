@@ -8,11 +8,51 @@ import {WETHGateway} from "src/extensions/WETHGateway.sol";
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationETHEMode is IntegrationTest {
-    IWETHGateway internal wethGateway;
+    using PercentageMath for uint256;
+    using TestMarketLib for TestMarket;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    function setUp() public override {
+    IWETHGateway internal wethGateway;
+    DataTypes.EModeCategory internal eModeCategory;
+
+    function setUp() public virtual override {
+        DataTypes.ReserveConfigurationMap memory stakedConfig = pool.getConfiguration(sNative);
+
+        eModeCategoryId = uint8(stakedConfig.getEModeCategory());
+        eModeCategory = pool.getEModeCategoryData(eModeCategoryId);
+
         super.setUp();
 
         wethGateway = new WETHGateway(address(morpho));
+    }
+
+    function testLeverageStakedNative(uint256 collateral, address onBehalf, address receiver) public {
+        onBehalf = _boundOnBehalf(onBehalf);
+
+        _assumeETHReceiver(receiver);
+        _prepareOnBehalf(onBehalf);
+
+        TestMarket storage sNativeMarket = testMarkets[sNative];
+        TestMarket storage wNativeMarket = testMarkets[wNative];
+
+        collateral = _boundCollateral(sNativeMarket, collateral, wNativeMarket);
+        uint256 collateralized = (
+            ((collateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND) * sNativeMarket.price * 1 ether)
+                / (wNativeMarket.price * 1 ether)
+        );
+
+        uint256 borrowed = collateralized.percentMul(eModeCategory.ltv - 10);
+
+        user.approve(sNative, collateral);
+        user.supplyCollateral(sNative, collateral, onBehalf);
+
+        vm.startPrank(onBehalf);
+        morpho.approveManager(address(wethGateway), true);
+        wethGateway.borrowETH(borrowed, receiver, DEFAULT_MAX_ITERATIONS);
+        vm.stopPrank();
+
+        user.withdrawCollateral(
+            sNative, collateralized.percentMul(eModeCategory.liquidationThreshold - 10) - borrowed, onBehalf, receiver
+        );
     }
 }
