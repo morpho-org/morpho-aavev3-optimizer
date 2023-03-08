@@ -1,25 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {Types} from "src/libraries/Types.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
-import {Events} from "src/libraries/Events.sol";
-import {Errors} from "src/libraries/Errors.sol";
 
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
-import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
+import "test/helpers/BaseTest.sol";
 
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
-
-import {Test} from "@forge-std/Test.sol";
-
-contract TestUnitMarketLib is Test {
+contract TestUnitMarketLib is BaseTest {
     using MarketLib for Types.Market;
     using WadRayMath for uint256;
-
-    uint256 internal constant MAX_AMOUNT = 1e10 ether;
-    uint256 internal constant MIN_INDEX = WadRayMath.RAY;
-    uint256 internal constant MAX_INDEX = 100 * WadRayMath.RAY;
 
     Types.Market internal market;
 
@@ -234,10 +222,10 @@ contract TestUnitMarketLib is Test {
     }
 
     function testSetIndexes(Types.Indexes256 memory indexes) public {
-        indexes.supply.poolIndex = bound(indexes.supply.poolIndex, MIN_INDEX, MAX_INDEX);
-        indexes.supply.p2pIndex = bound(indexes.supply.p2pIndex, MIN_INDEX, MAX_INDEX);
-        indexes.borrow.poolIndex = bound(indexes.borrow.poolIndex, MIN_INDEX, MAX_INDEX);
-        indexes.borrow.p2pIndex = bound(indexes.borrow.p2pIndex, MIN_INDEX, MAX_INDEX);
+        indexes.supply.poolIndex = _boundIndex(indexes.supply.poolIndex);
+        indexes.supply.p2pIndex = _boundIndex(indexes.supply.p2pIndex);
+        indexes.borrow.poolIndex = _boundIndex(indexes.borrow.poolIndex);
+        indexes.borrow.p2pIndex = _boundIndex(indexes.borrow.p2pIndex);
 
         vm.expectEmit(true, true, true, true);
         emit Events.IndexesUpdated(
@@ -286,11 +274,11 @@ contract TestUnitMarketLib is Test {
     }
 
     function testGetProportionIdle(Types.Market memory _market) public {
-        _market.deltas.supply.scaledP2PTotal = bound(_market.deltas.supply.scaledP2PTotal, 0, MAX_AMOUNT);
+        _market.deltas.supply.scaledP2PTotal = _boundAmount(_market.deltas.supply.scaledP2PTotal);
         _market.idleSupply = bound(_market.idleSupply, 0, _market.deltas.supply.scaledP2PTotal);
-        _market.indexes.supply.poolIndex = uint128(bound(_market.indexes.supply.poolIndex, MIN_INDEX, MAX_INDEX));
-        _market.indexes.supply.p2pIndex = uint128(bound(_market.indexes.supply.p2pIndex, MIN_INDEX, MAX_INDEX));
-        _market.indexes.borrow.poolIndex = uint128(bound(_market.indexes.borrow.poolIndex, MIN_INDEX, MAX_INDEX));
+        _market.indexes.supply.poolIndex = uint128(_boundIndex(_market.indexes.supply.poolIndex));
+        _market.indexes.supply.p2pIndex = uint128(_boundIndex(_market.indexes.supply.p2pIndex));
+        _market.indexes.borrow.poolIndex = uint128(_boundIndex(_market.indexes.borrow.poolIndex));
 
         market = _market;
 

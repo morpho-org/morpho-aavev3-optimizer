@@ -128,8 +128,6 @@ library Events {
 
     event IsDeprecatedSet(address indexed underlying, bool isDeprecated);
 
-    event EModeSet(uint8 categoryId);
-
     event IndexesUpdated(
         address indexed underlying,
         uint256 poolSupplyIndex,
@@ -142,5 +140,5 @@ library Events {
 
     event ReserveFeeClaimed(address indexed underlying, uint256 claimed);
 
-    event UserNonceIncremented(address indexed manager, address indexed signatory, uint256 usedNonce);
+    event UserNonceIncremented(address indexed caller, address indexed signatory, uint256 usedNonce);
 }

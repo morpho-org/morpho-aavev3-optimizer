@@ -5,6 +5,7 @@ on:
     paths:
       - lib/**
       - src/**
+      - test/**
       - foundry.toml
       - remappings.txt
       - .github/workflows/pull_request.yml
