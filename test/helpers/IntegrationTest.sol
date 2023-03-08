@@ -87,16 +87,21 @@ contract IntegrationTest is ForkTest {
     }
 
     function _deploy() internal {
-        positionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID);
-        morphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID);
+        positionsManager = new PositionsManager();
+        morphoImpl = new Morpho();
 
         proxyAdmin = new ProxyAdmin();
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImpl)), address(proxyAdmin), "");
         morpho = Morpho(payable(address(morphoProxy)));
 
-        morpho.initialize(address(positionsManager), Types.Iterations({repay: 10, withdraw: 10}));
+        morpho.initialize(
+            address(addressesProvider),
+            E_MODE_CATEGORY_ID,
+            address(positionsManager),
+            Types.Iterations({repay: 10, withdraw: 10})
+        );
 
-        rewardsManager = new RewardsManager(address(rewardsController), address(morpho), address(pool));
+        rewardsManager = new RewardsManager(address(rewardsController), address(morpho));
 
         morpho.setRewardsManager(address(rewardsManager));
     }
@@ -285,6 +290,8 @@ contract IntegrationTest is ForkTest {
 
         vm.prank(borrower);
         borrowed = morpho.borrow(market.underlying, amount, onBehalf, receiver, maxIterations);
+
+        _deposit(market, market.minBorrowCollateral(market, borrowed), address(morpho)); // Make Morpho able to borrow again with some collateral.
 
         oracle.setAssetPrice(market.underlying, market.price);
     }
