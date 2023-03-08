@@ -29,7 +29,7 @@ contract IntegrationTest is ForkTest {
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
 
     // AaveV3 base currency is USD, 8 decimals on all L2s.
-    uint256 internal constant MIN_USD_AMOUNT = 10e8; // 10$
+    uint256 internal constant MIN_USD_AMOUNT = 1e8; // 1$
     uint256 internal constant MAX_USD_AMOUNT = 500_000_000e8; // 500m$
 
     IMorpho internal morpho;
