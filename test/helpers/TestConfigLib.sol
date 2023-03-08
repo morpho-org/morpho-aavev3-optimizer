@@ -17,27 +17,27 @@ library TestConfigLib {
     string internal constant MARKETS_PATH = "$.markets";
     string internal constant MORPHO_DAO_PATH = "$.morphoDao";
 
-    function getAddress(TestConfig storage config, string memory key) internal view returns (address) {
+    function getAddress(TestConfig storage config, string memory key) internal returns (address) {
         return config.json.readAddress(string.concat("$.", key));
     }
 
-    function getRpcAlias(TestConfig storage config) internal view returns (string memory) {
+    function getRpcAlias(TestConfig storage config) internal returns (string memory) {
         return config.json.readString(RPC_ALIAS_PATH);
     }
 
-    function getForkBlockNumber(TestConfig storage config) internal view returns (uint256) {
+    function getForkBlockNumber(TestConfig storage config) internal returns (uint256) {
         return config.json.readUint(FORK_BLOCK_NUMBER_PATH);
     }
 
-    function getAddressesProvider(TestConfig storage config) internal view returns (address) {
+    function getAddressesProvider(TestConfig storage config) internal returns (address) {
         return config.json.readAddress(ADDRESSES_PROVIDER_PATH);
     }
 
-    function getMorphoDao(TestConfig storage config) internal view returns (address) {
+    function getMorphoDao(TestConfig storage config) internal returns (address) {
         return config.json.readAddress(MORPHO_DAO_PATH);
     }
 
-    function getWrappedNative(TestConfig storage config) internal view returns (address) {
+    function getWrappedNative(TestConfig storage config) internal returns (address) {
         return getAddress(config, config.json.readString(WRAPPED_NATIVE_PATH));
     }
 }
