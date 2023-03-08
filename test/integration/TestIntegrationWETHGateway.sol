@@ -10,7 +10,6 @@ import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationWETHGateway is IntegrationTest {
     uint256 internal constant MIN_AMOUNT = 1e9;
-    uint256 internal constant MAX_ITERATIONS = 10;
 
     IWETHGateway internal wethGateway;
 
@@ -18,12 +17,6 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         super.setUp();
 
         wethGateway = new WETHGateway(address(morpho));
-    }
-
-    /// @dev Assumes the receiver is able to receive ETH without reverting.
-    function _assumeReceiver(address receiver) internal {
-        (bool success,) = receiver.call("");
-        vm.assume(success);
     }
 
     function invariantWETHAllowance() public {
@@ -96,11 +89,11 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         _supplyETH(address(this), amount);
 
         vm.expectRevert(Errors.PermissionDenied.selector);
-        wethGateway.withdrawETH(amount, address(this), MAX_ITERATIONS);
+        wethGateway.withdrawETH(amount, address(this), DEFAULT_MAX_ITERATIONS);
     }
 
     function testWithdrawETH(uint256 supply, uint256 toWithdraw, address receiver) public {
-        _assumeReceiver(receiver);
+        _assumeETHReceiver(receiver);
 
         supply = bound(supply, MIN_AMOUNT, type(uint96).max);
         toWithdraw = bound(toWithdraw, 1, type(uint256).max);
@@ -111,7 +104,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
         uint256 balanceBefore = address(this).balance;
         uint256 receiverBalanceBefore = receiver.balance;
-        uint256 withdrawn = wethGateway.withdrawETH(toWithdraw, receiver, MAX_ITERATIONS);
+        uint256 withdrawn = wethGateway.withdrawETH(toWithdraw, receiver, DEFAULT_MAX_ITERATIONS);
 
         if (receiver != address(this)) assertEq(address(this).balance, balanceBefore, "balanceAfter != balanceBefore");
         assertApproxEqAbs(withdrawn, Math.min(toWithdraw, supply), 1, "withdrawn != minimum");
@@ -136,7 +129,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testWithdrawCollateralETH(uint256 collateral, uint256 toWithdraw, address receiver) public {
-        _assumeReceiver(receiver);
+        _assumeETHReceiver(receiver);
 
         collateral = bound(collateral, MIN_AMOUNT, type(uint96).max);
         toWithdraw = bound(toWithdraw, 1, type(uint256).max);
@@ -171,11 +164,11 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         _supplyCollateralETH(address(this), amount);
 
         vm.expectRevert(Errors.PermissionDenied.selector);
-        wethGateway.borrowETH(amount / 2, address(this), MAX_ITERATIONS);
+        wethGateway.borrowETH(amount / 2, address(this), DEFAULT_MAX_ITERATIONS);
     }
 
     function testBorrowETH(uint256 amount, address receiver) public {
-        _assumeReceiver(receiver);
+        _assumeETHReceiver(receiver);
 
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
 
@@ -185,7 +178,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
         uint256 balanceBefore = receiver.balance;
         uint256 toBorrow = amount / 2;
-        uint256 borrowed = wethGateway.borrowETH(toBorrow, receiver, MAX_ITERATIONS);
+        uint256 borrowed = wethGateway.borrowETH(toBorrow, receiver, DEFAULT_MAX_ITERATIONS);
 
         assertEq(borrowed, toBorrow, "borrowed != toBorrow");
         assertGt(morpho.borrowBalance(weth, address(this)), 0);
@@ -194,7 +187,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testRepayETH(uint256 amount, uint256 toRepay, address onBehalf, address repayer) public {
-        _assumeReceiver(onBehalf);
+        _assumeETHReceiver(onBehalf);
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
 
         _supplyCollateralETH(address(this), amount);
@@ -202,7 +195,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         morpho.approveManager(address(wethGateway), true);
 
         uint256 toBorrow = amount / 2;
-        wethGateway.borrowETH(toBorrow, onBehalf, MAX_ITERATIONS);
+        wethGateway.borrowETH(toBorrow, onBehalf, DEFAULT_MAX_ITERATIONS);
 
         toRepay = bound(toRepay, 1, toBorrow);
         deal(repayer, toRepay);
@@ -217,8 +210,8 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testRepayETHWithExcess(uint256 amount, uint256 toRepay, address onBehalf, address repayer) public {
-        _assumeReceiver(onBehalf);
-        _assumeReceiver(repayer);
+        _assumeETHReceiver(onBehalf);
+        _assumeETHReceiver(repayer);
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
 
         _supplyCollateralETH(address(this), amount);
@@ -226,7 +219,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         morpho.approveManager(address(wethGateway), true);
 
         uint256 toBorrow = amount / 2;
-        wethGateway.borrowETH(toBorrow, onBehalf, MAX_ITERATIONS);
+        wethGateway.borrowETH(toBorrow, onBehalf, DEFAULT_MAX_ITERATIONS);
 
         uint256 borrowBalance = morpho.borrowBalance(weth, address(this));
 
@@ -241,7 +234,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function _supplyETH(address onBehalf, uint256 amount) internal returns (uint256) {
-        return wethGateway.supplyETH{value: amount}(onBehalf, MAX_ITERATIONS);
+        return wethGateway.supplyETH{value: amount}(onBehalf, DEFAULT_MAX_ITERATIONS);
     }
 
     function _supplyCollateralETH(address onBehalf, uint256 amount) internal returns (uint256) {
