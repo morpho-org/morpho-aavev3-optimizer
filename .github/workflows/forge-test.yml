@@ -1,4 +1,4 @@
-name: Forge
+name: Forge tests
 
 on:
   workflow_call:
