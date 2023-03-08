@@ -10,9 +10,13 @@ library Errors {
     error MarketAlreadyCreated();
     error MarketIsNotListedOnAave();
     error MarketLtTooLow();
+    error SiloedBorrowMarket();
 
     error AddressIsZero();
     error AmountIsZero();
+    error DebtIsZero();
+    error SupplyIsZero();
+    error CollateralIsZero();
     error PermissionDenied();
 
     error SupplyIsPaused();
@@ -28,12 +32,14 @@ library Errors {
     error MarketIsDeprecated();
     error BorrowNotPaused();
 
-    error BorrowingNotEnabled();
+    error BorrowNotEnabled();
+    error SentinelBorrowNotEnabled();
     error InconsistentEMode();
     error UnauthorizedBorrow();
 
     error UnauthorizedWithdraw();
     error UnauthorizedLiquidate();
+    error SentinelLiquidateNotEnabled();
 
     error ExceedsMaxBasisPoints();
 

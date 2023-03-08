@@ -26,24 +26,24 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
 
     /* STORAGE */
 
-    /// @notice Returns the pool address.
-    function POOL() external view returns (address) {
-        return address(_POOL);
-    }
-
-    /// @notice Returns the addresses provider address.
-    function ADDRESSES_PROVIDER() external view returns (address) {
-        return address(_ADDRESSES_PROVIDER);
-    }
-
     /// @notice Returns the domain separator of the EIP712.
     function DOMAIN_SEPARATOR() external view returns (bytes32) {
         return _domainSeparator();
     }
 
+    /// @notice Returns the pool address.
+    function pool() external view returns (address) {
+        return address(_pool);
+    }
+
+    /// @notice Returns the addresses provider address.
+    function addressesProvider() external view returns (address) {
+        return address(_addressesProvider);
+    }
+
     /// @notice Returns the e-mode category ID of Morpho on the Aave protocol.
-    function E_MODE_CATEGORY_ID() external view returns (uint256) {
-        return _E_MODE_CATEGORY_ID;
+    function eModeCategoryId() external view returns (uint256) {
+        return _eModeCategoryId;
     }
 
     /// @notice Returns the market data.
@@ -97,7 +97,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
 
     /// @notice Returns the supply collateral balance of `user` on the `underlying` market (in underlying).
     function collateralBalance(address underlying, address user) external view returns (uint256) {
-        return _getUserCollateralBalanceFromIndex(underlying, user, _POOL.getReserveNormalizedIncome(underlying));
+        return _getUserCollateralBalanceFromIndex(underlying, user, _pool.getReserveNormalizedIncome(underlying));
     }
 
     /// @notice Returns the list of collateral underlyings of `user`.

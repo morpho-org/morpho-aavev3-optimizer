@@ -16,7 +16,7 @@ contract UserMock {
 
     constructor(address _morpho) {
         morpho = IMorpho(_morpho);
-        pool = IPool(morpho.POOL());
+        pool = IPool(morpho.pool());
     }
 
     receive() external payable {}
@@ -144,5 +144,9 @@ contract UserMock {
         returns (uint256, uint256)
     {
         return morpho.liquidate(underlyingBorrowed, underlyingCollateral, borrower, amount);
+    }
+
+    function approveManager(address manager, bool isApproved) external {
+        return morpho.approveManager(manager, isApproved);
     }
 }

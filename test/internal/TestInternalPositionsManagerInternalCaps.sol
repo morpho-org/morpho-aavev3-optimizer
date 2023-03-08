@@ -13,6 +13,7 @@ import "test/helpers/InternalTest.sol";
 
 contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsManagerInternal {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using ReserveDataLib for DataTypes.ReserveData;
     using EnumerableSet for EnumerableSet.AddressSet;
     using WadRayMath for uint256;
     using PoolLib for IPool;
@@ -24,6 +25,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
     uint256 daiTokenUnit;
 
     function setUp() public virtual override {
+        super.setUp();
+
         _defaultIterations = Types.Iterations(10, 10);
 
         _createMarket(dai, 0, 3_333);
@@ -33,12 +36,12 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         _setBalances(address(this), type(uint256).max);
 
-        _POOL.supplyToPool(dai, 100 ether);
-        _POOL.supplyToPool(wbtc, 1e8);
-        _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(wNative, 1 ether);
+        _pool.supplyToPool(dai, 100 ether);
+        _pool.supplyToPool(wbtc, 1e8);
+        _pool.supplyToPool(usdc, 1e8);
+        _pool.supplyToPool(wNative, 1 ether);
 
-        daiTokenUnit = 10 ** _POOL.getConfiguration(dai).getDecimals();
+        daiTokenUnit = 10 ** _pool.getConfiguration(dai).getDecimals();
     }
 
     function testAuthorizeBorrowWithNoBorrowCap(uint256 amount, uint256 totalP2P, uint256 delta) public {
@@ -112,7 +115,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         Types.Market storage market = _market[dai];
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
-        uint256 totalPoolSupply = (IAToken(market.aToken).scaledTotalSupply() + _accruedToTreasury(market.underlying))
+        DataTypes.ReserveData memory reserve = pool.getReserveData(market.underlying);
+        uint256 totalPoolSupply = (IAToken(market.aToken).scaledTotalSupply() + reserve.getAccruedToTreasury(indexes))
             .rayMul(indexes.supply.poolIndex);
         supplyCap = bound(
             supplyCap,

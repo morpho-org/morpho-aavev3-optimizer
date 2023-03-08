@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 import {IPriceOracleSentinel} from "@aave-v3-core/interfaces/IPriceOracleSentinel.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -104,9 +105,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
     /// @dev Authorizes a borrow action.
     function _authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) internal view {
-        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
-        if (!config.getBorrowingEnabled()) revert Errors.BorrowingNotEnabled();
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
+        DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
+        if (!config.getBorrowingEnabled()) revert Errors.BorrowNotEnabled();
+
+        address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
+        if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
+            revert Errors.SentinelBorrowNotEnabled();
+        }
+
+        if (_eModeCategoryId != 0 && _eModeCategoryId != config.getEModeCategory()) {
             revert Errors.InconsistentEMode();
         }
 
@@ -175,20 +182,20 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (_market[underlyingBorrowed].isDeprecated()) return Constants.MAX_CLOSE_FACTOR; // Allow liquidation of the whole debt.
 
         uint256 healthFactor = _getUserHealthFactor(borrower);
-        if (healthFactor >= Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+        if (healthFactor >= Constants.DEFAULT_LIQUIDATION_MAX_HF) {
             revert Errors.UnauthorizedLiquidate();
         }
 
-        if (healthFactor > Constants.MIN_LIQUIDATION_THRESHOLD) {
-            address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
+        if (healthFactor >= Constants.DEFAULT_LIQUIDATION_MIN_HF) {
+            address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
 
             if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
             {
-                revert Errors.UnauthorizedLiquidate();
+                revert Errors.SentinelLiquidateNotEnabled();
             }
-
-            return Constants.DEFAULT_CLOSE_FACTOR;
         }
+
+        if (healthFactor > Constants.DEFAULT_LIQUIDATION_MIN_HF) return Constants.DEFAULT_CLOSE_FACTOR;
 
         return Constants.MAX_CLOSE_FACTOR;
     }
@@ -227,7 +234,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Supply on pool.
         (vars.toSupply, vars.onPool) = _addToPool(amount, vars.onPool, indexes.supply.poolIndex);
 
-        _updateSupplierInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
+        (vars.onPool, vars.inP2P) = _updateSupplierInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
     }
 
     /// @dev Performs the accounting of a borrow action.
@@ -269,7 +276,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Borrow on pool.
         (vars.toBorrow, vars.onPool) = _addToPool(amount, vars.onPool, indexes.borrow.poolIndex);
 
-        _updateBorrowerInDS(underlying, borrower, vars.onPool, vars.inP2P, false);
+        (vars.onPool, vars.inP2P) = _updateBorrowerInDS(underlying, borrower, vars.onPool, vars.inP2P, false);
     }
 
     /// @dev Performs the accounting of a repay action.
@@ -293,8 +300,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Repay borrow peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.borrow.p2pIndex)); // In peer-to-peer borrow unit.
 
-        _updateBorrowerInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
+        (vars.onPool, vars.inP2P) = _updateBorrowerInDS(underlying, onBehalf, vars.onPool, vars.inP2P, false);
 
+        // Returning early requires having updated the borrower in the data structure, which in turn requires having updated `inP2P`.
         if (amount == 0) return vars;
 
         Types.Market storage market = _market[underlying];
@@ -326,7 +334,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Handle the supply cap.
         uint256 idleSupplyIncrease;
         (vars.toSupply, idleSupplyIncrease) =
-            market.increaseIdle(underlying, amount, _POOL.getReserveData(underlying), indexes);
+            market.increaseIdle(underlying, amount, _pool.getReserveData(underlying), indexes);
 
         // Demote peer-to-peer suppliers.
         uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxIterations);
@@ -360,8 +368,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Withdraw supply peer-to-peer.
         vars.inP2P = vars.inP2P.zeroFloorSub(amount.rayDivUp(indexes.supply.p2pIndex)); // In peer-to-peer supply unit.
 
-        _updateSupplierInDS(underlying, supplier, vars.onPool, vars.inP2P, false);
+        (vars.onPool, vars.inP2P) = _updateSupplierInDS(underlying, supplier, vars.onPool, vars.inP2P, false);
 
+        // Returning early requires having updated the supplier in the data structure, which in turn requires having updated `inP2P`.
         if (amount == 0) return vars;
 
         // Decrease the peer-to-peer idle supply.
@@ -425,7 +434,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     }
 
     /// @dev Executes a supply action.
-
     function _executeSupply(
         address underlying,
         uint256 amount,
@@ -560,5 +568,59 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         (uint256 promoted, uint256 iterationsDone) = promote(underlying, amount, maxIterations); // In underlying.
 
         return (amount - promoted, promoted, maxIterations - iterationsDone);
+    }
+
+    /// @dev Calculates the amount to seize during a liquidation process.
+    /// @param underlyingBorrowed The address of the underlying borrowed asset.
+    /// @param underlyingCollateral The address of the underlying collateral asset.
+    /// @param maxToRepay The maximum amount of `underlyingBorrowed` to repay.
+    /// @param borrower The address of the borrower being liquidated.
+    /// @param poolSupplyIndex The current pool supply index of the `underlyingCollateral` market.
+    /// @return amountToRepay The amount of `underlyingBorrowed` to repay.
+    /// @return amountToSeize The amount of `underlyingCollateral` to seize.
+    function _calculateAmountToSeize(
+        address underlyingBorrowed,
+        address underlyingCollateral,
+        uint256 maxToRepay,
+        address borrower,
+        uint256 poolSupplyIndex
+    ) internal view returns (uint256 amountToRepay, uint256 amountToSeize) {
+        Types.AmountToSeizeVars memory vars;
+        DataTypes.ReserveConfigurationMap memory borrowedConfig = _pool.getConfiguration(underlyingBorrowed);
+        DataTypes.ReserveConfigurationMap memory collateralConfig = _pool.getConfiguration(underlyingCollateral);
+
+        DataTypes.EModeCategory memory eModeCategory;
+        if (_eModeCategoryId != 0) eModeCategory = _pool.getEModeCategoryData(_eModeCategoryId);
+
+        bool collateralIsInEMode = _isInEModeCategory(collateralConfig);
+        vars.liquidationBonus =
+            collateralIsInEMode ? eModeCategory.liquidationBonus : collateralConfig.getLiquidationBonus();
+
+        IAaveOracle oracle = IAaveOracle(_addressesProvider.getPriceOracle());
+        vars.borrowedPrice =
+            _getAssetPrice(underlyingBorrowed, oracle, _isInEModeCategory(borrowedConfig), eModeCategory.priceSource);
+        vars.collateralPrice =
+            _getAssetPrice(underlyingCollateral, oracle, collateralIsInEMode, eModeCategory.priceSource);
+
+        unchecked {
+            vars.borrowedTokenUnit = 10 ** borrowedConfig.getDecimals();
+            vars.collateralTokenUnit = 10 ** collateralConfig.getDecimals();
+        }
+
+        amountToRepay = maxToRepay;
+        amountToSeize = (
+            (amountToRepay * vars.borrowedPrice * vars.collateralTokenUnit)
+                / (vars.borrowedTokenUnit * vars.collateralPrice)
+        ).percentMul(vars.liquidationBonus);
+
+        uint256 collateralBalance = _getUserCollateralBalanceFromIndex(underlyingCollateral, borrower, poolSupplyIndex);
+
+        if (amountToSeize > collateralBalance) {
+            amountToSeize = collateralBalance;
+            amountToRepay = (
+                (collateralBalance * vars.collateralPrice * vars.borrowedTokenUnit)
+                    / (vars.borrowedPrice * vars.collateralTokenUnit)
+            ).percentDiv(vars.liquidationBonus);
+        }
     }
 }

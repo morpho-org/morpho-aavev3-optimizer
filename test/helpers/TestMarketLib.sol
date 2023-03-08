@@ -8,7 +8,6 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {collateralValue, rawCollateralValue} from "test/helpers/Utils.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
-import {Vm} from "@forge-std/Vm.sol";
 
 struct TestMarket {
     address aToken;
@@ -37,8 +36,6 @@ struct TestMarket {
 library TestMarketLib {
     using Math for uint256;
     using PercentageMath for uint256;
-
-    Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     /// @dev Returns the quantity that can be borrowed/withdrawn from the market.
     function liquidity(TestMarket storage market) internal view returns (uint256) {
@@ -107,7 +104,9 @@ library TestMarketLib {
             (
                 (amount * borrowedMarket.price * 10 ** collateralMarket.decimals)
                     / (collateralMarket.price * 10 ** borrowedMarket.decimals)
-            ).percentDiv(collateralMarket.ltv - 1)
+            )
+                // The quantity of collateral required to open a borrow is over-estimated because of decimals precision (especially in the case WBTC/WETH).
+                .percentDiv(collateralMarket.ltv - 10)
         );
     }
 

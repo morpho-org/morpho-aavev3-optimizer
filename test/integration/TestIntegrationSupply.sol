@@ -324,8 +324,11 @@ contract TestIntegrationSupply is IntegrationTest {
         }
     }
 
-    function testShouldUpdateIndexesAfterSupply(uint256 amount, address onBehalf) public {
+    function testShouldUpdateIndexesAfterSupply(uint256 blocks, uint256 amount, address onBehalf) public {
+        blocks = _boundBlocks(blocks);
         onBehalf = _boundReceiver(onBehalf);
+
+        _forward(blocks);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             _revert();
