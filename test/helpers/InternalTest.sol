@@ -13,7 +13,7 @@ contract InternalTest is ForkTest, Morpho {
     function setUp() public virtual override {
         super.setUp();
 
-        vm.store(address(this), bytes32(uint256(42)), 0); // Re-enable initialization.
+        vm.store(address(this), bytes32(uint256(43)), 0); // Re-enable initialization.
         this.initialize(
             config.getAddressesProvider(),
             uint8(vm.envOr("E_MODE_CATEGORY_ID", uint256(0))),
