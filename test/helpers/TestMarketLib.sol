@@ -82,16 +82,24 @@ library TestMarketLib {
         return market.borrowCap.zeroFloorSub(totalBorrow(market));
     }
 
+    /// @dev Quotes the given amount of base tokens as quote tokens.
+    function quote(TestMarket storage quoteMarket, TestMarket storage baseMarket, uint256 amount)
+        internal
+        view
+        returns (uint256)
+    {
+        return
+            (amount * baseMarket.price * 10 ** quoteMarket.decimals) / (quoteMarket.price * 10 ** baseMarket.decimals);
+    }
+
     /// @dev Calculates the maximum borrowable quantity collateralized by the given quantity of collateral.
     function borrowable(TestMarket storage borrowedMarket, TestMarket storage collateralMarket, uint256 rawCollateral)
         internal
         view
         returns (uint256)
     {
-        return (
-            collateralValue(rawCollateral).percentMul(collateralMarket.ltv - 1) * collateralMarket.price
-                * 10 ** borrowedMarket.decimals
-        ) / (borrowedMarket.price * 10 ** collateralMarket.decimals);
+        return
+            quote(borrowedMarket, collateralMarket, collateralValue(rawCollateral)).percentMul(collateralMarket.ltv - 1);
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt and still be able to borrow.
@@ -101,11 +109,8 @@ library TestMarketLib {
         returns (uint256)
     {
         return rawCollateralValue(
-            (
-                (amount * borrowedMarket.price * 10 ** collateralMarket.decimals)
-                    / (collateralMarket.price * 10 ** borrowedMarket.decimals)
-            )
-                // The quantity of collateral required to open a borrow is over-estimated because of decimals precision (especially in the case WBTC/WETH).
+            quote(collateralMarket, borrowedMarket, amount)
+                // The quantity of collateral required to open a borrow is over-estimated because of decimals precision (especially for the pair WBTC/WETH).
                 .percentDiv(collateralMarket.ltv - 10)
         );
     }
@@ -117,11 +122,6 @@ library TestMarketLib {
         view
         returns (uint256)
     {
-        return rawCollateralValue(
-            (
-                (amount * borrowedMarket.price * 10 ** collateralMarket.decimals)
-                    / (collateralMarket.price * 10 ** borrowedMarket.decimals)
-            ).percentDiv(collateralMarket.lt)
-        );
+        return rawCollateralValue(quote(collateralMarket, borrowedMarket, amount).percentDiv(collateralMarket.lt));
     }
 }
