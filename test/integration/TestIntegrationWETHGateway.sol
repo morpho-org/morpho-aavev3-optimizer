@@ -236,10 +236,10 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertEq(receiver.balance, balanceBefore + toBorrow, "balance != expectedBalance");
     }
 
-    function testCannotRepayETHWhenAmountZero(address repayer) public {
+    function testCannotRepayETHWhenAmountZero(address repayer, address onBehalf) public {
         vm.prank(repayer);
         vm.expectRevert(Errors.AmountIsZero.selector);
-        wethGateway.repayETH{value: 0}(address(this));
+        wethGateway.repayETH{value: 0}(onBehalf);
     }
 
     function testRepayETH(uint256 amount, uint256 toRepay, address onBehalf, address repayer) public {
