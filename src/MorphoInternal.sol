@@ -303,12 +303,8 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @return debtValue The debt value of `vars.user` on the `underlying` market.
     function _debt(address underlying, Types.LiquidityVars memory vars) internal view returns (uint256 debtValue) {
         DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
-        uint256 tokenUnit;
-        unchecked {
-            tokenUnit = 10 ** config.getDecimals();
-        }
-        uint256 underlyingPrice =
-            _getAssetPrice(underlying, vars.oracle, _isInEModeCategory(config), vars.eModeCategory.priceSource);
+        (, uint256 underlyingPrice, uint256 tokenUnit) =
+            _getAssetPrice(underlying, vars.oracle, config, vars.eModeCategory.priceSource);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
         debtValue =
@@ -328,12 +324,10 @@ abstract contract MorphoInternal is MorphoStorage {
         returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit)
     {
         DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
-        unchecked {
-            tokenUnit = 10 ** config.getDecimals();
-        }
 
-        bool isInEMode = _isInEModeCategory(config);
-        underlyingPrice = _getAssetPrice(underlying, vars.oracle, isInEMode, vars.eModeCategory.priceSource);
+        bool isInEMode;
+        (isInEMode, underlyingPrice, tokenUnit) =
+            _getAssetPrice(underlying, vars.oracle, config, vars.eModeCategory.priceSource);
 
         // If the LTV is 0 on Aave V3, the asset cannot be used as collateral to borrow upon a breaking withdraw.
         // In response, Morpho disables the asset as collateral and sets its liquidation threshold
@@ -491,18 +485,24 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Returns the underlying price of a given asset or the price of the e-mode price source if the asset is in the e-mode category.
-    function _getAssetPrice(address underlying, IAaveOracle oracle, bool isInEMode, address priceSource)
-        internal
-        view
-        returns (uint256)
-    {
+    function _getAssetPrice(
+        address underlying,
+        IAaveOracle oracle,
+        DataTypes.ReserveConfigurationMap memory config,
+        address priceSource
+    ) internal view returns (bool isInEMode, uint256 price, uint256 tokenUnit) {
+        unchecked {
+            tokenUnit = 10 ** config.getDecimals();
+        }
+
+        isInEMode = _isInEModeCategory(config);
         if (isInEMode && priceSource != address(0)) {
             uint256 eModePrice = oracle.getAssetPrice(priceSource);
 
-            if (eModePrice != 0) return eModePrice;
+            if (eModePrice != 0) return (isInEMode, eModePrice, tokenUnit);
         }
 
-        return oracle.getAssetPrice(underlying);
+        price = oracle.getAssetPrice(underlying);
     }
 
     /// @dev Returns whether Morpho is in an e-mode category and the given asset configuration is in the same e-mode category.

@@ -586,26 +586,22 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 poolSupplyIndex
     ) internal view returns (uint256 amountToRepay, uint256 amountToSeize) {
         Types.AmountToSeizeVars memory vars;
-        DataTypes.ReserveConfigurationMap memory borrowedConfig = _pool.getConfiguration(underlyingBorrowed);
-        DataTypes.ReserveConfigurationMap memory collateralConfig = _pool.getConfiguration(underlyingCollateral);
 
         DataTypes.EModeCategory memory eModeCategory;
         if (_eModeCategoryId != 0) eModeCategory = _pool.getEModeCategoryData(_eModeCategoryId);
 
-        bool collateralIsInEMode = _isInEModeCategory(collateralConfig);
+        bool collateralIsInEMode;
+        IAaveOracle oracle = IAaveOracle(_addressesProvider.getPriceOracle());
+        DataTypes.ReserveConfigurationMap memory borrowedConfig = _pool.getConfiguration(underlyingBorrowed);
+        DataTypes.ReserveConfigurationMap memory collateralConfig = _pool.getConfiguration(underlyingCollateral);
+
+        (, vars.borrowedPrice, vars.borrowedTokenUnit) =
+            _getAssetPrice(underlyingBorrowed, oracle, borrowedConfig, eModeCategory.priceSource);
+        (collateralIsInEMode, vars.collateralPrice, vars.collateralTokenUnit) =
+            _getAssetPrice(underlyingCollateral, oracle, collateralConfig, eModeCategory.priceSource);
+
         vars.liquidationBonus =
             collateralIsInEMode ? eModeCategory.liquidationBonus : collateralConfig.getLiquidationBonus();
-
-        IAaveOracle oracle = IAaveOracle(_addressesProvider.getPriceOracle());
-        vars.borrowedPrice =
-            _getAssetPrice(underlyingBorrowed, oracle, _isInEModeCategory(borrowedConfig), eModeCategory.priceSource);
-        vars.collateralPrice =
-            _getAssetPrice(underlyingCollateral, oracle, collateralIsInEMode, eModeCategory.priceSource);
-
-        unchecked {
-            vars.borrowedTokenUnit = 10 ** borrowedConfig.getDecimals();
-            vars.collateralTokenUnit = 10 ** collateralConfig.getDecimals();
-        }
 
         amountToRepay = maxToRepay;
         amountToSeize = (
