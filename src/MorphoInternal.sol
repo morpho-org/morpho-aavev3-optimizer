@@ -302,7 +302,13 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param vars The liquidity variables.
     /// @return debtValue The debt value of `vars.user` on the `underlying` market.
     function _debt(address underlying, Types.LiquidityVars memory vars) internal view returns (uint256 debtValue) {
-        (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(underlying, vars);
+        DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
+        uint256 tokenUnit;
+        unchecked {
+            tokenUnit = 10 ** config.getDecimals();
+        }
+        uint256 underlyingPrice =
+            _getAssetPrice(underlying, vars.oracle, _isInEModeCategory(config), vars.eModeCategory.priceSource);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
         debtValue =
