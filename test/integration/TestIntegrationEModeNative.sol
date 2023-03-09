@@ -12,7 +12,6 @@ contract TestIntegrationEModeNative is IntegrationTest {
     using TestMarketLib for TestMarket;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    IWETHGateway internal wethGateway;
     DataTypes.EModeCategory internal eModeCategory;
 
     function setUp() public virtual override {
@@ -22,8 +21,6 @@ contract TestIntegrationEModeNative is IntegrationTest {
         eModeCategory = pool.getEModeCategoryData(eModeCategoryId);
 
         super.setUp();
-
-        wethGateway = new WETHGateway(address(morpho));
     }
 
     function testShouldLeverageStakedNative(uint256 rawCollateral, address onBehalf, address receiver) public {
@@ -37,16 +34,15 @@ contract TestIntegrationEModeNative is IntegrationTest {
         TestMarket storage wNativeMarket = testMarkets[wNative];
 
         rawCollateral = _boundCollateral(sNativeMarket, rawCollateral, wNativeMarket);
-        uint256 quoted = wNativeMarket.quoteRawCollateral(sNativeMarket, rawCollateral);
+        uint256 quoted = wNativeMarket.quote(
+            sNativeMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
+        );
         uint256 borrowed = quoted.percentMul(eModeCategory.ltv - 10);
 
         user.approve(sNative, rawCollateral);
         user.supplyCollateral(sNative, rawCollateral, onBehalf);
 
-        vm.startPrank(onBehalf);
-        morpho.approveManager(address(wethGateway), true);
-        wethGateway.borrowETH(borrowed, receiver, DEFAULT_MAX_ITERATIONS);
-        vm.stopPrank();
+        user.borrow(wNative, borrowed, onBehalf, receiver);
 
         user.withdrawCollateral(
             sNative, quoted.percentMul(eModeCategory.liquidationThreshold - 10) - borrowed, onBehalf, receiver
@@ -80,18 +76,16 @@ contract TestIntegrationEModeNative is IntegrationTest {
             borrowed = bound(
                 borrowed,
                 wNativeMarket.borrowable(collateralMarket, rawCollateral),
-                wNativeMarket.quoteRawCollateral(collateralMarket, rawCollateral).percentMul(eModeCategory.ltv)
+                wNativeMarket.quote(
+                    collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
+                ).percentMul(eModeCategory.ltv)
             );
 
             user.approve(collateralMarket.underlying, rawCollateral);
             user.supplyCollateral(collateralMarket.underlying, rawCollateral, onBehalf);
 
-            vm.startPrank(onBehalf);
-            morpho.approveManager(address(wethGateway), true);
-
             vm.expectRevert(Errors.UnauthorizedBorrow.selector);
-            wethGateway.borrowETH(borrowed, receiver, DEFAULT_MAX_ITERATIONS);
-            vm.stopPrank();
+            user.borrow(wNative, borrowed, onBehalf, receiver);
         }
     }
 

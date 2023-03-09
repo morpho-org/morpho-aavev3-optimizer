@@ -90,22 +90,15 @@ library TestMarketLib {
             (amount * baseMarket.price * 10 ** quoteMarket.decimals) / (quoteMarket.price * 10 ** baseMarket.decimals);
     }
 
-    function quoteRawCollateral(
-        TestMarket storage borrowedMarket,
-        TestMarket storage collateralMarket,
-        uint256 rawCollateral
-    ) internal view returns (uint256) {
-        return quote(borrowedMarket, collateralMarket, rawCollateral) * (Constants.LT_LOWER_BOUND - 1)
-            / Constants.LT_LOWER_BOUND;
-    }
-
     /// @dev Calculates the maximum borrowable quantity collateralized by the given quantity of collateral.
     function borrowable(TestMarket storage borrowedMarket, TestMarket storage collateralMarket, uint256 rawCollateral)
         internal
         view
         returns (uint256)
     {
-        return quoteRawCollateral(borrowedMarket, collateralMarket, rawCollateral).percentMul(collateralMarket.ltv - 1);
+        return quote(
+            borrowedMarket, collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
+        ).percentMul(collateralMarket.ltv - 1);
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt and still be able to borrow.
