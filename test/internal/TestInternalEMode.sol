@@ -145,7 +145,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         }
     }
 
-    function testAssetPriceEMode(
+    function testAssetDataEMode(
         address underlying,
         address priceSourceEMode,
         uint256 underlyingPriceEMode,
@@ -174,7 +174,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         assertEq(tokenUnit, 10 ** configuration.getDecimals(), "tokenUnit");
     }
 
-    function testAssetPriceEModeWithPriceSourceZero(
+    function testAssetDataEModeWithPriceSourceZero(
         address underlying,
         uint256 underlyingPrice,
         uint256 underlyingPriceEMode,
@@ -200,7 +200,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         assertEq(tokenUnit, 10 ** configuration.getDecimals(), "tokenUnit");
     }
 
-    function testAssetPriceNonEMode(
+    function testAssetDataNonEMode(
         address underlying,
         address priceSourceEMode,
         uint256 underlyingPriceEMode,
@@ -226,7 +226,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         assertEq(tokenUnit, 10 ** configuration.getDecimals(), "tokenUnit");
     }
 
-    function testAssetPriceEModeWithEModePriceZero(
+    function testAssetDataEModeWithEModePriceZero(
         address underlying,
         address priceSourceEMode,
         uint256 underlyingPrice,
