@@ -165,6 +165,14 @@ contract IntegrationTest is ForkTest {
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
     }
 
+    function _randomCollateral(uint256 seed) internal view returns (address) {
+        return collateralUnderlyings[seed % collateralUnderlyings.length];
+    }
+
+    function _randomBorrowable(uint256 seed) internal view returns (address) {
+        return borrowableUnderlyings[seed % borrowableUnderlyings.length];
+    }
+
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
     function _supplyGap(TestMarket storage market) internal view returns (uint256) {
         return market.supplyCap.zeroFloorSub(_totalSupplyToCap(market.underlying));
