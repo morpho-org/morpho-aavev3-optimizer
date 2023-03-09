@@ -167,7 +167,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         configuration.setEModeCategory(eModeCategoryId);
 
         (bool isInEMode, uint256 price, uint256 tokenUnit) =
-            _getAssetPrice(underlying, oracle, configuration, priceSourceEMode);
+            _assetData(underlying, oracle, configuration, priceSourceEMode);
 
         assertEq(isInEMode, true, "isInEMode");
         assertEq(price, underlyingPriceEMode, "price != expected price");
@@ -193,8 +193,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         _eModeCategoryId = eModeCategoryId;
         configuration.setEModeCategory(eModeCategoryId);
 
-        (bool isInEMode, uint256 price, uint256 tokenUnit) =
-            _getAssetPrice(underlying, oracle, configuration, address(0));
+        (bool isInEMode, uint256 price, uint256 tokenUnit) = _assetData(underlying, oracle, configuration, address(0));
 
         assertEq(isInEMode, true, "isInEMode");
         assertEq(price, underlyingPrice, "price != expected price");
@@ -220,7 +219,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         configuration.setEModeCategory(eModeCategoryId);
 
         (bool isInEMode, uint256 price, uint256 tokenUnit) =
-            _getAssetPrice(underlying, oracle, configuration, priceSourceEMode);
+            _assetData(underlying, oracle, configuration, priceSourceEMode);
 
         assertEq(isInEMode, false, "isInEMode");
         assertEq(price, underlyingPrice, "price != expected price");
@@ -247,7 +246,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         configuration.setEModeCategory(eModeCategoryId);
 
         (bool isInEMode, uint256 price, uint256 tokenUnit) =
-            _getAssetPrice(underlying, oracle, configuration, priceSourceEMode);
+            _assetData(underlying, oracle, configuration, priceSourceEMode);
 
         assertEq(isInEMode, true, "isInEMode");
         assertEq(price, underlyingPrice, "price != expected price");

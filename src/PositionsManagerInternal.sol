@@ -596,9 +596,9 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         DataTypes.ReserveConfigurationMap memory collateralConfig = _pool.getConfiguration(underlyingCollateral);
 
         (, vars.borrowedPrice, vars.borrowedTokenUnit) =
-            _getAssetPrice(underlyingBorrowed, oracle, borrowedConfig, eModeCategory.priceSource);
+            _assetData(underlyingBorrowed, oracle, borrowedConfig, eModeCategory.priceSource);
         (collateralIsInEMode, vars.collateralPrice, vars.collateralTokenUnit) =
-            _getAssetPrice(underlyingCollateral, oracle, collateralConfig, eModeCategory.priceSource);
+            _assetData(underlyingCollateral, oracle, collateralConfig, eModeCategory.priceSource);
 
         vars.liquidationBonus =
             collateralIsInEMode ? eModeCategory.liquidationBonus : collateralConfig.getLiquidationBonus();

@@ -389,9 +389,9 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         bool isInCollateralEMode;
         (, vars.borrowedPrice, vars.borrowedTokenUnit) =
-            _getAssetPrice(wbtc, oracle, borrowConfig, eModeCategory.priceSource);
+            _assetData(wbtc, oracle, borrowConfig, eModeCategory.priceSource);
         (isInCollateralEMode, vars.collateralPrice, vars.collateralTokenUnit) =
-            _getAssetPrice(dai, oracle, collateralConfig, eModeCategory.priceSource);
+            _assetData(dai, oracle, collateralConfig, eModeCategory.priceSource);
 
         if (isInCollateralEMode) vars.liquidationBonus = eModeCategory.liquidationBonus;
 
