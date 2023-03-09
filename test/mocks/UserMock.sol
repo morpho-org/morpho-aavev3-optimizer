@@ -147,6 +147,6 @@ contract UserMock {
     }
 
     function approveManager(address manager, bool isApproved) external {
-        return morpho.approveManager(manager, isApproved);
+        morpho.approveManager(manager, isApproved);
     }
 }
