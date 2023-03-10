@@ -12,12 +12,6 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
     address private constant DEFAULT_PRANKER = address(uint160(uint256(keccak256(abi.encode(42069)))));
     uint256 private constant MAX_AMOUNT = 1e20 ether;
 
-    modifier callNotOwner() {
-        vm.prank(DEFAULT_PRANKER);
-        vm.expectRevert("Ownable: caller is not the owner");
-        _;
-    }
-
     function testShouldNotCreateSiloedBorrowMarket(uint16 reserveFactor, uint16 p2pIndexCursor) public {
         DataTypes.ReserveData memory reserve = pool.getReserveData(link);
         reserve.configuration.setSiloedBorrowing(true);
@@ -27,9 +21,11 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.createMarket(link, reserveFactor, p2pIndexCursor);
     }
 
-    function testCreateMarketRevertsIfNotOwner(uint16 reserveFactor, uint16 p2pIndexCursor) public callNotOwner {
+    function testCreateMarketRevertsIfNotOwner(uint16 reserveFactor, uint16 p2pIndexCursor) public {
         reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
         p2pIndexCursor = uint16(bound(p2pIndexCursor, 0, PercentageMath.PERCENTAGE_FACTOR));
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.createMarket(link, reserveFactor, p2pIndexCursor);
     }
 
@@ -119,11 +115,13 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(ERC20(link).allowance(address(morpho), address(pool)), type(uint256).max);
     }
 
-    function testClaimToTreasuryOnlyOwner() public callNotOwner {
+    function testClaimToTreasuryOnlyOwner() public {
         address[] memory underlyings = new address[](1);
         underlyings[0] = link;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 1000;
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.claimToTreasury(underlyings, amounts);
     }
 
@@ -192,8 +190,10 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlyings[0]).idleSupply, idleSupply, "idle supply after");
     }
 
-    function testSetDefaultIterationsFailsIfNotOwner(uint128 repay, uint128 withdraw) public callNotOwner {
+    function testSetDefaultIterationsFailsIfNotOwner(uint128 repay, uint128 withdraw) public {
         Types.Iterations memory iterations = Types.Iterations(repay, withdraw);
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setDefaultIterations(iterations);
     }
 
@@ -206,8 +206,10 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.defaultIterations().withdraw, withdraw);
     }
 
-    function testSetPositionsManagerFailsIfNotOwner(address positionsManager) public callNotOwner {
+    function testSetPositionsManagerFailsIfNotOwner(address positionsManager) public {
         vm.assume(positionsManager != address(0));
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setPositionsManager(positionsManager);
     }
 
@@ -224,7 +226,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.positionsManager(), positionsManager);
     }
 
-    function testSetRewardsManagerFailsIfNotOwner(address rewardsManager) public callNotOwner {
+    function testSetRewardsManagerFailsIfNotOwner(address rewardsManager) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setRewardsManager(rewardsManager);
     }
 
@@ -236,7 +240,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.rewardsManager(), rewardsManager);
     }
 
-    function testSetTreasuryVaultFailsIfNotOwner(address treasuryVault) public callNotOwner {
+    function testSetTreasuryVaultFailsIfNotOwner(address treasuryVault) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setTreasuryVault(treasuryVault);
     }
 
@@ -247,8 +253,10 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.treasuryVault(), treasuryVault);
     }
 
-    function testSetReserveFactorFailsIfNotOwner(uint256 seed, uint16 reserveFactor) public callNotOwner {
+    function testSetReserveFactorFailsIfNotOwner(uint256 seed, uint16 reserveFactor) public {
         address underlying = _randomUnderlying(seed);
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setReserveFactor(underlying, reserveFactor);
     }
 
@@ -267,8 +275,10 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).reserveFactor, reserveFactor);
     }
 
-    function testSetP2PIndexCursorFailsIfNotOwner(uint256 seed, uint16 p2pIndexCursor) public callNotOwner {
+    function testSetP2PIndexCursorFailsIfNotOwner(uint256 seed, uint16 p2pIndexCursor) public {
         address underlying = _randomUnderlying(seed);
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setP2PIndexCursor(underlying, p2pIndexCursor);
     }
 
@@ -286,7 +296,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).p2pIndexCursor, p2pIndexCursor);
     }
 
-    function testSetIsClaimRewardsPausedFailsIfNotOwner(bool paused) public callNotOwner {
+    function testSetIsClaimRewardsPausedFailsIfNotOwner(bool paused) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setIsClaimRewardsPaused(paused);
     }
 
@@ -297,7 +309,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.isClaimRewardsPaused(), paused);
     }
 
-    function testSetIsSupplyPausedFailsIfNotOwner(address underlying, bool paused) public callNotOwner {
+    function testSetIsSupplyPausedFailsIfNotOwner(address underlying, bool paused) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setIsSupplyPaused(underlying, paused);
     }
 
@@ -314,7 +328,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).pauseStatuses.isSupplyPaused, paused);
     }
 
-    function testSetIsSupplyCollateralPausedFailsIfNotOwner(address underlying, bool paused) public callNotOwner {
+    function testSetIsSupplyCollateralPausedFailsIfNotOwner(address underlying, bool paused) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setIsSupplyCollateralPaused(underlying, paused);
     }
 
@@ -331,7 +347,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).pauseStatuses.isSupplyCollateralPaused, paused);
     }
 
-    function testSetIsBorrowPausedFailsIfNotOwner(address underlying, bool paused) public callNotOwner {
+    function testSetIsBorrowPausedFailsIfNotOwner(address underlying, bool paused) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setIsBorrowPaused(underlying, paused);
     }
 
@@ -348,7 +366,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).pauseStatuses.isBorrowPaused, paused);
     }
 
-    function testSetIsRepayPausedFailsIfNotOwner(address underlying, bool paused) public callNotOwner {
+    function testSetIsRepayPausedFailsIfNotOwner(address underlying, bool paused) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setIsRepayPaused(underlying, paused);
     }
 
@@ -365,7 +385,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).pauseStatuses.isRepayPaused, paused);
     }
 
-    function testSetIsWithdrawPausedFailsIfNotOwner(address underlying, bool paused) public callNotOwner {
+    function testSetIsWithdrawPausedFailsIfNotOwner(address underlying, bool paused) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setIsWithdrawPaused(underlying, paused);
     }
 
@@ -382,7 +404,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).pauseStatuses.isWithdrawPaused, paused);
     }
 
-    function testSetIsWithdrawCollateralPausedFailsIfNotOwner(address underlying, bool paused) public callNotOwner {
+    function testSetIsWithdrawCollateralPausedFailsIfNotOwner(address underlying, bool paused) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setIsWithdrawCollateralPaused(underlying, paused);
     }
 
@@ -399,7 +423,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).pauseStatuses.isWithdrawCollateralPaused, paused);
     }
 
-    function testSetIsLiquidateCollateralPausedFailsIfNotOwner(address underlying, bool paused) public callNotOwner {
+    function testSetIsLiquidateCollateralPausedFailsIfNotOwner(address underlying, bool paused) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setIsLiquidateCollateralPaused(underlying, paused);
     }
 
@@ -416,7 +442,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).pauseStatuses.isLiquidateCollateralPaused, paused);
     }
 
-    function testSetIsLiquidateBorrowPausedFailsIfNotOwner(address underlying, bool paused) public callNotOwner {
+    function testSetIsLiquidateBorrowPausedFailsIfNotOwner(address underlying, bool paused) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setIsLiquidateBorrowPaused(underlying, paused);
     }
 
@@ -433,7 +461,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).pauseStatuses.isLiquidateBorrowPaused, paused);
     }
 
-    function testSetIsPausedFailsIfNotOwner(address underlying, bool paused) public callNotOwner {
+    function testSetIsPausedFailsIfNotOwner(address underlying, bool paused) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setIsPaused(underlying, paused);
     }
 
@@ -508,7 +538,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(pauseStatuses.isBorrowPaused, true);
     }
 
-    function testSetIsPausedForAllMarketsFailsIfNotOwner(bool isPaused) public callNotOwner {
+    function testSetIsPausedForAllMarketsFailsIfNotOwner(bool isPaused) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setIsPausedForAllMarkets(isPaused);
     }
 
@@ -549,7 +581,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         }
     }
 
-    function testSetIsP2PDisabledFailsIfNotOwner(address underlying, bool disabled) public callNotOwner {
+    function testSetIsP2PDisabledFailsIfNotOwner(address underlying, bool disabled) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setIsP2PDisabled(underlying, disabled);
     }
 
@@ -566,7 +600,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).pauseStatuses.isP2PDisabled, disabled);
     }
 
-    function testSetIsDeprecatedFailsIfNotOwner(address underlying, bool deprecated) public callNotOwner {
+    function testSetIsDeprecatedFailsIfNotOwner(address underlying, bool deprecated) public {
+        vm.prank(DEFAULT_PRANKER);
+        vm.expectRevert("Ownable: caller is not the owner");
         morpho.setIsDeprecated(underlying, deprecated);
     }
 
