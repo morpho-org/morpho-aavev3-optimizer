@@ -114,7 +114,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         morpho.approveManager(address(wethGateway), true);
 
         vm.expectRevert(Errors.AmountIsZero.selector);
-        wethGateway.withdrawETH(0, receiver, MAX_ITERATIONS);
+        wethGateway.withdrawETH(0, receiver, DEFAULT_MAX_ITERATIONS);
     }
 
     function testWithdrawETH(uint256 supply, uint256 toWithdraw, address receiver) public {
@@ -207,7 +207,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         morpho.approveManager(address(wethGateway), true);
 
         vm.expectRevert(Errors.AmountIsZero.selector);
-        wethGateway.borrowETH(0, receiver, MAX_ITERATIONS);
+        wethGateway.borrowETH(0, receiver, DEFAULT_MAX_ITERATIONS);
     }
 
     function testBorrowETH(uint256 amount, address receiver) public {
