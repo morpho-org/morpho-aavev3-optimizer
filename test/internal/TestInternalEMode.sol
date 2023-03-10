@@ -166,12 +166,12 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         _eModeCategoryId = eModeCategoryId;
         configuration.setEModeCategory(eModeCategoryId);
 
-        (bool isInEMode, uint256 price, uint256 tokenUnit) =
+        (bool isInEMode, uint256 price, uint256 assetUnit) =
             _assetData(underlying, oracle, configuration, priceSourceEMode);
 
         assertEq(isInEMode, true, "isInEMode");
         assertEq(price, underlyingPriceEMode, "price != expected price");
-        assertEq(tokenUnit, 10 ** configuration.getDecimals(), "tokenUnit");
+        assertEq(assetUnit, 10 ** configuration.getDecimals(), "assetUnit");
     }
 
     function testAssetDataEModeWithPriceSourceZero(
@@ -193,11 +193,11 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         _eModeCategoryId = eModeCategoryId;
         configuration.setEModeCategory(eModeCategoryId);
 
-        (bool isInEMode, uint256 price, uint256 tokenUnit) = _assetData(underlying, oracle, configuration, address(0));
+        (bool isInEMode, uint256 price, uint256 assetUnit) = _assetData(underlying, oracle, configuration, address(0));
 
         assertEq(isInEMode, true, "isInEMode");
         assertEq(price, underlyingPrice, "price != expected price");
-        assertEq(tokenUnit, 10 ** configuration.getDecimals(), "tokenUnit");
+        assertEq(assetUnit, 10 ** configuration.getDecimals(), "assetUnit");
     }
 
     function testAssetDataNonEMode(
@@ -218,12 +218,12 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         DataTypes.ReserveConfigurationMap memory configuration = pool.getConfiguration(underlying);
         configuration.setEModeCategory(eModeCategoryId);
 
-        (bool isInEMode, uint256 price, uint256 tokenUnit) =
+        (bool isInEMode, uint256 price, uint256 assetUnit) =
             _assetData(underlying, oracle, configuration, priceSourceEMode);
 
         assertEq(isInEMode, false, "isInEMode");
         assertEq(price, underlyingPrice, "price != expected price");
-        assertEq(tokenUnit, 10 ** configuration.getDecimals(), "tokenUnit");
+        assertEq(assetUnit, 10 ** configuration.getDecimals(), "assetUnit");
     }
 
     function testAssetDataEModeWithEModePriceZero(
@@ -245,12 +245,12 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         _eModeCategoryId = eModeCategoryId;
         configuration.setEModeCategory(eModeCategoryId);
 
-        (bool isInEMode, uint256 price, uint256 tokenUnit) =
+        (bool isInEMode, uint256 price, uint256 assetUnit) =
             _assetData(underlying, oracle, configuration, priceSourceEMode);
 
         assertEq(isInEMode, true, "isInEMode");
         assertEq(price, underlyingPrice, "price != expected price");
-        assertEq(tokenUnit, 10 ** configuration.getDecimals(), "tokenUnit");
+        assertEq(assetUnit, 10 ** configuration.getDecimals(), "assetUnit");
     }
 
     function testShouldNotAuthorizeBorrowInconsistentEmode(
