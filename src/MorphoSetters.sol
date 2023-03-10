@@ -87,7 +87,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         if (isCollateral && !market.isCreated()) revert Errors.MarketNotCreated();
         if (!isCollateral && market.isCollateral) revert Errors.AssetIsCollateral();
 
-        _POOL.setUserUseReserveAsCollateral(underlying, isCollateral);
+        _pool.setUserUseReserveAsCollateral(underlying, isCollateral);
     }
 
     /// @notice Sets the `underlying` asset as `isCollateral` on Morpho, and updates Morpho's collateral status on pool if `isCollateral` is true.
@@ -98,7 +98,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     {
         if (
             isCollateral
-                && !_POOL.getUserConfiguration(address(this)).isUsingAsCollateral(_POOL.getReserveData(underlying).id)
+                && !_pool.getUserConfiguration(address(this)).isUsingAsCollateral(_pool.getReserveData(underlying).id)
         ) {
             revert Errors.AssetNotCollateral();
         }
