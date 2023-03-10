@@ -101,8 +101,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                collateral = _boundCollateral(collateralMarket, collateral, borrowedMarket).percentAdd(1);
-                uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral).percentSub(4);
+                collateral = _boundCollateral(collateralMarket, collateral, borrowedMarket);
+                uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral, eModeCategoryId);
                 borrowed = bound(
                     borrowed,
                     borrowedMarket.minAmount / 2,
@@ -111,8 +111,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
                 withdrawn = bound(
                     withdrawn,
                     collateral.zeroFloorSub(
-                        collateralMarket.minCollateral(borrowedMarket, borrowed) * (Constants.LT_LOWER_BOUND - 3)
-                            / Constants.LT_LOWER_BOUND
+                        collateralMarket.minCollateral(borrowedMarket, borrowed, eModeCategoryId)
+                            * (Constants.LT_LOWER_BOUND - 3) / Constants.LT_LOWER_BOUND
                     ),
                     type(uint256).max
                 );

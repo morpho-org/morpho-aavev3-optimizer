@@ -5,6 +5,7 @@ import {Constants} from "src/libraries/Constants.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
@@ -28,6 +29,9 @@ struct TestMarket {
     uint256 price;
     uint256 minAmount;
     uint256 maxAmount;
+    //
+    uint8 eModeCategoryId;
+    DataTypes.EModeCategory eModeCategory;
     //
     bool isBorrowable;
 }
@@ -91,35 +95,74 @@ library TestMarketLib {
     }
 
     /// @dev Calculates the maximum borrowable quantity collateralized by the given quantity of collateral.
-    function borrowable(TestMarket storage borrowedMarket, TestMarket storage collateralMarket, uint256 rawCollateral)
-        internal
-        view
-        returns (uint256)
-    {
+    function borrowable(
+        TestMarket storage borrowedMarket,
+        TestMarket storage collateralMarket,
+        uint256 rawCollateral,
+        uint8 eModeCategoryId
+    ) internal view returns (uint256) {
+        uint256 ltv = eModeCategoryId != 0 && eModeCategoryId == borrowedMarket.eModeCategoryId
+            && eModeCategoryId == collateralMarket.eModeCategoryId
+            ? collateralMarket.eModeCategory.ltv
+            : collateralMarket.ltv;
+
         return quote(
             borrowedMarket, collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
-        ).percentMul(collateralMarket.ltv - 1);
+        )
+            // The borrowable quantity is under-estimated because of decimals precision (especially for the pair WETH/WBTC).
+            .percentMul(ltv - 10);
     }
 
-    /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt and still be able to borrow.
-    function minBorrowCollateral(TestMarket storage collateralMarket, TestMarket storage borrowedMarket, uint256 amount)
-        internal
-        view
-        returns (uint256)
-    {
+    /// @dev Calculates the maximum borrowable quantity collateralized by the given quantity of collateral.
+    function collateralized(
+        TestMarket storage borrowedMarket,
+        TestMarket storage collateralMarket,
+        uint256 rawCollateral,
+        uint8 eModeCategoryId
+    ) internal view returns (uint256) {
+        uint256 lt = eModeCategoryId != 0 && eModeCategoryId == borrowedMarket.eModeCategoryId
+            && eModeCategoryId == collateralMarket.eModeCategoryId
+            ? collateralMarket.eModeCategory.liquidationThreshold
+            : collateralMarket.lt;
+
+        return quote(
+            borrowedMarket, collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
+        )
+            // The collateralized quantity is under-estimated because of decimals precision (especially for the pair WETH/WBTC).
+            .percentMul(lt - 10);
+    }
+
+    /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt while still being able to borrow.
+    function minBorrowCollateral(
+        TestMarket storage collateralMarket,
+        TestMarket storage borrowedMarket,
+        uint256 amount,
+        uint8 eModeCategoryId
+    ) internal view returns (uint256) {
+        uint256 ltv = eModeCategoryId != 0 && eModeCategoryId == borrowedMarket.eModeCategoryId
+            && eModeCategoryId == collateralMarket.eModeCategoryId
+            ? collateralMarket.eModeCategory.ltv
+            : collateralMarket.ltv;
+
         return quote(collateralMarket, borrowedMarket, amount)
             // The quantity of collateral required to open a borrow is over-estimated because of decimals precision (especially for the pair WBTC/WETH).
-            .percentDiv(collateralMarket.ltv - 10) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
+            .percentDiv(ltv - 10) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt,
     ///      without necessarily being able to borrow more.
-    function minCollateral(TestMarket storage collateralMarket, TestMarket storage borrowedMarket, uint256 amount)
-        internal
-        view
-        returns (uint256)
-    {
-        return quote(collateralMarket, borrowedMarket, amount).percentDiv(collateralMarket.lt)
-            * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
+    function minCollateral(
+        TestMarket storage collateralMarket,
+        TestMarket storage borrowedMarket,
+        uint256 amount,
+        uint8 eModeCategoryId
+    ) internal view returns (uint256) {
+        uint256 lt = eModeCategoryId != 0 && eModeCategoryId == borrowedMarket.eModeCategoryId
+            && eModeCategoryId == collateralMarket.eModeCategoryId
+            ? collateralMarket.eModeCategory.liquidationThreshold
+            : collateralMarket.lt;
+
+        return quote(collateralMarket, borrowedMarket, amount).percentDiv(lt) * Constants.LT_LOWER_BOUND
+            / (Constants.LT_LOWER_BOUND - 1);
     }
 }

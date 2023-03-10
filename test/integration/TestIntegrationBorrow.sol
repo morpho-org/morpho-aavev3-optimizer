@@ -420,7 +420,7 @@ contract TestIntegrationBorrow is IntegrationTest {
                 collateral = _boundCollateral(collateralMarket, collateral, borrowedMarket);
                 borrowed = bound(
                     borrowed,
-                    borrowedMarket.borrowable(collateralMarket, collateral).percentAdd(2),
+                    borrowedMarket.borrowable(collateralMarket, collateral, eModeCategoryId).percentAdd(2),
                     2 * borrowedMarket.maxAmount
                 );
                 _promoteBorrow(promoter1, borrowedMarket, borrowed); // <= 100% peer-to-peer.
