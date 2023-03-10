@@ -113,7 +113,7 @@ contract TestInternalMorphoInternal is InternalTest {
         borrowDelta = bound(borrowDelta, 0, p2pBorrowTotal);
         amount = bound(amount, 0, 10_000_000 ether); // $10m dollars worth
 
-        _POOL.supplyToPool(dai, amount * 2);
+        _pool.supplyToPool(dai, amount * 2);
 
         address underlying = dai;
         Types.Market storage market = _market[underlying];
