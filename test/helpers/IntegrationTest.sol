@@ -25,11 +25,10 @@ contract IntegrationTest is ForkTest {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using TestMarketLib for TestMarket;
 
-    uint8 internal constant E_MODE_CATEGORY_ID = 0;
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
 
     // AaveV3 base currency is USD, 8 decimals on all L2s.
-    uint256 internal constant MIN_USD_AMOUNT = 10e8; // 10$
+    uint256 internal constant MIN_USD_AMOUNT = 1e8; // 1$
     uint256 internal constant MAX_USD_AMOUNT = 500_000_000e8; // 500m$
 
     IMorpho internal morpho;
@@ -48,6 +47,7 @@ contract IntegrationTest is ForkTest {
 
     mapping(address => TestMarket) internal testMarkets;
 
+    uint8 internal eModeCategoryId = uint8(vm.envOr("E_MODE_CATEGORY_ID", uint256(0)));
     address[] internal underlyings;
     address[] internal collateralUnderlyings;
     address[] internal borrowableUnderlyings;
@@ -85,16 +85,21 @@ contract IntegrationTest is ForkTest {
     }
 
     function _deploy() internal {
-        positionsManager = new PositionsManager(address(addressesProvider), E_MODE_CATEGORY_ID);
-        morphoImpl = new Morpho(address(addressesProvider), E_MODE_CATEGORY_ID);
+        positionsManager = new PositionsManager();
+        morphoImpl = new Morpho();
 
         proxyAdmin = new ProxyAdmin();
         morphoProxy = new TransparentUpgradeableProxy(payable(address(morphoImpl)), address(proxyAdmin), "");
         morpho = Morpho(payable(address(morphoProxy)));
 
-        morpho.initialize(address(positionsManager), Types.Iterations({repay: 10, withdraw: 10}));
+        morpho.initialize(
+            address(addressesProvider),
+            eModeCategoryId,
+            address(positionsManager),
+            Types.Iterations({repay: 10, withdraw: 10})
+        );
 
-        rewardsManager = new RewardsManager(address(rewardsController), address(morpho), address(pool));
+        rewardsManager = new RewardsManager(address(rewardsController), address(morpho));
 
         morpho.setRewardsManager(address(rewardsManager));
     }
@@ -141,7 +146,7 @@ contract IntegrationTest is ForkTest {
 
         market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
             && !reserve.configuration.getBorrowableInIsolation()
-            && (E_MODE_CATEGORY_ID == 0 || E_MODE_CATEGORY_ID == reserve.configuration.getEModeCategory());
+            && (eModeCategoryId == 0 || eModeCategoryId == reserve.configuration.getEModeCategory());
 
         vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
         vm.label(reserve.variableDebtTokenAddress, string.concat("vd", market.symbol));
@@ -168,6 +173,14 @@ contract IntegrationTest is ForkTest {
         // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() return true.
         _deposit(market, (10 ** market.decimals) / 1e6, address(morpho));
         morpho.setAssetIsCollateral(market.underlying, true);
+    }
+
+    function _randomCollateral(uint256 seed) internal view returns (address) {
+        return collateralUnderlyings[seed % collateralUnderlyings.length];
+    }
+
+    function _randomBorrowable(uint256 seed) internal view returns (address) {
+        return borrowableUnderlyings[seed % borrowableUnderlyings.length];
     }
 
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
@@ -255,7 +268,13 @@ contract IntegrationTest is ForkTest {
             amount,
             collateralMarket.minBorrowCollateral(borrowedMarket, borrowedMarket.minAmount),
             Math.min(
-                collateralMarket.minBorrowCollateral(borrowedMarket, borrowedMarket.maxAmount),
+                collateralMarket.minBorrowCollateral(
+                    borrowedMarket,
+                    Math.min(
+                        borrowedMarket.maxAmount,
+                        Math.min(borrowedMarket.liquidity().percentMul(75_00), borrowedMarket.borrowGap())
+                    )
+                ),
                 _supplyGap(collateralMarket)
             )
         );
@@ -265,7 +284,9 @@ contract IntegrationTest is ForkTest {
     ///      and the maximum borrowable quantity, without exceeding the market's liquidity nor its borrow cap.
     function _boundBorrow(TestMarket storage market, uint256 amount) internal view returns (uint256) {
         return bound(
-            amount, market.minAmount, Math.min(market.maxAmount, Math.min(market.liquidity(), market.borrowGap()))
+            amount,
+            market.minAmount,
+            Math.min(market.maxAmount, Math.min(market.liquidity().percentMul(75_00), market.borrowGap()))
         );
     }
 

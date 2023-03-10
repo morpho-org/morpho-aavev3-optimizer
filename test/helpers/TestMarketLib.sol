@@ -81,17 +81,23 @@ library TestMarketLib {
         return market.borrowCap.zeroFloorSub(totalBorrow(market));
     }
 
-    /// @dev Calculates the maximum borrowable quantity collateralized by the given quantity of collateral.
-    function borrowable(TestMarket storage borrowedMarket, TestMarket storage collateralMarket, uint256 collateral)
+    function quote(TestMarket storage quoteMarket, TestMarket storage baseMarket, uint256 amount)
         internal
         view
         returns (uint256)
     {
-        return (
-            (
-                (collateral * collateralMarket.price * 10 ** borrowedMarket.decimals)
-                    / (borrowedMarket.price * 10 ** collateralMarket.decimals)
-            ) * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
+        return
+            (amount * baseMarket.price * 10 ** quoteMarket.decimals) / (quoteMarket.price * 10 ** baseMarket.decimals);
+    }
+
+    /// @dev Calculates the maximum borrowable quantity collateralized by the given quantity of collateral.
+    function borrowable(TestMarket storage borrowedMarket, TestMarket storage collateralMarket, uint256 rawCollateral)
+        internal
+        view
+        returns (uint256)
+    {
+        return quote(
+            borrowedMarket, collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
         ).percentMul(collateralMarket.ltv - 1);
     }
 
@@ -101,10 +107,9 @@ library TestMarketLib {
         view
         returns (uint256)
     {
-        return (
-            (amount * borrowedMarket.price * 10 ** collateralMarket.decimals)
-                / (collateralMarket.price * 10 ** borrowedMarket.decimals)
-        ).percentDiv(collateralMarket.ltv - 1) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
+        return quote(collateralMarket, borrowedMarket, amount)
+            // The quantity of collateral required to open a borrow is over-estimated because of decimals precision (especially for the pair WBTC/WETH).
+            .percentDiv(collateralMarket.ltv - 10) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt,
@@ -114,11 +119,7 @@ library TestMarketLib {
         view
         returns (uint256)
     {
-        return (
-            (
-                (amount * borrowedMarket.price * 10 ** collateralMarket.decimals)
-                    / (collateralMarket.price * 10 ** borrowedMarket.decimals)
-            ).percentDiv(collateralMarket.lt)
-        ) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
+        return quote(collateralMarket, borrowedMarket, amount).percentDiv(collateralMarket.lt)
+            * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
     }
 }

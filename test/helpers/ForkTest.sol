@@ -58,6 +58,7 @@ contract ForkTest is BaseTest {
     address internal wbtc;
     address internal weth;
     address internal wNative;
+    address internal sNative;
     address[] internal allUnderlyings;
 
     IPool internal pool;
@@ -134,8 +135,9 @@ contract ForkTest is BaseTest {
         wbtc = config.getAddress("WBTC");
         weth = config.getAddress("WETH");
         wNative = config.getWrappedNative();
+        sNative = config.getStakedNative();
 
-        allUnderlyings = [dai, usdc, aave, wbtc, weth];
+        allUnderlyings = [dai, usdc, aave, wbtc, weth, sNative];
     }
 
     function _label() internal virtual {
@@ -193,7 +195,6 @@ contract ForkTest is BaseTest {
     }
 
     /// @dev Avoids to revert because of AAVE token snapshots: https://github.com/aave/aave-token-v2/blob/master/contracts/token/base/GovernancePowerDelegationERC20.sol#L174
-
     function _deal(address underlying, address user, uint256 amount) internal {
         if (amount == 0) return;
 

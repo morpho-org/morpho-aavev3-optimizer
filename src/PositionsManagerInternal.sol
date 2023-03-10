@@ -108,15 +108,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
     /// @dev Authorizes a borrow action.
     function _authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) internal view {
-        DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+        DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
         if (!config.getBorrowingEnabled()) revert Errors.BorrowNotEnabled();
 
-        address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
+        address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
         if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
             revert Errors.SentinelBorrowNotEnabled();
         }
 
-        if (_E_MODE_CATEGORY_ID != 0 && _E_MODE_CATEGORY_ID != config.getEModeCategory()) {
+        if (_eModeCategoryId != 0 && _eModeCategoryId != config.getEModeCategory()) {
             revert Errors.InconsistentEMode();
         }
 
@@ -190,7 +190,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         }
 
         if (healthFactor >= Constants.DEFAULT_LIQUIDATION_MIN_HF) {
-            address priceOracleSentinel = _ADDRESSES_PROVIDER.getPriceOracleSentinel();
+            address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
 
             if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
             {
@@ -337,7 +337,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Handle the supply cap.
         uint256 idleSupplyIncrease;
         (vars.toSupply, idleSupplyIncrease) =
-            market.increaseIdle(underlying, amount, _POOL.getReserveData(underlying), indexes);
+            market.increaseIdle(underlying, amount, _pool.getReserveData(underlying), indexes);
 
         // Demote peer-to-peer suppliers.
         uint256 demoted = _demoteSuppliers(underlying, vars.toSupply, maxIterations);
@@ -589,17 +589,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         uint256 poolSupplyIndex
     ) internal view returns (uint256 amountToRepay, uint256 amountToSeize) {
         Types.AmountToSeizeVars memory vars;
-        DataTypes.ReserveConfigurationMap memory borrowedConfig = _POOL.getConfiguration(underlyingBorrowed);
-        DataTypes.ReserveConfigurationMap memory collateralConfig = _POOL.getConfiguration(underlyingCollateral);
+        DataTypes.ReserveConfigurationMap memory borrowedConfig = _pool.getConfiguration(underlyingBorrowed);
+        DataTypes.ReserveConfigurationMap memory collateralConfig = _pool.getConfiguration(underlyingCollateral);
 
         DataTypes.EModeCategory memory eModeCategory;
-        if (_E_MODE_CATEGORY_ID != 0) eModeCategory = _POOL.getEModeCategoryData(_E_MODE_CATEGORY_ID);
+        if (_eModeCategoryId != 0) eModeCategory = _pool.getEModeCategoryData(_eModeCategoryId);
 
         bool collateralIsInEMode = _isInEModeCategory(collateralConfig);
         vars.liquidationBonus =
             collateralIsInEMode ? eModeCategory.liquidationBonus : collateralConfig.getLiquidationBonus();
 
-        IAaveOracle oracle = IAaveOracle(_ADDRESSES_PROVIDER.getPriceOracle());
+        IAaveOracle oracle = IAaveOracle(_addressesProvider.getPriceOracle());
         vars.borrowedPrice =
             _getAssetPrice(underlyingBorrowed, oracle, _isInEModeCategory(borrowedConfig), eModeCategory.priceSource);
         vars.collateralPrice =

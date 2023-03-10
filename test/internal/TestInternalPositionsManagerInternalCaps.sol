@@ -25,6 +25,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
     uint256 daiTokenUnit;
 
     function setUp() public virtual override {
+        super.setUp();
+
         _defaultIterations = Types.Iterations(10, 10);
 
         _createMarket(dai, 0, 3_333);
@@ -34,12 +36,12 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         _setBalances(address(this), type(uint256).max);
 
-        _POOL.supplyToPool(dai, 100 ether);
-        _POOL.supplyToPool(wbtc, 1e8);
-        _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(wNative, 1 ether);
+        _pool.supplyToPool(dai, 100 ether);
+        _pool.supplyToPool(wbtc, 1e8);
+        _pool.supplyToPool(usdc, 1e8);
+        _pool.supplyToPool(wNative, 1 ether);
 
-        daiTokenUnit = 10 ** _POOL.getConfiguration(dai).getDecimals();
+        daiTokenUnit = 10 ** _pool.getConfiguration(dai).getDecimals();
     }
 
     function testAuthorizeBorrowWithNoBorrowCap(uint256 amount, uint256 totalP2P, uint256 delta) public {
