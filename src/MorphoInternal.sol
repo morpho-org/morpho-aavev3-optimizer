@@ -485,9 +485,10 @@ abstract contract MorphoInternal is MorphoStorage {
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
     }
 
-    /// @dev Returns whether the given asset is part of Morpho's e-mode category,
-    ///      its price or the price of the given e-mode price source if the asset is in the e-mode category
-    ///      and the asset's unit.
+    /// @dev Returns data relative to the given asset and its configuration, according to a given oracle.
+    /// @return isInEMode Whether the given asset is part of Morpho's e-mode category.
+    /// @return price The asset's price or the price of the given e-mode price source if the asset is in the e-mode category, according to the given oracle.
+    /// @return assetUnit The asset's unit.
     function _assetData(
         address asset,
         IAaveOracle oracle,
