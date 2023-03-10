@@ -20,6 +20,8 @@ contract WETHGateway is IWETHGateway {
 
     error AddressIsZero();
 
+    error AmountIsZero();
+
     /* CONSTANTS */
 
     address internal constant _WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -123,11 +125,13 @@ contract WETHGateway is IWETHGateway {
 
     /// @dev Wraps `amount` of ETH to WETH.
     function _wrapETH(uint256 amount) internal {
+        if (amount == 0) revert AmountIsZero();
         IWETH(_WETH).deposit{value: amount}();
     }
 
     /// @dev Unwraps `amount` of WETH to ETH and transfers it to `receiver`.
     function _unwrapAndTransferETH(uint256 amount, address receiver) internal {
+        if (amount == 0) revert AmountIsZero();
         IWETH(_WETH).withdraw(amount);
         SafeTransferLib.safeTransferETH(receiver, amount);
     }

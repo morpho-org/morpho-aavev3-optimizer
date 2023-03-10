@@ -58,6 +58,7 @@ contract ForkTest is BaseTest {
     address internal wbtc;
     address internal weth;
     address internal wNative;
+    address internal sNative;
     address[] internal allUnderlyings;
 
     IPool internal pool;
@@ -134,8 +135,9 @@ contract ForkTest is BaseTest {
         wbtc = config.getAddress("WBTC");
         weth = config.getAddress("WETH");
         wNative = config.getWrappedNative();
+        sNative = config.getStakedNative();
 
-        allUnderlyings = [dai, usdc, aave, wbtc, weth];
+        allUnderlyings = [dai, usdc, aave, wbtc, weth, sNative];
     }
 
     function _label() internal virtual {

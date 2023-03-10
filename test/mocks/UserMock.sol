@@ -145,4 +145,8 @@ contract UserMock {
     {
         return morpho.liquidate(underlyingBorrowed, underlyingCollateral, borrower, amount);
     }
+
+    function approveManager(address manager, bool isApproved) external {
+        morpho.approveManager(manager, isApproved);
+    }
 }
