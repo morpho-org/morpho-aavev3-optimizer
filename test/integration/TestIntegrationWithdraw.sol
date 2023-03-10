@@ -16,6 +16,8 @@ contract TestIntegrationWithdraw is IntegrationTest {
         uint256 scaledP2PSupply;
         uint256 scaledPoolSupply;
         uint256 scaledCollateral;
+        address[] collaterals;
+        address[] borrows;
         Types.Indexes256 indexes;
         Types.Market morphoMarket;
     }
@@ -53,6 +55,8 @@ contract TestIntegrationWithdraw is IntegrationTest {
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
             test.scaledCollateral = morpho.scaledCollateralBalance(market.underlying, onBehalf);
+            test.collaterals = morpho.userCollaterals(onBehalf);
+            test.borrows = morpho.userBorrows(onBehalf);
             uint256 p2pSupply = test.scaledP2PSupply.rayMul(test.indexes.supply.p2pIndex);
             uint256 remaining = test.supplied - test.withdrawn;
 
@@ -61,6 +65,9 @@ contract TestIntegrationWithdraw is IntegrationTest {
             assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
             assertApproxLeAbs(test.withdrawn, amount, 1, "withdrawn != amount");
             assertApproxLeAbs(p2pSupply, promoted, 2, "p2pSupply != promoted");
+
+            assertEq(test.collaterals.length, 0, "collaterals.length");
+            assertEq(test.borrows.length, 0, "borrows.length");
 
             assertApproxLeAbs(morpho.supplyBalance(market.underlying, onBehalf), remaining, 2, "supply != remaining");
             assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
@@ -139,6 +146,8 @@ contract TestIntegrationWithdraw is IntegrationTest {
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
             test.scaledCollateral = morpho.scaledCollateralBalance(market.underlying, onBehalf);
+            test.collaterals = morpho.userCollaterals(onBehalf);
+            test.borrows = morpho.userBorrows(onBehalf);
 
             // Assert balances on Morpho.
             assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
@@ -151,6 +160,9 @@ contract TestIntegrationWithdraw is IntegrationTest {
                 2,
                 "promoterScaledP2PBorrow != 0"
             );
+
+            assertEq(test.collaterals.length, 0, "collaterals.length");
+            assertEq(test.borrows.length, 0, "borrows.length");
 
             // Assert Morpho getters.
             assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supply != 0");
@@ -231,6 +243,8 @@ contract TestIntegrationWithdraw is IntegrationTest {
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
+            test.collaterals = morpho.userCollaterals(onBehalf);
+            test.borrows = morpho.userBorrows(onBehalf);
 
             // Assert balances on Morpho.
             assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
@@ -247,6 +261,9 @@ contract TestIntegrationWithdraw is IntegrationTest {
                 0,
                 "promoter2ScaledPoolBorrow != 0"
             );
+
+            assertEq(test.collaterals.length, 0, "collaterals.length");
+            assertEq(test.borrows.length, 0, "borrows.length");
 
             // Assert Morpho getters.
             assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supply != 0");
@@ -339,6 +356,8 @@ contract TestIntegrationWithdraw is IntegrationTest {
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
+            test.collaterals = morpho.userCollaterals(onBehalf);
+            test.borrows = morpho.userBorrows(onBehalf);
 
             // Assert balances on Morpho.
             assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
@@ -350,6 +369,9 @@ contract TestIntegrationWithdraw is IntegrationTest {
                 0,
                 "promoter1ScaledP2PBorrow != 0"
             );
+
+            assertEq(test.collaterals.length, 0, "collaterals.length");
+            assertEq(test.borrows.length, 0, "borrows.length");
 
             // Assert Morpho getters.
             assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supply != 0");

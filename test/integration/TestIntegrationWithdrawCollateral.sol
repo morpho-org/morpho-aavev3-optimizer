@@ -17,6 +17,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         uint256 scaledP2PSupply;
         uint256 scaledPoolSupply;
         uint256 scaledCollateral;
+        address[] collaterals;
+        address[] borrows;
         Types.Indexes256 indexes;
         Types.Market morphoMarket;
     }
@@ -52,12 +54,17 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
             test.scaledCollateral = morpho.scaledCollateralBalance(market.underlying, onBehalf);
+            test.collaterals = morpho.userCollaterals(onBehalf);
+            test.borrows = morpho.userBorrows(onBehalf);
 
             // Assert balances on Morpho.
             assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
             assertEq(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
             assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
             assertApproxLeAbs(test.withdrawn, test.supplied, 2, "withdrawn != supplied");
+
+            assertEq(test.collaterals.length, 0, "collaterals.length");
+            assertEq(test.borrows.length, 0, "borrows.length");
 
             // Assert Morpho getters.
             assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supply != 0");
