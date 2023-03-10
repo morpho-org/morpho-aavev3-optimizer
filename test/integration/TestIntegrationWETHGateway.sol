@@ -51,6 +51,14 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertEq(erc20.balanceOf(morphoDao), amount, "morphoDaoBalance");
     }
 
+    function testCannotSupplyETHWhenAmountIsZero(address onBehalf) public {
+        onBehalf = _boundAddressNotZero(onBehalf);
+        assertEq(morpho.supplyBalance(weth, onBehalf), 0);
+
+        vm.expectRevert(Errors.AmountIsZero.selector);
+        _supplyETH(onBehalf, 0);
+    }
+
     function testSupplyETH(uint256 amount, address onBehalf) public {
         onBehalf = _boundAddressNotZero(onBehalf);
         assertEq(morpho.supplyBalance(weth, onBehalf), 0);
@@ -65,6 +73,14 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertEq(address(this).balance + amount, balanceBefore, "balanceAfter != balanceBefore - amount");
         assertEq(supplied, amount, "supplied != amount");
         assertApproxEqAbs(morpho.supplyBalance(weth, onBehalf), amount, 1, "supplyBalance != amount");
+    }
+
+    function testCannotSupplyCollateralETHWhenAmountIsZero(address onBehalf) public {
+        onBehalf = _boundAddressNotZero(onBehalf);
+        assertEq(morpho.collateralBalance(weth, onBehalf), 0);
+
+        vm.expectRevert(Errors.AmountIsZero.selector);
+        _supplyCollateralETH(onBehalf, 0);
     }
 
     function testSupplyCollateralETH(uint256 amount, address onBehalf) public {
@@ -90,6 +106,15 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
         vm.expectRevert(Errors.PermissionDenied.selector);
         wethGateway.withdrawETH(amount, address(this), DEFAULT_MAX_ITERATIONS);
+    }
+
+    function testCannotWithdrawETHWhenAmountIsZero(uint256 supply, address receiver) public {
+        supply = bound(supply, MIN_AMOUNT, type(uint96).max);
+        _supplyETH(address(this), supply);
+        morpho.approveManager(address(wethGateway), true);
+
+        vm.expectRevert(Errors.AmountIsZero.selector);
+        wethGateway.withdrawETH(0, receiver, MAX_ITERATIONS);
     }
 
     function testWithdrawETH(uint256 supply, uint256 toWithdraw, address receiver) public {
@@ -126,6 +151,15 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
         vm.expectRevert(Errors.PermissionDenied.selector);
         wethGateway.withdrawCollateralETH(amount, address(this));
+    }
+
+    function testCannotWithdrawCollateralETHWhenAmountIsZero(uint256 collateral, address receiver) public {
+        collateral = bound(collateral, MIN_AMOUNT, type(uint96).max);
+        _supplyCollateralETH(address(this), collateral);
+        morpho.approveManager(address(wethGateway), true);
+
+        vm.expectRevert(Errors.AmountIsZero.selector);
+        wethGateway.withdrawCollateralETH(0, receiver);
     }
 
     function testWithdrawCollateralETH(uint256 collateral, uint256 toWithdraw, address receiver) public {
@@ -167,6 +201,15 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         wethGateway.borrowETH(amount / 2, address(this), DEFAULT_MAX_ITERATIONS);
     }
 
+    function testCannotBorrowETHWhenAmountIsZero(uint256 amount, address receiver) public {
+        amount = bound(amount, MIN_AMOUNT, type(uint96).max);
+        _supplyCollateralETH(address(this), amount);
+        morpho.approveManager(address(wethGateway), true);
+
+        vm.expectRevert(Errors.AmountIsZero.selector);
+        wethGateway.borrowETH(0, receiver, MAX_ITERATIONS);
+    }
+
     function testBorrowETH(uint256 amount, address receiver) public {
         _assumeETHReceiver(receiver);
 
@@ -184,6 +227,12 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertGt(morpho.borrowBalance(weth, address(this)), 0);
         assertApproxEqAbs(morpho.borrowBalance(weth, address(this)), toBorrow, 1);
         assertEq(receiver.balance, balanceBefore + toBorrow, "balance != expectedBalance");
+    }
+
+    function testCannotRepayETHWhenAmountZero(address repayer, address onBehalf) public {
+        vm.prank(repayer);
+        vm.expectRevert(Errors.AmountIsZero.selector);
+        wethGateway.repayETH{value: 0}(onBehalf);
     }
 
     function testRepayETH(uint256 amount, uint256 toRepay, address onBehalf, address repayer) public {
