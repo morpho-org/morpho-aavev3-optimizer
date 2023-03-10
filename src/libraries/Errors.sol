@@ -14,12 +14,17 @@ library Errors {
 
     /// @notice Thrown when creating a market that is not listed on Aave.
     error MarketIsNotListedOnAave();
+    error MarketLtTooLow();
+    error SiloedBorrowMarket();
 
     /// @notice Thrown when the address used is the zero address.
     error AddressIsZero();
 
     /// @notice Thrown when the amount used is zero.
     error AmountIsZero();
+    error DebtIsZero();
+    error SupplyIsZero();
+    error CollateralIsZero();
 
     /// @notice Thrown when the manager is not approved by the delegator.
     error PermissionDenied();

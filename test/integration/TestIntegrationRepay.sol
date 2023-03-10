@@ -368,7 +368,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
             TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
-            vm.expectRevert(Errors.AmountIsZero.selector);
+            vm.expectRevert(Errors.DebtIsZero.selector);
             user.repay(market.underlying, amount, onBehalf);
         }
     }

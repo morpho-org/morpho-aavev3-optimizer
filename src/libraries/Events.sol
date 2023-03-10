@@ -242,10 +242,6 @@ library Events {
     /// @param isDeprecated The deprecation status for this `underlying` asset.
     event IsDeprecatedSet(address indexed underlying, bool isDeprecated);
 
-    /// @notice Emitted when the e-mode is set.
-    /// @param categoryId The category id of the e-mode.
-    event EModeSet(uint8 categoryId);
-
     /// @notice Emitted when the indexes are updated.
     /// @param underlying The address of the underlying asset.
     /// @param poolSupplyIndex The new pool supply index.

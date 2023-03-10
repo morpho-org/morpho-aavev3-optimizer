@@ -24,19 +24,20 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     uint256 constant MAX_AMOUNT = type(uint96).max / 2;
 
     function setUp() public virtual override {
+        super.setUp();
+
         _defaultIterations = Types.Iterations(10, 10);
 
-        _createMarket(dai, 0, 3_333);
-        _createMarket(wbtc, 0, 3_333);
-        _createMarket(usdc, 0, 3_333);
-        _createMarket(wNative, 0, 3_333);
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            _createMarket(allUnderlyings[i], 0, 33_33);
+        }
 
         _setBalances(address(this), type(uint256).max);
 
-        _POOL.supplyToPool(dai, 100 ether);
-        _POOL.supplyToPool(wbtc, 1e8);
-        _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(wNative, 1 ether);
+        _pool.supplyToPool(dai, 100 ether);
+        _pool.supplyToPool(wbtc, 1e8);
+        _pool.supplyToPool(usdc, 1e8);
+        _pool.supplyToPool(wNative, 1 ether);
     }
 
     function testValidatePermission(address owner, address manager) public {
@@ -128,12 +129,12 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeBorrowShouldRevertIfBorrowingNotEnabled() public {
-        DataTypes.ReserveConfigurationMap memory reserveConfig = _POOL.getConfiguration(dai);
+        DataTypes.ReserveConfigurationMap memory reserveConfig = _pool.getConfiguration(dai);
         reserveConfig.setBorrowingEnabled(false);
         assertFalse(reserveConfig.getBorrowingEnabled());
 
         vm.prank(address(poolConfigurator));
-        _POOL.setConfiguration(dai, reserveConfig);
+        _pool.setConfiguration(dai, reserveConfig);
 
         vm.expectRevert(Errors.BorrowNotEnabled.selector);
         this.authorizeBorrow(dai, 1);
@@ -217,7 +218,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldPassIfCollateralAssetOnlyEnabledOnPool() public {
-        _POOL.setUserUseReserveAsCollateral(usdc, true);
+        _pool.setUserUseReserveAsCollateral(usdc, true);
 
         _userCollaterals[address(this)].add(dai);
         _userBorrows[address(this)].add(dai);
@@ -243,75 +244,85 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         assertEq(closeFactor, Constants.MAX_CLOSE_FACTOR);
     }
 
-    function testAuthorizeLiquidateShouldRevertIfSentinelDisallows() public {
-        _market[dai].isCollateral = true;
-
-        uint256 amount = 1e18;
-        (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
-
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
-        _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(
-            dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 101 / 100), 0, true
+    function _setHealthFactor(address borrower, address underlying, uint256 healthFactor) internal {
+        vm.mockCall(
+            address(oracle),
+            abi.encodeCall(IPriceOracleGetter.getAssetPrice, underlying),
+            abi.encode(10 ** ERC20(underlying).decimals())
         );
+        _market[underlying].setIndexes(
+            Types.Indexes256({
+                supply: Types.MarketSideIndexes256({p2pIndex: WadRayMath.RAY, poolIndex: WadRayMath.RAY}),
+                borrow: Types.MarketSideIndexes256({p2pIndex: WadRayMath.RAY, poolIndex: WadRayMath.RAY})
+            })
+        );
+
+        _userCollaterals[borrower].add(underlying);
+        uint256 collateral = healthFactor.percentDivDown(pool.getConfiguration(underlying).getLiquidationThreshold());
+        uint256 rawCollateral = (Constants.LT_LOWER_BOUND * collateral) / (Constants.LT_LOWER_BOUND - 1);
+
+        _marketBalances[underlying].collateral[borrower] = rawCollateral;
+
+        _userBorrows[borrower].add(underlying);
+        _updateBorrowerInDS(underlying, borrower, 1 ether, 0, true);
+    }
+
+    function testAuthorizeLiquidateShouldRevertIfSentinelDisallows(address borrower, uint256 healthFactor) public {
+        _market[dai].isCollateral = true;
+        borrower = _boundAddressNotZero(borrower);
+        healthFactor = bound(
+            healthFactor,
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
+        );
+
+        _setHealthFactor(borrower, dai, healthFactor);
 
         oracleSentinel.setLiquidationAllowed(false);
 
         vm.expectRevert(Errors.SentinelLiquidateNotEnabled.selector);
-        this.authorizeLiquidate(dai, address(this));
+        this.authorizeLiquidate(dai, borrower);
     }
 
-    function testAuthorizeLiquidateShouldRevertIfBorrowerHealthy() public {
+    function testAuthorizeLiquidateShouldRevertIfBorrowerHealthy(address borrower, uint256 healthFactor) public {
         _market[dai].isCollateral = true;
+        borrower = _boundAddressNotZero(borrower);
+        healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentAdd(1), type(uint128).max);
 
-        uint256 amount = 1e18;
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
-
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
-        _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulDown(50_00), 0, true);
+        _setHealthFactor(borrower, dai, healthFactor);
 
         vm.expectRevert(Errors.UnauthorizedLiquidate.selector);
-        this.authorizeLiquidate(dai, address(this));
+        this.authorizeLiquidate(dai, borrower);
     }
 
-    function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfBelowMinThreshold(uint256 amount) public {
+    function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfBelowMinThreshold(address borrower, uint256 healthFactor)
+        public
+    {
         _market[dai].isCollateral = true;
+        borrower = _boundAddressNotZero(borrower);
+        healthFactor = bound(healthFactor, 0, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(1));
 
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
-        (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+        _setHealthFactor(borrower, dai, healthFactor);
 
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
-        _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(
-            dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 11 / 10), 0, true
-        );
-
-        uint256 closeFactor = this.authorizeLiquidate(dai, address(this));
+        uint256 closeFactor = this.authorizeLiquidate(dai, borrower);
         assertEq(closeFactor, Constants.MAX_CLOSE_FACTOR);
     }
 
-    function testAuthorizeLiquidateShouldReturnDefaultCloseFactorIfAboveMinThreshold(uint256 amount) public {
+    function testAuthorizeLiquidateShouldReturnDefaultCloseFactorIfAboveMinThreshold(
+        address borrower,
+        uint256 healthFactor
+    ) public {
         _market[dai].isCollateral = true;
-
-        // Min amount needs to be high enough to have a precise enough price for this test
-        amount = bound(amount, 1e12, MAX_AMOUNT);
-        (, uint256 lt,,,,) = _POOL.getConfiguration(dai).getParams();
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
-
-        _userCollaterals[address(this)].add(dai);
-        _marketBalances[dai].collateral[address(this)] = amount.rayDiv(indexes.supply.poolIndex);
-        _userBorrows[address(this)].add(dai);
-        _updateBorrowerInDS(
-            dai, address(this), amount.rayDiv(indexes.borrow.poolIndex).percentMulUp(lt * 1001 / 1000), 0, true
+        borrower = _boundAddressNotZero(borrower);
+        healthFactor = bound(
+            healthFactor,
+            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
+            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(1)
         );
 
-        uint256 closeFactor = this.authorizeLiquidate(dai, address(this));
+        _setHealthFactor(borrower, dai, healthFactor);
+
+        uint256 closeFactor = this.authorizeLiquidate(dai, borrower);
         assertEq(closeFactor, Constants.DEFAULT_CLOSE_FACTOR);
     }
 
@@ -383,6 +394,65 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         assertEq(toProcess, amount - expectedToProcess, "toProcess");
         assertEq(toRepayOrWithdraw, expectedToProcess, "amountLeft");
         assertEq(maxLoopsLeft, expectedMaxLoopsLeft, "maxLoopsLeft");
+    }
+
+    struct TestSeizeVars {
+        uint256 amountToSeize;
+        uint256 amountToLiquidate;
+    }
+
+    function testCalculateAmountToSeize(uint256 maxToLiquidate, uint256 collateralAmount) public {
+        Types.AmountToSeizeVars memory vars;
+        maxToLiquidate = bound(maxToLiquidate, 0, 1_000_000 ether);
+        collateralAmount = bound(collateralAmount, 0, 1_000_000 ether);
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+
+        _marketBalances[dai].collateral[address(1)] = collateralAmount.rayDivUp(indexes.supply.poolIndex);
+
+        DataTypes.ReserveConfigurationMap memory borrowConfig = _pool.getConfiguration(wbtc);
+        DataTypes.ReserveConfigurationMap memory collateralConfig = _pool.getConfiguration(dai);
+        DataTypes.EModeCategory memory eModeCategory = _pool.getEModeCategoryData(_eModeCategoryId);
+
+        (,,, vars.borrowedTokenUnit,,) = borrowConfig.getParams();
+        (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = collateralConfig.getParams();
+
+        bool isInCollateralEMode = _eModeCategoryId != 0 && _eModeCategoryId == collateralConfig.getEModeCategory();
+        vars.borrowedPrice = _getAssetPrice(
+            wbtc,
+            oracle,
+            _eModeCategoryId != 0 && _eModeCategoryId == borrowConfig.getEModeCategory(),
+            eModeCategory.priceSource
+        );
+        vars.collateralPrice = _getAssetPrice(dai, oracle, isInCollateralEMode, eModeCategory.priceSource);
+
+        if (isInCollateralEMode) vars.liquidationBonus = eModeCategory.liquidationBonus;
+
+        vars.borrowedTokenUnit = 10 ** vars.borrowedTokenUnit;
+        vars.collateralTokenUnit = 10 ** vars.collateralTokenUnit;
+
+        TestSeizeVars memory expected;
+        TestSeizeVars memory actual;
+
+        expected.amountToSeize = Math.min(
+            (
+                (maxToLiquidate * vars.borrowedPrice * vars.collateralTokenUnit)
+                    / (vars.borrowedTokenUnit * vars.collateralPrice)
+            ).percentMul(vars.liquidationBonus),
+            collateralAmount
+        );
+        expected.amountToLiquidate = Math.min(
+            maxToLiquidate,
+            (
+                (collateralAmount * vars.collateralPrice * vars.borrowedTokenUnit)
+                    / (vars.borrowedPrice * vars.collateralTokenUnit)
+            ).percentDiv(vars.liquidationBonus)
+        );
+
+        (actual.amountToLiquidate, actual.amountToSeize) =
+            _calculateAmountToSeize(wbtc, dai, maxToLiquidate, address(1), indexes.supply.poolIndex);
+
+        assertApproxEqAbs(actual.amountToSeize, expected.amountToSeize, 1, "amount to seize not equal");
+        assertApproxEqAbs(actual.amountToLiquidate, expected.amountToLiquidate, 1, "amount to liquidate not equal");
     }
 
     function validatePermission(address owner, address manager) public view {

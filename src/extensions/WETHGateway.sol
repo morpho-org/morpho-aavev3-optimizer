@@ -22,6 +22,8 @@ contract WETHGateway is IWETHGateway {
     /// @notice Thrown when the `morpho` address passed in the constructor is zero.
     error AddressIsZero();
 
+    error AmountIsZero();
+
     /* CONSTANTS */
 
     /// @dev The address of the WETH contract.
@@ -131,11 +133,13 @@ contract WETHGateway is IWETHGateway {
 
     /// @dev Wraps `amount` of ETH to WETH.
     function _wrapETH(uint256 amount) internal {
+        if (amount == 0) revert AmountIsZero();
         IWETH(_WETH).deposit{value: amount}();
     }
 
     /// @dev Unwraps `amount` of WETH to ETH and transfers it to `receiver`.
     function _unwrapAndTransferETH(uint256 amount, address receiver) internal {
+        if (amount == 0) revert AmountIsZero();
         IWETH(_WETH).withdraw(amount);
         SafeTransferLib.safeTransferETH(receiver, amount);
     }

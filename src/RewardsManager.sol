@@ -25,7 +25,7 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     struct UserAssetBalance {
         address asset; // The rewarded asset (either aToken or debt token).
-        uint256 balance; // The user balance of this asset (in asset decimals).
+        uint256 scaledBalance; // The user scaled balance of this asset (in asset decimals).
         uint256 scaledTotalSupply; // The scaled total supply of this asset.
     }
 
@@ -92,16 +92,15 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     /// @notice Contract constructor.
     /// @dev Initializes immutable variables.
-    /// @param _rewardsController The address of the Aave rewards controller.
-    /// @param _morpho The address of the main Morpho contract.
-    /// @param _pool The address of the Aave _pool.
-    constructor(address _rewardsController, address _morpho, address _pool) {
-        if (_rewardsController == address(0) || _morpho == address(0) || _pool == address(0)) revert AddressIsZero();
+    /// @param rewardsController The address of the Aave rewards controller.
+    /// @param morpho The address of the main Morpho contract.
+    constructor(address rewardsController, address morpho) {
+        if (rewardsController == address(0) || morpho == address(0)) revert AddressIsZero();
         _disableInitializers();
 
-        _REWARDS_CONTROLLER = IRewardsController(_rewardsController);
-        _MORPHO = IMorpho(_morpho);
-        _POOL = IPool(_pool);
+        _REWARDS_CONTROLLER = IRewardsController(rewardsController);
+        _MORPHO = IMorpho(morpho);
+        _POOL = IPool(IMorpho(morpho).pool());
     }
 
     /* EXTERNAL */
@@ -198,7 +197,7 @@ contract RewardsManager is IRewardsManager, Initializable {
                 unclaimedAmounts[j] +=
                     _localAssetData[userAssetBalances[i].asset][rewardsList[j]].usersData[user].accrued;
 
-                if (userAssetBalances[i].balance == 0) continue;
+                if (userAssetBalances[i].scaledBalance == 0) continue;
 
                 unclaimedAmounts[j] += _getPendingRewards(user, rewardsList[j], userAssetBalances[i]);
             }
@@ -319,7 +318,7 @@ contract RewardsManager is IRewardsManager, Initializable {
             _updateData(
                 user,
                 _userAssetBalances[i].asset,
-                _userAssetBalances[i].balance,
+                _userAssetBalances[i].scaledBalance,
                 _userAssetBalances[i].scaledTotalSupply
             );
         }
@@ -341,7 +340,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         for (uint256 i; i < userAssetBalancesLength; ++i) {
             unclaimedRewards += _localAssetData[_userAssetBalances[i].asset][reward].usersData[user].accrued;
 
-            if (_userAssetBalances[i].balance == 0) continue;
+            if (_userAssetBalances[i].scaledBalance == 0) continue;
 
             unclaimedRewards += _getPendingRewards(user, reward, _userAssetBalances[i]);
         }
@@ -368,7 +367,7 @@ contract RewardsManager is IRewardsManager, Initializable {
             localRewardData, _userAssetBalance.asset, reward, _userAssetBalance.scaledTotalSupply, assetUnit
         );
 
-        return _getRewards(_userAssetBalance.balance, nextIndex, localRewardData.usersData[user].index, assetUnit);
+        return _getRewards(_userAssetBalance.scaledBalance, nextIndex, localRewardData.usersData[user].index, assetUnit);
     }
 
     /// @dev Computes user's accrued rewards on a distribution.
@@ -444,10 +443,10 @@ contract RewardsManager is IRewardsManager, Initializable {
                 _MORPHO.market(IPoolToken(userAssetBalances[i].asset).UNDERLYING_ASSET_ADDRESS());
 
             if (asset == market.aToken) {
-                userAssetBalances[i].balance = _MORPHO.scaledPoolSupplyBalance(market.underlying, user)
+                userAssetBalances[i].scaledBalance = _MORPHO.scaledPoolSupplyBalance(market.underlying, user)
                     + _MORPHO.scaledCollateralBalance(market.underlying, user);
             } else if (asset == market.variableDebtToken) {
-                userAssetBalances[i].balance = _MORPHO.scaledPoolBorrowBalance(market.underlying, user);
+                userAssetBalances[i].scaledBalance = _MORPHO.scaledPoolBorrowBalance(market.underlying, user);
             } else {
                 revert InvalidAsset();
             }

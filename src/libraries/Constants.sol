@@ -17,12 +17,15 @@ library Constants {
 
     /// @dev The threshold under which the balance is swept to 0.
     uint256 internal constant DUST_THRESHOLD = 1;
+    uint256 internal constant LT_LOWER_BOUND = 10_00; // A lower bound on the liquidation threshold values of all the listed assets.
 
     /// @dev The maximum close factor used during liquidations (100%).
     uint256 internal constant MAX_CLOSE_FACTOR = PercentageMath.PERCENTAGE_FACTOR;
 
     /// @dev The default close factor used during liquidations (50%).
     uint256 internal constant DEFAULT_CLOSE_FACTOR = PercentageMath.HALF_PERCENTAGE_FACTOR;
+    uint256 internal constant DEFAULT_LIQUIDATION_MAX_HF = WadRayMath.WAD; // Health factor below which the positions can be liquidated.
+    uint256 internal constant DEFAULT_LIQUIDATION_MIN_HF = 0.95e18; // Health factor below which the positions can be liquidated, whether or not the price oracle sentinel allows the liquidation.
 
     /// @dev The health factor below which the positions can be liquidated.
     uint256 internal constant DEFAULT_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
