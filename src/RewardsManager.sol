@@ -43,7 +43,8 @@ contract RewardsManager is IRewardsManager, Initializable {
     /* IMMUTABLES */
 
     /// @dev The address of Aave's rewards controller.
-    /// @dev It is supposed not to change depending on the asset.
+    /// @dev The rewards controller is, in theory, specific to an asset.
+    ///      In practice, it is the same for all assets and it is supposed to be true for future assets as well.
     IRewardsController internal immutable _REWARDS_CONTROLLER;
 
     /// @dev The address of the Morpho protocol.
