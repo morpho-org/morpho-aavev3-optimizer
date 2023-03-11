@@ -22,6 +22,7 @@ contract WETHGateway is IWETHGateway {
     /// @notice Thrown when the `morpho` address passed in the constructor is zero.
     error AddressIsZero();
 
+    /// @notice Thrown when the amount used is zero.
     error AmountIsZero();
 
     /* CONSTANTS */

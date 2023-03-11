@@ -14,16 +14,26 @@ library Errors {
 
     /// @notice Thrown when creating a market that is not listed on Aave.
     error MarketIsNotListedOnAave();
-    error MarketLtTooLow();
+
+    /// @notice Thrown when the market is in a siloed borrowing mode.
     error SiloedBorrowMarket();
+
+    /// @notice Thrown when the market liquidation threshold is too low to be created.
+    error MarketLtTooLow();
 
     /// @notice Thrown when the address used is the zero address.
     error AddressIsZero();
 
     /// @notice Thrown when the amount used is zero.
     error AmountIsZero();
+
+    /// @notice Thrown when the user's debt is zero.
     error DebtIsZero();
+
+    /// @notice Thrown when the user's supply is zero.
     error SupplyIsZero();
+
+    /// @notice Thrown when the user's collateral is zero.
     error CollateralIsZero();
 
     /// @notice Thrown when the manager is not approved by the delegator.

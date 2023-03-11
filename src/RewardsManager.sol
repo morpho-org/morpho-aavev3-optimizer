@@ -91,7 +91,7 @@ contract RewardsManager is IRewardsManager, Initializable {
     /* CONSTRUCTOR */
 
     /// @notice Contract constructor.
-    /// @dev Initializes immutable variables.
+    /// @dev The implementation contract disables initialization upon deployment to avoid being hijacked.
     /// @param rewardsController The address of the Aave rewards controller.
     /// @param morpho The address of the main Morpho contract.
     constructor(address rewardsController, address morpho) {
