@@ -506,7 +506,7 @@ abstract contract MorphoInternal is MorphoStorage {
             if (eModePrice != 0) return (isInEMode, eModePrice, assetUnit);
         }
 
-        price = oracle.getAssetPrice(asset);
+        return (isInEMode, oracle.getAssetPrice(asset), assetUnit);
     }
 
     /// @dev Returns whether Morpho is in an e-mode category and the given asset configuration is in the same e-mode category.
