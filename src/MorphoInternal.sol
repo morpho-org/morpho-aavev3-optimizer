@@ -486,20 +486,21 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Returns data relative to the given asset and its configuration, according to a given oracle.
-    /// @return isInEMode Whether the given asset is part of Morpho's e-mode category.
-    /// @return price The asset's price or the price of the given e-mode price source if the asset is in the e-mode category, according to the given oracle.
-    /// @return assetUnit The asset's unit.
+    /// @return Whether the given asset is part of Morpho's e-mode category.
+    /// @return The asset's price or the price of the given e-mode price source if the asset is in the e-mode category, according to the given oracle.
+    /// @return The asset's unit.
     function _assetData(
         address asset,
         IAaveOracle oracle,
         DataTypes.ReserveConfigurationMap memory config,
         address priceSource
-    ) internal view returns (bool isInEMode, uint256 price, uint256 assetUnit) {
+    ) internal view returns (bool, uint256, uint256) {
+        uint256 assetUnit;
         unchecked {
             assetUnit = 10 ** config.getDecimals();
         }
 
-        isInEMode = _isInEModeCategory(config);
+        bool isInEMode = _isInEModeCategory(config);
         if (isInEMode && priceSource != address(0)) {
             uint256 eModePrice = oracle.getAssetPrice(priceSource);
 
