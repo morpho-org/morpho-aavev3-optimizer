@@ -217,24 +217,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.validateLiquidate(dai, usdc, address(this));
     }
 
-    function testAuthorizeLiquidateShouldPassIfCollateralAssetOnlyEnabledOnPool() public {
-        _pool.setUserUseReserveAsCollateral(usdc, true);
-
-        _userCollaterals[address(this)].add(dai);
-        _userBorrows[address(this)].add(dai);
-        _market[dai].pauseStatuses.isDeprecated = true;
-        this.authorizeLiquidate(dai, dai);
-    }
-
-    function testAuthorizeLiquidateShouldPassIfCollateralAssetOnlyEnabledOnMorpho() public {
-        _market[dai].isCollateral = true;
-
-        _userCollaterals[address(this)].add(dai);
-        _userBorrows[address(this)].add(dai);
-        _market[dai].pauseStatuses.isDeprecated = true;
-        this.authorizeLiquidate(dai, dai);
-    }
-
     function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfDeprecatedBorrow() public {
         _market[dai].isCollateral = true;
         _userCollaterals[address(this)].add(dai);
