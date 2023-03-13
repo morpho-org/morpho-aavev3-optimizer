@@ -165,7 +165,7 @@ library MarketLib {
             indexes.supply.p2pIndex,
             indexes.borrow.poolIndex,
             indexes.borrow.p2pIndex
-            );
+        );
     }
 
     function getSupplyIndexes(Types.Market storage market)
