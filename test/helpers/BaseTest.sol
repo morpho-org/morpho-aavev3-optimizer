@@ -67,6 +67,11 @@ contract BaseTest is Test {
         return bound(amount, 1, MAX_AMOUNT);
     }
 
+    /// @dev Bounds the fuzzing input to a non-zero 256 bits unsigned integer.
+    function _boundNotZero(uint256 input) internal view virtual returns (uint256) {
+        return bound(input, 1, type(uint256).max);
+    }
+
     /// @dev Bounds the fuzzing input to a non-zero address.
     function _boundAddressNotZero(address input) internal view virtual returns (address) {
         return address(uint160(bound(uint256(uint160(input)), 1, type(uint160).max)));

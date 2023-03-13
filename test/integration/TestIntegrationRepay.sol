@@ -360,7 +360,7 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldNotRepayWhenNoBorrow(uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
@@ -414,7 +414,7 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldRevertRepayOnBehalfZero(uint256 amount) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
@@ -425,7 +425,7 @@ contract TestIntegrationRepay is IntegrationTest {
     function testShouldRevertRepayWhenMarketNotCreated(address underlying, uint256 amount, address onBehalf) public {
         _assumeNotUnderlying(underlying);
 
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
@@ -433,7 +433,7 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldRevertRepayWhenRepayPaused(uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
@@ -449,7 +449,7 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldRepayWhenEverythingElsePaused(uint256 borrowed, uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {

@@ -10,7 +10,6 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
     uint16 private constant DEFAULT_RESERVE_FACTOR = 1_000;
     uint16 private constant DEFAULT_P2P_INDEX_CURSOR = 1_000;
     address private constant DEFAULT_PRANKER = address(uint160(uint256(keccak256(abi.encode(42069)))));
-    uint256 private constant MAX_AMOUNT = 1e20 ether;
 
     function testShouldNotCreateSiloedBorrowMarket(uint16 reserveFactor, uint16 p2pIndexCursor) public {
         DataTypes.ReserveData memory reserve = pool.getReserveData(link);
@@ -156,9 +155,9 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         public
     {
         vm.assume(treasury != address(0));
-        amount = bound(amount, 0, MAX_AMOUNT);
-        balance = bound(balance, 0, MAX_AMOUNT);
-        idleSupply = bound(idleSupply, 0, MAX_AMOUNT);
+        amount = _boundAmount(amount);
+        balance = _boundAmount(balance);
+        idleSupply = _boundAmount(idleSupply);
 
         address[] memory underlyings = new address[](1);
         underlyings[0] = _randomUnderlying(seed);

@@ -131,7 +131,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     function testShouldNotWithdrawWhenNoCollateral(uint256 amount, address onBehalf, address receiver) public {
         WithdrawCollateralTest memory test;
 
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -189,7 +189,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     }
 
     function testShouldRevertWithdrawCollateralOnBehalfZero(uint256 amount, address receiver) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
@@ -199,7 +199,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     }
 
     function testShouldRevertWithdrawCollateralToZero(uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
 
         _prepareOnBehalf(onBehalf);
@@ -218,7 +218,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     ) public {
         _assumeNotUnderlying(underlying);
 
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -233,7 +233,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         address onBehalf,
         address receiver
     ) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -254,7 +254,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     function testShouldRevertWithdrawCollateralWhenNotManaging(uint256 amount, address onBehalf, address receiver)
         public
     {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         vm.assume(onBehalf != address(user));
         receiver = _boundReceiver(receiver);
