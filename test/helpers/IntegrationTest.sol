@@ -451,4 +451,8 @@ contract IntegrationTest is ForkTest {
         assertEq(market.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
         assertEq(market.idleSupply, 0, "idleSupply != 0");
     }
+
+    function _randomBorrowableUnderlying(uint256 seed) internal view returns (address) {
+        return borrowableUnderlyings[seed % borrowableUnderlyings.length];
+    }
 }
