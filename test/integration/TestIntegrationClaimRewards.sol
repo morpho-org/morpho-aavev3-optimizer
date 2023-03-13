@@ -12,4 +12,11 @@ contract TestIntegrationClaimRewards is IntegrationTest {
         vm.expectRevert(Errors.ClaimRewardsPaused.selector);
         morpho.claimRewards(assets, address(this));
     }
+
+    function testClaimRewardsRevertIfRewardsManagerZero() public {
+        morpho.setRewardsManager(address(0));
+
+        vm.expectRevert(Errors.AddressIsZero.selector);
+        morpho.claimRewards(assets, address(this));
+    }
 }
