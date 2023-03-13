@@ -544,7 +544,7 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function testShouldRevertBorrowWhenBorrowNotEnabled(uint256 amount, address onBehalf, address receiver) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
