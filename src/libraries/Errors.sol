@@ -39,28 +39,28 @@ library Errors {
     /// @notice Thrown when the manager is not approved by the delegator.
     error PermissionDenied();
 
-    /// @notice Thrown when supply is paused.
+    /// @notice Thrown when supply is paused for the asset.
     error SupplyIsPaused();
 
-    /// @notice Thrown when supply collateral is paused.
+    /// @notice Thrown when supply collateral is paused for the asset.
     error SupplyCollateralIsPaused();
 
-    /// @notice Thrown when borrow is paused.
+    /// @notice Thrown when borrow is paused for the asset.
     error BorrowIsPaused();
 
-    /// @notice Thrown when repay is paused.
+    /// @notice Thrown when repay is paused for the asset.
     error RepayIsPaused();
 
-    /// @notice Thrown when withdraw is paused.
+    /// @notice Thrown when withdraw is paused for the asset.
     error WithdrawIsPaused();
 
-    /// @notice Thrown when withdraw collateral is paused.
+    /// @notice Thrown when withdraw collateral is paused for the asset.
     error WithdrawCollateralIsPaused();
 
-    /// @notice Thrown when liquidate collateral is paused.
+    /// @notice Thrown when liquidate is paused for the collateral asset.
     error LiquidateCollateralIsPaused();
 
-    /// @notice Thrown when liquidate borrow is paused.
+    /// @notice Thrown when liquidate is paused for the borrow asset
     error LiquidateBorrowIsPaused();
 
     /// @notice Thrown when claim rewards is paused.

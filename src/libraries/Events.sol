@@ -11,8 +11,8 @@ library Events {
     /// @param onBehalf The address of the user on behalf of which the position is created.
     /// @param underlying The address of the underlying asset supplied.
     /// @param amount The amount of `underlying` asset supplied.
-    /// @param scaledOnPool The scaled balance on pool of `onBehalf` after the supply.
-    /// @param scaledInP2P The scaled balance in peer-to-peer of `onBehalf` after the supply.
+    /// @param scaledOnPool The scaled supply balance on pool of `onBehalf` after the supply.
+    /// @param scaledInP2P The scaled supply balance in peer-to-peer of `onBehalf` after the supply.
     event Supplied(
         address indexed from,
         address indexed onBehalf,
@@ -42,8 +42,8 @@ library Events {
     /// @param receiver The address of the user receiving the funds.
     /// @param underlying The address of the underlying asset borrowed.
     /// @param amount The amount of `underlying` asset borrowed.
-    /// @param scaledOnPool The scaled balance on pool of `onBehalf` after the borrow.
-    /// @param scaledInP2P The scaled balance in peer-to-peer of `onBehalf` after the borrow.
+    /// @param scaledOnPool The scaled borrow balance on pool of `onBehalf` after the borrow.
+    /// @param scaledInP2P The scaled borrow balance in peer-to-peer of `onBehalf` after the borrow.
     event Borrowed(
         address caller,
         address indexed onBehalf,
@@ -59,8 +59,8 @@ library Events {
     /// @param onBehalf The address of the user on behalf of which the position is modified.
     /// @param underlying The address of the underlying asset repaid.
     /// @param amount The amount of `underlying` asset repaid.
-    /// @param scaledOnPool The scaled balance on pool of `onBehalf` after the repay.
-    /// @param scaledInP2P The scaled balance in peer-to-peer of `onBehalf` after the repay.
+    /// @param scaledOnPool The scaled borrow balance on pool of `onBehalf` after the repay.
+    /// @param scaledInP2P The scaled borrow balance in peer-to-peer of `onBehalf` after the repay.
     event Repaid(
         address indexed repayer,
         address indexed onBehalf,
@@ -76,8 +76,8 @@ library Events {
     /// @param receiver The address of the user receiving the funds.
     /// @param underlying The address of the underlying asset withdrawn.
     /// @param amount The amount of `underlying` asset withdrawn.
-    /// @param scaledOnPool The scaled balance on pool of `onBehalf` after the withdraw.
-    /// @param scaledInP2P The scaled balance in peer-to-peer of `onBehalf` after the withdraw.
+    /// @param scaledOnPool The scaled supply balance on pool of `onBehalf` after the withdraw.
+    /// @param scaledInP2P The scaled supply balance in peer-to-peer of `onBehalf` after the withdraw.
     event Withdrawn(
         address caller,
         address indexed onBehalf,
@@ -126,8 +126,8 @@ library Events {
     /// @notice Emitted when a supply position is updated.
     /// @param user The address of the user.
     /// @param underlying The address of the underlying asset.
-    /// @param scaledOnPool The scaled balance on pool of `user` after the update.
-    /// @param scaledInP2P The scaled balance in peer-to-peer of `user` after the update.
+    /// @param scaledOnPool The scaled supply balance on pool of `user` after the update.
+    /// @param scaledInP2P The scaled supply balance in peer-to-peer of `user` after the update.
     event SupplyPositionUpdated(
         address indexed user, address indexed underlying, uint256 scaledOnPool, uint256 scaledInP2P
     );
@@ -135,8 +135,8 @@ library Events {
     /// @notice Emitted when a borrow position is updated.
     /// @param user The address of the user.
     /// @param underlying The address of the underlying asset.
-    /// @param scaledOnPool The scaled balance on pool of `user` after the update.
-    /// @param scaledInP2P The scaled balance in peer-to-peer of `user` after the update.
+    /// @param scaledOnPool The scaled borrow balance on pool of `user` after the update.
+    /// @param scaledInP2P The scaled borrow balance in peer-to-peer of `user` after the update.
     event BorrowPositionUpdated(
         address indexed user, address indexed underlying, uint256 scaledOnPool, uint256 scaledInP2P
     );
@@ -166,34 +166,34 @@ library Events {
         address indexed claimer, address indexed onBehalf, address indexed rewardToken, uint256 amountClaimed
     );
 
-    /// @notice Emitted when an `underlying` collateral status is set to `isCollateral`.
+    /// @notice Emitted when the collateral status of the `underlying` market is set to `isCollateral`.
     event IsCollateralSet(address indexed underlying, bool isCollateral);
 
     /// @notice Emitted when the claim rewards status is set to `isPaused`.
     event IsClaimRewardsPausedSet(bool isPaused);
 
-    /// @notice Emitted when an `underlying` supply pause status is set to `isPaused`.
+    /// @notice Emitted when the supply pause status of the `underlying` market is set to `isPaused`.
     event IsSupplyPausedSet(address indexed underlying, bool isPaused);
 
-    /// @notice Emitted when an `underlying` supply collateral pause status is set to `isPaused`.
+    /// @notice Emitted when the supply collateral pause status of the `underlying` market is set to `isPaused`.
     event IsSupplyCollateralPausedSet(address indexed underlying, bool isPaused);
 
-    /// @notice Emitted when an `underlying` borrow pause status is set to `isPaused`.
+    /// @notice Emitted when the borrow pause status of the `underlying` market is set to `isPaused`.
     event IsBorrowPausedSet(address indexed underlying, bool isPaused);
 
-    /// @notice Emitted when an `underlying` withdraw pause status is set to `isPaused`.
+    /// @notice Emitted when the withdraw pause status of the `underlying` market is set to `isPaused`.
     event IsWithdrawPausedSet(address indexed underlying, bool isPaused);
 
-    /// @notice Emitted when an `underlying` withdraw collateral pause status is set to `isPaused`.
+    /// @notice Emitted when the withdraw collateral pause status of the `underlying` market is set to `isPaused`.
     event IsWithdrawCollateralPausedSet(address indexed underlying, bool isPaused);
 
-    /// @notice Emitted when an `underlying` repay pause status is set to `isPaused`.
+    /// @notice Emitted when the repay pause status of the `underlying` market is set to `isPaused`.
     event IsRepayPausedSet(address indexed underlying, bool isPaused);
 
-    /// @notice Emitted when an `underlying` liquidate collateral pause status is set to `isPaused`.
+    /// @notice Emitted when the liquidate collateral pause status of the `underlying` market is set to `isPaused`.
     event IsLiquidateCollateralPausedSet(address indexed underlying, bool isPaused);
 
-    /// @notice Emitted when an `underlying` liquidate borrow pause status is set to `isPaused`.
+    /// @notice Emitted when the liquidate borrow pause status of the `underlying` market is set to `isPaused`.
     event IsLiquidateBorrowPausedSet(address indexed underlying, bool isPaused);
 
     /// @notice Emitted when an `_increaseP2PDeltas` is triggered.

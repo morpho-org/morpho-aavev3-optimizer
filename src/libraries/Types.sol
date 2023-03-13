@@ -165,6 +165,7 @@ library Types {
     }
 
     /// @notice Variables used in the liquidity computation process of a `user`.
+    /// @dev Used to avoid stack too deep.
     struct LiquidityVars {
         address user; // The user address.
         IAaveOracle oracle; // The oracle used by Aave.
@@ -172,6 +173,7 @@ library Types {
     }
 
     /// @notice Variables used during a borrow or withdraw.
+    /// @dev Used to avoid stack too deep.
     struct BorrowWithdrawVars {
         uint256 onPool; // The working scaled balance on pool of the user.
         uint256 inP2P; // The working scaled balance in peer-to-peer of the user.
@@ -180,6 +182,7 @@ library Types {
     }
 
     /// @notice Variables used during a supply or repay.
+    /// @dev Used to avoid stack too deep.
     struct SupplyRepayVars {
         uint256 onPool; // The working scaled balance on pool of the user.
         uint256 inP2P; // The working scaled balance in peer-to-peer of the user.
@@ -188,12 +191,14 @@ library Types {
     }
 
     /// @notice Variables used during a liquidate.
+    /// @dev Used to avoid stack too deep.
     struct LiquidateVars {
         uint256 closeFactor; // The close factor used during the liquidation process.
         uint256 seized; // The amount of collateral to be seized (in underlying).
     }
 
     /// @notice Variables used to compute the amount to seize during a liquidation.
+    /// @dev Used to avoid stack too deep.
     struct AmountToSeizeVars {
         uint256 liquidationBonus; // The liquidation bonus used during the liquidation process.
         uint256 borrowedTokenUnit; // The borrowed token unit.
