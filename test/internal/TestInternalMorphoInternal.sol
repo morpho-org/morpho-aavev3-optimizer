@@ -420,13 +420,12 @@ contract TestInternalMorphoInternal is InternalTest {
         (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
             _assetLiquidityData(dai, vars);
 
-        uint256 rawCollateralValue = (
+        uint256 rawCollateral = (
             _getUserCollateralBalanceFromIndex(dai, address(1), _market[dai].indexes.supply.poolIndex)
         ) * underlyingPrice / tokenUnit;
-        uint256 expectedCollateralValue =
-            ((Constants.LT_LOWER_BOUND - 1) * rawCollateralValue) / Constants.LT_LOWER_BOUND;
-        assertEq(borrowable, expectedCollateralValue.percentMulDown(ltv), "borrowable not equal to expected");
-        assertEq(maxDebt, expectedCollateralValue.percentMulDown(liquidationThreshold), "maxDebt not equal to expected");
+        uint256 expectedCollateral = collateralValue(rawCollateral);
+        assertEq(borrowable, expectedCollateral.percentMulDown(ltv), "borrowable not equal to expected");
+        assertEq(maxDebt, expectedCollateral.percentMulDown(liquidationThreshold), "maxDebt not equal to expected");
     }
 
     function testLiquidityDataDebt(uint256 amountPool, uint256 amountP2P) public {

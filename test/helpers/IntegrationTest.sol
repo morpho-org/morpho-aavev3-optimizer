@@ -430,10 +430,6 @@ contract IntegrationTest is ForkTest {
         return amount;
     }
 
-    function _boundAmount(uint256 amount) internal view override returns (uint256) {
-        return bound(amount, 1, type(uint256).max);
-    }
-
     function _boundOnBehalf(address onBehalf) internal view returns (address) {
         onBehalf = _boundAddressNotZero(onBehalf);
 
@@ -452,12 +448,6 @@ contract IntegrationTest is ForkTest {
         if (onBehalf != address(user)) {
             vm.prank(onBehalf);
             morpho.approveManager(address(user), true);
-        }
-    }
-
-    function _assumeNotUnderlying(address input) internal view {
-        for (uint256 i; i < allUnderlyings.length; ++i) {
-            vm.assume(input != allUnderlyings[i]);
         }
     }
 

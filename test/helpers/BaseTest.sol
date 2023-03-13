@@ -12,6 +12,7 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
+import {collateralValue, rawCollateralValue} from "test/helpers/Utils.sol";
 
 import {stdStorage, StdStorage} from "@forge-std/StdStorage.sol";
 import {console2} from "@forge-std/console2.sol";
@@ -65,6 +66,11 @@ contract BaseTest is Test {
     /// @dev Bounds the fuzzing input to a realistic amount.
     function _boundAmountNotZero(uint256 amount) internal view virtual returns (uint256) {
         return bound(amount, 1, MAX_AMOUNT);
+    }
+
+    /// @dev Bounds the fuzzing input to a non-zero 256 bits unsigned integer.
+    function _boundNotZero(uint256 input) internal view virtual returns (uint256) {
+        return bound(input, 1, type(uint256).max);
     }
 
     /// @dev Bounds the fuzzing input to a non-zero address.

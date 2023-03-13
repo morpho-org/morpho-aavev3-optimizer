@@ -241,9 +241,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         _userCollaterals[borrower].add(underlying);
         uint256 collateral = healthFactor.percentDivDown(pool.getConfiguration(underlying).getLiquidationThreshold());
-        uint256 rawCollateral = (Constants.LT_LOWER_BOUND * collateral) / (Constants.LT_LOWER_BOUND - 1);
 
-        _marketBalances[underlying].collateral[borrower] = rawCollateral;
+        _marketBalances[underlying].collateral[borrower] = rawCollateralValue(collateral);
 
         _userBorrows[borrower].add(underlying);
         _updateBorrowerInDS(underlying, borrower, 1 ether, 0, true);
