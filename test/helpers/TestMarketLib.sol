@@ -94,6 +94,18 @@ library TestMarketLib {
             (amount * baseMarket.price * 10 ** quoteMarket.decimals) / (quoteMarket.price * 10 ** baseMarket.decimals);
     }
 
+    function getLtv(TestMarket storage collateralMarket, uint8 eModeCategoryId) internal view returns (uint256) {
+        return eModeCategoryId != 0 && eModeCategoryId == collateralMarket.eModeCategoryId
+            ? collateralMarket.eModeCategory.ltv
+            : collateralMarket.ltv;
+    }
+
+    function getLt(TestMarket storage collateralMarket, uint8 eModeCategoryId) internal view returns (uint256) {
+        return eModeCategoryId != 0 && eModeCategoryId == collateralMarket.eModeCategoryId
+            ? collateralMarket.eModeCategory.liquidationThreshold
+            : collateralMarket.lt;
+    }
+
     /// @dev Calculates the maximum borrowable quantity collateralized by the given quantity of collateral.
     function borrowable(
         TestMarket storage borrowedMarket,
@@ -101,10 +113,7 @@ library TestMarketLib {
         uint256 rawCollateral,
         uint8 eModeCategoryId
     ) internal view returns (uint256) {
-        uint256 ltv = eModeCategoryId != 0 && eModeCategoryId == borrowedMarket.eModeCategoryId
-            && eModeCategoryId == collateralMarket.eModeCategoryId
-            ? collateralMarket.eModeCategory.ltv
-            : collateralMarket.ltv;
+        uint256 ltv = getLtv(collateralMarket, eModeCategoryId);
 
         return quote(
             borrowedMarket, collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
@@ -120,10 +129,7 @@ library TestMarketLib {
         uint256 rawCollateral,
         uint8 eModeCategoryId
     ) internal view returns (uint256) {
-        uint256 lt = eModeCategoryId != 0 && eModeCategoryId == borrowedMarket.eModeCategoryId
-            && eModeCategoryId == collateralMarket.eModeCategoryId
-            ? collateralMarket.eModeCategory.liquidationThreshold
-            : collateralMarket.lt;
+        uint256 lt = getLt(collateralMarket, eModeCategoryId);
 
         return quote(
             borrowedMarket, collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
@@ -139,10 +145,7 @@ library TestMarketLib {
         uint256 amount,
         uint8 eModeCategoryId
     ) internal view returns (uint256) {
-        uint256 ltv = eModeCategoryId != 0 && eModeCategoryId == borrowedMarket.eModeCategoryId
-            && eModeCategoryId == collateralMarket.eModeCategoryId
-            ? collateralMarket.eModeCategory.ltv
-            : collateralMarket.ltv;
+        uint256 ltv = getLtv(collateralMarket, eModeCategoryId);
 
         return quote(collateralMarket, borrowedMarket, amount)
             // The quantity of collateral required to open a borrow is over-estimated because of decimals precision (especially for the pair WBTC/WETH).
@@ -157,10 +160,7 @@ library TestMarketLib {
         uint256 amount,
         uint8 eModeCategoryId
     ) internal view returns (uint256) {
-        uint256 lt = eModeCategoryId != 0 && eModeCategoryId == borrowedMarket.eModeCategoryId
-            && eModeCategoryId == collateralMarket.eModeCategoryId
-            ? collateralMarket.eModeCategory.liquidationThreshold
-            : collateralMarket.lt;
+        uint256 lt = getLt(collateralMarket, eModeCategoryId);
 
         return quote(collateralMarket, borrowedMarket, amount).percentDiv(lt) * Constants.LT_LOWER_BOUND
             / (Constants.LT_LOWER_BOUND - 1);
