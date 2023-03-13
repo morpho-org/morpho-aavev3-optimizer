@@ -268,4 +268,8 @@ contract ForkTest is BaseTest {
         );
         poolAdmin.setAssetEModeCategory(underlying, eModeCategoryId);
     }
+
+    function _randomUnderlying(uint256 seed) internal view returns (address) {
+        return allUnderlyings[seed % allUnderlyings.length];
+    }
 }
