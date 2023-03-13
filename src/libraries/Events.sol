@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
 library Events {
     /// @notice Emitted when a supply happens.
     /// @param from The address of the user supplying the funds.
-    /// @param onBehalf The address of the user on behalf of which the funds are supplied.
+    /// @param onBehalf The address of the user on behalf of which the position is created.
     /// @param underlying The address of the underlying asset supplied.
     /// @param amount The amount of `underlying` asset supplied.
     /// @param scaledOnPool The scaled balance on pool of `onBehalf` after the supply.
@@ -24,7 +24,7 @@ library Events {
 
     /// @notice Emitted when a supply collateral happens.
     /// @param from The address of the user supplying the funds.
-    /// @param onBehalf The address of the user on behalf of which position is created.
+    /// @param onBehalf The address of the user on behalf of which the position is created.
     /// @param underlying The address of the underlying asset supplied.
     /// @param amount The amount of `underlying` asset supplied.
     /// @param scaledBalance The scaled collateral balance of `onBehalf` after the supply.
@@ -106,7 +106,7 @@ library Events {
 
     /// @notice Emitted when a liquidate happens.
     /// @param liquidator The address of the liquidator.
-    /// @param borrower The address of the borrower liquidated.
+    /// @param borrower The address of the borrower that was liquidated.
     /// @param underlyingBorrowed The address of the underlying asset borrowed being repaid.
     /// @param amountLiquidated The amount of `underlyingBorrowed` repaid.
     /// @param underlyingCollateral The address of the collateral underlying seized.

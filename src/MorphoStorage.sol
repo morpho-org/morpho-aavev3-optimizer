@@ -49,7 +49,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /// @dev The nonce of users. Used to prevent replay attacks with EIP-712 signatures.
     mapping(address => uint256) internal _userNonce;
 
-    /// @dev The default iterations values to use in the matching process.
+    /// @dev The default number of iterations to use in the matching process.
     Types.Iterations internal _defaultIterations;
 
     /// @dev The address of the positions manager on which calls are delegated to.

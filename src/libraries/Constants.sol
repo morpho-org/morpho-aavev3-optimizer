@@ -46,7 +46,7 @@ library Constants {
     bytes32 internal constant EIP712_DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
-    /// @dev The typehash for approveManagerBySig Authorization used for the EIP-712 signature.
+    /// @dev The typehash for approveManagerWithSig Authorization used for the EIP-712 signature.
     bytes32 internal constant EIP712_AUTHORIZATION_TYPEHASH =
         keccak256("Authorization(address delegator,address manager,bool isAllowed,uint256 nonce,uint256 deadline)");
 
