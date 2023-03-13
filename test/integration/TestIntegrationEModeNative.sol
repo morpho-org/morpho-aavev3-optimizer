@@ -61,19 +61,21 @@ contract TestIntegrationEModeNative is IntegrationTest {
         TestMarket storage wNativeMarket = testMarkets[wNative];
 
         for (
-            uint256 collateralMarketIndex; collateralMarketIndex < borrowableUnderlyings.length; ++collateralMarketIndex
+            uint256 collateralMarketIndex; collateralMarketIndex < collateralUnderlyings.length; ++collateralMarketIndex
         ) {
             _revert();
 
-            TestMarket storage collateralMarket = testMarkets[borrowableUnderlyings[collateralMarketIndex]];
+            TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralMarketIndex]];
 
             if (collateralMarket.underlying == wNative || collateralMarket.underlying == sNative) continue;
 
             rawCollateral = _boundCollateral(collateralMarket, rawCollateral, wNativeMarket);
             borrowed = bound(
                 borrowed,
-                wNativeMarket.borrowable(collateralMarket, rawCollateral, eModeCategoryId),
-                wNativeMarket.borrowable(collateralMarket, rawCollateral, 0)
+                wNativeMarket.borrowable(collateralMarket, rawCollateral, 0).percentAdd(2),
+                wNativeMarket.borrowable(collateralMarket, rawCollateral, collateralMarket.eModeCategoryId).percentAdd(
+                    2
+                )
             );
 
             user.approve(collateralMarket.underlying, rawCollateral);
