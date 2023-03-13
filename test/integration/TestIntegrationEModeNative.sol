@@ -72,9 +72,9 @@ contract TestIntegrationEModeNative is IntegrationTest {
             rawCollateral = _boundCollateral(collateralMarket, rawCollateral, wNativeMarket);
             borrowed = bound(
                 borrowed,
-                wNativeMarket.borrowable(collateralMarket, rawCollateral, 0).percentAdd(2),
+                wNativeMarket.borrowable(collateralMarket, rawCollateral, 0).percentAdd(20),
                 wNativeMarket.borrowable(collateralMarket, rawCollateral, collateralMarket.eModeCategoryId).percentAdd(
-                    2
+                    20
                 )
             );
 

@@ -117,7 +117,9 @@ library TestMarketLib {
 
         return quote(
             borrowedMarket, collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
-        ).percentMul(ltv - 1);
+        )
+            // The borrowable quantity is under-estimated because of decimals precision (especially for the pair WBTC/WETH).
+            .percentMul(ltv - 10);
     }
 
     /// @dev Calculates the maximum borrowable quantity collateralized by the given quantity of collateral.
@@ -131,7 +133,9 @@ library TestMarketLib {
 
         return quote(
             borrowedMarket, collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
-        ).percentMul(lt - 1);
+        )
+            // The collateralized quantity is under-estimated because of decimals precision (especially for the pair WBTC/WETH).
+            .percentMul(lt - 10);
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt while still being able to borrow.
