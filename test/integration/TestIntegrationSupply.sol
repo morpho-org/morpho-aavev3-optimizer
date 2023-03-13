@@ -360,7 +360,7 @@ contract TestIntegrationSupply is IntegrationTest {
     }
 
     function testShouldRevertSupplyOnBehalfZero(uint256 amount) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
@@ -371,7 +371,7 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldRevertSupplyWhenMarketNotCreated(address underlying, uint256 amount, address onBehalf) public {
         _assumeNotUnderlying(underlying);
 
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
@@ -379,7 +379,7 @@ contract TestIntegrationSupply is IntegrationTest {
     }
 
     function testShouldRevertSupplyWhenSupplyPaused(uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {

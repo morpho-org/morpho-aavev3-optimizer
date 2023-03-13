@@ -399,7 +399,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
     function testShouldNotWithdrawWhenNoSupply(uint256 amount, address onBehalf, address receiver) public {
         WithdrawTest memory test;
 
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -459,7 +459,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
     }
 
     function testShouldRevertWithdrawOnBehalfZero(uint256 amount, address receiver) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
@@ -469,7 +469,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
     }
 
     function testShouldRevertWithdrawToZero(uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
 
         _prepareOnBehalf(onBehalf);
@@ -488,7 +488,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
     ) public {
         _assumeNotUnderlying(underlying);
 
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -499,7 +499,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
     }
 
     function testShouldRevertWithdrawWhenWithdrawPaused(uint256 amount, address onBehalf, address receiver) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -518,7 +518,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
     }
 
     function testShouldRevertWithdrawWhenNotManaging(uint256 amount, address onBehalf, address receiver) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         vm.assume(onBehalf != address(user));
         receiver = _boundReceiver(receiver);
@@ -535,7 +535,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         address onBehalf,
         address receiver
     ) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 

@@ -473,7 +473,7 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function testShouldRevertBorrowOnBehalfZero(uint256 amount, address receiver) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         receiver = _boundReceiver(receiver);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
@@ -483,7 +483,7 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function testShouldRevertBorrowToZero(uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
 
         _prepareOnBehalf(onBehalf);
@@ -497,7 +497,7 @@ contract TestIntegrationBorrow is IntegrationTest {
     function testShouldRevertIfBorrowingNotEnableWithSentinel(uint256 amount, address onBehalf, address receiver)
         public
     {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -519,7 +519,7 @@ contract TestIntegrationBorrow is IntegrationTest {
     ) public {
         _assumeNotUnderlying(underlying);
 
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -530,7 +530,7 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function testShouldRevertBorrowWhenBorrowPaused(uint256 amount, address onBehalf, address receiver) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
@@ -549,7 +549,7 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function testShouldRevertBorrowWhenNotManaging(uint256 amount, address onBehalf, address receiver) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
         vm.assume(onBehalf != address(user));
         receiver = _boundReceiver(receiver);

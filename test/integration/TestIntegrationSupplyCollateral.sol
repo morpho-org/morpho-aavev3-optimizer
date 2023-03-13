@@ -132,7 +132,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     }
 
     function testShouldRevertSupplyCollateralOnBehalfZero(uint256 amount) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
@@ -145,7 +145,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     {
         _assumeNotUnderlying(underlying);
 
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
@@ -153,7 +153,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     }
 
     function testShouldRevertSupplyCollateralWhenSupplyCollateralPaused(uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
