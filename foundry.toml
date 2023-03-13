@@ -7,6 +7,11 @@ fs_permissions = [{ access = "read", path = "./config/"}]
 [fuzz]
 runs = 8
 
+[invariant]
+runs = 8
+depth = 8
+fail_on_revert = true
+
 [rpc_endpoints]
 mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"
 avalanche = "https://rpc.ankr.com/avalanche"
