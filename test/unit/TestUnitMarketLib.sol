@@ -234,7 +234,7 @@ contract TestUnitMarketLib is BaseTest {
             indexes.supply.p2pIndex,
             indexes.borrow.poolIndex,
             indexes.borrow.p2pIndex
-            );
+        );
         market.setIndexes(indexes);
 
         assertEq(market.indexes.supply.poolIndex, indexes.supply.poolIndex);
