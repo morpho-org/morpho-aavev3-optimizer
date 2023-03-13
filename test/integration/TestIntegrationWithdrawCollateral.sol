@@ -90,7 +90,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     }
 
     function testShouldNotWithdrawCollateralWhenLowHealthFactor(
-        uint256 collateral,
+        uint256 rawCollateral,
         uint256 borrowed,
         uint256 withdrawn,
         address onBehalf,
@@ -108,24 +108,23 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
                 TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralIndex]];
                 TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedIndex]];
 
-                collateral = _boundCollateral(collateralMarket, collateral, borrowedMarket).percentAdd(1);
-                uint256 borrowable = borrowedMarket.borrowable(collateralMarket, collateral).percentSub(4);
+                rawCollateral = _boundCollateral(collateralMarket, rawCollateral, borrowedMarket);
                 borrowed = bound(
                     borrowed,
-                    borrowedMarket.minAmount / 2,
-                    Math.min(borrowable, Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap()))
+                    borrowedMarket.minAmount,
+                    Math.min(
+                        borrowedMarket.borrowable(collateralMarket, rawCollateral),
+                        Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap())
+                    )
                 );
                 withdrawn = bound(
                     withdrawn,
-                    collateral.zeroFloorSub(
-                        collateralMarket.minCollateral(borrowedMarket, borrowed) * (Constants.LT_LOWER_BOUND - 3)
-                            / Constants.LT_LOWER_BOUND
-                    ),
+                    rawCollateral.zeroFloorSub(collateralMarket.minCollateral(borrowedMarket, borrowed)),
                     type(uint256).max
                 );
 
-                user.approve(collateralMarket.underlying, collateral);
-                user.supplyCollateral(collateralMarket.underlying, collateral, onBehalf);
+                user.approve(collateralMarket.underlying, rawCollateral);
+                user.supplyCollateral(collateralMarket.underlying, rawCollateral, onBehalf);
 
                 user.borrow(borrowedMarket.underlying, borrowed, onBehalf, receiver);
 

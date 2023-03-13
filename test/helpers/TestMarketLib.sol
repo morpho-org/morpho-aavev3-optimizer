@@ -5,6 +5,7 @@ import {Constants} from "src/libraries/Constants.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
+import {collateralValue, rawCollateralValue} from "test/helpers/Utils.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
@@ -81,6 +82,7 @@ library TestMarketLib {
         return market.borrowCap.zeroFloorSub(totalBorrow(market));
     }
 
+    /// @dev Quotes the given amount of base tokens as quote tokens.
     function quote(TestMarket storage quoteMarket, TestMarket storage baseMarket, uint256 amount)
         internal
         view
@@ -96,9 +98,8 @@ library TestMarketLib {
         view
         returns (uint256)
     {
-        return quote(
-            borrowedMarket, collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
-        ).percentMul(collateralMarket.ltv - 1);
+        return
+            quote(borrowedMarket, collateralMarket, collateralValue(rawCollateral)).percentMul(collateralMarket.ltv - 1);
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt and still be able to borrow.
@@ -107,9 +108,11 @@ library TestMarketLib {
         view
         returns (uint256)
     {
-        return quote(collateralMarket, borrowedMarket, amount)
-            // The quantity of collateral required to open a borrow is over-estimated because of decimals precision (especially for the pair WBTC/WETH).
-            .percentDiv(collateralMarket.ltv - 10) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
+        return rawCollateralValue(
+            quote(collateralMarket, borrowedMarket, amount)
+                // The quantity of collateral required to open a borrow is over-estimated because of decimals precision (especially for the pair WBTC/WETH).
+                .percentDiv(collateralMarket.ltv - 10)
+        );
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt,
@@ -119,7 +122,6 @@ library TestMarketLib {
         view
         returns (uint256)
     {
-        return quote(collateralMarket, borrowedMarket, amount).percentDiv(collateralMarket.lt)
-            * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
+        return rawCollateralValue(quote(collateralMarket, borrowedMarket, amount).percentDiv(collateralMarket.lt));
     }
 }
