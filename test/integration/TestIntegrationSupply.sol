@@ -15,6 +15,8 @@ contract TestIntegrationSupply is IntegrationTest {
         uint256 scaledP2PSupply;
         uint256 scaledPoolSupply;
         uint256 scaledCollateral;
+        address[] collaterals;
+        address[] borrows;
         Types.Indexes256 indexes;
         Types.Market morphoMarket;
     }
@@ -28,6 +30,8 @@ contract TestIntegrationSupply is IntegrationTest {
         test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
         test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
         test.scaledCollateral = morpho.scaledCollateralBalance(market.underlying, onBehalf);
+        test.collaterals = morpho.userCollaterals(onBehalf);
+        test.borrows = morpho.userBorrows(onBehalf);
         uint256 poolSupply = test.scaledPoolSupply.rayMul(test.indexes.supply.poolIndex);
 
         // Assert balances on Morpho.
@@ -35,6 +39,9 @@ contract TestIntegrationSupply is IntegrationTest {
         assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
         assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
         assertApproxEqDust(poolSupply, amount, "poolSupply != amount");
+
+        assertEq(test.collaterals.length, 0, "collaterals.length");
+        assertEq(test.borrows.length, 0, "borrows.length");
 
         assertApproxEqDust(morpho.supplyBalance(market.underlying, onBehalf), amount, "totalSupply != amount");
         assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
@@ -64,6 +71,8 @@ contract TestIntegrationSupply is IntegrationTest {
         test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
         test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
         test.scaledCollateral = morpho.scaledCollateralBalance(market.underlying, onBehalf);
+        test.collaterals = morpho.userCollaterals(onBehalf);
+        test.borrows = morpho.userBorrows(onBehalf);
         uint256 p2pSupply = test.scaledP2PSupply.rayMul(test.indexes.supply.p2pIndex);
 
         // Assert balances on Morpho.
@@ -80,6 +89,9 @@ contract TestIntegrationSupply is IntegrationTest {
         assertApproxEqDust(
             morpho.scaledPoolBorrowBalance(market.underlying, address(promoter1)), 0, "promoterScaledPoolBorrow != 0"
         );
+
+        assertEq(test.collaterals.length, 0, "collaterals.length");
+        assertEq(test.borrows.length, 0, "borrows.length");
 
         assertApproxEqAbs(morpho.supplyBalance(market.underlying, onBehalf), amount, 2, "supply != amount");
         assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
