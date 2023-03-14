@@ -53,4 +53,12 @@ contract TestInternalInvariants is Test{
         assertTrue(handler.Sum_Supply_P2P_minus_Delta_S()==handler.Sum_Borrow_P2P_minus_Delta_B());
     }
 
+    function invariant_Morpho_Pool_Supply_internal() public {
+        assertApproxEqAbs(handler.Sum_Supply_Pool_plus_Delta_S_plus_Collateralpos(),handler.Supply_Morpho(), 5);
+    }
+
+    function invariant_Morpho_Pool_Borrow_internal() public {
+        assertApproxEqAbs(handler.Sum_Borrow_Pool_plus_Delta_B(), handler.Borrow_Morpho(), 5);
+    }
+
 }

@@ -12,6 +12,7 @@ import {PoolLib} from "src/libraries/PoolLib.sol";
 import {Types} from "src/libraries/Types.sol";
 import {MarketLib} from "src/libraries/MarketLib.sol";
 import {MarketBalanceLib} from "src/libraries/MarketBalanceLib.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
 import "test/helpers/InternalTest.sol";
@@ -25,6 +26,7 @@ contract InternalHandler is InternalTest, PositionsManagerInternal {
     using MarketBalanceLib for Types.MarketBalances;
     using SafeTransferLib for ERC20;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using WadRayMath for uint256;
 
     address[] users;
     address actor;
@@ -36,6 +38,8 @@ contract InternalHandler is InternalTest, PositionsManagerInternal {
     uint256 public S_Pool;    
     uint256 public B_P2P;
     uint256 public B_Pool;
+    uint256 public Supply_Morpho;
+    uint256 public Borrow_Morpho;
 
     function setUp() public virtual override {
         super.setUp();
@@ -92,12 +96,31 @@ contract InternalHandler is InternalTest, PositionsManagerInternal {
         
         return Sum_Pool;
     }
+    
+    function Sum_Supply_Pool_unscaled() public view returns (uint256 Sum_Pool){
+        
+        for (uint256 marketIndex; marketIndex < _marketsCreated.length; ++marketIndex){ 
+            uint256 index = _market[_marketsCreated[marketIndex]].getSupplyIndexes().poolIndex;
+            for(uint i; i<users.length;i++)
+                Sum_Pool += _marketBalances[_marketsCreated[marketIndex]].scaledPoolSupplyBalance(address(users[i])).rayMulUp(index);
+        }
+        return Sum_Pool;
+    }
 
     function Sum_Borrow_Pool() public view returns (uint256 Sum_Pool){
         for(uint i; i<users.length;i++)
                 for (uint256 marketIndex; marketIndex < _marketsCreated.length; ++marketIndex) 
                     Sum_Pool += _marketBalances[_marketsCreated[marketIndex]].scaledPoolBorrowBalance(address(users[i]));
         
+        return Sum_Pool;
+    }
+
+    function Sum_Borrow_Pool_unscaled() public view returns (uint256 Sum_Pool){        
+        for (uint256 marketIndex; marketIndex < _marketsCreated.length; ++marketIndex){ 
+            uint256 index = _market[_marketsCreated[marketIndex]].getBorrowIndexes().poolIndex;
+            for(uint i; i<users.length;i++)
+                Sum_Pool += _marketBalances[_marketsCreated[marketIndex]].scaledPoolBorrowBalance(address(users[i])).rayMulUp(index);
+        }
         return Sum_Pool;
     }
 
@@ -115,6 +138,25 @@ contract InternalHandler is InternalTest, PositionsManagerInternal {
                     Sum_P2P += _marketBalances[_marketsCreated[marketIndex]].scaledP2PSupplyBalance(address(users[i]));
         
         return Sum_P2P;
+    }
+
+    function Sum_Supply_Collateral() public view returns (uint256 Sum_Collateral){
+        for(uint i; i<users.length;i++)
+                for (uint256 marketIndex; marketIndex < _marketsCreated.length; ++marketIndex) 
+                    Sum_Collateral += _marketBalances[_marketsCreated[marketIndex]].collateral[address(users[i])];
+        
+        return Sum_Collateral;
+    }
+
+
+    function Sum_Supply_Collateral_unscaled() public view returns (uint256 Sum_Collateral){
+        for (uint256 marketIndex; marketIndex < _marketsCreated.length; ++marketIndex){ 
+            uint256 index = _market[_marketsCreated[marketIndex]].getSupplyIndexes().poolIndex;
+            for(uint i; i<users.length;i++)
+                    Sum_Collateral += (_marketBalances[_marketsCreated[marketIndex]].collateral[address(users[i])]).rayMulUp(index);
+        }
+
+        return Sum_Collateral;
     }
 
     function Sum_Supply_P2P_minus_Delta_S() public view returns (uint256){
@@ -139,6 +181,27 @@ contract InternalHandler is InternalTest, PositionsManagerInternal {
         return Sum_P2P < delta_B ? 0 : Sum_P2P - delta_B;
     }
 
+    function Sum_Supply_Pool_plus_Delta_S_plus_Collateralpos() public view returns (uint256){
+        uint256 delta_S;
+        
+        for (uint256 marketIndex; marketIndex < _marketsCreated.length; ++marketIndex) {
+            uint256 index = _market[_marketsCreated[marketIndex]].getSupplyIndexes().poolIndex;
+            delta_S += (_market[_marketsCreated[marketIndex]].deltas.supply.scaledDelta).rayMulUp(index);
+        }
+
+        return Sum_Supply_Pool_unscaled() + delta_S + Sum_Supply_Collateral_unscaled();
+    }
+
+    function Sum_Borrow_Pool_plus_Delta_B() public view returns (uint256){
+        uint256 delta_B;
+        
+        for (uint256 marketIndex; marketIndex < _marketsCreated.length; ++marketIndex) {
+            uint256 index = _market[_marketsCreated[marketIndex]].getBorrowIndexes().poolIndex;
+            delta_B += (_market[_marketsCreated[marketIndex]].deltas.borrow.scaledDelta).rayMulUp(index);
+        }
+
+        return Sum_Borrow_Pool_unscaled() + delta_B;
+    }
 
     function current_balances(uint8 mindex) 
         public view 
@@ -300,6 +363,10 @@ contract InternalHandler is InternalTest, PositionsManagerInternal {
 
         pool.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
         pool.supplyToPool(underlying, vars.toSupply);
+        
+        Borrow_Morpho -= vars.toRepay;
+        Supply_Morpho -= vars.toRepay;
+        Supply_Morpho += vars.toSupply;
 
     }
 
@@ -316,6 +383,7 @@ contract InternalHandler is InternalTest, PositionsManagerInternal {
         
         pool.supplyToPool(underlying, amount);
 
+        Supply_Morpho += amount;
     }
 
     function _borrowLogic(address underlying, uint256 amount, address borrower, address receiver, uint256 maxIterations)
@@ -333,6 +401,10 @@ contract InternalHandler is InternalTest, PositionsManagerInternal {
 
         pool.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
         pool.borrowFromPool(underlying, vars.toBorrow);
+
+        Supply_Morpho -= vars.toWithdraw;
+        Supply_Morpho += vars.toBorrow;
+        Borrow_Morpho += vars.toBorrow;
 
         ERC20(underlying).safeTransfer(receiver, amount);
 
@@ -354,6 +426,10 @@ contract InternalHandler is InternalTest, PositionsManagerInternal {
 
         pool.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
         pool.borrowFromPool(underlying, vars.toBorrow);
+
+        Supply_Morpho -= vars.toWithdraw;
+        Supply_Morpho += vars.toBorrow;
+        Borrow_Morpho += vars.toBorrow;
 
         ERC20(underlying).safeTransfer(receiver, amount);
 
@@ -378,6 +454,8 @@ contract InternalHandler is InternalTest, PositionsManagerInternal {
         }
 
         pool.withdrawFromPool(underlying, market.aToken, amount);
+        
+        Supply_Morpho -= amount;
 
         ERC20(underlying).safeTransfer(receiver, amount);
 
@@ -400,6 +478,9 @@ contract InternalHandler is InternalTest, PositionsManagerInternal {
 
         pool.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
         pool.supplyToPool(underlying, vars.toSupply);
-
+        
+        Supply_Morpho -= vars.toRepay;
+        Borrow_Morpho -= vars.toRepay;
+        Supply_Morpho += vars.toSupply;
     }
 }
