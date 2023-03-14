@@ -270,4 +270,14 @@ contract ForkTest is BaseTest {
         );
         poolAdmin.setAssetEModeCategory(underlying, eModeCategoryId);
     }
+
+    function _assumeNotUnderlying(address input) internal view {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.assume(input != allUnderlyings[i]);
+        }
+    }
+
+    function _randomUnderlying(uint256 seed) internal view returns (address) {
+        return allUnderlyings[seed % allUnderlyings.length];
+    }
 }

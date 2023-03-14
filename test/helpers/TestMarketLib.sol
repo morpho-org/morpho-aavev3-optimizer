@@ -6,6 +6,7 @@ import {Constants} from "src/libraries/Constants.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {collateralValue, rawCollateralValue} from "test/helpers/Utils.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
@@ -85,6 +86,7 @@ library TestMarketLib {
         return market.borrowCap.zeroFloorSub(totalBorrow(market));
     }
 
+    /// @dev Quotes the given amount of base tokens as quote tokens.
     function quote(TestMarket storage quoteMarket, TestMarket storage baseMarket, uint256 amount)
         internal
         view
@@ -115,9 +117,7 @@ library TestMarketLib {
     ) internal view returns (uint256) {
         uint256 ltv = getLtv(collateralMarket, eModeCategoryId);
 
-        return quote(
-            borrowedMarket, collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
-        )
+        return quote(borrowedMarket, collateralMarket, collateralValue(rawCollateral))
             // The borrowable quantity is under-estimated because of decimals precision (especially for the pair WBTC/WETH).
             .percentMul(ltv - 10);
     }
@@ -131,9 +131,7 @@ library TestMarketLib {
     ) internal view returns (uint256) {
         uint256 lt = getLt(collateralMarket, eModeCategoryId);
 
-        return quote(
-            borrowedMarket, collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
-        )
+        return quote(borrowedMarket, collateralMarket, collateralValue(rawCollateral))
             // The collateralized quantity is under-estimated because of decimals precision (especially for the pair WBTC/WETH).
             .percentMul(lt - 10);
     }
@@ -147,9 +145,11 @@ library TestMarketLib {
     ) internal view returns (uint256) {
         uint256 ltv = getLtv(collateralMarket, eModeCategoryId);
 
-        return quote(collateralMarket, borrowedMarket, amount)
-            // The quantity of collateral required to open a borrow is over-estimated because of decimals precision (especially for the pair WBTC/WETH).
-            .percentDiv(ltv - 10) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
+        return rawCollateralValue(
+            quote(collateralMarket, borrowedMarket, amount)
+                // The quantity of collateral required to open a borrow is over-estimated because of decimals precision (especially for the pair WBTC/WETH).
+                .percentDiv(ltv - 10)
+        );
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt,
@@ -162,7 +162,6 @@ library TestMarketLib {
     ) internal view returns (uint256) {
         uint256 lt = getLt(collateralMarket, eModeCategoryId);
 
-        return quote(collateralMarket, borrowedMarket, amount).percentDiv(lt) * Constants.LT_LOWER_BOUND
-            / (Constants.LT_LOWER_BOUND - 1);
+        return rawCollateralValue(quote(collateralMarket, borrowedMarket, amount).percentDiv(lt));
     }
 }
