@@ -271,6 +271,11 @@ contract IntegrationTest is ForkTest {
         );
     }
 
+    /// @dev Bounds the fuzzing input to an arbitrary reasonable amount of iterations.
+    function _boundMaxIterations(uint256 maxIterations) internal view returns (uint256) {
+        return bound(maxIterations, 0, 32);
+    }
+
     /// @dev Borrows from `user` on behalf of `onBehalf`, with collateral.
     function _borrowWithCollateral(
         address borrower,

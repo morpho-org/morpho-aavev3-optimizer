@@ -1,37 +1,23 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {InvariantTest} from "@forge-std/InvariantTest.sol";
-import "test/helpers/IntegrationTest.sol";
+import "test/helpers/InvariantTest.sol";
 
-contract TestInvariantMorpho is IntegrationTest, InvariantTest {
+contract TestInvariantMorpho is InvariantTest {
     using SafeTransferLib for ERC20;
 
-    function setUp() public override {
+    function setUp() public virtual override {
         super.setUp();
 
-        targetContract(address(this));
-
-        bytes4[] memory selectors = new bytes4[](4);
+        bytes4[] memory selectors = new bytes4[](6);
         selectors[0] = this.supply.selector;
         selectors[1] = this.supplyCollateral.selector;
         selectors[2] = this.borrow.selector;
         selectors[3] = this.repay.selector;
+        selectors[4] = this.withdraw.selector;
+        selectors[5] = this.withdrawCollateral.selector;
 
         targetSelector(FuzzSelector({addr: address(this), selectors: selectors}));
-
-        targetSender(0x1000000000000000000000000000000000000000);
-        targetSender(0x0100000000000000000000000000000000000000);
-        targetSender(0x0010000000000000000000000000000000000000);
-        targetSender(0x0001000000000000000000000000000000000000);
-        targetSender(0x0000100000000000000000000000000000000000);
-        targetSender(0x0000010000000000000000000000000000000000);
-        targetSender(0x0000001000000000000000000000000000000000);
-        targetSender(0x0000000100000000000000000000000000000000);
-    }
-
-    function _boundMaxIterations(uint256 maxIterations) internal view returns (uint256) {
-        return bound(maxIterations, 0, 32);
     }
 
     function supply(uint256 seed, uint256 amount, address onBehalf, uint256 maxIterations) external {
@@ -39,8 +25,6 @@ contract TestInvariantMorpho is IntegrationTest, InvariantTest {
         amount = _boundSupply(market, amount);
         onBehalf = _boundAddressNotZero(onBehalf);
         maxIterations = _boundMaxIterations(maxIterations);
-
-        console2.log(msg.sender);
 
         _deal(market.underlying, msg.sender, amount);
 
@@ -83,6 +67,29 @@ contract TestInvariantMorpho is IntegrationTest, InvariantTest {
         ERC20(market.underlying).safeApprove(address(morpho), amount);
         morpho.repay(market.underlying, amount, onBehalf);
         vm.stopPrank();
+    }
+
+    function withdraw(uint256 seed, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
+        external
+    {
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+        amount = _boundNotZero(amount);
+        onBehalf = _boundAddressNotZero(onBehalf);
+        receiver = _boundReceiver(receiver);
+        maxIterations = _boundMaxIterations(maxIterations);
+
+        vm.prank(msg.sender);
+        morpho.withdraw(market.underlying, amount, onBehalf, receiver, maxIterations);
+    }
+
+    function withdrawCollateral(uint256 seed, uint256 amount, address onBehalf, address receiver) external {
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+        amount = _boundNotZero(amount);
+        onBehalf = _boundAddressNotZero(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        vm.prank(msg.sender);
+        morpho.withdrawCollateral(market.underlying, amount, onBehalf, receiver);
     }
 
     function invariantBalanceOf() public {
