@@ -14,7 +14,7 @@ jobs:
   test-ethereum-mainnet:
     if: github.head_ref != 'main' && github.head_ref != 'dev' # already triggered by push
 
-    name: Tests (ethereum-mainnet)
+    name: Forge
 
     uses: ./.github/workflows/forge.yml
     with:
