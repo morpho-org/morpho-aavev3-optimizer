@@ -9,7 +9,9 @@ contract InvariantTest is IntegrationTest, ForgeInvariantTest {
         super.setUp();
 
         targetContract(address(this));
+    }
 
+    function _targetDefaultSenders() internal {
         targetSender(0x1000000000000000000000000000000000000000);
         targetSender(0x0100000000000000000000000000000000000000);
         targetSender(0x0010000000000000000000000000000000000000);
@@ -20,9 +22,9 @@ contract InvariantTest is IntegrationTest, ForgeInvariantTest {
         targetSender(0x0000000100000000000000000000000000000000);
     }
 
-    function _randomSender(uint256 seed) internal view returns (address) {
+    function _randomSender(address seed) internal view returns (address) {
         address[] memory senders = targetSenders();
 
-        return senders[seed % senders.length];
+        return senders[uint256(uint160(seed)) % senders.length];
     }
 }

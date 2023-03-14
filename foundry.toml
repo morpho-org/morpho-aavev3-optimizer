@@ -8,8 +8,8 @@ fs_permissions = [{ access = "read", path = "./config/"}]
 runs = 8
 
 [invariant]
-runs = 8
-depth = 16
+runs = 4
+depth = 32
 
 [rpc_endpoints]
 mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"
