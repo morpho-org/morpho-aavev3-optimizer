@@ -103,6 +103,9 @@ library TestMarketLib {
     }
 
     function getLt(TestMarket storage collateralMarket, uint8 eModeCategoryId) internal view returns (uint256) {
+        uint256 ltv = getLtv(collateralMarket, eModeCategoryId);
+        if (ltv == 0) return 0;
+
         return eModeCategoryId != 0 && eModeCategoryId == collateralMarket.eModeCategoryId
             ? collateralMarket.eModeCategory.liquidationThreshold
             : collateralMarket.lt;
