@@ -10,7 +10,7 @@ jobs:
   test-ethereum-mainnet:
     name: Tests (ethereum-mainnet)
 
-    uses: morpho-dao/morpho-aave-v3/.github/workflows/forge.yml@main
+    uses: ./.github/workflows/forge.yml
     with:
       network: ethereum-mainnet
       internal-fuzz-runs: 64
