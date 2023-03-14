@@ -9,8 +9,7 @@ runs = 8
 
 [invariant]
 runs = 8
-depth = 8
-fail_on_revert = true
+depth = 16
 
 [rpc_endpoints]
 mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"

@@ -63,10 +63,10 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
     function testUpdatedPoolIndexes(uint256 blocks, uint256 supplied, uint256 borrowed) public {
         blocks = _boundBlocks(blocks);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
             supplied = _boundSupply(market, supplied);
             borrowed = _boundBorrow(market, borrowed);

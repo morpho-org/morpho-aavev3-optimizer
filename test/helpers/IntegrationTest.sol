@@ -48,7 +48,6 @@ contract IntegrationTest is ForkTest {
     mapping(address => TestMarket) internal testMarkets;
 
     uint8 internal eModeCategoryId = uint8(vm.envOr("E_MODE_CATEGORY_ID", uint256(0)));
-    address[] internal underlyings;
     address[] internal collateralUnderlyings;
     address[] internal borrowableUnderlyings;
 
@@ -158,7 +157,6 @@ contract IntegrationTest is ForkTest {
     function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         (TestMarket storage market,) = _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
-        underlyings.push(underlying);
         if (market.ltv > 0) collateralUnderlyings.push(underlying);
         if (market.isBorrowable) borrowableUnderlyings.push(underlying);
 
