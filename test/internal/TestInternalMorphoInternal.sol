@@ -417,12 +417,12 @@ contract TestInternalMorphoInternal is InternalTest {
 
         (uint256 borrowable, uint256 maxDebt) = _collateralData(dai, vars);
 
-        (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
+        (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 underlyingUnit) =
             _assetLiquidityData(dai, vars);
 
         uint256 rawCollateral = (
             _getUserCollateralBalanceFromIndex(dai, address(1), _market[dai].indexes.supply.poolIndex)
-        ) * underlyingPrice / tokenUnit;
+        ) * underlyingPrice / underlyingUnit;
         uint256 expectedCollateral = collateralValue(rawCollateral);
         assertEq(borrowable, expectedCollateral.percentMulDown(ltv), "borrowable not equal to expected");
         assertEq(maxDebt, expectedCollateral.percentMulDown(liquidationThreshold), "maxDebt not equal to expected");
@@ -447,10 +447,10 @@ contract TestInternalMorphoInternal is InternalTest {
 
         uint256 debt = _debt(dai, vars);
 
-        (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(dai, vars);
+        (uint256 underlyingPrice,,, uint256 underlyingUnit) = _assetLiquidityData(dai, vars);
 
         uint256 expectedDebtValue =
-            (_getUserBorrowBalanceFromIndexes(dai, address(1), indexes)) * underlyingPrice / tokenUnit;
+            (_getUserBorrowBalanceFromIndexes(dai, address(1), indexes)) * underlyingPrice / underlyingUnit;
         assertApproxEqAbs(debt, expectedDebtValue, 1, "debtValue not equal to expected");
     }
 
