@@ -34,9 +34,7 @@ contract TestIntegrationEModeNative is IntegrationTest {
         TestMarket storage wNativeMarket = testMarkets[wNative];
 
         rawCollateral = _boundCollateral(sNativeMarket, rawCollateral, wNativeMarket);
-        uint256 quoted = wNativeMarket.quote(
-            sNativeMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
-        );
+        uint256 quoted = wNativeMarket.quote(sNativeMarket, collateralValue(rawCollateral));
         uint256 borrowed = quoted.percentMul(eModeCategory.ltv - 10);
 
         user.approve(sNative, rawCollateral);
@@ -76,9 +74,7 @@ contract TestIntegrationEModeNative is IntegrationTest {
             borrowed = bound(
                 borrowed,
                 wNativeMarket.borrowable(collateralMarket, rawCollateral),
-                wNativeMarket.quote(
-                    collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
-                ).percentMul(eModeCategory.ltv)
+                wNativeMarket.quote(collateralMarket, collateralValue(rawCollateral)).percentMul(eModeCategory.ltv)
             );
 
             user.approve(collateralMarket.underlying, rawCollateral);

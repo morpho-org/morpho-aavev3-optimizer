@@ -12,6 +12,7 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
+import {collateralValue, rawCollateralValue} from "test/helpers/Utils.sol";
 
 import {stdStorage, StdStorage} from "@forge-std/StdStorage.sol";
 import {console2} from "@forge-std/console2.sol";

@@ -234,9 +234,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         _userCollaterals[borrower].add(underlying);
         uint256 collateral = healthFactor.percentDivDown(pool.getConfiguration(underlying).getLiquidationThreshold());
-        uint256 rawCollateral = (Constants.LT_LOWER_BOUND * collateral) / (Constants.LT_LOWER_BOUND - 1);
 
-        _marketBalances[underlying].collateral[borrower] = rawCollateral;
+        _marketBalances[underlying].collateral[borrower] = rawCollateralValue(collateral);
 
         _userBorrows[borrower].add(underlying);
         _updateBorrowerInDS(underlying, borrower, 1 ether, 0, true);
@@ -387,19 +386,13 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         (,,, vars.borrowedTokenUnit,,) = borrowConfig.getParams();
         (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = collateralConfig.getParams();
 
-        bool isInCollateralEMode = _eModeCategoryId != 0 && _eModeCategoryId == collateralConfig.getEModeCategory();
-        vars.borrowedPrice = _getAssetPrice(
-            wbtc,
-            oracle,
-            _eModeCategoryId != 0 && _eModeCategoryId == borrowConfig.getEModeCategory(),
-            eModeCategory.priceSource
-        );
-        vars.collateralPrice = _getAssetPrice(dai, oracle, isInCollateralEMode, eModeCategory.priceSource);
+        bool isInCollateralEMode;
+        (, vars.borrowedPrice, vars.borrowedTokenUnit) =
+            _assetData(wbtc, oracle, borrowConfig, eModeCategory.priceSource);
+        (isInCollateralEMode, vars.collateralPrice, vars.collateralTokenUnit) =
+            _assetData(dai, oracle, collateralConfig, eModeCategory.priceSource);
 
         if (isInCollateralEMode) vars.liquidationBonus = eModeCategory.liquidationBonus;
-
-        vars.borrowedTokenUnit = 10 ** vars.borrowedTokenUnit;
-        vars.collateralTokenUnit = 10 ** vars.collateralTokenUnit;
 
         TestSeizeVars memory expected;
         TestSeizeVars memory actual;
