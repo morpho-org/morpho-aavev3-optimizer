@@ -41,11 +41,13 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
     }
 
     function testSetAssetIsCollateralShouldRevertWhenMarketNotCollateralOnPool() public {
-        assertEq(morpho.market(dai).isCollateral, false);
         assertEq(_isUsingAsCollateral(dai), false);
 
         vm.expectRevert(Errors.AssetNotCollateral.selector);
         morpho.setAssetIsCollateral(dai, true);
+
+        vm.expectRevert(Errors.AssetNotCollateral.selector);
+        morpho.setAssetIsCollateral(dai, false);
     }
 
     function testSetAssetIsCollateral() public {
