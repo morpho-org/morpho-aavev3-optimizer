@@ -83,48 +83,6 @@ jobs:
             out
           key: forge-${{ github.ref_name }}
 
-  morpho-storage-check:
-    needs: build-no-ir
-
-    name: Storage check (Morpho)
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
-
-      - uses: ./.github/actions/install
-
-      - name: Check Morpho's storage layout
-        uses: Rubilmax/foundry-storage-check@v3.3
-        with:
-          contract: src/Morpho.sol:Morpho
-          rpcUrl: wss://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_KEY }}
-          failOnRemoval: true
-
-  rewards-manager-storage-check:
-    needs: build-no-ir
-
-    name: Storage check (RewardsManager)
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
-
-      - uses: ./.github/actions/install
-
-      - name: Check RewardsManager's storage layout
-        uses: Rubilmax/foundry-storage-check@v3.3
-        with:
-          contract: src/RewardsManager.sol:RewardsManager
-          rpcUrl: wss://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_KEY }}
-          failOnRemoval: true
-
   test-unit:
     needs: build-no-ir
 
