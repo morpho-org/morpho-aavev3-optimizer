@@ -37,6 +37,10 @@ on:
 env:
   FOUNDRY_PROFILE: ci
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-via-ir:
     name: Compilation (via IR)
@@ -94,7 +98,7 @@ jobs:
       - uses: ./.github/actions/install
 
       - name: Check Morpho's storage layout
-        uses: Rubilmax/foundry-storage-check@v3.2.1
+        uses: Rubilmax/foundry-storage-check@v3.3
         with:
           contract: src/Morpho.sol:Morpho
           rpcUrl: wss://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_KEY }}
@@ -115,7 +119,7 @@ jobs:
       - uses: ./.github/actions/install
 
       - name: Check RewardsManager's storage layout
-        uses: Rubilmax/foundry-storage-check@v3.2.1
+        uses: Rubilmax/foundry-storage-check@v3.3
         with:
           contract: src/RewardsManager.sol:RewardsManager
           rpcUrl: wss://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_KEY }}
