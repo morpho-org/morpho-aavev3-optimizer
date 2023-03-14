@@ -278,8 +278,4 @@ contract ForkTest is BaseTest {
     function _randomUnderlying(uint256 seed) internal view returns (address) {
         return allUnderlyings[seed % allUnderlyings.length];
     }
-
-    function _randomBorrowableUnderlying(uint256 seed) internal view returns (address) {
-        return borrowableUnderlyings[seed % borrowableUnderlyings.length];
-    }
 }
