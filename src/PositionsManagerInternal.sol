@@ -93,7 +93,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _validateSupplyCollateral(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
         if (market.isSupplyCollateralPaused()) revert Errors.SupplyCollateralIsPaused();
-        if (!market.isCollateral) revert Errors.AssetNotCollateral();
+        if (!market.isCollateral) revert Errors.AssetNotCollateralOnMorpho();
     }
 
     /// @dev Validates a borrow action.

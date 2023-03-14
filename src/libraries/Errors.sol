@@ -41,8 +41,9 @@ library Errors {
     error UnauthorizedLiquidate();
     error SentinelLiquidateNotEnabled();
 
-    error AssetNotCollateral();
-    error AssetIsCollateral();
+    error AssetNotCollateralOnPool();
+    error AssetNotCollateralOnMorpho();
+    error AssetIsCollateralOnMorpho();
 
     error ExceedsMaxBasisPoints();
 

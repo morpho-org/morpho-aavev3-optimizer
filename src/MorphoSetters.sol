@@ -85,7 +85,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     function setAssetIsCollateralOnPool(address underlying, bool isCollateral) external onlyOwner {
         Types.Market storage market = _market[underlying];
         if (isCollateral && !market.isCreated()) revert Errors.MarketNotCreated();
-        if (!isCollateral && market.isCollateral) revert Errors.AssetIsCollateral();
+        if (!isCollateral && market.isCollateral) revert Errors.AssetIsCollateralOnMorpho();
 
         _pool.setUserUseReserveAsCollateral(underlying, isCollateral);
     }
@@ -97,7 +97,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         isMarketCreated(underlying)
     {
         if (!_pool.getUserConfiguration(address(this)).isUsingAsCollateral(_pool.getReserveData(underlying).id)) {
-            revert Errors.AssetNotCollateral();
+            revert Errors.AssetNotCollateralOnPool();
         }
 
         _market[underlying].setAssetIsCollateral(isCollateral);

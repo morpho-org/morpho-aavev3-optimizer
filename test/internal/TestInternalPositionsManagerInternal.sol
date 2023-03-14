@@ -103,7 +103,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testValidateSupplyCollateralShouldRevertIfNotCollateral() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.AssetNotCollateral.selector));
+        vm.expectRevert(abi.encodeWithSelector(Errors.AssetNotCollateralOnMorpho.selector));
         this.validateSupplyCollateral(dai, 1, address(1));
     }
 
