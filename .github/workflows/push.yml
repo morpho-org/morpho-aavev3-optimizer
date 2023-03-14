@@ -15,4 +15,5 @@ jobs:
       network: ethereum-mainnet
       internal-fuzz-runs: 64
       integration-fuzz-runs: 64
+      invariant-depth: 128
     secrets: inherit
