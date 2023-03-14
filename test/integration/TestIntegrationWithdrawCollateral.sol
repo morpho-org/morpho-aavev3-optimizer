@@ -111,7 +111,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
                 rawCollateral = _boundCollateral(collateralMarket, rawCollateral, borrowedMarket);
                 borrowed = bound(
                     borrowed,
-                    borrowedMarket.minAmount,
+                    borrowedMarket.minAmount / 2,
                     Math.min(
                         borrowedMarket.borrowable(collateralMarket, rawCollateral, eModeCategoryId),
                         Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap())
