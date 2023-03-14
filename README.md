@@ -30,6 +30,10 @@ Configure your VSCode to automatically format a file on save, using `forge fmt`:
 }
 ```
 
+## Testing
+
+View the Makefile to see testing commands. For example, running `make test-unit` will run the unit tests.
+
 ## Documentation
 
 ## Audits
