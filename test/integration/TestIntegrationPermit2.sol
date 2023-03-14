@@ -16,11 +16,14 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
     AllowanceTransfer internal constant PERMIT2 = AllowanceTransfer(address(0x000000000022D473030F116dDEE9F6B43aC78BA3));
 
-    function getPermitHash(address underlying, address delegator, address spender, uint256 amount, uint256 deadline)
-        internal
-        view
-        returns (bytes32 hashed)
-    {
+    function getPermitSignature(
+        address underlying,
+        address delegator,
+        address spender,
+        uint256 amount,
+        uint256 deadline,
+        uint256 privateKey
+    ) internal view returns (Types.Signature memory sig) {
         (,, uint48 nonce) = PERMIT2.allowance(delegator, address(underlying), spender);
         IAllowanceTransfer.PermitDetails memory details = IAllowanceTransfer.PermitDetails({
             token: address(underlying),
@@ -33,43 +36,50 @@ contract TestIntegrationPermit2 is IntegrationTest {
         IAllowanceTransfer.PermitSingle memory permitSingle =
             IAllowanceTransfer.PermitSingle({details: details, spender: spender, sigDeadline: deadline});
 
-        hashed = PermitHash.hash(permitSingle);
+        bytes32 hashed = PermitHash.hash(permitSingle);
         hashed = ECDSA.toTypedDataHash(PERMIT2.DOMAIN_SEPARATOR(), hashed);
+
+        (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashed);
     }
 
-    function testSupplyWithPermit2(uint256 privateKey, uint256 deadline, uint256 amount, uint256 seed, address onBehalf)
-        public
-    {
-        deadline = bound(deadline, block.timestamp, type(uint256).max);
+    function testSupplyWithPermit2(
+        uint256 privateKey,
+        uint256 deadline,
+        uint256 amount,
+        uint256 seed,
+        uint256 timestamp
+    ) public {
+        deadline = bound(deadline, block.timestamp, type(uint32).max);
         privateKey = bound(privateKey, 1, type(uint160).max);
         address delegator = vm.addr(privateKey);
-
-        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint160).max, amount);
+        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
-        bytes32 hashPermit = getPermitHash(market.underlying, delegator, spender, amount, deadline);
 
-        Types.Signature memory sig;
-        (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashPermit);
-
+        Types.Signature memory sig =
+            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
         vm.prank(delegator);
-        ERC20(market.underlying).safeApprove(address(PERMIT2), amount);
+        ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
+
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
+        vm.warp(block.timestamp + timestamp);
 
         _deal(market.underlying, delegator, amount);
 
-        uint256 timestamp;
-        timestamp = bound(timestamp, 0, deadline - block.timestamp);
-        vm.warp(block.timestamp + timestamp);
+        uint256 balanceBefore = ERC20(market.underlying).balanceOf(delegator);
+        uint256 balanceSupplyBefore = morpho.supplyBalance(market.underlying, delegator);
 
         vm.prank(delegator);
-        morpho.supplyWithPermit(market.underlying, amount, onBehalf, DEFAULT_MAX_ITERATIONS, deadline, sig);
-        assertApproxEqAbs(morpho.supplyBalance(market.underlying, onBehalf), amount, 1, "Incorrect Supply");
-        assertEq(ERC20(market.underlying).balanceOf(delegator), 0, "Incorrect Balance");
+        morpho.supplyWithPermit(market.underlying, amount, delegator, DEFAULT_MAX_ITERATIONS, deadline, sig);
+
+        assertApproxEqAbs(
+            morpho.supplyBalance(market.underlying, delegator), balanceSupplyBefore + amount, 2, "Incorrect Supply"
+        );
+        assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
     }
 
     function testSupplyCollateralWithPermit2(
@@ -77,9 +87,10 @@ contract TestIntegrationPermit2 is IntegrationTest {
         uint256 deadline,
         uint256 amount,
         uint256 seed,
-        address onBehalf
+        address onBehalf,
+        uint256 timestamp
     ) public {
-        deadline = bound(deadline, block.timestamp, type(uint256).max);
+        deadline = bound(deadline, block.timestamp, type(uint32).max);
         privateKey = bound(privateKey, 1, type(uint160).max);
         address delegator = vm.addr(privateKey);
 
@@ -88,36 +99,44 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint160).max, amount);
+        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 
-        bytes32 hashPermit = getPermitHash(market.underlying, delegator, spender, amount, deadline);
-
-        Types.Signature memory sig;
-        (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashPermit);
+        Types.Signature memory sig =
+            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
-        ERC20(market.underlying).safeApprove(address(PERMIT2), amount);
+        ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
+
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
+        vm.warp(block.timestamp + timestamp);
 
         _deal(market.underlying, delegator, amount);
 
-        uint256 timestamp;
-        timestamp = bound(timestamp, 0, deadline - block.timestamp);
-        vm.warp(block.timestamp + timestamp);
+        uint256 balanceBefore = ERC20(market.underlying).balanceOf(delegator);
+        uint256 balanceSupplyBefore = morpho.supplyBalance(market.underlying, delegator);
 
         vm.prank(delegator);
         morpho.supplyCollateralWithPermit(market.underlying, amount, onBehalf, deadline, sig);
         assertApproxEqAbs(
-            morpho.collateralBalance(market.underlying, onBehalf), amount, 1, "Incorrect Supply Collateral"
+            morpho.collateralBalance(market.underlying, onBehalf),
+            balanceSupplyBefore + amount,
+            2,
+            "Incorrect Supply Collateral"
         );
-        assertEq(ERC20(market.underlying).balanceOf(delegator), 0, "Incorrect Balance");
+        assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
     }
 
-    function testRepayWithPermit(uint256 privateKey, uint256 deadline, uint256 amount, uint256 seed, address onBehalf)
-        public
-    {
-        deadline = bound(deadline, block.timestamp, type(uint256).max);
+    function testRepayWithPermit(
+        uint256 privateKey,
+        uint256 deadline,
+        uint256 amount,
+        uint256 seed,
+        address onBehalf,
+        uint256 timestamp
+    ) public {
+        deadline = bound(deadline, block.timestamp, type(uint32).max);
         privateKey = bound(privateKey, 1, type(uint160).max);
         address delegator = vm.addr(privateKey);
 
@@ -126,31 +145,31 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomBorrowable(seed)];
 
         amount = _boundBorrow(market, amount);
-        amount = Math.max(1, Math.min(type(uint160).max, amount));
+        amount = Math.max(1, Math.min(type(uint128).max, amount));
 
         address spender = address(morpho);
-
-        bytes32 hashPermit = getPermitHash(market.underlying, delegator, spender, amount, deadline);
-
-        Types.Signature memory sig;
-        (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashPermit);
 
         _borrowWithoutCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
 
         vm.prank(delegator);
-        ERC20(market.underlying).safeApprove(address(PERMIT2), amount);
+        ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
-        uint256 timestamp;
-        timestamp = bound(timestamp, 0, deadline - block.timestamp);
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
-        uint256 repaid = morpho.borrowBalance(market.underlying, onBehalf);
-        _deal(market.underlying, delegator, repaid);
+        amount = morpho.borrowBalance(market.underlying, onBehalf);
+        Types.Signature memory sig =
+            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
+
+        _deal(market.underlying, delegator, amount);
+
+        uint256 balanceBefore = ERC20(market.underlying).balanceOf(delegator);
+
         vm.prank(delegator);
-        morpho.repayWithPermit(market.underlying, repaid, onBehalf, deadline, sig);
+        morpho.repayWithPermit(market.underlying, amount, onBehalf, deadline, sig);
 
         assertApproxEqAbs(morpho.borrowBalance(market.underlying, onBehalf), 0, 1, "Incorrect Borrow Balance");
-        assertEq(ERC20(market.underlying).balanceOf(delegator), 0, "Incorrect Balance");
+        assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
     }
 
     function testSupplyWithPermitShouldRevertBecauseDeadlinePassed(
@@ -158,9 +177,10 @@ contract TestIntegrationPermit2 is IntegrationTest {
         uint256 deadline,
         uint256 amount,
         uint256 seed,
-        address onBehalf
+        address onBehalf,
+        uint256 timestamp
     ) public {
-        deadline = bound(deadline, block.timestamp, type(uint256).max - 1);
+        deadline = bound(deadline, block.timestamp, type(uint32).max - 1);
         privateKey = bound(privateKey, 1, type(uint160).max);
         address delegator = vm.addr(privateKey);
 
@@ -169,20 +189,17 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint160).max, amount);
+        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
-        bytes32 hashPermit = getPermitHash(market.underlying, delegator, spender, amount, deadline);
-
-        Types.Signature memory sig;
-        (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashPermit);
+        Types.Signature memory sig =
+            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
-        ERC20(market.underlying).safeApprove(address(PERMIT2), amount);
+        ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
         _deal(market.underlying, delegator, amount);
 
-        uint256 timestamp;
         timestamp = bound(timestamp, deadline + 1, type(uint256).max);
         vm.warp(timestamp);
 
@@ -196,9 +213,10 @@ contract TestIntegrationPermit2 is IntegrationTest {
         uint256 deadline,
         uint256 amount,
         uint256 seed,
-        address onBehalf
+        address onBehalf,
+        uint256 timestamp
     ) public {
-        deadline = bound(deadline, block.timestamp, type(uint256).max);
+        deadline = bound(deadline, block.timestamp, type(uint32).max);
         privateKey = bound(privateKey, 1, type(uint160).max);
         address delegator = vm.addr(privateKey);
 
@@ -207,22 +225,19 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint160).max, amount);
+        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 
-        bytes32 hashPermit = getPermitHash(market.underlying, delegator, spender, amount, deadline);
-
-        Types.Signature memory sig;
-        (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashPermit);
+        Types.Signature memory sig =
+            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
-        ERC20(market.underlying).safeApprove(address(PERMIT2), amount);
+        ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
         _deal(market.underlying, delegator, 2 * amount);
 
-        uint256 timestamp;
-        timestamp = bound(timestamp, 0, deadline - block.timestamp);
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
         vm.prank(delegator);
@@ -238,40 +253,36 @@ contract TestIntegrationPermit2 is IntegrationTest {
         uint256 deadline,
         uint256 amount,
         uint256 seed,
-        address onBehalf,
-        address pranker
+        address pranker,
+        uint256 timestamp
     ) public {
-        deadline = bound(deadline, block.timestamp, type(uint256).max);
+        deadline = bound(deadline, block.timestamp, type(uint32).max);
         privateKey = bound(privateKey, 1, type(uint160).max);
         address delegator = vm.addr(privateKey);
 
         vm.assume(pranker != delegator);
-        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint160).max, amount);
+        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 
-        bytes32 hashPermit = getPermitHash(market.underlying, delegator, spender, amount, deadline);
-
-        Types.Signature memory sig;
-        (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashPermit);
+        Types.Signature memory sig =
+            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
-        ERC20(market.underlying).safeApprove(address(PERMIT2), amount);
+        ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
         _deal(market.underlying, delegator, amount);
 
-        uint256 timestamp;
-        timestamp = bound(timestamp, 0, deadline - block.timestamp);
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
         vm.expectRevert(abi.encodeWithSelector(SignatureVerification.InvalidSigner.selector));
         vm.prank(pranker);
-        morpho.supplyCollateralWithPermit(market.underlying, amount, onBehalf, deadline, sig);
+        morpho.supplyCollateralWithPermit(market.underlying, amount, delegator, deadline, sig);
     }
 
     function testShouldRevertIfSupplyAnotherAmountThanTheOneSigned(
@@ -279,40 +290,35 @@ contract TestIntegrationPermit2 is IntegrationTest {
         uint256 deadline,
         uint256 amount,
         uint256 seed,
-        address onBehalf,
-        uint256 supplied
+        uint256 supplied,
+        uint256 timestamp
     ) public {
-        deadline = bound(deadline, block.timestamp, type(uint256).max);
+        deadline = bound(deadline, block.timestamp, type(uint32).max);
         privateKey = bound(privateKey, 1, type(uint160).max);
         address delegator = vm.addr(privateKey);
-
-        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint160).max, amount);
+        amount = Math.min(type(uint128).max, amount);
         supplied = bound(supplied, 0, amount - 1);
 
         address spender = address(morpho);
 
-        bytes32 hashPermit = getPermitHash(market.underlying, delegator, spender, amount, deadline);
-
-        Types.Signature memory sig;
-        (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashPermit);
+        Types.Signature memory sig =
+            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
-        ERC20(market.underlying).safeApprove(address(PERMIT2), amount);
+        ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
         _deal(market.underlying, delegator, amount);
 
-        uint256 timestamp;
-        timestamp = bound(timestamp, 0, deadline - block.timestamp);
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
         vm.expectRevert(abi.encodeWithSelector(SignatureVerification.InvalidSigner.selector));
         vm.prank(delegator);
-        morpho.supplyCollateralWithPermit(market.underlying, supplied, onBehalf, deadline, sig);
+        morpho.supplyCollateralWithPermit(market.underlying, supplied, delegator, deadline, sig);
     }
 
     function testShouldRevertIfPermitSignWithWrongPrivateKey(
@@ -321,40 +327,35 @@ contract TestIntegrationPermit2 is IntegrationTest {
         uint256 deadline,
         uint256 amount,
         uint256 seed,
-        address onBehalf
+        uint256 timestamp
     ) public {
-        deadline = bound(deadline, block.timestamp, type(uint256).max);
+        deadline = bound(deadline, block.timestamp, type(uint32).max);
         privateKey = bound(privateKey, 1, type(uint160).max);
         address delegator = vm.addr(privateKey);
 
         wrongPrivateKey = bound(wrongPrivateKey, 1, type(uint160).max);
         vm.assume(wrongPrivateKey != privateKey);
 
-        onBehalf = _boundOnBehalf(onBehalf);
-
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint160).max, amount);
+        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 
-        bytes32 hashPermit = getPermitHash(market.underlying, delegator, spender, amount, deadline);
-
-        Types.Signature memory sig;
-        (sig.v, sig.r, sig.s) = vm.sign(wrongPrivateKey, hashPermit);
+        Types.Signature memory sig =
+            getPermitSignature(market.underlying, delegator, spender, amount, deadline, wrongPrivateKey);
 
         vm.prank(delegator);
-        ERC20(market.underlying).safeApprove(address(PERMIT2), amount);
+        ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
         _deal(market.underlying, delegator, amount);
 
-        uint256 timestamp;
-        timestamp = bound(timestamp, 0, deadline - block.timestamp);
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
         vm.expectRevert(abi.encodeWithSelector(SignatureVerification.InvalidSigner.selector));
         vm.prank(delegator);
-        morpho.supplyCollateralWithPermit(market.underlying, amount, onBehalf, deadline, sig);
+        morpho.supplyCollateralWithPermit(market.underlying, amount, delegator, deadline, sig);
     }
 }
