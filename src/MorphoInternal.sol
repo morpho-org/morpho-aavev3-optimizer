@@ -281,15 +281,16 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256 borrowable, uint256 maxDebt)
     {
-        (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
+        (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 underlyingUnit) =
             _assetLiquidityData(underlying, vars);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
         uint256 rawCollateral = (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex))
-            * underlyingPrice / tokenUnit;
+            * underlyingPrice / underlyingUnit;
 
         // Morpho has a slightly different method of health factor calculation from the underlying pool.
-        // This method is used to account for a potential rounding error in calculateUserAccountData, see https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/libraries/logic/GenericLogic.sol#L64-L196
+        // This method is used to account for a potential rounding error in calculateUserAccountData,
+        // see https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/libraries/logic/GenericLogic.sol#L64-L196
         // To resolve this, Morpho reduces the collateral value by a small amount.
         uint256 collateral = ((Constants.LT_LOWER_BOUND - 1) * rawCollateral) / Constants.LT_LOWER_BOUND;
 
@@ -302,11 +303,13 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param vars The liquidity variables.
     /// @return debtValue The debt value of `vars.user` on the `underlying` market.
     function _debt(address underlying, Types.LiquidityVars memory vars) internal view returns (uint256 debtValue) {
-        (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(underlying, vars);
+        DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
+        (, uint256 underlyingPrice, uint256 underlyingUnit) =
+            _assetData(underlying, vars.oracle, config, vars.eModeCategory.priceSource);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
         debtValue =
-            (_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes) * underlyingPrice).divUp(tokenUnit);
+            (_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes) * underlyingPrice).divUp(underlyingUnit);
     }
 
     /// @dev Returns the liquidity data for a given set of inputs.
@@ -315,24 +318,22 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @return underlyingPrice The price of the underlying asset (in base currency).
     /// @return ltv The loan to value of the underlying asset.
     /// @return liquidationThreshold The liquidation threshold of the underlying asset.
-    /// @return tokenUnit The token unit of the underlying asset.
+    /// @return underlyingUnit The token unit of the underlying asset.
     function _assetLiquidityData(address underlying, Types.LiquidityVars memory vars)
         internal
         view
-        returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit)
+        returns (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 underlyingUnit)
     {
         DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
-        unchecked {
-            tokenUnit = 10 ** config.getDecimals();
-        }
 
-        bool isInEMode = _isInEModeCategory(config);
-        underlyingPrice = _getAssetPrice(underlying, vars.oracle, isInEMode, vars.eModeCategory.priceSource);
+        bool isInEMode;
+        (isInEMode, underlyingPrice, underlyingUnit) =
+            _assetData(underlying, vars.oracle, config, vars.eModeCategory.priceSource);
 
         // If the LTV is 0 on Aave V3, the asset cannot be used as collateral to borrow upon a breaking withdraw.
         // In response, Morpho disables the asset as collateral and sets its liquidation threshold
         // to 0 and the governance should warn users to repay their debt.
-        if (config.getLtv() == 0) return (underlyingPrice, 0, 0, tokenUnit);
+        if (config.getLtv() == 0) return (underlyingPrice, 0, 0, underlyingUnit);
 
         if (isInEMode) {
             ltv = vars.eModeCategory.ltv;
@@ -484,19 +485,29 @@ abstract contract MorphoInternal is MorphoStorage {
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
     }
 
-    /// @dev Returns the underlying price of a given asset or the price of the e-mode price source if the asset is in the e-mode category.
-    function _getAssetPrice(address underlying, IAaveOracle oracle, bool isInEMode, address priceSource)
-        internal
-        view
-        returns (uint256)
-    {
+    /// @dev Returns data relative to the given asset and its configuration, according to a given oracle.
+    /// @return Whether the given asset is part of Morpho's e-mode category.
+    /// @return The asset's price or the price of the given e-mode price source if the asset is in the e-mode category, according to the given oracle.
+    /// @return The asset's unit.
+    function _assetData(
+        address asset,
+        IAaveOracle oracle,
+        DataTypes.ReserveConfigurationMap memory config,
+        address priceSource
+    ) internal view returns (bool, uint256, uint256) {
+        uint256 assetUnit;
+        unchecked {
+            assetUnit = 10 ** config.getDecimals();
+        }
+
+        bool isInEMode = _isInEModeCategory(config);
         if (isInEMode && priceSource != address(0)) {
             uint256 eModePrice = oracle.getAssetPrice(priceSource);
 
-            if (eModePrice != 0) return eModePrice;
+            if (eModePrice != 0) return (isInEMode, eModePrice, assetUnit);
         }
 
-        return oracle.getAssetPrice(underlying);
+        return (isInEMode, oracle.getAssetPrice(asset), assetUnit);
     }
 
     /// @dev Returns whether Morpho is in an e-mode category and the given asset configuration is in the same e-mode category.
