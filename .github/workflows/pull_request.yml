@@ -14,9 +14,9 @@ jobs:
   test-ethereum-mainnet:
     if: github.head_ref != 'main' && github.head_ref != 'dev' # already triggered by push
 
-    name: Tests (ethereum-mainnet)
+    name: Forge
 
-    uses: morpho-dao/morpho-aave-v3/.github/workflows/forge.yml@main
+    uses: ./.github/workflows/forge.yml
     with:
       network: ethereum-mainnet
     secrets: inherit
