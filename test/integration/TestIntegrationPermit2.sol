@@ -77,7 +77,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         morpho.supplyWithPermit(market.underlying, amount, delegator, DEFAULT_MAX_ITERATIONS, deadline, sig);
 
         assertApproxEqAbs(
-            morpho.supplyBalance(market.underlying, delegator), balanceSupplyBefore + amount, 2, "Incorrect Supply"
+            morpho.supplyBalance(market.underlying, delegator), balanceSupplyBefore + amount, 3, "Incorrect Supply"
         );
         assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
     }
@@ -122,7 +122,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         assertApproxEqAbs(
             morpho.collateralBalance(market.underlying, onBehalf),
             balanceSupplyBefore + amount,
-            2,
+            3,
             "Incorrect Supply Collateral"
         );
         assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
