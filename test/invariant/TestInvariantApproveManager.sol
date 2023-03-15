@@ -6,14 +6,12 @@ import "test/helpers/InvariantTest.sol";
 contract TestInvariantApproveManager is InvariantTest {
     using SafeTransferLib for ERC20;
 
-    bytes4[] internal selectors;
-
     function setUp() public virtual override {
         super.setUp();
 
         _targetDefaultSenders();
 
-        selectors.push(this.approveManager.selector);
+        _weightSelector(this.approveManager.selector, 1);
 
         targetSelector(FuzzSelector({addr: address(this), selectors: selectors}));
     }

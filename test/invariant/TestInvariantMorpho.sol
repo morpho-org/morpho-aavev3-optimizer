@@ -8,8 +8,6 @@ contract TestInvariantMorpho is InvariantTest {
     using SafeTransferLib for ERC20;
     using TestMarketLib for TestMarket;
 
-    bytes4[] internal selectors;
-
     uint256 internal initialized;
 
     function setUp() public virtual override {
@@ -17,15 +15,15 @@ contract TestInvariantMorpho is InvariantTest {
 
         _targetDefaultSenders();
 
-        selectors.push(this.supply.selector);
-        selectors.push(this.supplyCollateral.selector);
-        selectors.push(this.borrow.selector);
-        selectors.push(this.repay.selector);
-        selectors.push(this.withdraw.selector);
-        selectors.push(this.withdrawCollateral.selector);
-        selectors.push(this.liquidate.selector);
-        selectors.push(this.initialize.selector);
-        selectors.push(this.approveManager.selector);
+        _weightSelector(this.initialize.selector, 5);
+        _weightSelector(this.approveManager.selector, 10);
+        _weightSelector(this.supply.selector, 10);
+        _weightSelector(this.supplyCollateral.selector, 15);
+        _weightSelector(this.borrow.selector, 15);
+        _weightSelector(this.repay.selector, 10);
+        _weightSelector(this.withdraw.selector, 10);
+        _weightSelector(this.withdrawCollateral.selector, 15);
+        _weightSelector(this.liquidate.selector, 10);
 
         targetSelector(FuzzSelector({addr: address(this), selectors: selectors}));
     }

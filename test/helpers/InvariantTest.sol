@@ -5,6 +5,8 @@ import {InvariantTest as ForgeInvariantTest} from "@forge-std/InvariantTest.sol"
 import "test/helpers/IntegrationTest.sol";
 
 contract InvariantTest is IntegrationTest, ForgeInvariantTest {
+    bytes4[] internal selectors;
+
     function setUp() public virtual override {
         super.setUp();
 
@@ -20,6 +22,12 @@ contract InvariantTest is IntegrationTest, ForgeInvariantTest {
         targetSender(0x0000010000000000000000000000000000000000);
         targetSender(0x0000001000000000000000000000000000000000);
         targetSender(0x0000000100000000000000000000000000000000);
+    }
+
+    function _weightSelector(bytes4 selector, uint256 weight) internal {
+        for (uint256 i; i < weight; ++i) {
+            selectors.push(selector);
+        }
     }
 
     function _randomSender(address seed) internal view returns (address) {

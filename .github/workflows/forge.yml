@@ -30,7 +30,7 @@ on:
       invariant-depth:
         description: The depth of invariant tests.
         required: false
-        default: 64
+        default: 128
         type: number
       coverageThreshold:
         description: The coverage threshold below which to fail the action.
