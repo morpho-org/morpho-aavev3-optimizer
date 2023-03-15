@@ -85,9 +85,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         onlyOwner
         isMarketCreated(underlying)
     {
-        Types.Market storage market = _market[underlying];
-        if (isCollateral && !market.isCreated()) revert Errors.MarketNotCreated();
-        if (!isCollateral && market.isCollateral) revert Errors.AssetIsCollateralOnMorpho();
+        if (_market[underlying].isCollateral) revert Errors.AssetIsCollateralOnMorpho();
 
         _pool.setUserUseReserveAsCollateral(underlying, isCollateral);
     }
