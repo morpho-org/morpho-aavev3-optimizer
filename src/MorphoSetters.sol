@@ -80,6 +80,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     /// @notice Sets the `underlying` asset as `isCollateral` on the pool.
+    /// @dev The following invariants must always hold:
+    ///      - isCollateral on Morpho => isCollateral on pool
+    ///      - !isCollateral on pool => !isCollateral on Morpho
     function setAssetIsCollateralOnPool(address underlying, bool isCollateral)
         external
         onlyOwner
@@ -91,6 +94,9 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     }
 
     /// @notice Sets the `underlying` asset as `isCollateral` on Morpho.
+    /// @dev The following invariants must always hold:
+    ///      - isCollateral on Morpho => isCollateral on pool
+    ///      - !isCollateral on pool => !isCollateral on Morpho
     function setAssetIsCollateral(address underlying, bool isCollateral)
         external
         onlyOwner
