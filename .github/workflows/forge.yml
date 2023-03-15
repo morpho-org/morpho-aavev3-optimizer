@@ -169,7 +169,7 @@ jobs:
   test-invariant:
     needs: build-no-ir
 
-    name: Internal tests (${{ inputs.network }})
+    name: Invariant tests (${{ inputs.network }})
     runs-on: ubuntu-latest
 
     steps:
@@ -194,6 +194,7 @@ jobs:
       - test-unit
       - test-internal
       - test-integration
+      - test-invariant
     if: inputs.coverageThreshold != ''
 
     name: Coverage (${{ inputs.network }})

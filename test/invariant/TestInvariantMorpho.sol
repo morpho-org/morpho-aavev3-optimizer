@@ -48,10 +48,11 @@ contract TestInvariantMorpho is InvariantTest {
 
         _deal(market.underlying, msg.sender, amount);
 
-        vm.startPrank(msg.sender);
+        vm.prank(msg.sender); // Cannot startPrank because `morpho.repay` may revert and not call stopPrank.
         ERC20(market.underlying).safeApprove(address(morpho), amount);
+
+        vm.prank(msg.sender);
         morpho.supply(market.underlying, amount, onBehalf, maxIterations);
-        vm.stopPrank();
     }
 
     function supplyCollateral(uint256 underlyingSeed, uint256 amount, address onBehalf) external {
@@ -61,10 +62,11 @@ contract TestInvariantMorpho is InvariantTest {
 
         _deal(market.underlying, msg.sender, amount);
 
-        vm.startPrank(msg.sender);
+        vm.prank(msg.sender); // Cannot startPrank because `morpho.repay` may revert and not call stopPrank.
         ERC20(market.underlying).safeApprove(address(morpho), amount);
+
+        vm.prank(msg.sender);
         morpho.supplyCollateral(market.underlying, amount, onBehalf);
-        vm.stopPrank();
     }
 
     function borrow(uint256 underlyingSeed, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
@@ -85,10 +87,11 @@ contract TestInvariantMorpho is InvariantTest {
         amount = _boundNotZero(amount);
         onBehalf = _randomSender(onBehalf);
 
-        vm.startPrank(msg.sender);
+        vm.prank(msg.sender); // Cannot startPrank because `morpho.repay` may revert and not call stopPrank.
         ERC20(market.underlying).safeApprove(address(morpho), amount);
+
+        vm.prank(msg.sender);
         morpho.repay(market.underlying, amount, onBehalf);
-        vm.stopPrank();
     }
 
     function withdraw(uint256 underlyingSeed, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
