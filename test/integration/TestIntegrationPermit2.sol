@@ -16,7 +16,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
     AllowanceTransfer internal constant PERMIT2 = AllowanceTransfer(address(0x000000000022D473030F116dDEE9F6B43aC78BA3));
 
-    function getPermitSignature(
+    function _signPermit2(
         address underlying,
         address delegator,
         address spender,
@@ -60,8 +60,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         address spender = address(morpho);
 
-        Types.Signature memory sig =
-            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
@@ -103,8 +102,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         address spender = address(morpho);
 
-        Types.Signature memory sig =
-            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
@@ -128,7 +126,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
     }
 
-    function testRepayWithPermit(
+    function testRepayWithPermit2(
         uint256 privateKey,
         uint256 deadline,
         uint256 amount,
@@ -158,8 +156,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.warp(block.timestamp + timestamp);
 
         amount = morpho.borrowBalance(market.underlying, onBehalf);
-        Types.Signature memory sig =
-            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
 
         _deal(market.underlying, delegator, amount);
 
@@ -172,7 +169,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
     }
 
-    function testSupplyWithPermitShouldRevertBecauseDeadlinePassed(
+    function testSupplyWithPermit2ShouldRevertBecauseDeadlinePassed(
         uint256 privateKey,
         uint256 deadline,
         uint256 amount,
@@ -192,8 +189,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
-        Types.Signature memory sig =
-            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
@@ -203,8 +199,8 @@ contract TestIntegrationPermit2 is IntegrationTest {
         timestamp = bound(timestamp, deadline + 1, type(uint256).max);
         vm.warp(timestamp);
 
-        vm.expectRevert(abi.encodeWithSelector(SignatureExpired.selector, deadline));
         vm.prank(delegator);
+        vm.expectRevert(abi.encodeWithSelector(SignatureExpired.selector, deadline));
         morpho.supplyWithPermit(market.underlying, amount, onBehalf, DEFAULT_MAX_ITERATIONS, deadline, sig);
     }
 
@@ -229,8 +225,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         address spender = address(morpho);
 
-        Types.Signature memory sig =
-            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
@@ -243,12 +238,12 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.prank(delegator);
         morpho.supplyCollateralWithPermit(market.underlying, amount, onBehalf, deadline, sig);
 
-        vm.expectRevert(abi.encodeWithSelector(SignatureVerification.InvalidSigner.selector));
         vm.prank(delegator);
+        vm.expectRevert(SignatureVerification.InvalidSigner.selector);
         morpho.supplyCollateralWithPermit(market.underlying, amount, onBehalf, deadline, sig);
     }
 
-    function testShouldRevertIfSomeoneImpersonateSignerOfPermit(
+    function testShouldRevertIfSomeoneImpersonateSignerOfPermit2(
         uint256 privateKey,
         uint256 deadline,
         uint256 amount,
@@ -269,8 +264,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         address spender = address(morpho);
 
-        Types.Signature memory sig =
-            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
@@ -280,8 +274,8 @@ contract TestIntegrationPermit2 is IntegrationTest {
         timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
-        vm.expectRevert(abi.encodeWithSelector(SignatureVerification.InvalidSigner.selector));
         vm.prank(pranker);
+        vm.expectRevert(SignatureVerification.InvalidSigner.selector);
         morpho.supplyCollateralWithPermit(market.underlying, amount, delegator, deadline, sig);
     }
 
@@ -305,8 +299,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         address spender = address(morpho);
 
-        Types.Signature memory sig =
-            getPermitSignature(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
@@ -316,12 +309,12 @@ contract TestIntegrationPermit2 is IntegrationTest {
         timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
-        vm.expectRevert(abi.encodeWithSelector(SignatureVerification.InvalidSigner.selector));
         vm.prank(delegator);
+        vm.expectRevert(SignatureVerification.InvalidSigner.selector);
         morpho.supplyCollateralWithPermit(market.underlying, supplied, delegator, deadline, sig);
     }
 
-    function testShouldRevertIfPermitSignWithWrongPrivateKey(
+    function testShouldRevertIfPermit2SignWithWrongPrivateKey(
         uint256 privateKey,
         uint256 wrongPrivateKey,
         uint256 deadline,
@@ -344,7 +337,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         address spender = address(morpho);
 
         Types.Signature memory sig =
-            getPermitSignature(market.underlying, delegator, spender, amount, deadline, wrongPrivateKey);
+            _signPermit2(market.underlying, delegator, spender, amount, deadline, wrongPrivateKey);
 
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
@@ -354,8 +347,8 @@ contract TestIntegrationPermit2 is IntegrationTest {
         timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
-        vm.expectRevert(abi.encodeWithSelector(SignatureVerification.InvalidSigner.selector));
         vm.prank(delegator);
+        vm.expectRevert(SignatureVerification.InvalidSigner.selector);
         morpho.supplyCollateralWithPermit(market.underlying, amount, delegator, deadline, sig);
     }
 }
