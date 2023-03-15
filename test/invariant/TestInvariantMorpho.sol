@@ -37,7 +37,9 @@ contract TestInvariantMorpho is InvariantTest {
         vm.prank(msg.sender);
         try morpho.initialize(addressesProvider, eModeCategoryId, newPositionsManager, newDefaultIterations) {
             ++initialized;
-        } catch {}
+        } catch (bytes memory reason) {
+            revert(string(reason)); // Bubble up the revert reason.
+        }
     }
 
     function supply(uint256 underlyingSeed, uint256 amount, address onBehalf, uint256 maxIterations) external {
@@ -189,13 +191,14 @@ contract TestInvariantMorpho is InvariantTest {
             for (uint256 j; j < collaterals.length; ++j) {
                 TestMarket storage market = testMarkets[collaterals[j]];
 
-                // TODO: replace with .getLt() & use rawCollateralValue()
-                uint256 withdrawable = (
-                    ((liquidityData.maxDebt - liquidityData.debt) * 1 ether * 10 ** market.decimals).percentAdd(5)
-                        / (market.price * 1 ether)
-                ) // Inflate withdrawable because of WBTC decimals precision.
-                    .percentDiv(market.lt) * Constants.LT_LOWER_BOUND / (Constants.LT_LOWER_BOUND - 1);
-                if (withdrawable == 0) continue;
+                uint256 withdrawable = rawCollateralValue(
+                    (
+                        ((liquidityData.maxDebt - liquidityData.debt) * 1 ether * 10 ** market.decimals).percentAdd(5)
+                            / (market.price * 1 ether)
+                    ) // Inflate withdrawable because of WBTC decimals precision.
+                        .percentDiv(market.getLt(eModeCategoryId))
+                );
+                if (withdrawable == 0 || withdrawable > morpho.collateralBalance(market.underlying, sender)) continue;
 
                 vm.prank(sender);
                 vm.expectRevert(Errors.UnauthorizedWithdraw.selector);

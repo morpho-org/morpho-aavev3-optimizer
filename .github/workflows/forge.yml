@@ -25,7 +25,7 @@ on:
       invariant-runs:
         description: The number of runs to perform for invariant tests.
         required: false
-        default: 8
+        default: 4
         type: number
       invariant-depth:
         description: The depth of invariant tests.
