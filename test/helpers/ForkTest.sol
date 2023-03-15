@@ -53,6 +53,7 @@ contract ForkTest is BaseTest {
 
     address internal dai;
     address internal usdc;
+    address internal usdt;
     address internal aave;
     address internal link;
     address internal wbtc;
@@ -130,6 +131,7 @@ contract ForkTest is BaseTest {
 
         dai = config.getAddress("DAI");
         usdc = config.getAddress("USDC");
+        usdt = config.getAddress("USDT");
         aave = config.getAddress("AAVE");
         link = config.getAddress("LINK");
         wbtc = config.getAddress("WBTC");

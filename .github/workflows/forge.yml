@@ -47,9 +47,13 @@ on:
 env:
   FOUNDRY_PROFILE: ci
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    name: Compilation
+  build-via-ir:
+    name: Compilation (via IR)
     runs-on: ubuntu-latest
 
     steps:
@@ -63,11 +67,34 @@ jobs:
         with:
           version: nightly
 
-      - name: Build contracts & check sizes
+      - name: Build contracts via IR & check sizes
         run: make contracts # don't use compilation cache
 
+  build-no-ir:
+    name: Compilation (without IR)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
+
+      - uses: ./.github/actions/install
+
+      - name: Build contracts without IR
+        run: forge build
+
+      - name: Save forge compilation cache
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            cache
+            out
+          key: forge-${{ github.ref_name }}
+
   test-unit:
-    needs: build
+    needs: build-no-ir
 
     name: Unit tests (${{ inputs.network }})
     runs-on: ubuntu-latest
@@ -89,7 +116,7 @@ jobs:
           FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
 
   test-internal:
-    needs: build
+    needs: build-no-ir
 
     name: Internal tests (${{ inputs.network }})
     runs-on: ubuntu-latest
@@ -111,7 +138,7 @@ jobs:
           FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
 
   test-integration:
-    needs: build
+    needs: build-no-ir
 
     name: Integration tests (${{ inputs.network }})
     runs-on: ubuntu-latest
@@ -140,7 +167,7 @@ jobs:
           report: ${{ inputs.network }}.gasreport.ansi
 
   test-invariant:
-    needs: build
+    needs: build-no-ir
 
     name: Internal tests (${{ inputs.network }})
     runs-on: ubuntu-latest
