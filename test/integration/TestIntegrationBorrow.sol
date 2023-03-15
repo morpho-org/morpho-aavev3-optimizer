@@ -614,4 +614,43 @@ contract TestIntegrationBorrow is IntegrationTest {
             _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
         }
     }
+
+    function testShouldNotBeAbleToBorrowPastLtvAfterBorrow(
+        uint256 collateral,
+        uint256 borrowed,
+        address onBehalf,
+        address receiver
+    ) public {
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
+        for (
+            uint256 collateralMarketIndex; collateralMarketIndex < collateralUnderlyings.length; ++collateralMarketIndex
+        ) {
+            for (uint256 borrowedMarketIndex; borrowedMarketIndex < borrowableUnderlyings.length; ++borrowedMarketIndex)
+            {
+                _revert();
+
+                TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralMarketIndex]];
+                TestMarket storage borrowedMarket = testMarkets[borrowableUnderlyings[borrowedMarketIndex]];
+
+                collateral = _boundCollateral(collateralMarket, collateral, borrowedMarket);
+                borrowed = bound(
+                    borrowed,
+                    borrowedMarket.borrowable(collateralMarket, collateral, eModeCategoryId).percentMulUp(50_10),
+                    borrowedMarket.borrowable(collateralMarket, collateral, eModeCategoryId)
+                );
+
+                user.approve(collateralMarket.underlying, collateral);
+                user.supplyCollateral(collateralMarket.underlying, collateral, onBehalf);
+
+                user.borrow(borrowedMarket.underlying, borrowed, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+
+                vm.expectRevert(Errors.UnauthorizedBorrow.selector);
+                user.borrow(borrowedMarket.underlying, borrowed, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+            }
+        }
+    }
 }
