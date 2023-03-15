@@ -579,4 +579,37 @@ contract TestIntegrationWithdraw is IntegrationTest {
             user.withdraw(market.underlying, amount);
         }
     }
+
+    function testShouldNotWithdrawAlreadyWithdrawn(
+        uint256 amountToSupply,
+        uint256 amountToWithdraw,
+        address onBehalf,
+        address receiver
+    ) public {
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+
+            amountToSupply = _boundSupply(market, amountToSupply);
+            amountToWithdraw = bound(amountToWithdraw, Math.max(1, amountToSupply / 10), amountToSupply);
+
+            uint256 numWithdraws = (amountToSupply / amountToWithdraw) + 1;
+
+            user.approve(market.underlying, amountToSupply);
+            user.supply(market.underlying, amountToSupply, onBehalf);
+
+            for (uint256 i; i < numWithdraws; ++i) {
+                user.withdraw(market.underlying, amountToWithdraw, onBehalf, receiver);
+            }
+
+            vm.expectRevert(Errors.SupplyIsZero.selector);
+            user.withdraw(market.underlying, amountToWithdraw, onBehalf, receiver);
+        }
+    }
 }
