@@ -144,9 +144,12 @@ contract IntegrationTest is ForkTest {
         market.supplyCap = type(uint256).max;
         market.borrowCap = type(uint256).max;
 
+        market.eModeCategoryId = uint8(reserve.configuration.getEModeCategory());
+        market.eModeCategory = pool.getEModeCategoryData(market.eModeCategoryId);
+
         market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
             && !reserve.configuration.getBorrowableInIsolation()
-            && (eModeCategoryId == 0 || eModeCategoryId == reserve.configuration.getEModeCategory());
+            && (eModeCategoryId == 0 || eModeCategoryId == market.eModeCategoryId);
 
         vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
         vm.label(reserve.variableDebtTokenAddress, string.concat("vd", market.symbol));
@@ -266,14 +269,12 @@ contract IntegrationTest is ForkTest {
     {
         return bound(
             amount,
-            collateralMarket.minBorrowCollateral(borrowedMarket, borrowedMarket.minAmount),
+            collateralMarket.minBorrowCollateral(borrowedMarket, borrowedMarket.minAmount, eModeCategoryId),
             Math.min(
                 collateralMarket.minBorrowCollateral(
                     borrowedMarket,
-                    Math.min(
-                        borrowedMarket.maxAmount,
-                        Math.min(borrowedMarket.liquidity().percentMul(75_00), borrowedMarket.borrowGap())
-                    )
+                    Math.min(borrowedMarket.maxAmount, Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap())),
+                    eModeCategoryId
                 ),
                 _supplyGap(collateralMarket)
             )
@@ -284,9 +285,7 @@ contract IntegrationTest is ForkTest {
     ///      and the maximum borrowable quantity, without exceeding the market's liquidity nor its borrow cap.
     function _boundBorrow(TestMarket storage market, uint256 amount) internal view returns (uint256) {
         return bound(
-            amount,
-            market.minAmount,
-            Math.min(market.maxAmount, Math.min(market.liquidity().percentMul(75_00), market.borrowGap()))
+            amount, market.minAmount, Math.min(market.maxAmount, Math.min(market.liquidity(), market.borrowGap()))
         );
     }
 
@@ -300,7 +299,7 @@ contract IntegrationTest is ForkTest {
         address receiver,
         uint256 maxIterations
     ) internal returns (uint256 collateral, uint256 borrowed) {
-        collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount);
+        collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount, eModeCategoryId);
         _deal(collateralMarket.underlying, borrower, collateral);
 
         vm.startPrank(borrower);
@@ -324,7 +323,7 @@ contract IntegrationTest is ForkTest {
         vm.prank(borrower);
         borrowed = morpho.borrow(market.underlying, amount, onBehalf, receiver, maxIterations);
 
-        _deposit(market, market.minBorrowCollateral(market, borrowed), address(morpho)); // Make Morpho able to borrow again with some collateral.
+        _deposit(market, market.minBorrowCollateral(market, borrowed, eModeCategoryId), address(morpho)); // Make Morpho able to borrow again with some collateral.
 
         oracle.setAssetPrice(market.underlying, market.price);
     }
@@ -342,7 +341,7 @@ contract IntegrationTest is ForkTest {
         try promoter.borrow(market.underlying, amount) returns (uint256 borrowed) {
             amount = borrowed;
 
-            _deposit(market, market.minBorrowCollateral(market, amount), address(morpho)); // Make Morpho able to borrow again with some collateral.
+            _deposit(market, market.minBorrowCollateral(market, amount, eModeCategoryId), address(morpho)); // Make Morpho able to borrow again with some collateral.
         } catch {
             amount = 0;
         }
@@ -430,10 +429,6 @@ contract IntegrationTest is ForkTest {
         return amount;
     }
 
-    function _boundAmount(uint256 amount) internal view override returns (uint256) {
-        return bound(amount, 1, type(uint256).max);
-    }
-
     function _boundOnBehalf(address onBehalf) internal view returns (address) {
         onBehalf = _boundAddressNotZero(onBehalf);
 
@@ -452,12 +447,6 @@ contract IntegrationTest is ForkTest {
         if (onBehalf != address(user)) {
             vm.prank(onBehalf);
             morpho.approveManager(address(user), true);
-        }
-    }
-
-    function _assumeNotUnderlying(address input) internal view {
-        for (uint256 i; i < allUnderlyings.length; ++i) {
-            vm.assume(input != allUnderlyings[i]);
         }
     }
 

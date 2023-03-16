@@ -8,9 +8,10 @@ import {UserConfiguration} from "@aave-v3-core/protocol/libraries/configuration/
 
 import {Morpho} from "src/Morpho.sol";
 
+import {InvariantTest as ForgeInvariantTest} from "@forge-std/InvariantTest.sol";
 import "test/helpers/IntegrationTest.sol";
 
-contract TestIntegrationAssetAsCollateral is IntegrationTest {
+contract TestIntegrationAssetAsCollateral is IntegrationTest, ForgeInvariantTest {
     using UserConfiguration for DataTypes.UserConfigurationMap;
 
     function setUp() public override {
@@ -33,6 +34,28 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
         pool.setUserUseReserveAsCollateral(weth, false);
         pool.setUserUseReserveAsCollateral(link, false);
         vm.stopPrank();
+
+        targetSender(address(this));
+        targetContract(address(morpho));
+
+        bytes4[] memory selectors = new bytes4[](2);
+        selectors[0] = this.setAssetIsCollateralOnPool.selector;
+        selectors[1] = this.setAssetIsCollateral.selector;
+
+        targetSelector(FuzzSelector({addr: address(this), selectors: selectors}));
+    }
+
+    function setAssetIsCollateralOnPool(bool isCollateral) external {
+        morpho.setAssetIsCollateralOnPool(dai, isCollateral);
+    }
+
+    function setAssetIsCollateral(bool isCollateral) external {
+        morpho.setAssetIsCollateral(dai, isCollateral);
+    }
+
+    function invariantAssetAsCollateral() public {
+        if (morpho.market(dai).isCollateral) assertTrue(_isUsingAsCollateral(dai));
+        if (!_isUsingAsCollateral(dai)) assertFalse(morpho.market(dai).isCollateral);
     }
 
     function testSetAssetIsCollateralShouldRevertWhenMarketNotCreated(address underlying) public {
@@ -41,11 +64,13 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
     }
 
     function testSetAssetIsCollateralShouldRevertWhenMarketNotCollateralOnPool() public {
-        assertEq(morpho.market(dai).isCollateral, false);
         assertEq(_isUsingAsCollateral(dai), false);
 
-        vm.expectRevert(Errors.AssetNotCollateral.selector);
+        vm.expectRevert(Errors.AssetNotCollateralOnPool.selector);
         morpho.setAssetIsCollateral(dai, true);
+
+        vm.expectRevert(Errors.AssetNotCollateralOnPool.selector);
+        morpho.setAssetIsCollateral(dai, false);
     }
 
     function testSetAssetIsCollateral() public {
@@ -80,6 +105,9 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         morpho.setAssetIsCollateralOnPool(link, true);
+
+        vm.expectRevert(Errors.MarketNotCreated.selector);
+        morpho.setAssetIsCollateralOnPool(link, false);
     }
 
     function testSetAssetIsCollateralOnPoolShouldRevertWhenMarketIsCollateralOnMorpho() public {
@@ -90,11 +118,11 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
         assertEq(morpho.market(dai).isCollateral, true);
         assertEq(_isUsingAsCollateral(dai), true);
 
-        vm.expectRevert(Errors.AssetIsCollateral.selector);
+        vm.expectRevert(Errors.AssetIsCollateralOnMorpho.selector);
         morpho.setAssetIsCollateralOnPool(dai, false);
     }
 
-    function testSetAssetIsCollateralOnPoolWhenMarketIsCreatedAndIsCollateralOnMorphoAndOnPool() public {
+    function testSetAssetIsCollateralOnPoolShouldRevertWhenMarketIsCreatedAndIsCollateralOnMorpho() public {
         vm.prank(address(morpho));
         pool.setUserUseReserveAsCollateral(dai, true);
         morpho.setAssetIsCollateral(dai, true);
@@ -102,10 +130,11 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
         assertEq(morpho.market(dai).isCollateral, true);
         assertEq(_isUsingAsCollateral(dai), true);
 
+        vm.expectRevert(Errors.AssetIsCollateralOnMorpho.selector);
         morpho.setAssetIsCollateralOnPool(dai, true);
 
-        assertEq(morpho.market(dai).isCollateral, true);
-        assertEq(_isUsingAsCollateral(dai), true);
+        vm.expectRevert(Errors.AssetIsCollateralOnMorpho.selector);
+        morpho.setAssetIsCollateralOnPool(dai, false);
     }
 
     function testSetAssetIsCollateralOnPoolWhenMarketIsCreatedAndIsNotCollateralOnMorphoOnly() public {
@@ -131,19 +160,6 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
         assertEq(_isUsingAsCollateral(dai), true);
     }
 
-    function testSetAssetIsNotCollateralOnPoolWhenMarketIsNotCreated() public {
-        vm.prank(address(morpho));
-        pool.setUserUseReserveAsCollateral(link, true);
-
-        assertEq(morpho.market(link).isCollateral, false);
-        assertEq(pool.getUserConfiguration(address(morpho)).isUsingAsCollateral(pool.getReserveData(link).id), true);
-
-        morpho.setAssetIsCollateralOnPool(link, false);
-
-        assertEq(morpho.market(link).isCollateral, false);
-        assertEq(pool.getUserConfiguration(address(morpho)).isUsingAsCollateral(pool.getReserveData(link).id), false);
-    }
-
     function testSetAssetIsNotCollateralOnPoolWhenMarketIsCreatedAndIsNotCollateralOnMorphoOnly() public {
         vm.prank(address(morpho));
         pool.setUserUseReserveAsCollateral(dai, true);
@@ -157,15 +173,15 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
         assertEq(_isUsingAsCollateral(dai), false);
     }
 
-    function _isUsingAsCollateral(address underlying) internal view returns (bool) {
-        return pool.getUserConfiguration(address(morpho)).isUsingAsCollateral(pool.getReserveData(underlying).id);
-    }
-
     function testSetAssetIsCollateralLifecycle() public {
         morpho.setAssetIsCollateralOnPool(dai, true);
         morpho.setAssetIsCollateral(dai, true);
 
         morpho.setAssetIsCollateral(dai, false);
         morpho.setAssetIsCollateralOnPool(dai, false);
+    }
+
+    function _isUsingAsCollateral(address underlying) internal view returns (bool) {
+        return pool.getUserConfiguration(address(morpho)).isUsingAsCollateral(pool.getReserveData(underlying).id);
     }
 }

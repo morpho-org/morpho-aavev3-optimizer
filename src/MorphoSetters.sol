@@ -79,28 +79,27 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         emit Events.TreasuryVaultSet(treasuryVault);
     }
 
-    /// @notice Sets the `underlying` asset as `isCollateral` on the pool, and updates Morpho to not accept the asset as collateral if `isCollateral` is false.
-    /// @dev Note that it is possible to set an asset as non-collateral even if the market is not created yet on Morpho.
-    ///      This is needed because an aToken with LTV = 0 can be sent to Morpho and would be set as collateral by default, thus blocking withdrawals from the pool.
-    function setAssetIsCollateralOnPool(address underlying, bool isCollateral) external onlyOwner {
-        Types.Market storage market = _market[underlying];
-        if (isCollateral && !market.isCreated()) revert Errors.MarketNotCreated();
-        if (!isCollateral && market.isCollateral) revert Errors.AssetIsCollateral();
+    /// @notice Sets the `underlying` asset as `isCollateral` on the pool.
+    /// @dev The following invariant must hold: is collateral on Morpho => is collateral on pool.
+    function setAssetIsCollateralOnPool(address underlying, bool isCollateral)
+        external
+        onlyOwner
+        isMarketCreated(underlying)
+    {
+        if (_market[underlying].isCollateral) revert Errors.AssetIsCollateralOnMorpho();
 
         _pool.setUserUseReserveAsCollateral(underlying, isCollateral);
     }
 
-    /// @notice Sets the `underlying` asset as `isCollateral` on Morpho, and updates Morpho's collateral status on pool if `isCollateral` is true.
+    /// @notice Sets the `underlying` asset as `isCollateral` on Morpho.
+    /// @dev The following invariant must hold: is collateral on Morpho => is collateral on pool.
     function setAssetIsCollateral(address underlying, bool isCollateral)
         external
         onlyOwner
         isMarketCreated(underlying)
     {
-        if (
-            isCollateral
-                && !_pool.getUserConfiguration(address(this)).isUsingAsCollateral(_pool.getReserveData(underlying).id)
-        ) {
-            revert Errors.AssetNotCollateral();
+        if (!_pool.getUserConfiguration(address(this)).isUsingAsCollateral(_pool.getReserveData(underlying).id)) {
+            revert Errors.AssetNotCollateralOnPool();
         }
 
         _market[underlying].setAssetIsCollateral(isCollateral);

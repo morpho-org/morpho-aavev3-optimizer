@@ -14,6 +14,8 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         uint256 scaledP2PSupply;
         uint256 scaledPoolSupply;
         uint256 scaledCollateral;
+        address[] collaterals;
+        address[] borrows;
         Types.Indexes256 indexes;
         Types.Market morphoMarket;
     }
@@ -45,6 +47,8 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
             test.scaledP2PSupply = morpho.scaledP2PSupplyBalance(market.underlying, onBehalf);
             test.scaledPoolSupply = morpho.scaledPoolSupplyBalance(market.underlying, onBehalf);
             test.scaledCollateral = morpho.scaledCollateralBalance(market.underlying, onBehalf);
+            test.collaterals = morpho.userCollaterals(onBehalf);
+            test.borrows = morpho.userBorrows(onBehalf);
             uint256 collateral = test.scaledCollateral.rayMul(test.indexes.supply.poolIndex);
 
             // Assert balances on Morpho.
@@ -52,6 +56,10 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
             assertEq(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
             assertEq(test.supplied, amount, "supplied != amount");
             assertApproxEqAbs(collateral, amount, 1, "collateral != amount");
+
+            assertEq(test.collaterals.length, 1, "collaterals.length");
+            assertEq(test.collaterals[0], market.underlying, "collaterals[0]");
+            assertEq(test.borrows.length, 0, "borrows.length");
 
             assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supply != 0");
             assertApproxLeAbs(morpho.collateralBalance(market.underlying, onBehalf), amount, 1, "collateral != amount");
@@ -132,7 +140,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     }
 
     function testShouldRevertSupplyCollateralOnBehalfZero(uint256 amount) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
@@ -145,7 +153,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     {
         _assumeNotUnderlying(underlying);
 
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
@@ -153,7 +161,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     }
 
     function testShouldRevertSupplyCollateralWhenSupplyCollateralPaused(uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {

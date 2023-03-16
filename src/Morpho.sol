@@ -264,6 +264,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         external
         returns (address[] memory rewardTokens, uint256[] memory claimedAmounts)
     {
+        if (address(_rewardsManager) == address(0)) revert Errors.AddressIsZero();
         if (_isClaimRewardsPaused) revert Errors.ClaimRewardsPaused();
 
         (rewardTokens, claimedAmounts) = _rewardsManager.claimRewards(assets, onBehalf);

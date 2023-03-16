@@ -93,11 +93,14 @@ library Errors {
     /// @notice Thrown when the oracle sentinel is set but the liquidation is not enabled.
     error SentinelLiquidateNotEnabled();
 
-    /// @notice Thrown when setting a market as collateral on Morpho while it is not a collateral on Aave.
-    error AssetNotCollateral();
+    /// @notice Thrown when (un)setting a market as collateral on Morpho while it is not a collateral on Aave.
+    error AssetNotCollateralOnPool();
 
-    /// @notice Thrown when unsetting a market as collateral on Aave while it is a collateral on Morpho.
-    error AssetIsCollateral();
+    /// @notice Thrown when supplying an asset as collateral while it is not a collateral on Morpho.
+    error AssetNotCollateralOnMorpho();
+
+    /// @notice Thrown when (un)setting a market as collateral on Aave while it is a collateral on Morpho.
+    error AssetIsCollateralOnMorpho();
 
     /// @notice Thrown when the value exceeds the maximum basis points value (100% = 10000).
     error ExceedsMaxBasisPoints();

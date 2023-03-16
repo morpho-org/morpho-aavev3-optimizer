@@ -53,6 +53,7 @@ contract ForkTest is BaseTest {
 
     address internal dai;
     address internal usdc;
+    address internal usdt;
     address internal aave;
     address internal link;
     address internal wbtc;
@@ -130,6 +131,7 @@ contract ForkTest is BaseTest {
 
         dai = config.getAddress("DAI");
         usdc = config.getAddress("USDC");
+        usdt = config.getAddress("USDT");
         aave = config.getAddress("AAVE");
         link = config.getAddress("LINK");
         wbtc = config.getAddress("WBTC");
@@ -267,5 +269,15 @@ contract ForkTest is BaseTest {
             ""
         );
         poolAdmin.setAssetEModeCategory(underlying, eModeCategoryId);
+    }
+
+    function _assumeNotUnderlying(address input) internal view {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.assume(input != allUnderlyings[i]);
+        }
+    }
+
+    function _randomUnderlying(uint256 seed) internal view returns (address) {
+        return allUnderlyings[seed % allUnderlyings.length];
     }
 }

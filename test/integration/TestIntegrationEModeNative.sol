@@ -12,13 +12,10 @@ contract TestIntegrationEModeNative is IntegrationTest {
     using TestMarketLib for TestMarket;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    DataTypes.EModeCategory internal eModeCategory;
-
     function setUp() public virtual override {
         DataTypes.ReserveConfigurationMap memory stakedConfig = pool.getConfiguration(sNative);
 
         eModeCategoryId = uint8(stakedConfig.getEModeCategory());
-        eModeCategory = pool.getEModeCategoryData(eModeCategoryId);
 
         super.setUp();
     }
@@ -34,10 +31,7 @@ contract TestIntegrationEModeNative is IntegrationTest {
         TestMarket storage wNativeMarket = testMarkets[wNative];
 
         rawCollateral = _boundCollateral(sNativeMarket, rawCollateral, wNativeMarket);
-        uint256 quoted = wNativeMarket.quote(
-            sNativeMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
-        );
-        uint256 borrowed = quoted.percentMul(eModeCategory.ltv - 10);
+        uint256 borrowed = wNativeMarket.borrowable(sNativeMarket, rawCollateral, eModeCategoryId);
 
         user.approve(sNative, rawCollateral);
         user.supplyCollateral(sNative, rawCollateral, onBehalf);
@@ -45,7 +39,10 @@ contract TestIntegrationEModeNative is IntegrationTest {
         user.borrow(wNative, borrowed, onBehalf, receiver);
 
         user.withdrawCollateral(
-            sNative, quoted.percentMul(eModeCategory.liquidationThreshold - 10) - borrowed, onBehalf, receiver
+            sNative,
+            wNativeMarket.collateralized(sNativeMarket, rawCollateral, eModeCategoryId) - borrowed,
+            onBehalf,
+            receiver
         );
     }
 
@@ -64,21 +61,21 @@ contract TestIntegrationEModeNative is IntegrationTest {
         TestMarket storage wNativeMarket = testMarkets[wNative];
 
         for (
-            uint256 collateralMarketIndex; collateralMarketIndex < borrowableUnderlyings.length; ++collateralMarketIndex
+            uint256 collateralMarketIndex; collateralMarketIndex < collateralUnderlyings.length; ++collateralMarketIndex
         ) {
             _revert();
 
-            TestMarket storage collateralMarket = testMarkets[borrowableUnderlyings[collateralMarketIndex]];
+            TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralMarketIndex]];
 
             if (collateralMarket.underlying == wNative || collateralMarket.underlying == sNative) continue;
 
             rawCollateral = _boundCollateral(collateralMarket, rawCollateral, wNativeMarket);
             borrowed = bound(
                 borrowed,
-                wNativeMarket.borrowable(collateralMarket, rawCollateral),
-                wNativeMarket.quote(
-                    collateralMarket, rawCollateral * (Constants.LT_LOWER_BOUND - 1) / Constants.LT_LOWER_BOUND
-                ).percentMul(eModeCategory.ltv)
+                wNativeMarket.borrowable(collateralMarket, rawCollateral, 0).percentAdd(20),
+                wNativeMarket.borrowable(collateralMarket, rawCollateral, collateralMarket.eModeCategoryId).percentAdd(
+                    20
+                )
             );
 
             user.approve(collateralMarket.underlying, rawCollateral);
