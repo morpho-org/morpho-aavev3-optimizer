@@ -344,7 +344,9 @@ contract IntegrationTest is ForkTest {
         try promoter.borrow(market.underlying, amount) returns (uint256 borrowed) {
             amount = borrowed;
 
-            _deposit(market, market.minBorrowCollateral(market, amount, eModeCategoryId), address(morpho)); // Make Morpho able to borrow again with some collateral.
+            _deposit(
+                testMarkets[dai], testMarkets[dai].minBorrowCollateral(market, amount, eModeCategoryId), address(morpho)
+            ); // Make Morpho able to borrow again with some collateral.
         } catch {
             amount = 0;
         }
