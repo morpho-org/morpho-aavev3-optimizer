@@ -72,7 +72,8 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.ReserveData memory reserve = _pool.getReserveData(underlying);
         if (!reserve.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
         if (reserve.configuration.getSiloedBorrowing()) revert Errors.SiloedBorrowMarket();
-        if (reserve.configuration.getLiquidationThreshold() < Constants.LT_LOWER_BOUND) {
+        uint256 liquidationThreshold = reserve.configuration.getLiquidationThreshold();
+        if (liquidationThreshold > 0 && liquidationThreshold < Constants.LT_LOWER_BOUND) {
             revert Errors.MarketLtTooLow();
         }
 

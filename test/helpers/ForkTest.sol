@@ -139,7 +139,7 @@ contract ForkTest is BaseTest {
         wNative = config.getWrappedNative();
         sNative = config.getStakedNative();
 
-        allUnderlyings = [dai, usdc, aave, wbtc, weth, sNative];
+        allUnderlyings = [dai, usdc, aave, usdt, wbtc, weth, sNative];
     }
 
     function _label() internal virtual {
