@@ -14,7 +14,7 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 library Types {
     /* ENUMS */
 
-    /// @notice Enumaration of the different position types in the protocol.
+    /// @notice Enumeration of the different position types in the protocol.
     enum Position {
         POOL_SUPPLIER,
         P2P_SUPPLIER,
