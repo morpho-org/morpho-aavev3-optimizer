@@ -75,7 +75,7 @@ library Errors {
     /// @notice Thrown when the market is not enabled on Aave.
     error BorrowNotEnabled();
 
-    /// @notice Thrown when the oracle sentinel is set but the borrow is not enabled.
+    /// @notice Thrown when the oracle sentinel is set and disables borrowing.
     error SentinelBorrowNotEnabled();
 
     /// @notice Thrown when borrowing an asset that is not in Morpho's e-mode category.
@@ -90,7 +90,7 @@ library Errors {
     /// @notice Thrown when the liquidatation is not authorized because of a collateralization ratio too high.
     error UnauthorizedLiquidate();
 
-    /// @notice Thrown when the oracle sentinel is set but the liquidation is not enabled.
+    /// @notice Thrown when the oracle sentinel is set and disables liquidating.
     error SentinelLiquidateNotEnabled();
 
     /// @notice Thrown when (un)setting a market as collateral on Morpho while it is not a collateral on Aave.
