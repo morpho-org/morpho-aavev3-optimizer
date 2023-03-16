@@ -281,6 +281,8 @@ abstract contract MorphoInternal is MorphoStorage {
         view
         returns (uint256 borrowable, uint256 maxDebt)
     {
+        if (!_market[underlying].isCollateral) return (0, 0);
+
         (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 underlyingUnit) =
             _assetLiquidityData(underlying, vars);
 

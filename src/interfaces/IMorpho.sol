@@ -53,6 +53,8 @@ interface IMorphoSetters {
     function setP2PIndexCursor(address underlying, uint16 p2pIndexCursor) external;
     function setReserveFactor(address underlying, uint16 newReserveFactor) external;
 
+    function setAssetIsCollateralOnPool(address underlying, bool isCollateral) external;
+    function setAssetIsCollateral(address underlying, bool isCollateral) external;
     function setIsClaimRewardsPaused(bool isPaused) external;
     function setIsPaused(address underlying, bool isPaused) external;
     function setIsPausedForAllMarkets(bool isPaused) external;

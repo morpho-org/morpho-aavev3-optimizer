@@ -59,9 +59,7 @@ contract IntegrationTest is ForkTest {
             _createTestMarket(allUnderlyings[i], 0, 33_33);
         }
 
-        // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() always return true.
-        _deposit(testMarkets[weth], 1e12, address(morpho));
-        _deposit(testMarkets[dai], 1e12, address(morpho));
+        _setAllAssetsAsCollateral();
 
         _forward(1); // All markets are outdated in Morpho's storage.
 
@@ -168,6 +166,18 @@ contract IntegrationTest is ForkTest {
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
     }
 
+    function _setAllAssetsAsCollateral() internal {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            _setAssetAsCollateral(testMarkets[allUnderlyings[i]]);
+        }
+    }
+
+    function _setAssetAsCollateral(TestMarket storage market) internal {
+        // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() return true.
+        _deposit(market, (10 ** market.decimals) / 1e6, address(morpho));
+        morpho.setAssetIsCollateral(market.underlying, true);
+    }
+
     function _randomCollateral(uint256 seed) internal view returns (address) {
         return collateralUnderlyings[seed % collateralUnderlyings.length];
     }
@@ -215,9 +225,16 @@ contract IntegrationTest is ForkTest {
         internal
         bypassSupplyCap(market, amount)
     {
-        _deal(market.underlying, address(this), amount);
+        deal(market.underlying, address(this), type(uint256).max);
         ERC20(market.underlying).approve(address(pool), amount);
         pool.deposit(market.underlying, amount, onBehalf, 0);
+    }
+
+    /// @dev Deposits the given amount of tokens on behalf of the given address, on AaveV3.
+    function _depositSimple(address underlying, uint256 amount, address onBehalf) internal {
+        deal(underlying, address(this), amount);
+        ERC20(underlying).approve(address(pool), amount);
+        pool.deposit(underlying, amount, onBehalf, 0);
     }
 
     /// @dev Bounds the input supply cap of AaveV3 so that it is exceeded after having deposited a given amount

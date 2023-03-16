@@ -292,4 +292,13 @@ contract TestUnitMarketLib is BaseTest {
         );
         assertLe(proportionIdle, WadRayMath.RAY);
     }
+
+    function testSetAssetIsCollateral(bool isCollateral) public {
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsCollateralSet(market.underlying, isCollateral);
+
+        market.setAssetIsCollateral(isCollateral);
+
+        assertEq(market.isCollateral, isCollateral);
+    }
 }
