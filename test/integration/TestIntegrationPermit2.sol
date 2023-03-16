@@ -13,6 +13,7 @@ import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationPermit2 is IntegrationTest {
     using SafeTransferLib for ERC20;
+    using WadRayMath for uint256;
 
     AllowanceTransfer internal constant PERMIT2 = AllowanceTransfer(address(0x000000000022D473030F116dDEE9F6B43aC78BA3));
 
@@ -123,6 +124,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
             3,
             "Incorrect Supply Collateral"
         );
+
         assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
     }
 
@@ -155,7 +157,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
-        amount = morpho.borrowBalance(market.underlying, onBehalf);
+        amount = morpho.borrowBalance(market.underlying, onBehalf) - 1;
         Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
 
         _deal(market.underlying, delegator, amount);
