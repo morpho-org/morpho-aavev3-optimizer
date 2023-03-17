@@ -21,6 +21,7 @@ import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {UserConfiguration} from "@aave-v3-core/protocol/libraries/configuration/UserConfiguration.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
@@ -44,6 +45,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     using EnumerableSet for EnumerableSet.AddressSet;
     using LogarithmicBuckets for LogarithmicBuckets.Buckets;
 
+    using UserConfiguration for DataTypes.UserConfigurationMap;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /// @dev Validates the manager's permission.
@@ -91,6 +93,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     function _validateSupplyCollateral(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
         if (market.isSupplyCollateralPaused()) revert Errors.SupplyCollateralIsPaused();
+        if (!market.isCollateral) revert Errors.AssetNotCollateralOnMorpho();
     }
 
     /// @dev Validates a borrow action.

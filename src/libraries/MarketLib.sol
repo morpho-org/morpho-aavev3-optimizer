@@ -73,6 +73,12 @@ library MarketLib {
         return market.pauseStatuses.isP2PDisabled;
     }
 
+    function setAssetIsCollateral(Types.Market storage market, bool isCollateral) internal {
+        market.isCollateral = isCollateral;
+
+        emit Events.IsCollateralSet(market.underlying, isCollateral);
+    }
+
     function setIsSupplyPaused(Types.Market storage market, bool isPaused) internal {
         market.pauseStatuses.isSupplyPaused = isPaused;
 
