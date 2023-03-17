@@ -326,7 +326,7 @@ contract IntegrationTest is ForkTest {
 
         _deposit(
             testMarkets[dai], testMarkets[dai].minBorrowCollateral(market, borrowed, eModeCategoryId), address(morpho)
-        ); // Make Morpho able to borrow again with some collateral.
+        ); // Make Morpho able to borrow again with some collateral. The DAI market is used here because some `market` can't be used as collateral such as USDT.
 
         oracle.setAssetPrice(market.underlying, market.price);
     }
@@ -346,7 +346,7 @@ contract IntegrationTest is ForkTest {
 
             _deposit(
                 testMarkets[dai], testMarkets[dai].minBorrowCollateral(market, amount, eModeCategoryId), address(morpho)
-            ); // Make Morpho able to borrow again with some collateral.
+            ); // Make Morpho able to borrow again with some collateral. The DAI market is used here because some `market` can't be used as collateral such as USDT.
         } catch {
             amount = 0;
         }
