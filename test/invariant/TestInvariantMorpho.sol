@@ -50,7 +50,7 @@ contract TestInvariantMorpho is InvariantTest {
 
         _deal(market.underlying, msg.sender, amount);
 
-        vm.prank(msg.sender); // Cannot startPrank because `morpho.repay` may revert and not call stopPrank.
+        vm.prank(msg.sender); // Cannot startPrank because `morpho.supply` may revert and not call stopPrank.
         ERC20(market.underlying).safeApprove(address(morpho), amount);
 
         vm.prank(msg.sender);
@@ -64,7 +64,7 @@ contract TestInvariantMorpho is InvariantTest {
 
         _deal(market.underlying, msg.sender, amount);
 
-        vm.prank(msg.sender); // Cannot startPrank because `morpho.repay` may revert and not call stopPrank.
+        vm.prank(msg.sender); // Cannot startPrank because `morpho.supplyCollateral` may revert and not call stopPrank.
         ERC20(market.underlying).safeApprove(address(morpho), amount);
 
         vm.prank(msg.sender);
