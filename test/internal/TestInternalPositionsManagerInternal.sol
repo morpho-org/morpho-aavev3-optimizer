@@ -313,7 +313,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         poolIndex = bound(poolIndex, WadRayMath.RAY, WadRayMath.RAY * 10);
 
         (uint256 newAmount, uint256 newOnPool) = _addToPool(amount, onPool, poolIndex);
-        assertEq(newAmount, amount);
+        assertEq(newAmount, amount.rayDivDown(poolIndex) == 0 ? 0 : amount);
         assertEq(newOnPool, onPool + amount.rayDivDown(poolIndex));
     }
 
