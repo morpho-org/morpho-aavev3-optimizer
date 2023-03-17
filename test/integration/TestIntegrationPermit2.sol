@@ -242,7 +242,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         vm.prank(delegator);
         vm.expectRevert(SignatureVerification.InvalidSigner.selector);
-        morpho.supplyCollateralWithPermit(market.underlying, amount, onBehalf, deadline, sig);
+        morpho.supplyWithPermit(market.underlying, amount, onBehalf, DEFAULT_MAX_ITERATIONS, deadline, sig);
     }
 
     function testShouldRevertIfSomeoneImpersonateSignerOfPermit2(
@@ -256,7 +256,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         deadline = bound(deadline, block.timestamp, type(uint32).max);
         privateKey = bound(privateKey, 1, type(uint160).max);
         address delegator = vm.addr(privateKey);
-
+        pranker = _boundAddressNotZero(pranker);
         vm.assume(pranker != delegator);
 
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
@@ -278,7 +278,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         vm.prank(pranker);
         vm.expectRevert(SignatureVerification.InvalidSigner.selector);
-        morpho.supplyCollateralWithPermit(market.underlying, amount, delegator, deadline, sig);
+        morpho.supplyWithPermit(market.underlying, amount, delegator, DEFAULT_MAX_ITERATIONS, deadline, sig);
     }
 
     function testShouldRevertIfSupplyAnotherAmountThanTheOneSigned(
@@ -313,7 +313,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         vm.prank(delegator);
         vm.expectRevert(SignatureVerification.InvalidSigner.selector);
-        morpho.supplyCollateralWithPermit(market.underlying, supplied, delegator, deadline, sig);
+        morpho.supplyWithPermit(market.underlying, supplied, delegator, DEFAULT_MAX_ITERATIONS, deadline, sig);
     }
 
     function testShouldRevertIfPermit2SignWithWrongPrivateKey(
@@ -351,6 +351,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         vm.prank(delegator);
         vm.expectRevert(SignatureVerification.InvalidSigner.selector);
-        morpho.supplyCollateralWithPermit(market.underlying, amount, delegator, deadline, sig);
+        morpho.supplyWithPermit(market.underlying, amount, delegator, DEFAULT_MAX_ITERATIONS, deadline, sig);
     }
 }
