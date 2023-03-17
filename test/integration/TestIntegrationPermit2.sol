@@ -206,7 +206,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         morpho.supplyWithPermit(market.underlying, amount, onBehalf, DEFAULT_MAX_ITERATIONS, deadline, sig);
     }
 
-    function testSupplyCollateralWithPermit2ShouldRevertIfSignatureUsedTwice(
+    function testSupplyWithPermit2ShouldRevertIfSignatureUsedTwice(
         uint256 privateKey,
         uint256 deadline,
         uint256 amount,
@@ -238,7 +238,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.warp(block.timestamp + timestamp);
 
         vm.prank(delegator);
-        morpho.supplyCollateralWithPermit(market.underlying, amount, onBehalf, deadline, sig);
+        morpho.supplyWithPermit(market.underlying, amount, onBehalf, DEFAULT_MAX_ITERATIONS, deadline, sig);
 
         vm.prank(delegator);
         vm.expectRevert(SignatureVerification.InvalidSigner.selector);
@@ -257,7 +257,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         privateKey = bound(privateKey, 1, type(uint160).max);
         address delegator = vm.addr(privateKey);
         pranker = _boundAddressNotZero(pranker);
-        vm.assume(pranker != delegator);
+        vm.assume(pranker != delegator && pranker.code.length == 0);
 
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
