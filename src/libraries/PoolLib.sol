@@ -17,7 +17,12 @@ library PoolLib {
     function supplyToPool(IPool pool, address underlying, uint256 amount) internal {
         if (amount == 0) return;
 
-        pool.supply(underlying, amount, address(this), Constants.NO_REFERRAL_CODE);
+        // If amount.rayDiv(index) == 0 on the pool it reverts. In this case the call is skipped.
+        try pool.supply(underlying, amount, address(this), Constants.NO_REFERRAL_CODE) {
+            return;
+        } catch {
+            return;
+        }
     }
 
     function borrowFromPool(IPool pool, address underlying, uint256 amount) internal {
