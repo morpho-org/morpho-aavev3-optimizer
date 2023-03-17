@@ -156,7 +156,7 @@ abstract contract MorphoInternal is MorphoStorage {
         emit Events.P2PBorrowDeltaUpdated(underlying, newBorrowDelta);
 
         _pool.borrowFromPool(underlying, amount);
-        _pool.supplyToPool(underlying, amount);
+        _pool.supplyToPool(underlying, amount, poolSupplyIndex);
 
         emit Events.P2PDeltasIncreased(underlying, amount);
     }
