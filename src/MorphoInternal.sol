@@ -72,6 +72,10 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.ReserveData memory reserve = _pool.getReserveData(underlying);
         if (!reserve.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
         if (reserve.configuration.getSiloedBorrowing()) revert Errors.SiloedBorrowMarket();
+
+        // `liquidationThreshold < Constants.LT_LOWER_BOUND` checks that the asset's LT is not to low to be listed as a collateral on Morpho.
+        // If the LT is 0, the check is skipped to be able to create markets for non-collateral assets.
+        // The check still works for e-mode assets since if the "standard" LT is 0, then the e-mode LT is also 0.
         uint256 liquidationThreshold = reserve.configuration.getLiquidationThreshold();
         if (liquidationThreshold > 0 && liquidationThreshold < Constants.LT_LOWER_BOUND) {
             revert Errors.MarketLtTooLow();
