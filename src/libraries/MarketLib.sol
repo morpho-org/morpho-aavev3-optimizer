@@ -220,6 +220,7 @@ library MarketLib {
                 indexes.supply.poolIndex
             )
         );
+        if (suppliable.rayDiv(indexes.supply.poolIndex) == 0) suppliable = 0;
         if (amount <= suppliable) return (amount, 0);
 
         uint256 idleSupplyIncrease = amount - suppliable;

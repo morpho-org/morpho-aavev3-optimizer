@@ -524,7 +524,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     /// @param poolIndex The current pool index.
     /// @return The amount to supply/borrow and the new on pool amount.
     function _addToPool(uint256 amount, uint256 onPool, uint256 poolIndex) internal pure returns (uint256, uint256) {
-        if (amount == 0) return (0, onPool);
+        if (amount.rayDiv(poolIndex) == 0) return (0, onPool);
 
         return (
             amount,
