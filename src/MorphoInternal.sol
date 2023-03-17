@@ -149,7 +149,7 @@ abstract contract MorphoInternal is MorphoStorage {
                 )
             )
         );
-        if (amount == 0) revert Errors.AmountIsZero();
+        if (amount.rayDiv(poolSupplyIndex) == 0) revert Errors.AmountIsZero();
 
         uint256 newSupplyDelta = deltas.supply.scaledDelta + amount.rayDiv(poolSupplyIndex);
         uint256 newBorrowDelta = deltas.borrow.scaledDelta + amount.rayDiv(poolBorrowIndex);

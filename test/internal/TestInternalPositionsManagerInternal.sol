@@ -96,20 +96,25 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testValidateSupplyCollateralShouldRevertIfSupplyCollateralPaused() public {
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
         _market[dai].pauseStatuses.isSupplyCollateralPaused = true;
 
         vm.expectRevert(Errors.SupplyCollateralIsPaused.selector);
-        this.validateSupplyCollateral(dai, 1, address(1));
+        this.validateSupplyCollateral(dai, 1, address(1), indexes.supply.poolIndex);
     }
 
     function testValidateSupplyCollateralShouldRevertIfNotCollateral() public {
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+
         vm.expectRevert(abi.encodeWithSelector(Errors.AssetNotCollateralOnMorpho.selector));
-        this.validateSupplyCollateral(dai, 1, address(1));
+        this.validateSupplyCollateral(dai, 1, address(1), indexes.supply.poolIndex);
     }
 
     function testValidateSupplyCollateral() public {
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+
         _market[dai].isCollateral = true;
-        this.validateSupplyCollateral(dai, 1, address(1));
+        this.validateSupplyCollateral(dai, 1, address(1), indexes.supply.poolIndex);
     }
 
     function testValidateBorrowShouldRevertIfBorrowPaused() public {
@@ -438,8 +443,11 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _validateSupply(underlying, amount, onBehalf);
     }
 
-    function validateSupplyCollateral(address underlying, uint256 amount, address onBehalf) public view {
-        _validateSupplyCollateral(underlying, amount, onBehalf);
+    function validateSupplyCollateral(address underlying, uint256 amount, address onBehalf, uint256 poolIndex)
+        public
+        view
+    {
+        _validateSupplyCollateral(underlying, amount, onBehalf, poolIndex);
     }
 
     function validateBorrow(address underlying, uint256 amount, address borrower, address receiver) public view {

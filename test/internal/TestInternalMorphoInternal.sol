@@ -83,6 +83,7 @@ contract TestInternalMorphoInternal is InternalTest {
         p2pBorrowTotal = _boundAmount(p2pBorrowTotal);
         supplyDelta = bound(supplyDelta, 0, p2pSupplyTotal);
         borrowDelta = bound(borrowDelta, 0, p2pBorrowTotal);
+        uint256 amount = 0;
 
         address underlying = dai;
         Types.Market storage market = _market[underlying];
@@ -93,8 +94,6 @@ contract TestInternalMorphoInternal is InternalTest {
         deltas.borrow.scaledDelta = borrowDelta.rayDivUp(indexes.borrow.p2pIndex);
         deltas.supply.scaledP2PTotal = p2pSupplyTotal.rayDivDown(indexes.supply.p2pIndex);
         deltas.borrow.scaledP2PTotal = p2pBorrowTotal.rayDivDown(indexes.borrow.p2pIndex);
-
-        uint256 amount = 0;
 
         vm.expectRevert(Errors.AmountIsZero.selector);
         this.increaseP2PDeltasTest(underlying, amount);
@@ -107,18 +106,19 @@ contract TestInternalMorphoInternal is InternalTest {
         uint256 borrowDelta,
         uint256 amount
     ) public {
+        address underlying = dai;
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+
         p2pSupplyTotal = _boundAmount(p2pSupplyTotal);
         p2pBorrowTotal = _boundAmount(p2pBorrowTotal);
         supplyDelta = bound(supplyDelta, 0, p2pSupplyTotal);
         borrowDelta = bound(borrowDelta, 0, p2pBorrowTotal);
-        amount = bound(amount, 0, 10_000_000 ether); // $10m dollars worth
+        amount = bound(amount, 10, 10_000_000 ether); // $10m dollars worth
 
         _pool.supplyToPool(dai, amount * 2);
 
-        address underlying = dai;
         Types.Market storage market = _market[underlying];
         Types.Deltas storage deltas = market.deltas;
-        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
 
         deltas.supply.scaledDelta = supplyDelta.rayDivUp(indexes.supply.p2pIndex);
         deltas.borrow.scaledDelta = borrowDelta.rayDivUp(indexes.borrow.p2pIndex);
