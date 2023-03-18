@@ -63,7 +63,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the supply position.
     /// @param maxIterations The maximum number of iterations allowed during the matching process.
-    /// @return The amount supplied.
+    /// @return The amount supplied (in underlying).
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
         external
         returns (uint256)
@@ -79,7 +79,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param maxIterations The maximum number of iterations allowed during the matching process.
     /// @param deadline The deadline for the permit2 signature.
     /// @param signature The permit2 signature.
-    /// @return The amount supplied.
+    /// @return The amount supplied (in underlying).
     function supplyWithPermit(
         address underlying,
         uint256 amount,
@@ -99,7 +99,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param underlying The address of the underlying asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the collateral position.
-    /// @return The collateral amount supplied.
+    /// @return The collateral amount supplied (in underlying).
     function supplyCollateral(address underlying, uint256 amount, address onBehalf) external returns (uint256) {
         return _supplyCollateral(underlying, amount, msg.sender, onBehalf);
     }
@@ -111,7 +111,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param onBehalf The address that will receive the collateral position.
     /// @param deadline The deadline for the permit2 signature.
     /// @param signature The permit2 signature.
-    /// @return The collateral amount supplied.
+    /// @return The collateral amount supplied (in underlying).
     function supplyCollateralWithPermit(
         address underlying,
         uint256 amount,
@@ -132,7 +132,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param onBehalf The address that will receive the debt position.
     /// @param receiver The address that will receive the borrowed funds.
     /// @param maxIterations The maximum number of iterations allowed during the matching process.
-    /// @return The amount borrowed.
+    /// @return The amount borrowed (in underlying).
     function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
         returns (uint256)
@@ -145,7 +145,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param underlying The address of the underlying asset to borrow.
     /// @param amount The amount of `underlying` to repay.
     /// @param onBehalf The address whose position will be repaid.
-    /// @return The amount repaid.
+    /// @return The amount repaid (in underlying).
     function repay(address underlying, uint256 amount, address onBehalf) external returns (uint256) {
         return _repay(underlying, amount, msg.sender, onBehalf);
     }
@@ -156,7 +156,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param onBehalf The address whose position will be repaid.
     /// @param deadline The deadline for the permit2 signature.
     /// @param signature The permit2 signature.
-    /// @return The amount repaid.
+    /// @return The amount repaid (in underlying).
     function repayWithPermit(
         address underlying,
         uint256 amount,
@@ -191,7 +191,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to withdraw.
     /// @param onBehalf The address whose position will be withdrawn.
     /// @param receiver The address that will receive the withdrawn funds.
-    /// @return The collateral amount withdrawn.
+    /// @return The collateral amount withdrawn (in underlying).
     function withdrawCollateral(address underlying, uint256 amount, address onBehalf, address receiver)
         external
         returns (uint256)
@@ -204,7 +204,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param underlyingCollateral The address of the underlying collateral to seize.
     /// @param user The address of the user to liquidate.
     /// @param amount The amount of `underlyingBorrowed` to repay.
-    /// @return The `underlyingBorrowed` amount repaid and the `underlyingCollateral` amount seized.
+    /// @return The `underlyingBorrowed` amount repaid (in underlying) and the `underlyingCollateral` amount seized (in underlying).
     function liquidate(address underlyingBorrowed, address underlyingCollateral, address user, uint256 amount)
         external
         returns (uint256, uint256)
