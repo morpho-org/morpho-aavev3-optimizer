@@ -315,15 +315,18 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             TestMarket storage market = testMarkets[underlyings[marketIndex]];
 
             amountToSupply = _boundSupply(market, amountToSupply);
-            amountToWithdraw = bound(amountToWithdraw, Math.max(1, amountToSupply / 10), amountToSupply);
-
-            uint256 numWithdraws = (amountToSupply / amountToWithdraw) + 1;
+            amountToWithdraw = bound(amountToWithdraw, Math.max(market.minAmount, amountToSupply / 10), amountToSupply);
 
             user.approve(market.underlying, amountToSupply);
             user.supplyCollateral(market.underlying, amountToSupply, onBehalf);
 
-            for (uint256 i; i < numWithdraws; ++i) {
+            uint256 collateralBalance = morpho.collateralBalance(market.underlying, address(onBehalf));
+
+            while (collateralBalance > 0) {
                 user.withdrawCollateral(market.underlying, amountToWithdraw, onBehalf, receiver);
+                uint256 newCollateralBalance = morpho.collateralBalance(market.underlying, address(onBehalf));
+                assertLt(newCollateralBalance, collateralBalance);
+                collateralBalance = newCollateralBalance;
             }
 
             vm.expectRevert(Errors.CollateralIsZero.selector);
