@@ -19,7 +19,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         Types.Iterations memory iterations = morpho.defaultIterations();
         assertEq(iterations.repay, 10, "defaultIterations.repay");
         assertEq(iterations.withdraw, 10, "defaultIterations.withdraw");
-        assertEq(pool.getUserEMode(address(this)), eModeCategoryId, "getUserEMode");
+        assertEq(pool.getUserEMode(address(morpho)), eModeCategoryId, "getUserEMode");
         assertEq(morpho.positionsManager(), address(positionsManager), "positionsManager");
     }
 
