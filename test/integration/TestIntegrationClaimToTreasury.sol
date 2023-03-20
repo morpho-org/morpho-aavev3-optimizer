@@ -18,7 +18,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
 
     function testClaimToTreasuryShouldRevertIfTreasuryVaultIsZero(uint256[] calldata amounts) public {
         vm.expectRevert(Errors.AddressIsZero.selector);
-        morpho.claimToTreasury(underlyings, amounts);
+        morpho.claimToTreasury(allUnderlyings, amounts);
     }
 
     function testShouldNotClaimToTreasuryIfMarketNotCreated(address treasuryVault, uint8 nbUnderlyings) public {
