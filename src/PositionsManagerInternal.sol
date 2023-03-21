@@ -4,8 +4,6 @@ pragma solidity ^0.8.17;
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 import {IPriceOracleSentinel} from "@aave-v3-core/interfaces/IPriceOracleSentinel.sol";
 
-import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
-
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
@@ -424,6 +422,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         _updateRewards(onBehalf, _market[underlying].aToken, collateralBalance);
 
         collateralBalance += amount.rayDivDown(poolSupplyIndex);
+
         marketBalances.collateral[onBehalf] = collateralBalance;
 
         _userCollaterals[onBehalf].add(underlying);
