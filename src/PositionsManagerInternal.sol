@@ -233,9 +233,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             // Update the peer-to-peer totals.
             market.deltas.supply.scaledP2PTotal += vars.toRepay.rayDiv(indexes.supply.p2pIndex);
             market.deltas.borrow.scaledP2PTotal += promoted.rayDiv(indexes.borrow.p2pIndex);
-            emit Events.P2PTotalsUpdated(
-                underlying, market.deltas.supply.scaledP2PTotal, market.deltas.borrow.scaledP2PTotal
-            );
+            market.deltas.emitP2PTotalsUpdated(underlying);
         }
 
         /* Pool supply */
@@ -281,9 +279,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             // Update the peer-to-peer totals.
             market.deltas.supply.scaledP2PTotal += promoted.rayDiv(indexes.supply.p2pIndex);
             market.deltas.borrow.scaledP2PTotal += (vars.toWithdraw + matchedIdle).rayDiv(indexes.borrow.p2pIndex);
-            emit Events.P2PTotalsUpdated(
-                underlying, market.deltas.supply.scaledP2PTotal, market.deltas.borrow.scaledP2PTotal
-            );
+            market.deltas.emitP2PTotalsUpdated(underlying);
         }
 
         /* Pool borrow */
@@ -362,9 +358,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             market.deltas.supply.scaledP2PTotal.zeroFloorSub(demoted.rayDiv(indexes.supply.p2pIndex));
         market.deltas.borrow.scaledP2PTotal =
             market.deltas.borrow.scaledP2PTotal.zeroFloorSub(amount.rayDiv(indexes.borrow.p2pIndex));
-        emit Events.P2PTotalsUpdated(
-            underlying, market.deltas.supply.scaledP2PTotal, market.deltas.borrow.scaledP2PTotal
-        );
+        market.deltas.emitP2PTotalsUpdated(underlying);
     }
 
     /// @dev Performs the accounting of a withdraw action.
@@ -430,9 +424,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             market.deltas.supply.scaledP2PTotal.zeroFloorSub(p2pTotalSupplyDecrease.rayDiv(indexes.supply.p2pIndex));
         market.deltas.borrow.scaledP2PTotal =
             market.deltas.borrow.scaledP2PTotal.zeroFloorSub(demoted.rayDiv(indexes.borrow.p2pIndex));
-        emit Events.P2PTotalsUpdated(
-            underlying, market.deltas.supply.scaledP2PTotal, market.deltas.borrow.scaledP2PTotal
-        );
+        market.deltas.emitP2PTotalsUpdated(underlying);
     }
 
     /// @dev Performs the accounting of a supply action.

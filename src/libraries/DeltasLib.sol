@@ -41,4 +41,8 @@ library DeltasLib {
 
         return amount - feeToRepay;
     }
+
+    function emitP2PTotalsUpdated(Types.Deltas storage deltas, address underlying) internal {
+        emit Events.P2PTotalsUpdated(underlying, deltas.supply.scaledP2PTotal, deltas.borrow.scaledP2PTotal);
+    }
 }
