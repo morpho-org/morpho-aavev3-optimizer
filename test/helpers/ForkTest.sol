@@ -232,8 +232,8 @@ contract ForkTest is BaseTest {
         return reserve.totalSupplyToCap(poolSupplyIndex, poolBorrowIndex);
     }
 
-    // @dev  Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
-    // https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/pool/PoolConfigurator.sol#L369-L376
+    /// @dev Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
+    /// https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/pool/PoolConfigurator.sol#L369-L376
     function _getLtvLt(address underlying, uint8 eModeCategoryId)
         internal
         view
