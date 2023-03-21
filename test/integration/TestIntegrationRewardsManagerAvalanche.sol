@@ -39,23 +39,51 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         user.approve(dai, 100 ether);
         user.supply(dai, 100 ether);
         _forward(10);
-        uint256 accruedRewards = rewardsController.getUserRewards(assets, address(morpho), wNative);
+        uint256 accruedRewards = rewardsManager.getUserRewards(assets, address(user), wNative);
+
+        vm.expectEmit(true, true, true, true);
+        emit Events.RewardsClaimed(address(this), address(user), wNative, accruedRewards);
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
+
         assertEq(rewardTokens.length, 1);
         assertEq(amounts.length, 1);
         assertEq(rewardTokens[0], wNative);
-        assertApproxLeAbs(amounts[0], accruedRewards, accruedRewards / 1000, "amount");
+        assertEq(amounts[0], accruedRewards, "amount");
+        assertGt(amounts[0], 0, "amount = 0");
     }
 
     function testClaimRewardsWhenSupplyingCollateral() public {
         user.approve(dai, 100 ether);
         user.supplyCollateral(dai, 100 ether);
         _forward(10);
-        uint256 accruedRewards = rewardsController.getUserRewards(assets, address(morpho), wNative);
+        uint256 accruedRewards = rewardsManager.getUserRewards(assets, address(user), wNative);
+
+        vm.expectEmit(true, true, true, true);
+        emit Events.RewardsClaimed(address(this), address(user), wNative, accruedRewards);
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
+
         assertEq(rewardTokens.length, 1);
         assertEq(amounts.length, 1);
         assertEq(rewardTokens[0], wNative);
-        assertApproxLeAbs(amounts[0], accruedRewards, accruedRewards / 1000, "amount");
+        assertEq(amounts[0], accruedRewards, "amount");
+        assertGt(amounts[0], 0, "amount = 0");
+    }
+
+    function testClaimRewardsWhenBorrowingPool() public {
+        user.approve(wbtc, 1e8); // wbtc has no rewards and so 1 BTC will make for a clean collateral for a test
+        user.supplyCollateral(wbtc, 1e8);
+        user.borrow(dai, 100 ether);
+        _forward(10);
+        uint256 accruedRewards = rewardsManager.getUserRewards(assets, address(user), wNative);
+
+        vm.expectEmit(true, true, true, true);
+        emit Events.RewardsClaimed(address(this), address(user), wNative, accruedRewards);
+        (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
+
+        assertEq(rewardTokens.length, 1);
+        assertEq(amounts.length, 1);
+        assertEq(rewardTokens[0], wNative);
+        assertEq(amounts[0], accruedRewards, "amount");
+        assertGt(amounts[0], 0, "amount = 0");
     }
 }
