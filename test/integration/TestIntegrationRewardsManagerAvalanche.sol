@@ -39,21 +39,23 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         user.approve(dai, 100 ether);
         user.supply(dai, 100 ether);
         _forward(10);
+        uint256 accruedRewards = rewardsController.getUserRewards(assets, address(morpho), wNative);
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
-        for (uint256 i; i < rewardTokens.length; i++) {
-            console2.log(rewardTokens[i]);
-            console2.log(amounts[i]);
-        }
+        assertEq(rewardTokens.length, 1);
+        assertEq(amounts.length, 1);
+        assertEq(rewardTokens[0], wNative);
+        assertApproxLeAbs(amounts[0], accruedRewards, accruedRewards / 1000, "amount");
     }
 
     function testClaimRewardsWhenSupplyingCollateral() public {
         user.approve(dai, 100 ether);
         user.supplyCollateral(dai, 100 ether);
         _forward(10);
+        uint256 accruedRewards = rewardsController.getUserRewards(assets, address(morpho), wNative);
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
-        for (uint256 i; i < rewardTokens.length; i++) {
-            console2.log(rewardTokens[i]);
-            console2.log(amounts[i]);
-        }
+        assertEq(rewardTokens.length, 1);
+        assertEq(amounts.length, 1);
+        assertEq(rewardTokens[0], wNative);
+        assertApproxLeAbs(amounts[0], accruedRewards, accruedRewards / 1000, "amount");
     }
 }
