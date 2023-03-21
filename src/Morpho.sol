@@ -62,7 +62,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param underlying The address of the underlying asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the supply position.
-    /// @param maxIterations The maximum number of iterations allowed during the matching process.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process. Using 4 was shown to be efficient in Morpho Labs' simulations.
     /// @return The amount supplied (in underlying).
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
         external
@@ -131,7 +131,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to borrow.
     /// @param onBehalf The address that will receive the debt position.
     /// @param receiver The address that will receive the borrowed funds.
-    /// @param maxIterations The maximum number of iterations allowed during the matching process.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process. Using 4 was shown to be efficient in Morpho Labs' simulations.
     /// @return The amount borrowed (in underlying).
     function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
