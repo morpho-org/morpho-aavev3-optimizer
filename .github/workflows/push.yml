@@ -10,7 +10,7 @@ jobs:
   forge-ethereum-mainnet:
     name: Forge
 
-    uses: ./.github/workflows/forge.yml
+    uses: ./.github/workflows/forge-test.yml
     with:
       network: ethereum-mainnet
       internal-fuzz-runs: 64

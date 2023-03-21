@@ -16,7 +16,7 @@ jobs:
 
     name: Forge
 
-    uses: ./.github/workflows/forge.yml
+    uses: ./.github/workflows/forge-test.yml
     with:
       network: ethereum-mainnet
     secrets: inherit
