@@ -25,10 +25,10 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
         onBehalf = _boundReceiver(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
             amount = _boundSupply(market, amount);
 
@@ -87,10 +87,10 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     {
         onBehalf = _boundReceiver(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
             amount = _boundSupply(market, amount);
 
@@ -110,10 +110,10 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
         _forward(blocks);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
             amount = _boundSupply(market, amount);
 
@@ -133,18 +133,18 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     function testShouldRevertSupplyCollateralZero(address onBehalf) public {
         onBehalf = _boundReceiver(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user.supplyCollateral(testMarkets[underlyings[marketIndex]].underlying, 0, onBehalf);
+            user.supplyCollateral(testMarkets[allUnderlyings[marketIndex]].underlying, 0, onBehalf);
         }
     }
 
     function testShouldRevertSupplyCollateralOnBehalfZero(uint256 amount) public {
         amount = _boundNotZero(amount);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user.supplyCollateral(testMarkets[underlyings[marketIndex]].underlying, amount, address(0));
+            user.supplyCollateral(testMarkets[allUnderlyings[marketIndex]].underlying, amount, address(0));
         }
     }
 
@@ -164,10 +164,10 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
             morpho.setIsSupplyCollateralPaused(market.underlying, true);
 
@@ -181,10 +181,10 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
         morpho.setIsPausedForAllMarkets(true);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
             amount = _boundSupply(market, amount);
 

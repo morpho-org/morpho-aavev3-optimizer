@@ -72,6 +72,10 @@ abstract contract MorphoInternal is MorphoStorage {
         DataTypes.ReserveData memory reserve = _pool.getReserveData(underlying);
         if (!reserve.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
         if (reserve.configuration.getSiloedBorrowing()) revert Errors.SiloedBorrowMarket();
+
+        // `liquidationThreshold < Constants.LT_LOWER_BOUND` checks that the asset's LT is not too low to be listed as a collateral on Morpho.
+        // If the LT is 0, the check is skipped to be able to create markets for non-collateral assets.
+        // The check still works for e-mode assets since if the "standard" LT is 0, then the e-mode LT is also 0.
         uint256 liquidationThreshold = reserve.configuration.getLiquidationThreshold();
         if (liquidationThreshold > 0 && liquidationThreshold < Constants.LT_LOWER_BOUND) {
             revert Errors.MarketLtTooLow();
@@ -347,6 +351,17 @@ abstract contract MorphoInternal is MorphoStorage {
         }
     }
 
+    /// @dev Prompts the rewards manager (if set) to accrue a user's rewards.
+    /// @param user The address of the user to accrue rewards for.
+    /// @param poolToken The address of the pool token related to this market (aToken or variable debt token address).
+    /// @param formerOnPool The former scaled balance on pool of the `user`.
+    function _updateRewards(address user, address poolToken, uint256 formerOnPool) internal {
+        IRewardsManager rewardsManager = _rewardsManager;
+        if (address(rewardsManager) != address(0)) {
+            rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
+        }
+    }
+
     /// @dev Updates a `user`'s position in the data structure.
     /// @param poolToken The address of the pool token related to this market (aToken or variable debt token address).
     /// @param user The address of the user to update.
@@ -372,11 +387,7 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 formerInP2P = p2pBuckets.valueOf[user];
 
         if (onPool != formerOnPool) {
-            IRewardsManager rewardsManager = _rewardsManager;
-            if (address(rewardsManager) != address(0)) {
-                rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
-            }
-
+            _updateRewards(user, poolToken, formerOnPool);
             poolBuckets.update(user, onPool, demoting);
         }
 

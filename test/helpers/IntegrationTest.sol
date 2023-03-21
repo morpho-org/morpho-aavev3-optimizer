@@ -49,7 +49,6 @@ contract IntegrationTest is ForkTest {
     mapping(address => TestMarket) internal testMarkets;
 
     uint8 internal eModeCategoryId = uint8(vm.envOr("E_MODE_CATEGORY_ID", uint256(0)));
-    address[] internal underlyings;
     address[] internal collateralUnderlyings;
     address[] internal borrowableUnderlyings;
 
@@ -160,7 +159,6 @@ contract IntegrationTest is ForkTest {
     function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         (TestMarket storage market,) = _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
-        underlyings.push(underlying);
         if (market.ltv > 0) collateralUnderlyings.push(underlying);
         if (market.isBorrowable) borrowableUnderlyings.push(underlying);
 
@@ -288,6 +286,11 @@ contract IntegrationTest is ForkTest {
         return bound(
             amount, market.minAmount, Math.min(market.maxAmount, Math.min(market.liquidity(), market.borrowGap()))
         );
+    }
+
+    /// @dev Bounds the fuzzing input to an arbitrary reasonable amount of iterations.
+    function _boundMaxIterations(uint256 maxIterations) internal view returns (uint256) {
+        return bound(maxIterations, 0, 32);
     }
 
     /// @dev Borrows from `user` on behalf of `onBehalf`, with collateral.
