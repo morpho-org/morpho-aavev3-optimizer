@@ -346,6 +346,17 @@ abstract contract MorphoInternal is MorphoStorage {
         }
     }
 
+    /// @dev Prompts the rewards manager (if set) to accrue a user's rewards.
+    /// @param user The address of the user to accrue rewards for.
+    /// @param poolToken The address of the pool token related to this market (aToken or variable debt token address).
+    /// @param formerOnPool The former scaled balance on pool of the `user`.
+    function _updateRewards(address user, address poolToken, uint256 formerOnPool) internal {
+        IRewardsManager rewardsManager = _rewardsManager;
+        if (address(rewardsManager) != address(0)) {
+            rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
+        }
+    }
+
     /// @dev Updates a `user`'s position in the data structure.
     /// @param poolToken The address of the pool token related to this market (aToken or variable debt token address).
     /// @param user The address of the user to update.
@@ -371,11 +382,7 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 formerInP2P = p2pBuckets.valueOf[user];
 
         if (onPool != formerOnPool) {
-            IRewardsManager rewardsManager = _rewardsManager;
-            if (address(rewardsManager) != address(0)) {
-                rewardsManager.updateUserRewards(user, poolToken, formerOnPool);
-            }
-
+            _updateRewards(user, poolToken, formerOnPool);
             poolBuckets.update(user, onPool, demoting);
         }
 
