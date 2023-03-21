@@ -423,7 +423,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         IRewardsManager rewardsManager = _rewardsManager;
         if (address(rewardsManager) != address(0)) {
-            rewardsManager.updateUserRewards(onBehalf, _market[onBehalf].aToken, collateralBalance);
+            rewardsManager.updateUserRewards(onBehalf, _market[underlying].aToken, collateralBalance);
         }
 
         collateralBalance += amount.rayDivDown(poolSupplyIndex);
@@ -443,7 +443,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         IRewardsManager rewardsManager = _rewardsManager;
         if (address(rewardsManager) != address(0)) {
-            rewardsManager.updateUserRewards(onBehalf, _market[onBehalf].aToken, collateralBalance);
+            rewardsManager.updateUserRewards(onBehalf, _market[underlying].aToken, collateralBalance);
         }
 
         collateralBalance = collateralBalance.zeroFloorSub(amount.rayDivUp(poolSupplyIndex));
