@@ -228,8 +228,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             (amount, promoted,) = _promoteRoutine(underlying, amount, maxIterations, _promoteBorrowers);
             vars.toRepay += promoted;
 
+            vars.inP2P += vars.toRepay.rayDiv(indexes.supply.p2pIndex);
+
             // Update the peer-to-peer totals.
-            vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toRepay, indexes, true);
+            market.deltas.supply.scaledP2PTotal += vars.toRepay.rayDiv(indexes.supply.p2pIndex);
+            market.deltas.borrow.scaledP2PTotal += promoted.rayDiv(indexes.borrow.p2pIndex);
+            emit Events.P2PTotalsUpdated(
+                underlying, market.deltas.supply.scaledP2PTotal, market.deltas.borrow.scaledP2PTotal
+            );
         }
 
         /* Pool supply */
@@ -270,8 +276,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             (amount, promoted,) = _promoteRoutine(underlying, amount, maxIterations, _promoteSuppliers);
             vars.toWithdraw += promoted;
 
+            vars.inP2P += (vars.toWithdraw + matchedIdle).rayDiv(indexes.borrow.p2pIndex);
+
             // Update the peer-to-peer totals.
-            vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toWithdraw + matchedIdle, indexes, false);
+            market.deltas.supply.scaledP2PTotal += promoted.rayDiv(indexes.supply.p2pIndex);
+            market.deltas.borrow.scaledP2PTotal += (vars.toWithdraw + matchedIdle).rayDiv(indexes.borrow.p2pIndex);
+            emit Events.P2PTotalsUpdated(
+                underlying, market.deltas.supply.scaledP2PTotal, market.deltas.borrow.scaledP2PTotal
+            );
         }
 
         /* Pool borrow */
@@ -346,7 +358,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         market.deltas.supply.increaseDelta(underlying, vars.toSupply - demoted, indexes.supply, false);
 
         // Update the peer-to-peer totals.
-        market.deltas.decreaseP2P(underlying, demoted, vars.toSupply + idleSupplyIncrease, indexes, false);
+        market.deltas.supply.scaledP2PTotal =
+            market.deltas.supply.scaledP2PTotal.zeroFloorSub(demoted.rayDiv(indexes.supply.p2pIndex));
+        market.deltas.borrow.scaledP2PTotal =
+            market.deltas.borrow.scaledP2PTotal.zeroFloorSub(amount.rayDiv(indexes.borrow.p2pIndex));
+        emit Events.P2PTotalsUpdated(
+            underlying, market.deltas.supply.scaledP2PTotal, market.deltas.borrow.scaledP2PTotal
+        );
     }
 
     /// @dev Performs the accounting of a withdraw action.
@@ -376,6 +394,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         // Returning early requires having updated the supplier in the data structure, which in turn requires having updated `inP2P`.
         if (amount == 0) return vars;
 
+        uint256 p2pTotalSupplyDecrease = amount;
+
         // Decrease the peer-to-peer idle supply.
         uint256 matchedIdle;
         (amount, matchedIdle) = market.decreaseIdle(underlying, amount);
@@ -385,7 +405,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         (amount, toWithdrawStep) =
             market.deltas.supply.decreaseDelta(underlying, amount, indexes.supply.poolIndex, false);
         vars.toWithdraw += toWithdrawStep;
-        uint256 p2pTotalSupplyDecrease = toWithdrawStep + matchedIdle;
 
         /* Transfer withdraw */
 
@@ -407,7 +426,13 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         market.deltas.borrow.increaseDelta(underlying, vars.toBorrow - demoted, indexes.borrow, true);
 
         // Update the peer-to-peer totals.
-        market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow + p2pTotalSupplyDecrease, indexes, true);
+        market.deltas.supply.scaledP2PTotal =
+            market.deltas.supply.scaledP2PTotal.zeroFloorSub(p2pTotalSupplyDecrease.rayDiv(indexes.supply.p2pIndex));
+        market.deltas.borrow.scaledP2PTotal =
+            market.deltas.borrow.scaledP2PTotal.zeroFloorSub(demoted.rayDiv(indexes.borrow.p2pIndex));
+        emit Events.P2PTotalsUpdated(
+            underlying, market.deltas.supply.scaledP2PTotal, market.deltas.borrow.scaledP2PTotal
+        );
     }
 
     /// @dev Performs the accounting of a supply action.
