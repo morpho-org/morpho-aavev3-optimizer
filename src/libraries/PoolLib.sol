@@ -18,6 +18,8 @@ library PoolLib {
     using WadRayMath for uint256;
 
     /// @notice Supplies `amount` of `underlying` to `pool`.
+    /// @dev The pool supply `index` must be passed as a parameter to skip the supply on pool
+    ///      if it were to revert due to the amount being too small.
     function supplyToPool(IPool pool, address underlying, uint256 amount, uint256 index) internal {
         if (amount.rayDiv(index) == 0) return;
 
