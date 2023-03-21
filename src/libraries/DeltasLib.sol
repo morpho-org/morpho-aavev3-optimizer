@@ -22,7 +22,7 @@ library DeltasLib {
     /// @param amount The amount to increase the opposite side peer-to-peer total (in underlying).
     /// @param indexes The current indexes.
     /// @return p2pBalanceIncrease The balance amount in peer-to-peer to increase.
-    function increaseP2PSuppliers(
+    function increaseP2PTotalSupply(
         Types.Deltas storage deltas,
         address underlying,
         uint256 promoted,
@@ -43,7 +43,7 @@ library DeltasLib {
     /// @param amount The amount to increase the opposite side peer-to-peer total (in underlying).
     /// @param indexes The current indexes.
     /// @return p2pBalanceIncrease The balance amount in peer-to-peer to increase.
-    function increaseP2PBorrowers(
+    function increaseP2PTotalBorrow(
         Types.Deltas storage deltas,
         address underlying,
         uint256 promoted,
@@ -63,7 +63,7 @@ library DeltasLib {
     /// @param demoted The amount to decrease the demoted side peer-to-peer total (in underlying). Must be lower than or equal to amount.
     /// @param amount The amount to decrease the opposite side peer-to-peer total (in underlying).
     /// @param indexes The current indexes.
-    function decreaseP2PSuppliers(
+    function decreaseP2PTotalSupply(
         Types.Deltas storage deltas,
         address underlying,
         uint256 demoted,
@@ -84,7 +84,7 @@ library DeltasLib {
     /// @param demoted The amount to decrease the demoted side peer-to-peer total (in underlying). Must be lower than or equal to amount.
     /// @param amount The amount to decrease the opposite side peer-to-peer total (in underlying).
     /// @param indexes The current indexes.
-    function decreaseP2PBorrowers(
+    function decreaseP2PTotalBorrow(
         Types.Deltas storage deltas,
         address underlying,
         uint256 demoted,
