@@ -638,10 +638,10 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
     }
 
     function testShouldSetBorrowPaused() public {
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
             morpho.setIsBorrowPaused(market.underlying, true);
 
@@ -650,10 +650,10 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
     }
 
     function testShouldNotSetBorrowNotPausedWhenDeprecated() public {
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
             morpho.setIsBorrowPaused(market.underlying, true);
             morpho.setIsDeprecated(market.underlying, true);
@@ -664,10 +664,10 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
     }
 
     function testShouldSetDeprecatedWhenBorrowPaused(bool isDeprecated) public {
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
             morpho.setIsBorrowPaused(market.underlying, true);
 
@@ -678,10 +678,10 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
     }
 
     function testShouldNotSetDeprecatedWhenBorrowNotPaused(bool isDeprecated) public {
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
             morpho.setIsBorrowPaused(market.underlying, false);
 

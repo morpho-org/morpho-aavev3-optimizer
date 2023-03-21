@@ -14,6 +14,9 @@ contracts:
 	FOUNDRY_TEST=/dev/null FOUNDRY_SCRIPT=/dev/null forge build --via-ir --extra-output-files irOptimized --sizes --force
 
 
+test-invariant:
+	@FOUNDRY_MATCH_CONTRACT=TestInvariant make test
+
 test-integration:
 	@FOUNDRY_MATCH_CONTRACT=TestIntegration make test
 
@@ -27,6 +30,9 @@ test:
 	forge test -vvv
 
 
+test-invariant-%:
+	@FOUNDRY_MATCH_TEST=$* make test-invariant
+
 test-integration-%:
 	@FOUNDRY_MATCH_TEST=$* make test-integration
 
@@ -39,6 +45,9 @@ test-unit-%:
 test-%:
 	@FOUNDRY_MATCH_TEST=$* make test
 
+
+test-invariant/%:
+	@FOUNDRY_MATCH_CONTRACT=TestInvariant$* make test
 
 test-integration/%:
 	@FOUNDRY_MATCH_CONTRACT=TestIntegration$* make test

@@ -22,7 +22,7 @@ library DeltasLib {
     /// @param amount The amount to increase the opposite side peer-to-peer total (in underlying).
     /// @param indexes The current indexes.
     /// @param borrowSide True if this follows borrower promotions. False for supplier promotions.
-    /// @return p2pBalanceIncrease The balance amount in peer-to-peer to increase.
+    /// @return p2pBalanceIncrease The scaled balance amount in peer-to-peer to increase.
     function increaseP2P(
         Types.Deltas storage deltas,
         address underlying,
@@ -75,9 +75,9 @@ library DeltasLib {
 
     /// @notice Calculates & deducts the reserve fee to repay from the given amount, updating the total peer-to-peer amount.
     /// @dev Should only be called if amount or borrow delta is zero.
-    /// @param amount The amount to repay/withdraw.
+    /// @param amount The amount to repay/withdraw (in underlying).
     /// @param indexes The current indexes.
-    /// @return The new amount left to process.
+    /// @return The new amount left to process (in underlying).
     function repayFee(Types.Deltas storage deltas, uint256 amount, Types.Indexes256 memory indexes)
         internal
         returns (uint256)

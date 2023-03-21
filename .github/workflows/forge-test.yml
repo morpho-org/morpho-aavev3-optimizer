@@ -1,4 +1,4 @@
-name: Forge
+name: Forge tests
 
 on:
   workflow_call:
@@ -21,6 +21,16 @@ on:
         description: The number of fuzz rounds to perform for each fuzzing unit test.
         required: false
         default: 32
+        type: number
+      invariant-runs:
+        description: The number of runs to perform for invariant tests.
+        required: false
+        default: 4
+        type: number
+      invariant-depth:
+        description: The depth of invariant tests.
+        required: false
+        default: 128
         type: number
       coverageThreshold:
         description: The coverage threshold below which to fail the action.
@@ -156,11 +166,35 @@ jobs:
           match: src/Morpho.sol
           report: ${{ inputs.network }}.gasreport.ansi
 
+  test-invariant:
+    needs: build-no-ir
+
+    name: Invariant tests (${{ inputs.network }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
+
+      - uses: ./.github/actions/install
+
+      - name: Run invariant tests
+        run: make test-invariant
+        env:
+          NETWORK: ${{ inputs.network }}
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
+          FOUNDRY_INVARIANT_RUNS: ${{ inputs.invariant-runs }}
+          FOUNDRY_INVARIANT_DEPTH: ${{ inputs.invariant-depth }}
+          FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
+
   coverage:
     needs:
       - test-unit
       - test-internal
       - test-integration
+      - test-invariant
     if: inputs.coverageThreshold != ''
 
     name: Coverage (${{ inputs.network }})

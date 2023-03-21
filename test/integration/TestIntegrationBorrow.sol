@@ -480,9 +480,9 @@ contract TestIntegrationBorrow is IntegrationTest {
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user.borrow(testMarkets[underlyings[marketIndex]].underlying, 0, onBehalf, receiver);
+            user.borrow(testMarkets[allUnderlyings[marketIndex]].underlying, 0, onBehalf, receiver);
         }
     }
 
@@ -490,9 +490,9 @@ contract TestIntegrationBorrow is IntegrationTest {
         amount = _boundNotZero(amount);
         receiver = _boundReceiver(receiver);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user.borrow(testMarkets[underlyings[marketIndex]].underlying, amount, address(0), receiver);
+            user.borrow(testMarkets[allUnderlyings[marketIndex]].underlying, amount, address(0), receiver);
         }
     }
 
@@ -502,9 +502,9 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user.borrow(testMarkets[underlyings[marketIndex]].underlying, amount, onBehalf, address(0));
+            user.borrow(testMarkets[allUnderlyings[marketIndex]].underlying, amount, onBehalf, address(0));
         }
     }
 
@@ -550,10 +550,10 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
             poolAdmin.setReserveStableRateBorrowing(market.underlying, false);
             poolAdmin.setReserveBorrowing(market.underlying, false);
@@ -570,10 +570,10 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
             morpho.setIsBorrowPaused(market.underlying, true);
 
@@ -588,9 +588,9 @@ contract TestIntegrationBorrow is IntegrationTest {
         vm.assume(onBehalf != address(user));
         receiver = _boundReceiver(receiver);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.PermissionDenied.selector);
-            user.borrow(testMarkets[underlyings[marketIndex]].underlying, amount, onBehalf, receiver);
+            user.borrow(testMarkets[allUnderlyings[marketIndex]].underlying, amount, onBehalf, receiver);
         }
     }
 

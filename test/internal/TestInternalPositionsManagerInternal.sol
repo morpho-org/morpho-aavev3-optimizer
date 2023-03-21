@@ -102,7 +102,13 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.validateSupplyCollateral(dai, 1, address(1));
     }
 
-    function testValidateSupplyCollateral() public view {
+    function testValidateSupplyCollateralShouldRevertIfNotCollateral() public {
+        vm.expectRevert(abi.encodeWithSelector(Errors.AssetNotCollateralOnMorpho.selector));
+        this.validateSupplyCollateral(dai, 1, address(1));
+    }
+
+    function testValidateSupplyCollateral() public {
+        _market[dai].isCollateral = true;
         this.validateSupplyCollateral(dai, 1, address(1));
     }
 
@@ -212,6 +218,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfDeprecatedBorrow() public {
+        _market[dai].isCollateral = true;
         _userCollaterals[address(this)].add(dai);
         _userBorrows[address(this)].add(dai);
         _market[dai].pauseStatuses.isDeprecated = true;
@@ -242,6 +249,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldRevertIfSentinelDisallows(address borrower, uint256 healthFactor) public {
+        _market[dai].isCollateral = true;
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(
             healthFactor,
@@ -258,6 +266,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldRevertIfBorrowerHealthy(address borrower, uint256 healthFactor) public {
+        _market[dai].isCollateral = true;
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentAdd(1), type(uint128).max);
 
@@ -270,6 +279,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfBelowMinThreshold(address borrower, uint256 healthFactor)
         public
     {
+        _market[dai].isCollateral = true;
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(healthFactor, 0, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(1));
 
@@ -283,6 +293,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         address borrower,
         uint256 healthFactor
     ) public {
+        _market[dai].isCollateral = true;
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(
             healthFactor,
