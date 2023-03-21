@@ -4,8 +4,6 @@ pragma solidity ^0.8.17;
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 import {IPriceOracleSentinel} from "@aave-v3-core/interfaces/IPriceOracleSentinel.sol";
 
-import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
-
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
@@ -421,12 +419,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         collateralBalance = marketBalances.collateral[onBehalf];
 
-        IRewardsManager rewardsManager = _rewardsManager;
-        if (address(rewardsManager) != address(0)) {
-            rewardsManager.updateUserRewards(onBehalf, _market[underlying].aToken, collateralBalance);
-        }
+        _updateRewards(onBehalf, _market[underlying].aToken, collateralBalance);
 
         collateralBalance += amount.rayDivDown(poolSupplyIndex);
+
         marketBalances.collateral[onBehalf] = collateralBalance;
 
         _userCollaterals[onBehalf].add(underlying);
@@ -441,10 +437,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         collateralBalance = marketBalances.collateral[onBehalf];
 
-        IRewardsManager rewardsManager = _rewardsManager;
-        if (address(rewardsManager) != address(0)) {
-            rewardsManager.updateUserRewards(onBehalf, _market[underlying].aToken, collateralBalance);
-        }
+        _updateRewards(onBehalf, _market[underlying].aToken, collateralBalance);
 
         collateralBalance = collateralBalance.zeroFloorSub(amount.rayDivUp(poolSupplyIndex));
 

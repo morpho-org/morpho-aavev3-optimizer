@@ -386,10 +386,10 @@ contract TestIntegrationRepay is IntegrationTest {
         amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
             vm.expectRevert(Errors.DebtIsZero.selector);
             user.repay(market.underlying, amount, onBehalf);
@@ -430,18 +430,18 @@ contract TestIntegrationRepay is IntegrationTest {
     function testShouldRevertRepayZero(address onBehalf) public {
         onBehalf = _boundReceiver(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user.repay(testMarkets[underlyings[marketIndex]].underlying, 0, onBehalf);
+            user.repay(testMarkets[allUnderlyings[marketIndex]].underlying, 0, onBehalf);
         }
     }
 
     function testShouldRevertRepayOnBehalfZero(uint256 amount) public {
         amount = _boundNotZero(amount);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user.repay(testMarkets[underlyings[marketIndex]].underlying, amount, address(0));
+            user.repay(testMarkets[allUnderlyings[marketIndex]].underlying, amount, address(0));
         }
     }
 
@@ -459,10 +459,10 @@ contract TestIntegrationRepay is IntegrationTest {
         amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket memory market = testMarkets[underlyings[marketIndex]];
+            TestMarket memory market = testMarkets[allUnderlyings[marketIndex]];
 
             morpho.setIsRepayPaused(market.underlying, true);
 
