@@ -229,7 +229,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             vars.toRepay += promoted;
 
             // Update the peer-to-peer totals.
-            vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toRepay, indexes, true);
+            vars.inP2P += market.deltas.increaseP2PBorrowers(underlying, promoted, vars.toRepay, indexes);
         }
 
         /* Pool supply */
@@ -271,7 +271,8 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             vars.toWithdraw += promoted;
 
             // Update the peer-to-peer totals.
-            vars.inP2P += market.deltas.increaseP2P(underlying, promoted, vars.toWithdraw + matchedIdle, indexes, false);
+            vars.inP2P +=
+                market.deltas.increaseP2PSuppliers(underlying, promoted, vars.toWithdraw + matchedIdle, indexes);
         }
 
         /* Pool borrow */
@@ -346,7 +347,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         market.deltas.supply.increaseDelta(underlying, vars.toSupply - demoted, indexes.supply, false);
 
         // Update the peer-to-peer totals.
-        market.deltas.decreaseP2P(underlying, demoted, vars.toSupply + idleSupplyIncrease, indexes, false);
+        market.deltas.decreaseP2PSuppliers(underlying, demoted, vars.toSupply + idleSupplyIncrease, indexes);
     }
 
     /// @dev Performs the accounting of a withdraw action.
@@ -407,7 +408,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         market.deltas.borrow.increaseDelta(underlying, vars.toBorrow - demoted, indexes.borrow, true);
 
         // Update the peer-to-peer totals.
-        market.deltas.decreaseP2P(underlying, demoted, vars.toBorrow + p2pTotalSupplyDecrease, indexes, true);
+        market.deltas.decreaseP2PBorrowers(underlying, demoted, vars.toBorrow + p2pTotalSupplyDecrease, indexes);
     }
 
     /// @dev Performs the accounting of a supply action.
