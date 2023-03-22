@@ -35,7 +35,7 @@ contract TestIntegrationPoolLibSupply is TestIntegrationPoolLib {
         uint256 balanceBefore = ERC20(dai).balanceOf(address(this));
         uint256 aBalanceBefore = ERC20(aDai).balanceOf(address(this));
 
-        pool.supplyToPool(dai, amount);
+        pool.supplyToPool(dai, amount, pool.getReserveNormalizedIncome(dai));
 
         assertEq(ERC20(dai).balanceOf(address(this)) + amount, balanceBefore, "balance");
         assertApproxEqAbs(ERC20(aDai).balanceOf(address(this)), aBalanceBefore + amount, 1, "aBalance");
@@ -47,7 +47,7 @@ contract TestIntegrationPoolLibBorrow is TestIntegrationPoolLib {
 
     function setUp() public virtual override {
         super.setUp();
-        pool.supplyToPool(dai, MAX_AMOUNT);
+        pool.supplyToPool(dai, MAX_AMOUNT, pool.getReserveNormalizedIncome(dai));
     }
 
     function testBorrowFromPool(uint256 amount) public {
@@ -68,7 +68,7 @@ contract TestIntegrationPoolLibRepay is TestIntegrationPoolLib {
 
     function setUp() public virtual override {
         super.setUp();
-        pool.supplyToPool(dai, MAX_AMOUNT);
+        pool.supplyToPool(dai, MAX_AMOUNT, pool.getReserveNormalizedIncome(dai));
         pool.borrowFromPool(dai, MAX_AMOUNT / 2);
 
         _forward(1);
@@ -92,7 +92,7 @@ contract TestIntegrationPoolLibWithdraw is TestIntegrationPoolLib {
 
     function setUp() public virtual override {
         super.setUp();
-        pool.supplyToPool(dai, MAX_AMOUNT);
+        pool.supplyToPool(dai, MAX_AMOUNT, pool.getReserveNormalizedIncome(dai));
     }
 
     function testWithdrawFromPool(uint256 amount) public {

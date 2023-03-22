@@ -8,15 +8,20 @@ import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.so
 import {Constants} from "./Constants.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
+import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 
 /// @title PoolLib
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
 /// @notice Library used to ease pool interactions.
 library PoolLib {
+    using WadRayMath for uint256;
+
     /// @notice Supplies `amount` of `underlying` to `pool`.
-    function supplyToPool(IPool pool, address underlying, uint256 amount) internal {
-        if (amount == 0) return;
+    /// @dev The pool supply `index` must be passed as a parameter to skip the supply on pool
+    ///      if it were to revert due to the amount being too small.
+    function supplyToPool(IPool pool, address underlying, uint256 amount, uint256 index) internal {
+        if (amount.rayDiv(index) == 0) return;
 
         pool.supply(underlying, amount, address(this), Constants.NO_REFERRAL_CODE);
     }
