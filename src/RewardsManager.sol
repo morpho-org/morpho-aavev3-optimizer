@@ -171,8 +171,9 @@ contract RewardsManager is IRewardsManager, Initializable {
         view
         returns (uint256 index, uint256 lastUpdateTimestamp)
     {
-        index = uint256(_localAssetData[asset][reward].index);
-        lastUpdateTimestamp = uint256(_localAssetData[asset][reward].lastUpdateTimestamp);
+        RewardData storage localAssetData = _localAssetData[asset][reward];
+        index = uint256(localAssetData.index);
+        lastUpdateTimestamp = uint256(localAssetData.lastUpdateTimestamp);
     }
 
     /// @notice Returns the user's index and accrued rewards for a specific asset and rewards pair.
@@ -186,8 +187,9 @@ contract RewardsManager is IRewardsManager, Initializable {
         view
         returns (uint256 index, uint256 accrued)
     {
-        index = uint256(_localAssetData[asset][reward].usersData[user].index);
-        accrued = uint256(_localAssetData[asset][reward].usersData[user].accrued);
+        UserData storage userData = _localAssetData[asset][reward].usersData[user];
+        index = uint256(userData.index);
+        accrued = uint256(userData.accrued);
     }
 
     /// @notice Returns user's accrued rewards for the specified assets and reward token
