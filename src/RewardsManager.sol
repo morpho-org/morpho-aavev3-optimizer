@@ -161,6 +161,35 @@ contract RewardsManager is IRewardsManager, Initializable {
         return address(_REWARDS_CONTROLLER);
     }
 
+    /// @notice Returns the last updated index and timestamp for a specific asset and reward token.
+    /// @param asset The address of the asset.
+    /// @param reward The address of the reward token.
+    /// @return index The last updated index.
+    /// @return lastUpdateTimestamp The last updated timestamp.
+    function getRewardData(address asset, address reward)
+        external
+        view
+        returns (uint256 index, uint256 lastUpdateTimestamp)
+    {
+        index = uint256(_localAssetData[asset][reward].index);
+        lastUpdateTimestamp = uint256(_localAssetData[asset][reward].lastUpdateTimestamp);
+    }
+
+    /// @notice Returns the user's index and accrued rewards for a specific asset and rewards pair.
+    /// @param asset The address of the asset.
+    /// @param reward The address of the reward token.
+    /// @param user The address of the user.
+    /// @return index The user's index.
+    /// @return accrued The user's accrued rewards.
+    function getUserData(address asset, address reward, address user)
+        external
+        view
+        returns (uint256 index, uint256 accrued)
+    {
+        index = uint256(_localAssetData[asset][reward].usersData[user].index);
+        accrued = uint256(_localAssetData[asset][reward].usersData[user].accrued);
+    }
+
     /// @notice Returns user's accrued rewards for the specified assets and reward token
     /// @param assets The list of assets to retrieve accrued rewards.
     /// @param user The address of the user.

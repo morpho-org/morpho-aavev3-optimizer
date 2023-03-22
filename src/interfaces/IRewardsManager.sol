@@ -6,6 +6,15 @@ interface IRewardsManager {
     function MORPHO() external view returns (address);
     function REWARDS_CONTROLLER() external view returns (address);
 
+    function getRewardData(address asset, address reward)
+        external
+        view
+        returns (uint256 index, uint256 lastUpdateTimestamp);
+    function getUserData(address asset, address reward, address user)
+        external
+        view
+        returns (uint256 index, uint256 accrued);
+
     function getAllUserRewards(address[] calldata assets, address user)
         external
         view
