@@ -43,10 +43,10 @@ contract TestInternalMorphoInternal is InternalTest {
         ERC20(usdc).approve(address(_pool), type(uint256).max);
         ERC20(wNative).approve(address(_pool), type(uint256).max);
 
-        _pool.supplyToPool(dai, 100 ether);
-        _pool.supplyToPool(wbtc, 1e8);
-        _pool.supplyToPool(usdc, 1e8);
-        _pool.supplyToPool(wNative, 1 ether);
+        _pool.supplyToPool(dai, 100 ether, _pool.getReserveNormalizedIncome(dai));
+        _pool.supplyToPool(wbtc, 1e8, _pool.getReserveNormalizedIncome(wbtc));
+        _pool.supplyToPool(usdc, 1e8, _pool.getReserveNormalizedIncome(usdc));
+        _pool.supplyToPool(wNative, 1 ether, _pool.getReserveNormalizedIncome(wNative));
     }
 
     function createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
@@ -113,7 +113,7 @@ contract TestInternalMorphoInternal is InternalTest {
         borrowDelta = bound(borrowDelta, 0, p2pBorrowTotal);
         amount = bound(amount, 0, 10_000_000 ether); // $10m dollars worth
 
-        _pool.supplyToPool(dai, amount * 2);
+        _pool.supplyToPool(dai, amount * 2, _pool.getReserveNormalizedIncome(dai));
 
         address underlying = dai;
         Types.Market storage market = _market[underlying];

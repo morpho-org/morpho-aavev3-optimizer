@@ -51,10 +51,10 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         ERC20(usdc).approve(address(_pool), type(uint256).max);
         ERC20(wNative).approve(address(_pool), type(uint256).max);
 
-        _pool.supplyToPool(dai, 100 ether);
-        _pool.supplyToPool(wbtc, 1e8);
-        _pool.supplyToPool(usdc, 1e8);
-        _pool.supplyToPool(wNative, 1 ether);
+        _pool.supplyToPool(dai, 100 ether, _pool.getReserveNormalizedIncome(dai));
+        _pool.supplyToPool(wbtc, 1e8, _pool.getReserveNormalizedIncome(wbtc));
+        _pool.supplyToPool(usdc, 1e8, _pool.getReserveNormalizedIncome(usdc));
+        _pool.supplyToPool(wNative, 1 ether, _pool.getReserveNormalizedIncome(wNative));
     }
 
     function testLtvLiquidationThresholdPriceSourceEMode(AssetData memory assetData) public {
