@@ -435,14 +435,14 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @param localRewardData The local reward's data.
     /// @param asset The asset being rewarded.
     /// @param reward The address of the reward token.
-    /// @param totalSupply The current total supply of underlying assets for this distribution.
+    /// @param scaledTotalSupply The current total supply of underlying assets for this distribution.
     /// @param assetUnit The asset's unit (10**decimals).
     /// @return The former index and the new index in this order.
     function _getAssetIndex(
         RewardData storage localRewardData,
         address asset,
         address reward,
-        uint256 totalSupply,
+        uint256 scaledTotalSupply,
         uint256 assetUnit
     ) internal view returns (uint256, uint256) {
         uint256 currentTimestamp = block.timestamp;
@@ -455,14 +455,14 @@ contract RewardsManager is IRewardsManager, Initializable {
             _REWARDS_CONTROLLER.getRewardsData(asset, reward);
 
         if (
-            emissionPerSecond == 0 || totalSupply == 0 || lastUpdateTimestamp == currentTimestamp
+            emissionPerSecond == 0 || scaledTotalSupply == 0 || lastUpdateTimestamp == currentTimestamp
                 || lastUpdateTimestamp >= distributionEnd
         ) return (localRewardData.index, rewardIndex);
 
         currentTimestamp = currentTimestamp > distributionEnd ? distributionEnd : currentTimestamp;
         uint256 totalEmitted = emissionPerSecond * (currentTimestamp - lastUpdateTimestamp) * assetUnit;
         assembly {
-            totalEmitted := div(totalEmitted, totalSupply)
+            totalEmitted := div(totalEmitted, scaledTotalSupply)
         }
         return (localRewardData.index, (totalEmitted + rewardIndex));
     }
