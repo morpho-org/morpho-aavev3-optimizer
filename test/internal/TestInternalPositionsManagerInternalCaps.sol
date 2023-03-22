@@ -36,10 +36,10 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         _setBalances(address(this), type(uint256).max);
 
-        _pool.supplyToPool(dai, 100 ether);
-        _pool.supplyToPool(wbtc, 1e8);
-        _pool.supplyToPool(usdc, 1e8);
-        _pool.supplyToPool(wNative, 1 ether);
+        _pool.supplyToPool(dai, 100 ether, _pool.getReserveNormalizedIncome(dai));
+        _pool.supplyToPool(wbtc, 1e8, _pool.getReserveNormalizedIncome(wbtc));
+        _pool.supplyToPool(usdc, 1e8, _pool.getReserveNormalizedIncome(usdc));
+        _pool.supplyToPool(wNative, 1 ether, _pool.getReserveNormalizedIncome(wNative));
 
         daiTokenUnit = 10 ** _pool.getConfiguration(dai).getDecimals();
     }
