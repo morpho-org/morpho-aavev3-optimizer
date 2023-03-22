@@ -46,9 +46,14 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         _forward(10);
         uint256 accruedRewards = rewardsManager.getUserRewards(assets, address(user), wNative);
 
-        // TODO: See if we can predict the index for testing the event data.
-        vm.expectEmit(true, true, true, false);
-        emit Accrued(testMarkets[dai].aToken, wNative, address(user), 0, 0);
+        vm.expectEmit(true, true, true, true);
+        emit Accrued(
+            testMarkets[dai].aToken,
+            wNative,
+            address(user),
+            rewardsManager.getAssetIndex(testMarkets[dai].aToken, wNative),
+            accruedRewards
+        );
         vm.expectEmit(true, true, true, true);
         emit Events.RewardsClaimed(address(this), address(user), wNative, accruedRewards);
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
@@ -66,9 +71,14 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         _forward(10);
         uint256 accruedRewards = rewardsManager.getUserRewards(assets, address(user), wNative);
 
-        // TODO: See if we can predict the index for testing the event data.
-        vm.expectEmit(true, true, true, false);
-        emit Accrued(testMarkets[dai].aToken, wNative, address(user), 0, 0);
+        vm.expectEmit(true, true, true, true);
+        emit Accrued(
+            testMarkets[dai].aToken,
+            wNative,
+            address(user),
+            rewardsManager.getAssetIndex(testMarkets[dai].aToken, wNative),
+            accruedRewards
+        );
         vm.expectEmit(true, true, true, true);
         emit Events.RewardsClaimed(address(this), address(user), wNative, accruedRewards);
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
@@ -87,9 +97,14 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         _forward(10);
         uint256 accruedRewards = rewardsManager.getUserRewards(assets, address(user), wNative);
 
-        // TODO: See if we can predict the index for testing the event data.
-        vm.expectEmit(true, true, true, false);
-        emit Accrued(testMarkets[dai].variableDebtToken, wNative, address(user), 0, 0);
+        vm.expectEmit(true, true, true, true);
+        emit Accrued(
+            testMarkets[dai].variableDebtToken,
+            wNative,
+            address(user),
+            rewardsManager.getAssetIndex(testMarkets[dai].variableDebtToken, wNative),
+            accruedRewards
+        );
         vm.expectEmit(true, true, true, true);
         emit Events.RewardsClaimed(address(this), address(user), wNative, accruedRewards);
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
