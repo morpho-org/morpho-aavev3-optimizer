@@ -33,6 +33,7 @@ contract RewardsManagerMock is IRewardsManager {
     {}
 
     function getUserAssetIndex(address user, address asset, address reward) external view returns (uint256) {}
+    function getAssetIndex(address asset, address reward) external view returns (uint256 assetIndex) {}
 
     function claimRewards(address[] calldata assets, address user)
         external

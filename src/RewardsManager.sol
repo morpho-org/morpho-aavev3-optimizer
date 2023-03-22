@@ -223,13 +223,27 @@ contract RewardsManager is IRewardsManager, Initializable {
         return _localAssetData[asset][reward].usersData[user].index;
     }
 
+    /// @notice Returns the virtually updated asset index for the specified asset and reward token.
+    /// @param asset The address of the reference asset of the distribution (aToken or variable debt token).
+    /// @param reward The address of the reward token.
+    /// @return assetIndex The reward token's virtually updated asset index.
+    function getAssetIndex(address asset, address reward) external view returns (uint256 assetIndex) {
+        (, assetIndex) = _getAssetIndex(
+            _localAssetData[asset][reward],
+            asset,
+            reward,
+            IScaledBalanceToken(asset).scaledTotalSupply(),
+            10 ** _REWARDS_CONTROLLER.getAssetDecimals(asset)
+        );
+    }
+
     /* INTERNAL */
 
     /// @dev Updates the state of the distribution for the specified reward.
     /// @param localRewardData The local reward's data.
     /// @param asset The asset being rewarded.
     /// @param reward The address of the reward token.
-    /// @param totalSupply The current total supply of underlying assets for this distribution.
+    /// @param scaledTotalSupply The current scaled total supply of underlying assets for this distribution.
     /// @param assetUnit The asset's unit (10**decimals).
     /// @return newIndex The new distribution index.
     /// @return indexUpdated True if the index was updated, false otherwise.
@@ -237,11 +251,11 @@ contract RewardsManager is IRewardsManager, Initializable {
         RewardData storage localRewardData,
         address asset,
         address reward,
-        uint256 totalSupply,
+        uint256 scaledTotalSupply,
         uint256 assetUnit
     ) internal returns (uint256 newIndex, bool indexUpdated) {
         uint256 oldIndex;
-        (oldIndex, newIndex) = _getAssetIndex(localRewardData, asset, reward, totalSupply, assetUnit);
+        (oldIndex, newIndex) = _getAssetIndex(localRewardData, asset, reward, scaledTotalSupply, assetUnit);
 
         if (newIndex != oldIndex) {
             indexUpdated = true;
