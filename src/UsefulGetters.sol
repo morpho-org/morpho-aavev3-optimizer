@@ -20,7 +20,6 @@ import {Types} from "./libraries/Types.sol";
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
 /// @notice Contract managing Aave's protocol rewards.
-
 contract Snippet {
     using Math for uint256;
     using WadRayMath for uint256;
