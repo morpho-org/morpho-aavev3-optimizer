@@ -1,0 +1,636 @@
+module MorphoInternal
+use export int.MinMax
+use int.Power
+use int.ComputerDivision
+use set.Fset
+use set.FsetSum
+
+use export pool.Pool
+
+exception Unauthorized (* Thrown when trying to borrow/withdraw too much on Morpho *)
+
+type morpho_storage = {
+    mutable p2p_supply_amount: int; (* market.deltas.supply.scaledP2PTotal *)
+    p2p_supply_balance: Map.t int; (* marketBalances.scaledP2PSupplyBalances() *)
+    mutable p2p_supply_delta: int; (* market.deltas.supply.scaledDelta *)
+    ghost mutable sum_pool_supply_balance: int;
+    pool_supply_balance: Map.t int; (* marketBalances.scaledPoolSupplyBalances() *)
+
+    mutable idle_supply: int; (* market.idleSupply *)
+    ghost mutable sum_collateral_supply_balance: int;
+    collateral_supply_balance: Map.t int; (* marketBalances.scaledCollateralBalances() *)
+
+    mutable p2p_borrow_amount: int; (* market.deltas.borrow.scaledP2PTotal *)
+    p2p_borrow_balance: Map.t int; (* marketBalances.scaledP2PBorrowBalances() *)
+    mutable p2p_borrow_delta: int; (* market.deltas.borrow.scaledDelta *)
+    ghost mutable sum_pool_borrow_balance: int;
+    pool_borrow_balance: Map.t int; (* marketBalances.scaledPoolBorrowBalances() *)
+} invariant {
+    p2p_supply_amount = FsetSum.sum p2p_supply_balance.Map.domain (fun x -> get x p2p_supply_balance) &&
+    forall a. get a p2p_supply_balance >= 0 &&
+    0 <= p2p_supply_delta &&
+    sum_pool_supply_balance = FsetSum.sum pool_supply_balance.Map.domain (fun x -> get x pool_supply_balance) &&
+    forall a. get a pool_supply_balance >= 0 &&
+
+    0 <= idle_supply &&
+    sum_collateral_supply_balance = FsetSum.sum collateral_supply_balance.Map.domain (fun x -> get x collateral_supply_balance) &&
+    forall a. get a collateral_supply_balance >= 0 &&
+
+    p2p_borrow_amount = FsetSum.sum p2p_borrow_balance.Map.domain (fun x -> get x p2p_borrow_balance) &&
+    forall a. get a p2p_borrow_balance >= 0 &&
+    0 <= p2p_borrow_delta &&
+    sum_pool_borrow_balance = FsetSum.sum pool_borrow_balance.Map.domain (fun x -> get x pool_borrow_balance) &&
+    forall a. get a pool_borrow_balance >= 0
+} by {
+    p2p_supply_amount = 0;
+    p2p_supply_balance = Map.create();
+    p2p_supply_delta = 0;
+    sum_pool_supply_balance = 0;
+    pool_supply_balance = Map.create();
+
+    idle_supply = 0;
+    sum_collateral_supply_balance = 0;
+    collateral_supply_balance = Map.create();
+
+    p2p_borrow_amount = 0;
+    p2p_borrow_balance = Map.create();
+    p2p_borrow_delta = 0;
+    sum_pool_borrow_balance = 0;
+    pool_borrow_balance = Map.create();
+}
+
+(* No assumptions are made about the matching engine, it only needs to return an address. *)
+val matched_address () : address
+
+(* No assumptions are made about the gas consumption. *)
+val constant iterations () : int
+
+(* To force the invariant to be verified in the logic *)
+predicate type_invariant_hold (_: pool_storage) (_: morpho_storage) = true
+
+predicate sum_of_positive (set: fset address) =
+    forall m. (forall a. get a m >= 0) ->
+    FsetSum.sum set (fun x -> get x m) >= 0
+clone set.FsetInduction with type t=address, predicate p=sum_of_positive
+lemma sum_of_positive_holds:
+    forall set. sum_of_positive set
+
+let lemma aggregate_p2p_supply_balance (m: morpho_storage) (e: address)
+    ensures { let b = m.p2p_supply_balance in
+    get e b <= FsetSum.sum b.Map.domain (fun x -> get x b)
+    by if Map.mem e b
+       then b.Map.domain = Fset.add e (Fset.remove e b.Map.domain)
+       else sum_of_positive b.Map.domain
+    }
+= ()
+
+let lemma aggregate_pool_supply_balance (m: morpho_storage)
+    ensures { let b = m.pool_supply_balance in
+    0 <= FsetSum.sum b.Map.domain (fun x -> get x b)
+    by sum_of_positive b.Map.domain }
+= ()
+
+lemma aggregate_collateral_supply_balance:
+    forall m. let b = m.collateral_supply_balance in
+    0 <= FsetSum.sum b.Map.domain (fun x -> get x b)
+    by sum_of_positive b.Map.domain
+
+let lemma aggregate_p2p_borrow_balance (m: morpho_storage) (e: address)
+    ensures { let b = m.p2p_borrow_balance in
+    get e b <= FsetSum.sum b.Map.domain (fun x -> get x b)
+    by if Map.mem e b
+       then b.Map.domain = Fset.add e (Fset.remove e b.Map.domain)
+       else sum_of_positive b.Map.domain
+    }
+= ()
+
+lemma aggregate_pool_borrow_balance:
+    forall m. let b = m.pool_borrow_balance in
+    0 <= FsetSum.sum b.Map.domain (fun x -> get x b)
+    by sum_of_positive b.Map.domain
+
+let function supply_balance (m: morpho_storage) (user: address) : int
+= get user m.p2p_supply_balance + get user m.pool_supply_balance
+
+let function borrow_balance (m: morpho_storage) (user: address) : int
+= get user m.p2p_borrow_balance + get user m.pool_borrow_balance
+
+let update_supplier (m: morpho_storage) (user: address) (p2p_amount: int) (pool_amount: int)
+    writes { m.p2p_supply_amount, m.p2p_supply_balance, m.sum_pool_supply_balance, m.pool_supply_balance }
+    requires { p2p_amount >= 0 && pool_amount >= 0 }
+    ensures { let former_p2p = get user (old m).p2p_supply_balance in
+              m.p2p_supply_amount = (old m).p2p_supply_amount + p2p_amount - former_p2p }
+    ensures { forall a. a <> user -> get a m.p2p_supply_balance = get a (old m.p2p_supply_balance) }
+    ensures { get user m.p2p_supply_balance = p2p_amount }
+    ensures { let former_pool = get user (old m).pool_supply_balance in
+              m.sum_pool_supply_balance = (old m).sum_pool_supply_balance + pool_amount - former_pool }
+    ensures { forall a. a <> user -> get a m.pool_supply_balance = get a (old m.pool_supply_balance) }
+    ensures { get user m.pool_supply_balance = pool_amount }
+    ensures { supply_balance m user = p2p_amount + pool_amount }
+=
+    let former_p2p = get user m.p2p_supply_balance in
+    let former_pool = get user m.pool_supply_balance in
+    m.p2p_supply_amount <- m.p2p_supply_amount + p2p_amount - former_p2p;
+    Map.add user p2p_amount m.p2p_supply_balance;
+    m.sum_pool_supply_balance <- m.sum_pool_supply_balance + pool_amount - former_pool;
+    Map.add user pool_amount m.pool_supply_balance;
+    assert { forall a. a <> user -> get a m.p2p_supply_balance = get a (old m.p2p_supply_balance) };
+    assert { m.p2p_supply_amount = FsetSum.sum (Fset.add user (Fset.remove user (old m.p2p_supply_balance.Map.domain))) (fun x -> get x m.p2p_supply_balance) };
+    assert { forall a. a <> user -> get a m.pool_supply_balance = get a (old m.pool_supply_balance) };
+    assert { m.sum_pool_supply_balance = FsetSum.sum (Fset.add user (Fset.remove user (old m.pool_supply_balance.Map.domain))) (fun x -> get x m.pool_supply_balance) }
+
+let update_borrower (m: morpho_storage) (user: address) (p2p_amount: int) (pool_amount: int)
+    writes { m.p2p_borrow_amount, m.p2p_borrow_balance, m.sum_pool_borrow_balance, m.pool_borrow_balance }
+    requires { p2p_amount >= 0 && pool_amount >= 0 }
+    ensures { let former_p2p = get user (old m).p2p_borrow_balance in
+              m.p2p_borrow_amount = (old m).p2p_borrow_amount + p2p_amount - former_p2p }
+    ensures { forall a. a <> user -> get a m.p2p_borrow_balance = get a (old m.p2p_borrow_balance) }
+    ensures { get user m.p2p_borrow_balance = p2p_amount }
+    ensures { let former_pool = get user (old m).pool_borrow_balance in
+              m.sum_pool_borrow_balance = (old m).sum_pool_borrow_balance + pool_amount - former_pool }
+    ensures { forall a. a <> user -> get a m.pool_borrow_balance = get a (old m.pool_borrow_balance) }
+    ensures { get user m.pool_borrow_balance = pool_amount }
+    ensures { borrow_balance m user = p2p_amount + pool_amount }
+=
+    let former_p2p = get user m.p2p_borrow_balance in
+    let former_pool = get user m.pool_borrow_balance in
+    m.p2p_borrow_amount <- m.p2p_borrow_amount + p2p_amount - former_p2p;
+    Map.add user p2p_amount m.p2p_borrow_balance;
+    m.sum_pool_borrow_balance <- m.sum_pool_borrow_balance + pool_amount - former_pool;
+    Map.add user pool_amount m.pool_borrow_balance;
+    assert { forall a. a <> user -> get a m.p2p_borrow_balance = get a (old m.p2p_borrow_balance) };
+    assert { m.p2p_borrow_amount = FsetSum.sum (Fset.add user (Fset.remove user (old m.p2p_borrow_balance.Map.domain))) (fun x -> get x m.p2p_borrow_balance) };
+    assert { forall a. a <> user -> get a m.pool_borrow_balance = get a (old m.pool_borrow_balance) };
+    assert { m.sum_pool_borrow_balance = FsetSum.sum (Fset.add user (Fset.remove user (old m.pool_borrow_balance.Map.domain))) (fun x -> get x m.pool_borrow_balance) }
+
+let function decimals = 18
+
+let function mul (x y: int) : int = div (x * y) (power 10 decimals)
+
+let lemma div_add (x y z: int)
+    requires { x >= 0 && y >= 0 && z > 0 }
+    ensures { div (x + y) z >= div x z + div y z
+              by let qx = div x z in let rx = mod x z in
+                 let qy = div y z in let ry = mod y z in
+                 let qs = div (x + y) z in let rs = mod (x + y) z in
+                 x = qx * z + rx &&
+                 y = qy * z + ry &&
+                 x + y = qs * z + rs
+                 so (qs - qx - qy) * z = rx + ry - rs
+                 so (qs - qx - qy) * z > - z
+                 so (qs - qx - qy <= -1 -> (qs - qx - qy) * z <= -1 * z)
+    }
+= ()
+
+let lemma mul_add (x y z: int)
+    requires { x >= 0 && y >= 0 && z >= 0 }
+    ensures { mul x z + mul y z <= mul (x + y) z }
+= div_add (x * z) (y * z) (power 10 decimals)
+
+let lemma mul_right_increasing (x y z: int)
+    requires { x >= 0 && y >= 0 && z >= 0 }
+    requires { x >= y }
+    ensures { mul x z >= mul y z }
+= mul_add (x - y) y z
+
+(* The liquidation threshold, a factor smaller than 1. *)
+val function lt : int
+    ensures { 0 <= result < power 10 decimals }
+
+predicate well_formed (p: pool_storage) (m: morpho_storage) =
+    p.supply_on_pool = m.sum_pool_supply_balance + m.sum_collateral_supply_balance + m.p2p_supply_delta &&
+    p.borrow_on_pool = m.sum_pool_borrow_balance + m.p2p_borrow_delta &&
+    m.p2p_supply_delta + m.idle_supply <= m.p2p_supply_amount &&
+    m.p2p_borrow_delta <= m.p2p_borrow_amount &&
+    m.p2p_supply_amount - m.p2p_supply_delta - m.idle_supply = m.p2p_borrow_amount - m.p2p_borrow_delta &&
+    forall user. mul (get user m.collateral_supply_balance) lt >= borrow_balance m user
+end
+
+module NonLiquidation
+use MorphoInternal
+let rec lemma mul_sum (m: morpho_storage) (s: Fset.fset address)
+    variant { Fset.cardinal s }
+    ensures { FsetSum.sum s (fun a -> mul (get a m.collateral_supply_balance) lt) <= mul (FsetSum.sum s (fun a -> get a m.collateral_supply_balance)) lt }
+= if not (Fset.is_empty s) then begin
+  let e = Fset.pick s in
+  mul_sum m (Fset.remove e s);
+  assert { FsetSum.sum (Fset.remove e s) (fun a -> get a m.collateral_supply_balance) >= 0
+           by sum_of_positive (Fset.remove e s)
+  };
+  assert SumMulRemove { FsetSum.sum s (fun a -> mul (get a m.collateral_supply_balance) lt) =
+           mul (get e m.collateral_supply_balance) lt +
+           FsetSum.sum (Fset.remove e s) (fun a -> mul (get a m.collateral_supply_balance) lt) };
+  assert SumRemove { FsetSum.sum s (fun a -> get a m.collateral_supply_balance) =
+           get e m.collateral_supply_balance +
+           FsetSum.sum (Fset.remove e s) (fun a -> get a m.collateral_supply_balance) };
+  assert MulAdd { mul (get e m.collateral_supply_balance) lt + mul (FsetSum.sum (Fset.remove e s) (fun a -> get a m.collateral_supply_balance)) lt <= mul (get e m.collateral_supply_balance + FsetSum.sum (Fset.remove e s) (fun a -> get a m.collateral_supply_balance)) lt }
+  (* let remaining_sum = FsetSum.sum (Fset.remove e s) (fun a -> get a m.collateral_supply_balance) in
+  mul_add (get e m.collateral_supply_balance) remaining_sum lt *)
+  end
+
+let rec lemma sum_greater (p: pool_storage) (m: morpho_storage) (s: Fset.fset address)
+    variant { Fset.cardinal s }
+    requires { well_formed p m }
+    ensures { FsetSum.sum s (fun a -> mul (get a m.collateral_supply_balance) lt) >=
+              FsetSum.sum s (fun a -> borrow_balance m a) }
+= if not (Fset.is_empty s) then
+  let e = Fset.pick s in
+  sum_greater p m (Fset.remove e s)
+
+let rec lemma sum_add (m: morpho_storage) (s: Fset.fset address)
+    variant { Fset.cardinal s }
+    ensures { FsetSum.sum s (fun a -> borrow_balance m a) =
+              FsetSum.sum s (fun a -> get a m.pool_borrow_balance) +
+              FsetSum.sum s (fun a -> get a m.p2p_borrow_balance) }
+= if not (Fset.is_empty s) then begin
+  let e = Fset.pick s in
+  sum_add m (Fset.remove e s);
+  assert { FsetSum.sum s (fun a -> borrow_balance m a) =
+           borrow_balance m e +
+           FsetSum.sum (Fset.remove e s) (fun a -> borrow_balance m a) };
+  assert { FsetSum.sum s (fun a -> get a m.pool_borrow_balance) =
+           get e m.pool_borrow_balance+
+           FsetSum.sum (Fset.remove e s) (fun a -> get a m.pool_borrow_balance) };
+  assert { FsetSum.sum s (fun a -> get a m.p2p_borrow_balance) =
+           get e m.p2p_borrow_balance+
+           FsetSum.sum (Fset.remove e s) (fun a -> get a m.p2p_borrow_balance)
+           by FsetSum.sum s (fun a -> get a m.p2p_borrow_balance) =
+              FsetSum.sum (Fset.add e (Fset.remove e s)) (fun a -> get a m.p2p_borrow_balance)
+           }
+  end
+
+let rec lemma sum_domain (s: Fset.fset address) (m: Map.t int)
+    variant { Fset.cardinal s - Fset.cardinal m.Map.domain }
+    requires { Fset.subset m.Map.domain s }
+    ensures { FsetSum.sum s (fun x -> get x m) = FsetSum.sum m.Map.domain (fun x -> get x m) }
+= if not (Fset.cardinal s = Fset.cardinal (Map.to_fmap m).Map.domain) then begin
+  let e = Fset.pick (Fset.diff s (Map.to_fmap m).Map.domain) in
+  sum_domain (Fset.remove e s) m;
+  assert { FsetSum.sum s (fun x -> get x m) =
+           get e m + FsetSum.sum (Fset.remove e s) (fun x -> get x m) };
+  assert { get e m = 0 }
+  end
+
+let lemma sum_collateralization_users (p: pool_storage) (m: morpho_storage)
+    requires { well_formed p m }
+    ensures { mul m.sum_collateral_supply_balance lt >= m.sum_pool_borrow_balance + m.p2p_borrow_amount }
+=
+  assert { m.sum_collateral_supply_balance = FsetSum.sum m.collateral_supply_balance.Map.domain (fun x -> get x m.collateral_supply_balance) };
+  assert { m.sum_pool_borrow_balance = FsetSum.sum m.pool_borrow_balance.Map.domain (fun x -> get x m.pool_borrow_balance) };
+  assert { m.p2p_borrow_amount = FsetSum.sum m.p2p_borrow_balance.Map.domain (fun x -> get x m.p2p_borrow_balance) };
+  let s = Fset.union (Map.to_fmap m.collateral_supply_balance).Map.domain (Fset.union (Map.to_fmap m.pool_borrow_balance).Map.domain (Map.to_fmap m.p2p_borrow_balance).Map.domain) in
+  mul_sum m s;
+  sum_greater p m s;
+  sum_add m s;
+  sum_domain s m.collateral_supply_balance;
+  sum_domain s m.pool_borrow_balance;
+  sum_domain s m.p2p_borrow_balance;
+  assert SumCollateral { m.sum_collateral_supply_balance = FsetSum.sum s (fun x -> get x m.collateral_supply_balance) };
+  assert SumPoolBorrow { m.sum_pool_borrow_balance = FsetSum.sum s (fun x -> get x m.pool_borrow_balance) };
+  assert SumP2PBorrow { m.p2p_borrow_amount = FsetSum.sum s (fun x -> get x m.p2p_borrow_balance) }
+
+let lemma non_liquidation_theorem (p: pool_storage) (m: morpho_storage)
+    requires { well_formed p m }
+    ensures { mul p.supply_on_pool lt >= p.borrow_on_pool }
+= aggregate_pool_supply_balance m
+end
+
+module Supply
+use MorphoInternal
+let supply (p: pool_storage) (m: morpho_storage) (user: address) (amount: int)
+    (* Untouched: m.p2p_supply_delta, m.idle_supply, m.sum_collateral_supply_balance, m.collateral_supply_balance *)
+    writes { p.suppliable, p.supply_on_pool, p.borrow_on_pool, m.p2p_supply_amount, m.p2p_supply_balance, m.sum_pool_supply_balance, m.pool_supply_balance, m.p2p_borrow_amount, m.p2p_borrow_balance, m.p2p_borrow_delta, m.sum_pool_borrow_balance, m.pool_borrow_balance }
+    requires { amount >= 0 }
+    requires { well_formed p m }
+    ensures { well_formed p m }
+    ensures { supply_balance m user = supply_balance (old m) user + amount }
+    raises { Underflow -> false }
+    raises { SupplyCapReached }
+=
+    let former_p2p = get user m.p2p_supply_balance in
+    let former_pool = get user m.pool_supply_balance in
+    assert { supply_balance m user = former_pool + former_p2p };
+    let ref to_supply = amount in
+    let ref to_repay = 0 in
+
+    (* Match peer-to-peer borrow delta *)
+    let delta_matched = min m.p2p_borrow_delta to_supply in
+    m.p2p_borrow_delta <- m.p2p_borrow_delta - delta_matched;
+    to_supply <- to_supply - delta_matched;
+    to_repay <- to_repay + delta_matched;
+
+    (* Promote borrowers *)
+    if to_supply > 0 then
+    for i = 1 to iterations () do
+        invariant { to_supply >= 0 && to_repay >= 0 }
+        invariant { to_supply + to_repay = amount }
+        invariant { p.borrow_on_pool = m.sum_pool_borrow_balance + to_repay }
+        invariant { m.p2p_borrow_amount = (old m).p2p_borrow_amount + to_repay - delta_matched }
+        invariant { forall u. borrow_balance m u = borrow_balance (old m) u }
+        invariant { type_invariant_hold p m }
+        let next_borrower = matched_address() in
+        let next_p2p = get next_borrower m.p2p_borrow_balance in
+        let next_pool = get next_borrower m.pool_borrow_balance in
+        let next_matched = min to_supply next_pool in
+        update_borrower m next_borrower (next_p2p + next_matched) (next_pool - next_matched);
+        to_supply <- to_supply - next_matched;
+        to_repay <- to_repay + next_matched;
+    done;
+    assert { m.sum_pool_borrow_balance = FsetSum.sum m.pool_borrow_balance.Map.domain (fun x -> get x m.pool_borrow_balance) };
+
+    (* Pool interaction *)
+    supply_to_pool p to_supply;
+    repay_to_pool p to_repay;
+
+    update_supplier m user (former_p2p + to_repay) (former_pool + to_supply)
+end
+
+module SupplyCollateral
+use MorphoInternal
+let supply_collateral (p: pool_storage) (m: morpho_storage) (user: address) (amount: int)
+    (* Untouched: p.borrow_on_pool, m.p2p_supply_amount, m.p2p_supply_balance, m.sum_pool_supply_balance, m.pool_supply_balance, m.idle_supply, m.p2p_borrow_amount, m.p2p_borrow_balance, m.p2p_borrow_delta, m.p2p_supply_delta, m.sum_pool_borrow_balance, m.pool_borrow_balance *)
+    writes { p.suppliable, p.supply_on_pool, m.sum_collateral_supply_balance, m.collateral_supply_balance }
+    requires { amount >= 0 }
+    requires { well_formed p m }
+    ensures { well_formed p m }
+    ensures { get user m.collateral_supply_balance = get user (old m).collateral_supply_balance + amount }
+    raises { SupplyCapReached }
+=
+    let former_collateral = get user m.collateral_supply_balance in
+    supply_to_pool p amount;
+    m.sum_collateral_supply_balance <- m.sum_collateral_supply_balance + amount;
+    Map.add user (former_collateral + amount) m.collateral_supply_balance;
+    assert { m.collateral_supply_balance.Map.domain = Fset.add user (Fset.remove user (old m.collateral_supply_balance.Map.domain)) };
+    assert { forall a. a <> user -> get a m.collateral_supply_balance = get a (old m.collateral_supply_balance) };
+    assert { m.sum_collateral_supply_balance = FsetSum.sum m.collateral_supply_balance.Map.domain (fun x -> get x m.collateral_supply_balance) };
+    mul_right_increasing (get user m.collateral_supply_balance) former_collateral lt;
+    assert { forall user'.
+             let res = mul (get user' m.collateral_supply_balance) lt >= borrow_balance m user' in
+             res by if user' = user then res else res
+    }
+end
+
+module Borrow
+use MorphoInternal
+let borrow (p: pool_storage) (m: morpho_storage) (user: address) (amount: int)
+    (* Untouched: m.sum_collateral_supply_balance, m.collateral_supply_balance, m.p2p_borrow_delta *)
+    writes { p.suppliable, p.supply_on_pool, p.borrow_on_pool, m.p2p_supply_amount, m.p2p_supply_balance, m.p2p_supply_delta, m.sum_pool_supply_balance, m.pool_supply_balance, m.idle_supply, m.p2p_borrow_amount, m.p2p_borrow_balance, m.sum_pool_borrow_balance, m.pool_borrow_balance }
+    requires { amount >= 0 }
+    requires { well_formed p m }
+    ensures { well_formed p m }
+    ensures { borrow_balance m user = borrow_balance (old m) user + amount }
+    raises { Underflow -> false }
+    raises { Unauthorized }
+=
+    let former_p2p = get user m.p2p_borrow_balance in
+    let former_pool = get user m.pool_borrow_balance in
+    assert { borrow_balance m user = former_pool + former_p2p };
+
+    let collateral = get user m.collateral_supply_balance in
+    if mul collateral lt < borrow_balance m user + amount then raise Unauthorized;
+
+    let ref to_borrow = amount in
+    let ref to_withdraw = 0 in
+
+    (* Decrease the peer-to-peer idle supply *)
+    let matched_idle = min amount m.idle_supply in
+    to_borrow <- to_borrow - matched_idle;
+    m.idle_supply <- m.idle_supply - matched_idle;
+
+    (* Match peer-to-peer supply delta *)
+    let delta_matched = min m.p2p_supply_delta to_borrow in
+    m.p2p_supply_delta <- m.p2p_supply_delta - delta_matched;
+    to_borrow <- to_borrow - delta_matched;
+    to_withdraw <- to_withdraw + delta_matched;
+
+    (* Promote suppliers *)
+    if to_borrow > 0 then
+    for i = 1 to iterations () do
+        invariant { to_borrow >= 0 && to_withdraw >= 0 }
+        invariant { to_borrow + to_withdraw + matched_idle = amount }
+        invariant { p.supply_on_pool = m.sum_pool_supply_balance + m.sum_collateral_supply_balance + to_withdraw }
+        invariant { m.p2p_supply_amount = (old m).p2p_supply_amount + to_withdraw - delta_matched }
+        invariant { type_invariant_hold p m }
+        let next_supplier = matched_address() in
+        let next_p2p = get next_supplier m.p2p_supply_balance in
+        let next_pool = get next_supplier m.pool_supply_balance in
+        let next_matched = min to_borrow next_pool in
+        update_supplier m next_supplier (next_p2p + next_matched) (next_pool - next_matched);
+        to_borrow <- to_borrow - next_matched;
+        to_withdraw <- to_withdraw + next_matched;
+    done;
+    assert { m.sum_pool_borrow_balance = FsetSum.sum m.pool_borrow_balance.Map.domain (fun x -> get x m.pool_borrow_balance) };
+    assert { m.sum_collateral_supply_balance = FsetSum.sum m.collateral_supply_balance.Map.domain (fun x -> get x m.collateral_supply_balance) };
+
+    (* Pool interaction *)
+    borrow_from_pool p to_borrow;
+    withdraw_from_pool p to_withdraw;
+
+    update_borrower m user (former_p2p + to_withdraw + matched_idle) (former_pool + to_borrow)
+end
+
+module Withdraw
+use MorphoInternal
+let withdraw (p: pool_storage) (m: morpho_storage) (user: address) (amount: int)
+    (* Untouched: m.sum_collateral_supply_balance, m.collateral_supply_balance *)
+    writes { p.suppliable, p.supply_on_pool, p.borrow_on_pool, m.p2p_supply_amount, m.p2p_supply_balance, m.p2p_supply_delta, m.sum_pool_supply_balance, m.pool_supply_balance, m.idle_supply, m.p2p_borrow_amount, m.p2p_borrow_balance, m.p2p_borrow_delta, m.sum_pool_borrow_balance, m.pool_borrow_balance }
+    requires { amount >= 0 }
+    requires { well_formed p m }
+    ensures { well_formed p m }
+    ensures { supply_balance m user = supply_balance (old m) user - amount }
+    raises { Underflow }
+=
+    let former_p2p = get user m.p2p_supply_balance in
+    let former_pool = get user m.pool_supply_balance in
+    let former_balance = former_pool + former_p2p in
+
+    if amount > former_balance then raise Underflow;
+
+    let ref remaining = amount in
+    let ref to_withdraw = 0 in
+    let ref to_borrow = 0 in
+
+    (* Pool withdraw *)
+    let withdrawn_from_pool = min remaining former_pool in
+    remaining <- remaining - withdrawn_from_pool;
+    to_withdraw <- to_withdraw + withdrawn_from_pool;
+
+    aggregate_p2p_supply_balance m user;
+    assert { remaining <= m.p2p_supply_amount };
+
+    update_supplier m user (former_p2p - remaining) (former_pool - withdrawn_from_pool);
+
+    (* Decrease idle supply *)
+    let matched_idle = min remaining m.idle_supply in
+    remaining <- remaining - matched_idle;
+    m.idle_supply <- m.idle_supply - matched_idle;
+
+    (* Reduce peer-to-peer supply delta *)
+    let delta_matched = min remaining m.p2p_supply_delta in
+    m.p2p_supply_delta <- m.p2p_supply_delta - delta_matched;
+    remaining <- remaining - delta_matched;
+    to_withdraw <- to_withdraw + delta_matched;
+
+    assert { m.p2p_supply_amount >= m.p2p_supply_delta + m.idle_supply };
+
+    (* Promote suppliers *)
+    for i = 1 to iterations () do
+        invariant { remaining >= 0 && to_withdraw >= 0 }
+        invariant { remaining + to_withdraw + matched_idle = amount }
+        invariant { p.supply_on_pool = m.sum_pool_supply_balance + m.sum_collateral_supply_balance + m.p2p_supply_delta + to_withdraw  }
+        invariant { m.p2p_supply_amount >= m.p2p_supply_delta + m.idle_supply }
+        invariant { m.p2p_supply_amount = (old m).p2p_supply_amount - remaining - delta_matched - matched_idle }
+        invariant { supply_balance m user = supply_balance (old m) user - amount } (* a trick to not have to specify the matching engine *)
+        invariant { type_invariant_hold p m }
+        let next_supplier = matched_address() in
+        let next_p2p = get next_supplier m.p2p_supply_balance in
+        let next_pool = get next_supplier m.pool_supply_balance in
+        let matched = min remaining next_pool in
+        update_supplier m next_supplier (next_p2p + matched) (next_pool - matched);
+        remaining <- remaining - matched;
+        to_withdraw <- to_withdraw + matched;
+    done;
+    assert { m.sum_pool_supply_balance = FsetSum.sum m.pool_supply_balance.Map.domain (fun x -> get x m.pool_supply_balance) };
+    assert { m.sum_collateral_supply_balance = FsetSum.sum m.collateral_supply_balance.Map.domain (fun x -> get x m.collateral_supply_balance) };
+
+    (* Demote borrowers *)
+    for i = 1 to iterations () do
+        invariant { remaining >= 0 && to_withdraw >= 0 && to_borrow >= 0 }
+        invariant { remaining + to_withdraw + to_borrow + matched_idle = amount }
+        invariant { p.borrow_on_pool = m.sum_pool_borrow_balance + m.p2p_borrow_delta - to_borrow }
+        invariant { m.p2p_borrow_amount = (old m).p2p_borrow_amount - to_borrow }
+        invariant { forall u. borrow_balance m u = borrow_balance (old m) u }
+        invariant { type_invariant_hold p m }
+        let next_borrower = matched_address() in
+        let next_p2p = get next_borrower m.p2p_borrow_balance in
+        let next_pool = get next_borrower m.pool_borrow_balance in
+        let unmatched = min remaining next_p2p in
+        update_borrower m next_borrower (next_p2p - unmatched) (next_pool + unmatched);
+        remaining <- remaining - unmatched;
+        to_borrow <- to_borrow + unmatched;
+    done;
+
+    (* Increase peer-to-peer borrow delta *)
+    m.p2p_borrow_delta <- m.p2p_borrow_delta + remaining;
+    to_borrow <- to_borrow + remaining;
+
+    (* Pool interaction *)
+    withdraw_from_pool p to_withdraw;
+    borrow_from_pool p to_borrow
+end
+
+module WithdrawCollateral
+use MorphoInternal
+let withdraw_collateral (p: pool_storage) (m: morpho_storage) (user: address) (amount: int)
+    (* Untouched: p.borrow_on_pool, m.p2p_supply_amount, m.p2p_supply_balance, m.sum_pool_supply_balance, m.pool_supply_balance, m.idle_supply, m.p2p_borrow_amount, m.p2p_borrow_balance, m.p2p_borrow_delta, m.p2p_supply_delta, m.sum_pool_borrow_balance, m.pool_borrow_balance *)
+    writes { p.suppliable, p.supply_on_pool, m.sum_collateral_supply_balance, m.collateral_supply_balance }
+    requires { amount >= 0 }
+    requires { well_formed p m }
+    ensures { well_formed p m }
+    ensures { get user m.collateral_supply_balance = get user (old m).collateral_supply_balance - amount }
+    raises { Underflow }
+    raises { Unauthorized }
+=
+    let former_collateral = get user m.collateral_supply_balance in
+    if amount > former_collateral then raise Underflow;
+    if mul (former_collateral - amount) lt < borrow_balance m user then raise Unauthorized;
+    withdraw_from_pool p amount;
+    m.sum_collateral_supply_balance <- m.sum_collateral_supply_balance - amount;
+    Map.add user (former_collateral - amount) m.collateral_supply_balance;
+    assert { forall a. a <> user -> get a m.collateral_supply_balance = get a (old m.collateral_supply_balance) };
+    assert { m.sum_collateral_supply_balance = FsetSum.sum (Fset.add user (Fset.remove user (old m.collateral_supply_balance.Map.domain))) (fun x -> get x m.collateral_supply_balance) }
+end
+
+module Repay
+use MorphoInternal
+let repay (p: pool_storage) (m: morpho_storage) (user: address) (amount: int)
+    (* Untouched: m.sum_collateral_supply_balance, m.collateral_supply_balance *)
+    writes { p.suppliable, p.supply_on_pool, p.borrow_on_pool, m.p2p_supply_amount, m.p2p_supply_balance, m.p2p_supply_delta, m.sum_pool_supply_balance, m.pool_supply_balance, m.idle_supply, m.p2p_borrow_amount, m.p2p_borrow_balance, m.p2p_borrow_delta, m.sum_pool_borrow_balance, m.pool_borrow_balance }
+    requires { amount >= 0 }
+    requires { well_formed p m }
+    ensures { well_formed p m }
+    ensures { borrow_balance m user = borrow_balance (old m) user - amount }
+    raises { Underflow }
+    raises { SupplyCapReached -> false }
+=
+    let former_p2p = get user m.p2p_borrow_balance in
+    let former_pool = get user m.pool_borrow_balance in
+    let former_balance = former_pool + former_p2p in
+
+    if amount > former_balance then raise Underflow;
+
+    let ref remaining = amount in
+    let ref to_repay = 0 in
+    let ref to_supply = 0 in
+
+    (* Pool repay *)
+    let repaid_to_pool = min remaining former_pool in
+    remaining <- remaining - repaid_to_pool;
+    to_repay <- to_repay + repaid_to_pool;
+
+    aggregate_p2p_borrow_balance m user;
+    assert { remaining <= m.p2p_borrow_amount };
+
+    update_borrower m user (former_p2p - remaining) (former_pool - repaid_to_pool);
+
+    (* Reduce peer-to-peer borrow delta *)
+    let delta_matched = min remaining m.p2p_borrow_delta in
+    m.p2p_borrow_delta <- m.p2p_borrow_delta - delta_matched;
+    remaining <- remaining - delta_matched;
+    to_repay <- to_repay + delta_matched;
+
+    assert { m.p2p_borrow_amount >= m.p2p_borrow_delta };
+
+    (* Promote borrowers *)
+    for i = 1 to iterations () do
+        invariant { remaining >= 0 && to_repay >= 0 }
+        invariant { remaining + to_repay = amount }
+        invariant { p.borrow_on_pool = m.sum_pool_borrow_balance + m.p2p_borrow_delta + to_repay  }
+        invariant { m.p2p_borrow_amount >= m.p2p_borrow_delta }
+        invariant { m.p2p_borrow_amount = (old m).p2p_borrow_amount - remaining - delta_matched }
+        invariant { borrow_balance m user = borrow_balance (old m) user - amount }
+        invariant { forall u. borrow_balance m u <= borrow_balance (old m) u }
+        invariant { type_invariant_hold p m }
+        let next_borrower = matched_address() in
+        let next_p2p = get next_borrower m.p2p_borrow_balance in
+        let next_pool = get next_borrower m.pool_borrow_balance in
+        let matched = min remaining next_pool in
+        update_borrower m next_borrower (next_p2p + matched) (next_pool - matched);
+        remaining <- remaining - matched;
+        to_repay <- to_repay + matched;
+    done;
+    assert { m.sum_pool_borrow_balance = FsetSum.sum m.pool_borrow_balance.Map.domain (fun x -> get x m.pool_borrow_balance) };
+
+    (* Increase idle supply *)
+    let increased_idle = max 0 (remaining - p.suppliable) in
+    m.idle_supply <- m.idle_supply + increased_idle;
+    remaining <- remaining - increased_idle;
+
+    (* Demote suppliers *)
+    for i = 1 to iterations () do
+        invariant { remaining >= 0 && to_repay >= 0 && to_supply >= 0 }
+        invariant { remaining + increased_idle + to_repay + to_supply = amount }
+        invariant { p.supply_on_pool = m.sum_pool_supply_balance + m.sum_collateral_supply_balance + m.p2p_supply_delta - to_supply }
+        invariant { m.p2p_supply_amount = (old m).p2p_supply_amount - to_supply }
+        invariant { remaining + to_supply <= p.suppliable }
+        invariant { forall u. borrow_balance m u <= borrow_balance (old m) u }
+        invariant { type_invariant_hold p m }
+        let next_supplier = matched_address() in
+        let next_p2p = get next_supplier m.p2p_supply_balance in
+        let next_pool = get next_supplier m.pool_supply_balance in
+        let unmatched = min remaining next_p2p in
+        update_supplier m next_supplier (next_p2p - unmatched) (next_pool + unmatched);
+        remaining <- remaining - unmatched;
+        to_supply <- to_supply + unmatched;
+    done;
+    assert { m.sum_collateral_supply_balance = FsetSum.sum m.collateral_supply_balance.Map.domain (fun x -> get x m.collateral_supply_balance) };
+    assert { remaining + to_supply <= p.suppliable };
+
+    (* Increase peer-to-peer supply delta *)
+    m.p2p_supply_delta <- m.p2p_supply_delta + remaining;
+    to_supply <- to_supply + remaining;
+
+    (* Pool interaction *)
+    repay_to_pool p to_repay;
+    supply_to_pool p to_supply
+end

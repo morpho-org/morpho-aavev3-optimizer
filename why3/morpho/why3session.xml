@@ -1,0 +1,1844 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
+"http://why3.lri.fr/why3session.dtd">
+<why3session shape_version="6">
+<prover id="0" name="CVC4" version="1.8" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="2" name="Z3" version="4.11.0" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="3" name="Alt-Ergo" version="2.4.2" timelimit="1" steplimit="0" memlimit="1000"/>
+<file format="whyml" proved="true">
+<path name=".."/><path name="morpho.mlw"/>
+<theory name="MorphoInternal" proved="true">
+ <goal name="morpho_storage&#39;vc" expl="VC for morpho_storage" proved="true">
+ <proof prover="0"><result status="valid" time="0.16" steps="23245"/></proof>
+ </goal>
+ <goal name="sum_of_positive_holds" proved="true">
+ <proof prover="3"><result status="valid" time="0.06" steps="257"/></proof>
+ </goal>
+ <goal name="aggregate_p2p_supply_balance&#39;vc" expl="VC for aggregate_p2p_supply_balance" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="aggregate_p2p_supply_balance&#39;vc.0" expl="postcondition" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="aggregate_p2p_supply_balance&#39;vc.0.0" expl="postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="17206"/></proof>
+   </goal>
+   <goal name="aggregate_p2p_supply_balance&#39;vc.0.1" expl="postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.07" steps="14239"/></proof>
+   </goal>
+   <goal name="aggregate_p2p_supply_balance&#39;vc.0.2" expl="VC for aggregate_p2p_supply_balance" proved="true">
+   <proof prover="0"><result status="valid" time="0.32" steps="78981"/></proof>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="aggregate_pool_supply_balance&#39;vc" expl="VC for aggregate_pool_supply_balance" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="aggregate_pool_supply_balance&#39;vc.0" expl="postcondition" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="aggregate_pool_supply_balance&#39;vc.0.0" expl="postcondition" proved="true">
+   <proof prover="3" timelimit="5" memlimit="2000"><result status="valid" time="0.02" steps="10"/></proof>
+   </goal>
+   <goal name="aggregate_pool_supply_balance&#39;vc.0.1" expl="VC for aggregate_pool_supply_balance" proved="true">
+   <proof prover="3" timelimit="5" memlimit="2000"><result status="valid" time="0.39" steps="2432"/></proof>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="aggregate_collateral_supply_balance" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="aggregate_collateral_supply_balance.0" proved="true">
+  <proof prover="3" timelimit="5"><result status="valid" time="0.03" steps="10"/></proof>
+  </goal>
+  <goal name="aggregate_collateral_supply_balance.1" proved="true">
+  <proof prover="3"><result status="valid" time="0.32" steps="2989"/></proof>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="aggregate_p2p_borrow_balance&#39;vc" expl="VC for aggregate_p2p_borrow_balance" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="aggregate_p2p_borrow_balance&#39;vc.0" expl="postcondition" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="aggregate_p2p_borrow_balance&#39;vc.0.0" expl="postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.13" steps="17688"/></proof>
+   </goal>
+   <goal name="aggregate_p2p_borrow_balance&#39;vc.0.1" expl="postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="14649"/></proof>
+   </goal>
+   <goal name="aggregate_p2p_borrow_balance&#39;vc.0.2" expl="VC for aggregate_p2p_borrow_balance" proved="true">
+   <proof prover="0"><result status="valid" time="0.35" steps="82730"/></proof>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="aggregate_pool_borrow_balance" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="aggregate_pool_borrow_balance.0" proved="true">
+  <proof prover="0"><result status="valid" time="0.10" steps="14159"/></proof>
+  </goal>
+  <goal name="aggregate_pool_borrow_balance.1" proved="true">
+  <proof prover="3"><result status="valid" time="0.54" steps="4530"/></proof>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="supply_balance&#39;vc" expl="VC for supply_balance" proved="true">
+ <proof prover="0"><result status="valid" time="0.06" steps="13695"/></proof>
+ </goal>
+ <goal name="borrow_balance&#39;vc" expl="VC for borrow_balance" proved="true">
+ <proof prover="0"><result status="valid" time="0.08" steps="13695"/></proof>
+ </goal>
+ <goal name="update_supplier&#39;vc" expl="VC for update_supplier" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="update_supplier&#39;vc.0" expl="assertion" proved="true">
+  <proof prover="3"><result status="valid" time="0.09" steps="581"/></proof>
+  </goal>
+  <goal name="update_supplier&#39;vc.1" expl="assertion" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.44" steps="125382"/></proof>
+  </goal>
+  <goal name="update_supplier&#39;vc.2" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.20" steps="25453"/></proof>
+  </goal>
+  <goal name="update_supplier&#39;vc.3" expl="assertion" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.33" steps="235081"/></proof>
+  </goal>
+  <goal name="update_supplier&#39;vc.4" expl="type invariant" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="update_supplier&#39;vc.4.0" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.34" steps="49652"/></proof>
+   </goal>
+   <goal name="update_supplier&#39;vc.4.1" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.19" steps="27198"/></proof>
+   </goal>
+   <goal name="update_supplier&#39;vc.4.2" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.12" steps="20213"/></proof>
+   </goal>
+   <goal name="update_supplier&#39;vc.4.3" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.75" steps="265068"/></proof>
+   </goal>
+   <goal name="update_supplier&#39;vc.4.4" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.21" steps="28636"/></proof>
+   </goal>
+   <goal name="update_supplier&#39;vc.4.5" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.14" steps="20701"/></proof>
+   </goal>
+   <goal name="update_supplier&#39;vc.4.6" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.41" steps="61786"/></proof>
+   </goal>
+   <goal name="update_supplier&#39;vc.4.7" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.22" steps="28599"/></proof>
+   </goal>
+   <goal name="update_supplier&#39;vc.4.8" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.28" steps="71991"/></proof>
+   </goal>
+   <goal name="update_supplier&#39;vc.4.9" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.23" steps="29901"/></proof>
+   </goal>
+   <goal name="update_supplier&#39;vc.4.10" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.17" steps="21673"/></proof>
+   </goal>
+   <goal name="update_supplier&#39;vc.4.11" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.34" steps="88710"/></proof>
+   </goal>
+   <goal name="update_supplier&#39;vc.4.12" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.25" steps="31241"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="update_supplier&#39;vc.5" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.08" steps="17180"/></proof>
+  </goal>
+  <goal name="update_supplier&#39;vc.6" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.17" steps="17882"/></proof>
+  </goal>
+  <goal name="update_supplier&#39;vc.7" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.14" steps="29928"/></proof>
+  </goal>
+  <goal name="update_supplier&#39;vc.8" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.09" steps="17281"/></proof>
+  </goal>
+  <goal name="update_supplier&#39;vc.9" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.11" steps="18039"/></proof>
+  </goal>
+  <goal name="update_supplier&#39;vc.10" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.25" steps="29918"/></proof>
+  </goal>
+  <goal name="update_supplier&#39;vc.11" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="21736"/></proof>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="update_borrower&#39;vc" expl="VC for update_borrower" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="update_borrower&#39;vc.0" expl="assertion" proved="true">
+  <proof prover="3"><result status="valid" time="0.08" steps="584"/></proof>
+  </goal>
+  <goal name="update_borrower&#39;vc.1" expl="assertion" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.79" steps="125382"/></proof>
+  </goal>
+  <goal name="update_borrower&#39;vc.2" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.22" steps="25453"/></proof>
+  </goal>
+  <goal name="update_borrower&#39;vc.3" expl="assertion" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.41" steps="235095"/></proof>
+  </goal>
+  <goal name="update_borrower&#39;vc.4" expl="type invariant" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="update_borrower&#39;vc.4.0" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.20" steps="50436"/></proof>
+   </goal>
+   <goal name="update_borrower&#39;vc.4.1" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.22" steps="26425"/></proof>
+   </goal>
+   <goal name="update_borrower&#39;vc.4.2" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.14" steps="20206"/></proof>
+   </goal>
+   <goal name="update_borrower&#39;vc.4.3" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.25" steps="63765"/></proof>
+   </goal>
+   <goal name="update_borrower&#39;vc.4.4" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.21" steps="27641"/></proof>
+   </goal>
+   <goal name="update_borrower&#39;vc.4.5" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.13" steps="20677"/></proof>
+   </goal>
+   <goal name="update_borrower&#39;vc.4.6" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.30" steps="76809"/></proof>
+   </goal>
+   <goal name="update_borrower&#39;vc.4.7" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.22" steps="28907"/></proof>
+   </goal>
+   <goal name="update_borrower&#39;vc.4.8" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.34" steps="89363"/></proof>
+   </goal>
+   <goal name="update_borrower&#39;vc.4.9" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.19" steps="31539"/></proof>
+   </goal>
+   <goal name="update_borrower&#39;vc.4.10" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.14" steps="21656"/></proof>
+   </goal>
+   <goal name="update_borrower&#39;vc.4.11" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="2.35" steps="641394"/></proof>
+   </goal>
+   <goal name="update_borrower&#39;vc.4.12" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.25" steps="33240"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="update_borrower&#39;vc.5" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.10" steps="17180"/></proof>
+  </goal>
+  <goal name="update_borrower&#39;vc.6" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.11" steps="17882"/></proof>
+  </goal>
+  <goal name="update_borrower&#39;vc.7" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.24" steps="29928"/></proof>
+  </goal>
+  <goal name="update_borrower&#39;vc.8" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.08" steps="17281"/></proof>
+  </goal>
+  <goal name="update_borrower&#39;vc.9" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="18039"/></proof>
+  </goal>
+  <goal name="update_borrower&#39;vc.10" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.23" steps="29918"/></proof>
+  </goal>
+  <goal name="update_borrower&#39;vc.11" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.15" steps="21736"/></proof>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="mul&#39;vc" expl="VC for mul" proved="true">
+ <proof prover="0"><result status="valid" time="0.11" steps="17321"/></proof>
+ </goal>
+ <goal name="div_add&#39;vc" expl="VC for div_add" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="div_add&#39;vc.0" expl="postcondition" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="div_add&#39;vc.0.0" expl="postcondition" proved="true">
+   <proof prover="2"><result status="valid" time="0.03" steps="68561"/></proof>
+   </goal>
+   <goal name="div_add&#39;vc.0.1" expl="postcondition" proved="true">
+   <proof prover="2"><result status="valid" time="0.04" steps="63980"/></proof>
+   </goal>
+   <goal name="div_add&#39;vc.0.2" expl="postcondition" proved="true">
+   <proof prover="2"><result status="valid" time="0.02" steps="64686"/></proof>
+   </goal>
+   <goal name="div_add&#39;vc.0.3" expl="VC for div_add" proved="true">
+   <proof prover="2"><result status="valid" time="0.03" steps="66123"/></proof>
+   </goal>
+   <goal name="div_add&#39;vc.0.4" expl="VC for div_add" proved="true">
+   <proof prover="2"><result status="valid" time="0.02" steps="67591"/></proof>
+   </goal>
+   <goal name="div_add&#39;vc.0.5" expl="VC for div_add" proved="true">
+   <proof prover="3"><result status="valid" time="0.09" steps="1147"/></proof>
+   </goal>
+   <goal name="div_add&#39;vc.0.6" expl="VC for div_add" proved="true">
+   <proof prover="2"><result status="valid" time="0.02" steps="75699"/></proof>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="mul_add&#39;vc" expl="VC for mul_add" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="mul_add&#39;vc.0" expl="precondition" proved="true">
+  <proof prover="3"><result status="valid" time="0.02" steps="19"/></proof>
+  </goal>
+  <goal name="mul_add&#39;vc.1" expl="postcondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.04" steps="69393"/></proof>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="mul_right_increasing&#39;vc" expl="VC for mul_right_increasing" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="mul_right_increasing&#39;vc.0" expl="precondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.02" steps="33643"/></proof>
+  </goal>
+  <goal name="mul_right_increasing&#39;vc.1" expl="postcondition" proved="true">
+  <proof prover="3"><result status="valid" time="0.02" steps="119"/></proof>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="lt&#39;vc" expl="VC for lt" proved="true">
+ <proof prover="0"><result status="valid" time="0.08" steps="15871"/></proof>
+ <proof prover="3"><result status="valid" time="0.01" steps="0"/></proof>
+ </goal>
+</theory>
+<theory name="NonLiquidation" proved="true">
+ <goal name="mul_sum&#39;vc" expl="VC for mul_sum" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="mul_sum&#39;vc.0" expl="variant decrease" proved="true">
+  <proof prover="2"><result status="valid" time="0.03" steps="95577"/></proof>
+  </goal>
+  <goal name="mul_sum&#39;vc.1" expl="assertion" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="mul_sum&#39;vc.1.0" expl="assertion" proved="true">
+   <proof prover="2"><result status="valid" time="0.03" steps="102012"/></proof>
+   </goal>
+   <goal name="mul_sum&#39;vc.1.1" expl="VC for mul_sum" proved="true">
+   <transf name="unfold" proved="true" arg1="sum_of_positive" arg2="in" arg3="H">
+    <goal name="mul_sum&#39;vc.1.1.0" expl="VC for mul_sum" proved="true">
+    <transf name="apply" proved="true" arg1="H">
+     <goal name="mul_sum&#39;vc.1.1.0.0" expl="apply premises" proved="true">
+     <proof prover="0"><result status="valid" time="0.09" steps="22391"/></proof>
+     </goal>
+    </transf>
+    </goal>
+   </transf>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="mul_sum&#39;vc.2" expl="assertion" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.25" steps="52383"/></proof>
+  </goal>
+  <goal name="mul_sum&#39;vc.3" expl="assertion" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.35" steps="248734"/></proof>
+  </goal>
+  <goal name="mul_sum&#39;vc.4" expl="assertion" proved="true">
+  <transf name="apply" proved="true" arg1="mul_add">
+   <goal name="mul_sum&#39;vc.4.0" expl="apply premises" proved="true">
+   <proof prover="0"><result status="valid" time="0.25" steps="57857"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="mul_sum&#39;vc.5" expl="postcondition" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="mul_sum&#39;vc.5.0" expl="postcondition" proved="true">
+   <transf name="rewrite" proved="true" arg1="SumRemove">
+    <goal name="mul_sum&#39;vc.5.0.0" expl="postcondition" proved="true">
+    <transf name="rewrite" proved="true" arg1="SumMulRemove">
+     <goal name="mul_sum&#39;vc.5.0.0.0" expl="postcondition" proved="true">
+     <transf name="clear_but" proved="true" arg1="Ensures,MulAdd">
+      <goal name="mul_sum&#39;vc.5.0.0.0.0" expl="postcondition" proved="true">
+      <transf name="apply" proved="true" arg1="Trans" arg2="with" arg3="(mul (get e (m.collateral_supply_balance)) lt   + mul     (sum (remove1 e s) (fun (a:address) -&gt; get a (m.collateral_supply_balance)))  lt)">
+       <goal name="mul_sum&#39;vc.5.0.0.0.0.0" expl="apply premises" proved="true">
+       <proof prover="0"><result status="valid" time="0.14" steps="31804"/></proof>
+       </goal>
+       <goal name="mul_sum&#39;vc.5.0.0.0.0.1" expl="apply premises" proved="true">
+       <transf name="apply" proved="true" arg1="MulAdd">
+       </transf>
+       </goal>
+      </transf>
+      </goal>
+     </transf>
+     </goal>
+    </transf>
+    </goal>
+   </transf>
+   </goal>
+   <goal name="mul_sum&#39;vc.5.1" expl="postcondition" proved="true">
+   <proof prover="2"><result status="valid" time="0.12" steps="422297"/></proof>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="sum_greater&#39;vc" expl="VC for sum_greater" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="sum_greater&#39;vc.0" expl="variant decrease" proved="true">
+  <proof prover="2"><result status="valid" time="0.03" steps="107624"/></proof>
+  </goal>
+  <goal name="sum_greater&#39;vc.1" expl="precondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.02" steps="6499"/></proof>
+  </goal>
+  <goal name="sum_greater&#39;vc.2" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.24" steps="54541"/></proof>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="sum_add&#39;vc" expl="VC for sum_add" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="sum_add&#39;vc.0" expl="variant decrease" proved="true">
+  <proof prover="2"><result status="valid" time="0.03" steps="110406"/></proof>
+  </goal>
+  <goal name="sum_add&#39;vc.1" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.11" steps="30461"/></proof>
+  </goal>
+  <goal name="sum_add&#39;vc.2" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.23" steps="52718"/></proof>
+  </goal>
+  <goal name="sum_add&#39;vc.3" expl="assertion" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="sum_add&#39;vc.3.0" expl="assertion" proved="true">
+   <proof prover="2"><result status="valid" time="0.17" steps="457905"/></proof>
+   </goal>
+   <goal name="sum_add&#39;vc.3.1" expl="VC for sum_add" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.38" steps="396965"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="sum_add&#39;vc.4" expl="postcondition" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="sum_add&#39;vc.4.0" expl="postcondition" proved="true">
+   <proof prover="3" timelimit="5" memlimit="2000"><result status="valid" time="1.29" steps="15397"/></proof>
+   </goal>
+   <goal name="sum_add&#39;vc.4.1" expl="postcondition" proved="true">
+   <proof prover="2"><result status="valid" time="0.03" steps="111463"/></proof>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="sum_domain&#39;vc" expl="VC for sum_domain" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="sum_domain&#39;vc.0" expl="variant decrease" proved="true">
+  <proof prover="2"><result status="valid" time="0.23" steps="7328867"/></proof>
+  </goal>
+  <goal name="sum_domain&#39;vc.1" expl="precondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.06" steps="198454"/></proof>
+  </goal>
+  <goal name="sum_domain&#39;vc.2" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="1.22" steps="262073"/></proof>
+  </goal>
+  <goal name="sum_domain&#39;vc.3" expl="assertion" proved="true">
+  <proof prover="2"><result status="valid" time="0.06" steps="205279"/></proof>
+  </goal>
+  <goal name="sum_domain&#39;vc.4" expl="postcondition" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="sum_domain&#39;vc.4.0" expl="postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.30" steps="67309"/></proof>
+   </goal>
+   <goal name="sum_domain&#39;vc.4.1" expl="postcondition" proved="true">
+   <proof prover="2"><result status="valid" time="0.11" steps="434030"/></proof>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="sum_collateralization_users&#39;vc" expl="VC for sum_collateralization_users" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="sum_collateralization_users&#39;vc.0" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.19" steps="34158"/></proof>
+  </goal>
+  <goal name="sum_collateralization_users&#39;vc.1" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.22" steps="36493"/></proof>
+  </goal>
+  <goal name="sum_collateralization_users&#39;vc.2" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.21" steps="38282"/></proof>
+  </goal>
+  <goal name="sum_collateralization_users&#39;vc.3" expl="precondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.02" steps="7853"/></proof>
+  </goal>
+  <goal name="sum_collateralization_users&#39;vc.4" expl="precondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.05" steps="126748"/></proof>
+  </goal>
+  <goal name="sum_collateralization_users&#39;vc.5" expl="precondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.04" steps="145382"/></proof>
+  </goal>
+  <goal name="sum_collateralization_users&#39;vc.6" expl="precondition" proved="true">
+  <proof prover="3"><result status="valid" time="0.07" steps="578"/></proof>
+  </goal>
+  <goal name="sum_collateralization_users&#39;vc.7" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.78" steps="91545"/></proof>
+  </goal>
+  <goal name="sum_collateralization_users&#39;vc.8" expl="assertion" proved="true">
+  <transf name="rewrite" proved="true" arg1="sum_domain">
+   <goal name="sum_collateralization_users&#39;vc.8.0" expl="assertion" proved="true">
+   <proof prover="3"><result status="valid" time="0.12" steps="775"/></proof>
+   </goal>
+   <goal name="sum_collateralization_users&#39;vc.8.1" expl="rewrite premises" proved="true">
+   <proof prover="3"><result status="valid" time="0.11" steps="737"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="sum_collateralization_users&#39;vc.9" expl="assertion" proved="true">
+  <transf name="rewrite" proved="true" arg1="sum_domain">
+   <goal name="sum_collateralization_users&#39;vc.9.0" expl="assertion" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.27" steps="40143"/></proof>
+   </goal>
+   <goal name="sum_collateralization_users&#39;vc.9.1" expl="rewrite premises" proved="true">
+   <proof prover="3"><result status="valid" time="0.13" steps="822"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="sum_collateralization_users&#39;vc.10" expl="postcondition" proved="true">
+  <transf name="rewrite" proved="true" arg1="SumCollateral">
+   <goal name="sum_collateralization_users&#39;vc.10.0" expl="postcondition" proved="true">
+   <transf name="rewrite" proved="true" arg1="SumPoolBorrow">
+    <goal name="sum_collateralization_users&#39;vc.10.0.0" expl="postcondition" proved="true">
+    <transf name="rewrite" proved="true" arg1="SumP2PBorrow">
+     <goal name="sum_collateralization_users&#39;vc.10.0.0.0" expl="postcondition" proved="true">
+     <transf name="rewrite" proved="true" arg1="&lt;-" arg2="Ensures3">
+      <goal name="sum_collateralization_users&#39;vc.10.0.0.0.0" expl="postcondition" proved="true">
+      <proof prover="0"><result status="valid" time="0.57" steps="111148"/></proof>
+      </goal>
+     </transf>
+     </goal>
+    </transf>
+    </goal>
+   </transf>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="non_liquidation_theorem&#39;vc" expl="VC for non_liquidation_theorem" proved="true">
+ <proof prover="0"><result status="valid" time="0.31" steps="85601"/></proof>
+ </goal>
+</theory>
+<theory name="Supply" proved="true">
+ <goal name="supply&#39;vc" expl="VC for supply" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="supply&#39;vc.0" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.12" steps="20073"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.1" expl="type invariant" proved="true">
+  <proof prover="0"><result status="valid" time="0.18" steps="50785"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.2" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="21476"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.3" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.10" steps="17502"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.4" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="21655"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.5" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.10" steps="17591"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.6" expl="loop invariant init" proved="true">
+  <proof prover="3"><result status="valid" time="0.02" steps="158"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.7" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.07" steps="17265"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.8" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.21" steps="29179"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.9" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.26" steps="32867"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.10" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.10" steps="18721"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.11" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="18736"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.12" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.10" steps="18833"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.13" expl="loop invariant preservation" proved="true">
+  <proof prover="3"><result status="valid" time="0.74" steps="6645"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.14" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.09" steps="18090"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.15" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.30" steps="43359"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.16" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.09" steps="19123"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.17" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.31" steps="43612"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.18" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.19" steps="28971"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.19" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.33" steps="53566"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.20" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="20847"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.21" expl="exceptional postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.25" steps="43713"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.22" expl="out of loop bounds" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="supply&#39;vc.22.0" expl="assertion" proved="true">
+   <proof prover="0"><result status="valid" time="0.14" steps="39246"/></proof>
+   </goal>
+   <goal name="supply&#39;vc.22.1" expl="precondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.11" steps="18806"/></proof>
+   </goal>
+   <goal name="supply&#39;vc.22.2" expl="precondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.15" steps="39404"/></proof>
+   </goal>
+   <goal name="supply&#39;vc.22.3" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.40" steps="61556"/></proof>
+   </goal>
+   <goal name="supply&#39;vc.22.4" expl="precondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.18" steps="28345"/></proof>
+   </goal>
+   <goal name="supply&#39;vc.22.5" expl="postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.25" steps="52743"/></proof>
+   </goal>
+   <goal name="supply&#39;vc.22.6" expl="postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.11" steps="20272"/></proof>
+   </goal>
+   <goal name="supply&#39;vc.22.7" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.36" steps="61425"/></proof>
+   </goal>
+   <goal name="supply&#39;vc.22.8" expl="exceptional postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.24" steps="42632"/></proof>
+   </goal>
+   <goal name="supply&#39;vc.22.9" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.36" steps="61337"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="supply&#39;vc.23" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.26" steps="38971"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.24" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.15" steps="22462"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.25" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.27" steps="39037"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.26" expl="type invariant" proved="true">
+  <proof prover="0"><result status="valid" time="0.25" steps="61205"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.27" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.20" steps="28407"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.28" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.37" steps="54179"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.29" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.12" steps="20395"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.30" expl="type invariant" proved="true">
+  <proof prover="0"><result status="valid" time="0.35" steps="61067"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.31" expl="exceptional postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.27" steps="42792"/></proof>
+  </goal>
+  <goal name="supply&#39;vc.32" expl="type invariant" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="23413"/></proof>
+  </goal>
+ </transf>
+ </goal>
+</theory>
+<theory name="SupplyCollateral" proved="true">
+ <goal name="supply_collateral&#39;vc" expl="VC for supply_collateral" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="supply_collateral&#39;vc.0" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.09" steps="16569"/></proof>
+  </goal>
+  <goal name="supply_collateral&#39;vc.1" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.16" steps="42639"/></proof>
+  </goal>
+  <goal name="supply_collateral&#39;vc.2" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.25" steps="29525"/></proof>
+  </goal>
+  <goal name="supply_collateral&#39;vc.3" expl="assertion" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.80" steps="171603"/></proof>
+  </goal>
+  <goal name="supply_collateral&#39;vc.4" expl="precondition" proved="true">
+  <proof prover="3"><result status="valid" time="0.12" steps="1125"/></proof>
+  </goal>
+  <goal name="supply_collateral&#39;vc.5" expl="precondition" proved="true">
+  <proof prover="3"><result status="valid" time="0.13" steps="1398"/></proof>
+  </goal>
+  <goal name="supply_collateral&#39;vc.6" expl="type invariant" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="supply_collateral&#39;vc.6.0" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.31" steps="53066"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.6.1" expl="type invariant" proved="true">
+   <proof prover="3"><result status="valid" time="0.03" steps="78"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.6.2" expl="type invariant" proved="true">
+   <proof prover="3"><result status="valid" time="0.03" steps="78"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.6.3" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.31" steps="66201"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.6.4" expl="type invariant" proved="true">
+   <proof prover="3"><result status="valid" time="0.02" steps="90"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.6.5" expl="type invariant" proved="true">
+   <proof prover="3"><result status="valid" time="0.02" steps="91"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.6.6" expl="type invariant" proved="true">
+   <proof prover="3"><result status="valid" time="0.06" steps="498"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.6.7" expl="type invariant" proved="true">
+   <proof prover="3"><result status="valid" time="0.20" steps="1980"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.6.8" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.37" steps="77101"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.6.9" expl="type invariant" proved="true">
+   <proof prover="3"><result status="valid" time="0.03" steps="121"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.6.10" expl="type invariant" proved="true">
+   <proof prover="3"><result status="valid" time="0.03" steps="121"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.6.11" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.52" steps="108728"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.6.12" expl="type invariant" proved="true">
+   <proof prover="3"><result status="valid" time="0.03" steps="133"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="supply_collateral&#39;vc.7" expl="assertion" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="supply_collateral&#39;vc.7.0" expl="assertion" proved="true">
+   <proof prover="2" timelimit="5"><result status="valid" time="0.05" steps="140059"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.7.1" expl="assertion" proved="true">
+   <proof prover="2" timelimit="5"><result status="valid" time="0.05" steps="142880"/></proof>
+   </goal>
+   <goal name="supply_collateral&#39;vc.7.2" expl="VC for supply_collateral" proved="true">
+   <proof prover="3"><result status="valid" time="0.02" steps="46"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="supply_collateral&#39;vc.8" expl="postcondition" proved="true">
+  <proof prover="0" timelimit="5"><result status="valid" time="0.18" steps="26009"/></proof>
+  </goal>
+  <goal name="supply_collateral&#39;vc.9" expl="postcondition" proved="true">
+  <proof prover="3"><result status="valid" time="0.39" steps="2557"/></proof>
+  </goal>
+ </transf>
+ </goal>
+</theory>
+<theory name="Borrow" proved="true">
+ <goal name="borrow&#39;vc" expl="VC for borrow" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="borrow&#39;vc.0" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="19981"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.1" expl="type invariant" proved="true">
+  <proof prover="0"><result status="valid" time="0.22" steps="55710"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.2" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.15" steps="22144"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.3" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.11" steps="17772"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.4" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.14" steps="22419"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.5" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.10" steps="17710"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.6" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.06" steps="17322"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.7" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.19" steps="30281"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.8" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.23" steps="34854"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.9" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.12" steps="18761"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.10" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.08" steps="18804"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.11" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="18837"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.12" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.06" steps="18191"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.13" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.31" steps="47689"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.14" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.72" steps="58602"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.15" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.08" steps="19245"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.16" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.08" steps="19324"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.17" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.19" steps="30102"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.18" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.45" steps="81170"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.19" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="20879"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.20" expl="exceptional postcondition" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.57" steps="184862"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.21" expl="out of loop bounds" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="borrow&#39;vc.21.0" expl="assertion" proved="true">
+   <proof prover="0"><result status="valid" time="0.30" steps="43595"/></proof>
+   </goal>
+   <goal name="borrow&#39;vc.21.1" expl="assertion" proved="true">
+   <proof prover="0"><result status="valid" time="0.35" steps="48535"/></proof>
+   </goal>
+   <goal name="borrow&#39;vc.21.2" expl="precondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="18944"/></proof>
+   </goal>
+   <goal name="borrow&#39;vc.21.3" expl="precondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.11" steps="23003"/></proof>
+   </goal>
+   <goal name="borrow&#39;vc.21.4" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.33" steps="73403"/></proof>
+   </goal>
+   <goal name="borrow&#39;vc.21.5" expl="precondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.16" steps="29811"/></proof>
+   </goal>
+   <goal name="borrow&#39;vc.21.6" expl="postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.48" steps="82314"/></proof>
+   </goal>
+   <goal name="borrow&#39;vc.21.7" expl="postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="20418"/></proof>
+   </goal>
+   <goal name="borrow&#39;vc.21.8" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.34" steps="73417"/></proof>
+   </goal>
+   <goal name="borrow&#39;vc.21.9" expl="exceptional postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.34" steps="53433"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="borrow&#39;vc.22" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.27" steps="43262"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.23" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.26" steps="48127"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.24" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="22970"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.25" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="23120"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.26" expl="type invariant" proved="true">
+  <proof prover="0"><result status="valid" time="0.59" steps="72964"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.27" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.36" steps="53680"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.28" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.46" steps="81461"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.29" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.12" steps="20543"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.30" expl="type invariant" proved="true">
+  <proof prover="0"><result status="valid" time="0.56" steps="72917"/></proof>
+  </goal>
+  <goal name="borrow&#39;vc.31" expl="exceptional postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.25" steps="53062"/></proof>
+  </goal>
+ </transf>
+ </goal>
+</theory>
+<theory name="Withdraw" proved="true">
+ <goal name="withdraw&#39;vc" expl="VC for withdraw" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="withdraw&#39;vc.0" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.28" steps="39044"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.1" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.16" steps="26565"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.2" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.21" steps="30301"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.3" expl="type invariant" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="withdraw&#39;vc.3.0" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.59" steps="65057"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.3.1" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.31" steps="61731"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.3.2" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.15" steps="24540"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.3.3" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.29" steps="65579"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.3.4" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.24" steps="31726"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.3.5" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.16" steps="25139"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.3.6" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.28" steps="78527"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.3.7" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.25" steps="32058"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.3.8" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.39" steps="86865"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.3.9" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.27" steps="33695"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.3.10" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.17" steps="25773"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.3.11" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.45" steps="115695"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.3.12" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.27" steps="35332"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="withdraw&#39;vc.4" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.24" steps="31620"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.5" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.11" steps="20570"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.6" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.15" steps="25291"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.7" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.12" steps="20597"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.8" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.14" steps="20758"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.9" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.16" steps="25437"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.10" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.09" steps="19942"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.11" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.27" steps="33470"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.12" expl="loop invariant preservation" proved="true">
+  <proof prover="3"><result status="valid" time="0.13" steps="893"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.13" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.14" steps="21772"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.14" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.14" steps="21833"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.15" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.22" steps="36945"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.16" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.14" steps="21943"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.17" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.30" steps="29983"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.18" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.11" steps="20839"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.19" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.44" steps="67418"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.20" expl="assertion" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="2.20" steps="93156"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.21" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.10" steps="20107"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.22" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.08" steps="20133"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.23" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.14" steps="25877"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.24" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.11" steps="21037"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.25" expl="loop invariant init" proved="true">
+  <proof prover="3"><result status="valid" time="0.05" steps="307"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.26" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.11" steps="20233"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.27" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.16" steps="35108"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.28" expl="loop invariant preservation" proved="true">
+  <proof prover="3" timelimit="5"><result status="valid" time="0.17" steps="1023"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.29" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="22507"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.30" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="22546"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.31" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.16" steps="22560"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.32" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.39" steps="41948"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.33" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.10" steps="21335"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.34" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.10" steps="20525"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.35" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.14" steps="21736"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.36" expl="type invariant" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="withdraw&#39;vc.36.0" expl="type invariant" proved="true">
+   <proof prover="2"><result status="valid" time="0.13" steps="447565"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.36.1" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.30" steps="34446"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.36.2" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.19" steps="26600"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.36.3" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.26" steps="37980"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.36.4" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.29" steps="35873"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.36.5" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.15" steps="27109"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.36.6" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.31" steps="39525"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.36.7" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.33" steps="37008"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.36.8" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.70" steps="116346"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.36.9" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.31" steps="38621"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.36.10" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.16" steps="28558"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.36.11" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.13" steps="144361"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.36.12" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.32" steps="40322"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="withdraw&#39;vc.37" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.56" steps="84034"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.38" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.18" steps="27932"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.39" expl="type invariant" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="withdraw&#39;vc.39.0" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.45" steps="84354"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.39.1" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.25" steps="34400"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.39.2" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.18" steps="26374"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.39.3" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.29" steps="37979"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.39.4" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.27" steps="35858"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.39.5" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.17" steps="26883"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.39.6" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.34" steps="39510"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.39.7" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.29" steps="36993"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.39.8" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.09" steps="120056"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.39.9" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.33" steps="38606"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.39.10" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.17" steps="28332"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.39.11" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.89" steps="160520"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.39.12" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.20" steps="40307"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="withdraw&#39;vc.40" expl="out of loop bounds" proved="true">
+  <proof prover="0"><result status="valid" time="0.11" steps="22407"/></proof>
+  </goal>
+  <goal name="withdraw&#39;vc.41" expl="out of loop bounds" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="withdraw&#39;vc.41.0" expl="assertion" proved="true">
+   <proof prover="0"><result status="valid" time="0.29" steps="59380"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.1" expl="assertion" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.12" steps="72275"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.2" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="20052"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.3" expl="loop invariant init" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="19686"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.4" expl="loop invariant init" proved="true">
+   <proof prover="0"><result status="valid" time="0.07" steps="19725"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.5" expl="loop invariant init" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="19767"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.6" expl="loop invariant init" proved="true">
+   <proof prover="0"><result status="valid" time="0.07" steps="19790"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.7" expl="loop invariant init" proved="true">
+   <proof prover="3"><result status="valid" time="0.02" steps="80"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.8" expl="loop invariant init" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="19826"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.9" expl="precondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.08" steps="19973"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.10" expl="loop invariant preservation" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="20548"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.11" expl="loop invariant preservation" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="20589"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.12" expl="loop invariant preservation" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="20629"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.13" expl="loop invariant preservation" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="20660"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.14" expl="loop invariant preservation" proved="true">
+   <proof prover="3"><result status="valid" time="0.02" steps="80"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.15" expl="loop invariant preservation" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="20696"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.16" expl="precondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="19886"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.17" expl="precondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="20000"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.18" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.12" steps="20755"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.19" expl="postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.07" steps="20324"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.20" expl="postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.08" steps="20375"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.21" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="20629"/></proof>
+   </goal>
+   <goal name="withdraw&#39;vc.41.22" expl="out of loop bounds" proved="true">
+   <transf name="split_vc" proved="true" >
+    <goal name="withdraw&#39;vc.41.22.0" expl="precondition" proved="true">
+    <proof prover="0"><result status="valid" time="0.18" steps="31014"/></proof>
+    </goal>
+    <goal name="withdraw&#39;vc.41.22.1" expl="precondition" proved="true">
+    <proof prover="0"><result status="valid" time="0.11" steps="24661"/></proof>
+    </goal>
+    <goal name="withdraw&#39;vc.41.22.2" expl="type invariant" proved="true">
+    <transf name="split_vc" proved="true" >
+     <goal name="withdraw&#39;vc.41.22.2.0" expl="type invariant" proved="true">
+     <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.67" steps="73971"/></proof>
+     </goal>
+     <goal name="withdraw&#39;vc.41.22.2.1" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.22" steps="31908"/></proof>
+     </goal>
+     <goal name="withdraw&#39;vc.41.22.2.2" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.12" steps="25236"/></proof>
+     </goal>
+     <goal name="withdraw&#39;vc.41.22.2.3" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.20" steps="33761"/></proof>
+     </goal>
+     <goal name="withdraw&#39;vc.41.22.2.4" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.21" steps="32633"/></proof>
+     </goal>
+     <goal name="withdraw&#39;vc.41.22.2.5" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.13" steps="25835"/></proof>
+     </goal>
+     <goal name="withdraw&#39;vc.41.22.2.6" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.22" steps="34420"/></proof>
+     </goal>
+     <goal name="withdraw&#39;vc.41.22.2.7" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.22" steps="32765"/></proof>
+     </goal>
+     <goal name="withdraw&#39;vc.41.22.2.8" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.49" steps="86597"/></proof>
+     </goal>
+     <goal name="withdraw&#39;vc.41.22.2.9" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.22" steps="34476"/></proof>
+     </goal>
+     <goal name="withdraw&#39;vc.41.22.2.10" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.22" steps="35631"/></proof>
+     </goal>
+     <goal name="withdraw&#39;vc.41.22.2.11" expl="type invariant" proved="true">
+     <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.65" steps="115289"/></proof>
+     </goal>
+     <goal name="withdraw&#39;vc.41.22.2.12" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.26" steps="36225"/></proof>
+     </goal>
+    </transf>
+    </goal>
+    <goal name="withdraw&#39;vc.41.22.3" expl="postcondition" proved="true">
+    <proof prover="0"><result status="valid" time="0.41" steps="74068"/></proof>
+    </goal>
+    <goal name="withdraw&#39;vc.41.22.4" expl="postcondition" proved="true">
+    <proof prover="0"><result status="valid" time="0.13" steps="25687"/></proof>
+    </goal>
+    <goal name="withdraw&#39;vc.41.22.5" expl="type invariant" proved="true">
+    <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.60" steps="115957"/></proof>
+    </goal>
+   </transf>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+</theory>
+<theory name="WithdrawCollateral" proved="true">
+ <goal name="withdraw_collateral&#39;vc" expl="VC for withdraw_collateral" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="withdraw_collateral&#39;vc.0" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.08" steps="16734"/></proof>
+  </goal>
+  <goal name="withdraw_collateral&#39;vc.1" expl="assertion" proved="true">
+  <proof prover="3" timelimit="5" memlimit="2000"><result status="valid" time="0.44" steps="4977"/></proof>
+  </goal>
+  <goal name="withdraw_collateral&#39;vc.2" expl="assertion" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="3.48" steps="208475"/></proof>
+  </goal>
+  <goal name="withdraw_collateral&#39;vc.3" expl="type invariant" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="withdraw_collateral&#39;vc.3.0" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.21" steps="50514"/></proof>
+   </goal>
+   <goal name="withdraw_collateral&#39;vc.3.1" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.19" steps="30159"/></proof>
+   </goal>
+   <goal name="withdraw_collateral&#39;vc.3.2" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.12" steps="23552"/></proof>
+   </goal>
+   <goal name="withdraw_collateral&#39;vc.3.3" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.26" steps="62786"/></proof>
+   </goal>
+   <goal name="withdraw_collateral&#39;vc.3.4" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.14" steps="31335"/></proof>
+   </goal>
+   <goal name="withdraw_collateral&#39;vc.3.5" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.17" steps="24011"/></proof>
+   </goal>
+   <goal name="withdraw_collateral&#39;vc.3.6" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.30" steps="71331"/></proof>
+   </goal>
+   <goal name="withdraw_collateral&#39;vc.3.7" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.25" steps="33608"/></proof>
+   </goal>
+   <goal name="withdraw_collateral&#39;vc.3.8" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.32" steps="76743"/></proof>
+   </goal>
+   <goal name="withdraw_collateral&#39;vc.3.9" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.14" steps="34051"/></proof>
+   </goal>
+   <goal name="withdraw_collateral&#39;vc.3.10" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.17" steps="25037"/></proof>
+   </goal>
+   <goal name="withdraw_collateral&#39;vc.3.11" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.40" steps="102466"/></proof>
+   </goal>
+   <goal name="withdraw_collateral&#39;vc.3.12" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.20" steps="35741"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="withdraw_collateral&#39;vc.4" expl="postcondition" proved="true">
+  <transf name="unfold" proved="true" arg1="well_formed">
+   <goal name="withdraw_collateral&#39;vc.4.0" expl="VC for withdraw_collateral" proved="true">
+   <transf name="split_vc" proved="true" >
+    <goal name="withdraw_collateral&#39;vc.4.0.0" expl="VC for withdraw_collateral" proved="true">
+    <proof prover="0"><result status="valid" time="0.10" steps="24291"/></proof>
+    </goal>
+    <goal name="withdraw_collateral&#39;vc.4.0.1" expl="VC for withdraw_collateral" proved="true">
+    <proof prover="2"><result status="valid" time="0.06" steps="105987"/></proof>
+    </goal>
+    <goal name="withdraw_collateral&#39;vc.4.0.2" expl="VC for withdraw_collateral" proved="true">
+    <proof prover="2"><result status="valid" time="0.04" steps="106184"/></proof>
+    </goal>
+    <goal name="withdraw_collateral&#39;vc.4.0.3" expl="VC for withdraw_collateral" proved="true">
+    <proof prover="2"><result status="valid" time="0.04" steps="106352"/></proof>
+    </goal>
+    <goal name="withdraw_collateral&#39;vc.4.0.4" expl="VC for withdraw_collateral" proved="true">
+    <proof prover="2"><result status="valid" time="0.03" steps="106668"/></proof>
+    </goal>
+    <goal name="withdraw_collateral&#39;vc.4.0.5" expl="VC for withdraw_collateral" proved="true">
+    <proof prover="0"><result status="valid" time="0.19" steps="35688"/></proof>
+    </goal>
+   </transf>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="withdraw_collateral&#39;vc.5" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.22" steps="33317"/></proof>
+  </goal>
+ </transf>
+ </goal>
+</theory>
+<theory name="Repay" proved="true">
+ <goal name="repay&#39;vc" expl="VC for repay" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="repay&#39;vc.0" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.25" steps="39574"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.1" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.18" steps="26643"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.2" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.17" steps="24651"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.3" expl="type invariant" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="repay&#39;vc.3.0" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.71" steps="69409"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.3.1" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.21" steps="30111"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.3.2" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.15" steps="24015"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.3.3" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="2.37" steps="95989"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.3.4" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.25" steps="31164"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.3.5" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.17" steps="24446"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.3.6" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.34" steps="103042"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.3.7" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.23" steps="32301"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.3.8" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.29" steps="109857"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.3.9" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.51" steps="100968"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.3.10" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.16" steps="25888"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.3.11" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.48" steps="112357"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.3.12" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.27" steps="35154"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="repay&#39;vc.4" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.23" steps="31908"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.5" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="20414"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.6" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.16" steps="25023"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.7" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.12" steps="20430"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.8" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.12" steps="20567"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.9" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.17" steps="25157"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.10" expl="loop invariant init" proved="true">
+  <proof prover="3"><result status="valid" time="0.53" steps="5499"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.11" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.09" steps="19839"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.12" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.15" steps="33437"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.13" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.32" steps="36503"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.14" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="21491"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.15" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="21674"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.16" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.30" steps="36416"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.17" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.12" steps="21766"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.18" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.26" steps="29676"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.19" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.32" steps="37952"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.20" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.10" steps="20758"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.21" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.47" steps="78189"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.22" expl="type invariant" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="repay&#39;vc.22.0" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.43" steps="76726"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.22.1" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.25" steps="32692"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.22.2" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.17" steps="25347"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.22.3" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="2.52" steps="110946"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.22.4" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.28" steps="33775"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.22.5" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.17" steps="26164"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.22.6" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.88" steps="113633"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.22.7" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.16" steps="34957"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.22.8" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="2.18" steps="129645"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.22.9" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.17" steps="36612"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.22.10" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.17" steps="26848"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.22.11" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.18" steps="39776"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.22.12" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.17" steps="38012"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="repay&#39;vc.23" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.18" steps="26206"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.24" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="21107"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.25" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.17" steps="26359"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.26" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="21223"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.27" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.18" steps="26347"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.28" expl="loop invariant init" proved="true">
+  <proof prover="3"><result status="valid" time="0.49" steps="2126"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.29" expl="loop invariant init" proved="true">
+  <proof prover="0"><result status="valid" time="0.08" steps="20466"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.30" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.23" steps="35212"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.31" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.23" steps="39002"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.32" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.14" steps="22497"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.33" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.15" steps="22554"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.34" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.16" steps="22562"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.35" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.13" steps="22593"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.36" expl="loop invariant preservation" proved="true">
+  <proof prover="3"><result status="valid" time="1.02" steps="3787"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.37" expl="loop invariant preservation" proved="true">
+  <proof prover="0"><result status="valid" time="0.11" steps="21454"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.38" expl="assertion" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.60" steps="93917"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.39" expl="assertion" proved="true">
+  <proof prover="0"><result status="valid" time="0.10" steps="20549"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.40" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.59" steps="85380"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.41" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.15" steps="21769"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.42" expl="type invariant" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="repay&#39;vc.42.0" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.42" steps="77283"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.42.1" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.28" steps="34435"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.42.2" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.11" steps="27072"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.42.3" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.53" steps="94136"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.42.4" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.22" steps="35646"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.42.5" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.13" steps="27234"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.42.6" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.34" steps="38695"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.42.7" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.13" steps="36729"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.42.8" expl="type invariant" proved="true">
+   <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="4.55" steps="147090"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.42.9" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.27" steps="38557"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.42.10" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.12" steps="28268"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.42.11" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.34" steps="43121"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.42.12" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.33" steps="40164"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="repay&#39;vc.43" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.78" steps="103005"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.44" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.18" steps="28142"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.45" expl="type invariant" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.07" steps="22496"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.46" expl="exceptional postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.11" steps="22194"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.47" expl="type invariant" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.30" steps="144290"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.48" expl="out of loop bounds" proved="true">
+  <proof prover="0"><result status="valid" time="0.11" steps="29281"/></proof>
+  </goal>
+  <goal name="repay&#39;vc.49" expl="out of loop bounds" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="repay&#39;vc.49.0" expl="assertion" proved="true">
+   <proof prover="0"><result status="valid" time="0.30" steps="60583"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.1" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.08" steps="19948"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.2" expl="loop invariant init" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="19574"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.3" expl="loop invariant init" proved="true">
+   <proof prover="0"><result status="valid" time="0.08" steps="19613"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.4" expl="loop invariant init" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="19666"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.5" expl="loop invariant init" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="19689"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.6" expl="loop invariant init" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="19716"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.7" expl="loop invariant init" proved="true">
+   <proof prover="3"><result status="valid" time="0.02" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.8" expl="loop invariant init" proved="true">
+   <proof prover="0"><result status="valid" time="0.08" steps="19776"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.9" expl="precondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="19921"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.10" expl="loop invariant preservation" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="20558"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.11" expl="loop invariant preservation" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="20599"/></proof>
+   <proof prover="2"><result status="valid" time="0.02" steps="8253"/></proof>
+   <proof prover="3"><result status="valid" time="0.03" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.12" expl="loop invariant preservation" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="20646"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.13" expl="loop invariant preservation" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="20677"/></proof>
+   <proof prover="2"><result status="valid" time="0.03" steps="8301"/></proof>
+   <proof prover="3"><result status="valid" time="0.03" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.14" expl="loop invariant preservation" proved="true">
+   <proof prover="0"><result status="valid" time="0.11" steps="20706"/></proof>
+   <proof prover="2"><result status="valid" time="0.03" steps="8310"/></proof>
+   <proof prover="3"><result status="valid" time="0.03" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.15" expl="loop invariant preservation" proved="true">
+   <proof prover="3"><result status="valid" time="0.02" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.16" expl="loop invariant preservation" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="20766"/></proof>
+   <proof prover="2"><result status="valid" time="0.02" steps="8328"/></proof>
+   <proof prover="3"><result status="valid" time="0.03" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.17" expl="assertion" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="19857"/></proof>
+   <proof prover="2"><result status="valid" time="0.02" steps="7848"/></proof>
+   <proof prover="3"><result status="valid" time="0.02" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.18" expl="assertion" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="19861"/></proof>
+   <proof prover="2"><result status="valid" time="0.03" steps="7857"/></proof>
+   <proof prover="3"><result status="valid" time="0.03" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.19" expl="precondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.08" steps="19937"/></proof>
+   <proof prover="2"><result status="valid" time="0.02" steps="7883"/></proof>
+   <proof prover="3"><result status="valid" time="0.03" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.20" expl="precondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.08" steps="19995"/></proof>
+   <proof prover="2"><result status="valid" time="0.02" steps="7918"/></proof>
+   <proof prover="3"><result status="valid" time="0.03" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.21" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.11" steps="20761"/></proof>
+   <proof prover="2"><result status="valid" time="0.01" steps="8338"/></proof>
+   <proof prover="3"><result status="valid" time="0.02" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.22" expl="postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.07" steps="20338"/></proof>
+   <proof prover="2"><result status="valid" time="0.03" steps="8116"/></proof>
+   <proof prover="3"><result status="valid" time="0.02" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.23" expl="postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="20389"/></proof>
+   <proof prover="2"><result status="valid" time="0.02" steps="8143"/></proof>
+   <proof prover="3"><result status="valid" time="0.03" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.24" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.11" steps="20715"/></proof>
+   <proof prover="2"><result status="valid" time="0.01" steps="8315"/></proof>
+   <proof prover="3"><result status="valid" time="0.02" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.25" expl="exceptional postcondition" proved="true">
+   <proof prover="0"><result status="valid" time="0.09" steps="20283"/></proof>
+   <proof prover="2"><result status="valid" time="0.01" steps="8089"/></proof>
+   <proof prover="3"><result status="valid" time="0.03" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.26" expl="type invariant" proved="true">
+   <proof prover="0"><result status="valid" time="0.10" steps="20655"/></proof>
+   <proof prover="2"><result status="valid" time="0.01" steps="8279"/></proof>
+   <proof prover="3"><result status="valid" time="0.02" steps="76"/></proof>
+   </goal>
+   <goal name="repay&#39;vc.49.27" expl="out of loop bounds" proved="true">
+   <transf name="split_vc" proved="true" >
+    <goal name="repay&#39;vc.49.27.0" expl="assertion" proved="true">
+    <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.09" steps="74284"/></proof>
+    </goal>
+    <goal name="repay&#39;vc.49.27.1" expl="assertion" proved="true">
+    <proof prover="0"><result status="valid" time="0.16" steps="24397"/></proof>
+    </goal>
+    <goal name="repay&#39;vc.49.27.2" expl="precondition" proved="true">
+    <proof prover="0"><result status="valid" time="0.57" steps="67791"/></proof>
+    </goal>
+    <goal name="repay&#39;vc.49.27.3" expl="precondition" proved="true">
+    <proof prover="0"><result status="valid" time="0.22" steps="30923"/></proof>
+    </goal>
+    <goal name="repay&#39;vc.49.27.4" expl="type invariant" proved="true">
+    <transf name="split_vc" proved="true" >
+     <goal name="repay&#39;vc.49.27.4.0" expl="type invariant" proved="true">
+     <proof prover="2"><result status="valid" time="0.12" steps="434788"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.4.1" expl="type invariant" proved="true">
+     <proof prover="2"><result status="valid" time="0.07" steps="123720"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.4.2" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.27" steps="32526"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.4.3" expl="type invariant" proved="true">
+     <proof prover="2" timelimit="5" memlimit="2000"><result status="valid" time="1.73" steps="10645030"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.4.4" expl="type invariant" proved="true">
+     <proof prover="2"><result status="valid" time="0.05" steps="152054"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.4.5" expl="type invariant" proved="true">
+     <proof prover="2"><result status="valid" time="0.21" steps="434863"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.4.6" expl="type invariant" proved="true">
+     <proof prover="2"><result status="valid" time="0.05" steps="154875"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.4.7" expl="type invariant" proved="true">
+     <proof prover="2"><result status="valid" time="0.12" steps="437155"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.4.8" expl="type invariant" proved="true">
+     <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="1.68" steps="122626"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.4.9" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.16" steps="35762"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.4.10" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.10" steps="26921"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.4.11" expl="type invariant" proved="true">
+     <proof prover="2"><result status="valid" time="0.09" steps="159281"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.4.12" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.17" steps="36618"/></proof>
+     </goal>
+    </transf>
+    </goal>
+    <goal name="repay&#39;vc.49.27.5" expl="postcondition" proved="true">
+    <proof prover="0"><result status="valid" time="0.77" steps="75361"/></proof>
+    </goal>
+    <goal name="repay&#39;vc.49.27.6" expl="postcondition" proved="true">
+    <proof prover="0"><result status="valid" time="0.16" steps="25709"/></proof>
+    </goal>
+    <goal name="repay&#39;vc.49.27.7" expl="type invariant" proved="true">
+    <transf name="split_vc" proved="true" >
+     <goal name="repay&#39;vc.49.27.7.0" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.07" steps="20196"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.7.1" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.07" steps="20169"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.7.2" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.07" steps="20208"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.7.3" expl="type invariant" proved="true">
+     <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.07" steps="20328"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.7.4" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.07" steps="20301"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.7.5" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.14" steps="20329"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.7.6" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.07" steps="20443"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.7.7" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.12" steps="20416"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.7.8" expl="type invariant" proved="true">
+     <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.07" steps="20507"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.7.9" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.07" steps="20506"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.7.10" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.15" steps="20541"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.7.11" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.06" steps="20615"/></proof>
+     </goal>
+     <goal name="repay&#39;vc.49.27.7.12" expl="type invariant" proved="true">
+     <proof prover="0"><result status="valid" time="0.08" steps="20614"/></proof>
+     </goal>
+    </transf>
+    </goal>
+    <goal name="repay&#39;vc.49.27.8" expl="exceptional postcondition" proved="true">
+    <proof prover="0"><result status="valid" time="0.13" steps="20521"/></proof>
+    </goal>
+    <goal name="repay&#39;vc.49.27.9" expl="type invariant" proved="true">
+    <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.50" steps="111460"/></proof>
+    </goal>
+   </transf>
+   </goal>
+  </transf>
+  </goal>
+ </transf>
+ </goal>
+</theory>
+</file>
+</why3session>
