@@ -30,13 +30,14 @@ contract RewardsManager is IRewardsManager, Initializable {
     }
 
     struct UserData {
-        uint128 index; // The user's index for a specific (asset, reward) pair.
-        uint128 accrued; // The user's accrued rewards for a specific (asset, reward) pair (in reward token decimals).
+        uint104 index; // The user's index for a specific (asset, reward) pair.
+        uint104 accrued; // The user's accrued rewards for a specific (asset, reward) pair (in reward token decimals).
     }
 
     struct RewardData {
-        uint128 index; // The current index for a specific reward token.
-        uint128 lastUpdateTimestamp; // The last timestamp the index was updated.
+        uint104 startingIndex; // The index from which the RewardsManager begins tracking the RewardsController's index.
+        uint104 index; // The current index for a specific reward token.
+        uint32 lastUpdateTimestamp; // The last timestamp the index was updated.
         mapping(address => UserData) usersData; // Users data. user -> UserData
     }
 
@@ -220,7 +221,7 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @param reward The address of the reward token.
     /// @return The user's index.
     function getUserAssetIndex(address user, address asset, address reward) external view returns (uint256) {
-        return _localAssetData[asset][reward].usersData[user].index;
+        return _computeUserIndex(_localAssetData[asset][reward], user);
     }
 
     /* INTERNAL */
@@ -244,12 +245,15 @@ contract RewardsManager is IRewardsManager, Initializable {
         (oldIndex, newIndex) = _getAssetIndex(localRewardData, asset, reward, totalSupply, assetUnit);
 
         if (newIndex != oldIndex) {
+            if (oldIndex == 0) {
+                localRewardData.startingIndex = newIndex.toUint104();
+            }
             indexUpdated = true;
-            localRewardData.index = newIndex.toUint128();
+            localRewardData.index = newIndex.toUint104();
         }
 
         // Not safe casting because 2^128 is large enough.
-        localRewardData.lastUpdateTimestamp = uint128(block.timestamp);
+        localRewardData.lastUpdateTimestamp = uint32(block.timestamp);
     }
 
     /// @dev Updates the state of the distribution for the specific user.
@@ -267,17 +271,17 @@ contract RewardsManager is IRewardsManager, Initializable {
         uint256 newAssetIndex,
         uint256 assetUnit
     ) internal returns (uint256 rewardsAccrued, bool dataUpdated) {
-        uint256 userIndex = localRewardData.usersData[user].index;
+        uint256 userIndex = _computeUserIndex(localRewardData, user);
 
         if ((dataUpdated = userIndex != newAssetIndex)) {
             // Already checked for overflow in _updateRewardData.
-            localRewardData.usersData[user].index = uint128(newAssetIndex);
+            localRewardData.usersData[user].index = uint104(newAssetIndex);
 
             if (userBalance != 0) {
                 rewardsAccrued = _getRewards(userBalance, newAssetIndex, userIndex, assetUnit);
 
                 // Not safe casting because 2^128 is large enough.
-                localRewardData.usersData[user].accrued += uint128(rewardsAccrued);
+                localRewardData.usersData[user].accrued += uint104(rewardsAccrued);
             }
         }
     }
@@ -294,7 +298,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         unchecked {
             uint256 assetUnit = 10 ** _REWARDS_CONTROLLER.getAssetDecimals(asset);
 
-            for (uint128 i; i < availableRewards.length; ++i) {
+            for (uint256 i; i < availableRewards.length; ++i) {
                 address reward = availableRewards[i];
                 RewardData storage localRewardData = _localAssetData[asset][reward];
 
@@ -368,7 +372,8 @@ contract RewardsManager is IRewardsManager, Initializable {
             localRewardData, _userAssetBalance.asset, reward, _userAssetBalance.scaledTotalSupply, assetUnit
         );
 
-        return _getRewards(_userAssetBalance.scaledBalance, nextIndex, localRewardData.usersData[user].index, assetUnit);
+        return
+            _getRewards(_userAssetBalance.scaledBalance, nextIndex, _computeUserIndex(localRewardData, user), assetUnit);
     }
 
     /// @dev Computes user's accrued rewards on a distribution.
@@ -457,5 +462,10 @@ contract RewardsManager is IRewardsManager, Initializable {
 
             userAssetBalances[i].scaledTotalSupply = IScaledBalanceToken(asset).scaledTotalSupply();
         }
+    }
+
+    function _computeUserIndex(RewardData storage localRewardData, address user) internal view returns (uint256) {
+        uint256 index = uint256(localRewardData.usersData[user].index);
+        return index == 0 ? localRewardData.startingIndex : index;
     }
 }
