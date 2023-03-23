@@ -164,6 +164,7 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @notice Returns user's accrued rewards for the specified assets and reward token
     /// @param assets The list of assets to retrieve accrued rewards.
     /// @param user The address of the user.
+    /// @param reward The address of the reward token.
     /// @return totalAccrued The total amount of accrued rewards.
     function getUserAccruedRewards(address[] calldata assets, address user, address reward)
         external
