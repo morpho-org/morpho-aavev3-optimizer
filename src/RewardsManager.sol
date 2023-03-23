@@ -382,6 +382,9 @@ contract RewardsManager is IRewardsManager, Initializable {
         pure
         returns (uint256 rewards)
     {
+        // If `_userIndex` is 0, it means that it has not accrued reward yet.
+        if (_userIndex == 0) return 0;
+
         rewards = userBalance * (_reserveIndex - _userIndex);
         assembly {
             rewards := div(rewards, assetUnit)
