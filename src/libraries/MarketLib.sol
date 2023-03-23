@@ -225,7 +225,9 @@ library MarketLib {
         if (idleSupply == 0) return 0;
 
         uint256 totalP2PSupplied = market.deltas.supply.scaledP2PTotal.rayMul(market.indexes.supply.p2pIndex);
-        return idleSupply.rayDivUp(totalP2PSupplied);
+
+        // We take the minimum to handle the case where the proportion is rounded to greater than 1.
+        return Math.min(idleSupply.rayDivUp(totalP2PSupplied), WadRayMath.RAY);
     }
 
     /// @notice Increases the idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
