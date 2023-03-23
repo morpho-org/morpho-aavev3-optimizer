@@ -59,8 +59,6 @@ contract IntegrationTest is ForkTest {
             _createTestMarket(allUnderlyings[i], 0, 33_33);
         }
 
-        _setAllAssetsAsCollateral();
-
         _forward(1); // All markets are outdated in Morpho's storage.
 
         user = _initUser();
@@ -147,6 +145,7 @@ contract IntegrationTest is ForkTest {
         market.eModeCategoryId = uint8(reserve.configuration.getEModeCategory());
         market.eModeCategory = pool.getEModeCategoryData(market.eModeCategoryId);
 
+        market.isCollateral = market.getLt(eModeCategoryId) > 0 && reserve.configuration.getDebtCeiling() == 0;
         market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
             && !reserve.configuration.getBorrowableInIsolation()
             && (eModeCategoryId == 0 || eModeCategoryId == market.eModeCategoryId);
@@ -159,22 +158,17 @@ contract IntegrationTest is ForkTest {
     function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         (TestMarket storage market,) = _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
-        if (market.ltv > 0) collateralUnderlyings.push(underlying);
-        if (market.isBorrowable) borrowableUnderlyings.push(underlying);
-
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
-    }
 
-    function _setAllAssetsAsCollateral() internal {
-        for (uint256 i; i < allUnderlyings.length; ++i) {
-            _setAssetAsCollateral(testMarkets[allUnderlyings[i]]);
+        if (market.isCollateral) {
+            collateralUnderlyings.push(underlying);
+
+            // Supply dust to make UserConfigurationMap.isUsingAsCollateral() return true (cannot enable the asset as collateral on the pool if Morpho has no aToken).
+            _deposit(market, 10 ** (market.decimals / 2), address(morpho));
+            morpho.setAssetIsCollateral(market.underlying, true);
         }
-    }
 
-    function _setAssetAsCollateral(TestMarket storage market) internal {
-        // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() return true.
-        _deposit(market, (10 ** market.decimals) / 1e6, address(morpho));
-        morpho.setAssetIsCollateral(market.underlying, true);
+        if (market.isBorrowable) borrowableUnderlyings.push(underlying);
     }
 
     function _randomCollateral(uint256 seed) internal view returns (address) {

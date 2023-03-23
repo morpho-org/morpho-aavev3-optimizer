@@ -96,7 +96,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         onBehalf = _boundOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+        TestMarket storage market = testMarkets[_randomCollateral(seed)];
 
         amount = _boundSupply(market, amount);
         amount = Math.min(type(uint128).max, amount);
