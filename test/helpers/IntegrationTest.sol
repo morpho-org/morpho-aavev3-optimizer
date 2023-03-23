@@ -160,11 +160,14 @@ contract IntegrationTest is ForkTest {
 
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
 
+        // Supply dust to:
+        // 1. account for roundings upon borrow or withdraw.
+        // 2. make UserConfigurationMap.isUsingAsCollateral() return true (cannot enable the asset as collateral on the pool if Morpho has no aToken).
+        _deposit(market, 10 ** (market.decimals / 2), address(morpho));
+
         if (market.isCollateral) {
             collateralUnderlyings.push(underlying);
 
-            // Supply dust to make UserConfigurationMap.isUsingAsCollateral() return true (cannot enable the asset as collateral on the pool if Morpho has no aToken).
-            _deposit(market, 10 ** (market.decimals / 2), address(morpho));
             morpho.setAssetIsCollateral(market.underlying, true);
         }
 
