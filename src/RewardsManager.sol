@@ -31,7 +31,7 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     struct UserData {
         uint104 index; // The user's index for a specific (asset, reward) pair.
-        uint104 accrued; // The user's accrued rewards for a specific (asset, reward) pair (in reward token decimals).
+        uint128 accrued; // The user's accrued rewards for a specific (asset, reward) pair (in reward token decimals).
     }
 
     struct RewardData {
@@ -281,7 +281,7 @@ contract RewardsManager is IRewardsManager, Initializable {
                 rewardsAccrued = _getRewards(userBalance, newAssetIndex, userIndex, assetUnit);
 
                 // Not safe casting because 2^128 is large enough.
-                localRewardData.usersData[user].accrued += uint104(rewardsAccrued);
+                localRewardData.usersData[user].accrued += uint128(rewardsAccrued);
             }
         }
     }
