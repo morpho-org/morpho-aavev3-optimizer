@@ -252,8 +252,7 @@ contract RewardsManager is IRewardsManager, Initializable {
             localRewardData.index = newIndex.toUint104();
         }
 
-        // Not safe casting because 2^128 is large enough.
-        localRewardData.lastUpdateTimestamp = uint32(block.timestamp);
+        localRewardData.lastUpdateTimestamp = block.timestamp.toUint32();
     }
 
     /// @dev Updates the state of the distribution for the specific user.
@@ -464,6 +463,10 @@ contract RewardsManager is IRewardsManager, Initializable {
         }
     }
 
+    /// @dev Computes the index of a user for a specific reward distribution.
+    /// @param localRewardData The local reward's data.
+    /// @param user The address of the user.
+    /// @return The index of the user for the distribution.
     function _computeUserIndex(RewardData storage localRewardData, address user) internal view returns (uint256) {
         uint256 index = uint256(localRewardData.usersData[user].index);
         return index == 0 ? localRewardData.startingIndex : index;
