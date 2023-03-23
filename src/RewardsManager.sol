@@ -304,14 +304,14 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     /// @dev Accrues all the rewards of the assets specified in the userAssetBalances list.
     /// @param user The address of the user.
-    /// @param _userAssetBalances The list of structs with the user balance and total supply of a set of assets.
-    function _updateDataMultiple(address user, UserAssetBalance[] memory _userAssetBalances) internal {
-        for (uint256 i; i < _userAssetBalances.length; ++i) {
+    /// @param userAssetBalances The list of structs with the user balance and total supply of a set of assets.
+    function _updateDataMultiple(address user, UserAssetBalance[] memory userAssetBalances) internal {
+        for (uint256 i; i < userAssetBalances.length; ++i) {
             _updateData(
                 user,
-                _userAssetBalances[i].asset,
-                _userAssetBalances[i].scaledBalance,
-                _userAssetBalances[i].scaledTotalSupply
+                userAssetBalances[i].asset,
+                userAssetBalances[i].scaledBalance,
+                userAssetBalances[i].scaledTotalSupply
             );
         }
     }
@@ -319,61 +319,61 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @dev Returns the accrued unclaimed amount of a reward from a user over a list of distribution.
     /// @param user The address of the user.
     /// @param reward The address of the reward token.
-    /// @param _userAssetBalances List of structs with the user balance and total supply of a set of assets.
+    /// @param userAssetBalances List of structs with the user balance and total supply of a set of assets.
     /// @return unclaimedRewards The accrued rewards for the user until the moment.
-    function _getUserReward(address user, address reward, UserAssetBalance[] memory _userAssetBalances)
+    function _getUserReward(address user, address reward, UserAssetBalance[] memory userAssetBalances)
         internal
         view
         returns (uint256 unclaimedRewards)
     {
-        uint256 userAssetBalancesLength = _userAssetBalances.length;
+        uint256 userAssetBalancesLength = userAssetBalances.length;
 
         // Add unrealized rewards.
         for (uint256 i; i < userAssetBalancesLength; ++i) {
-            unclaimedRewards += _localAssetData[_userAssetBalances[i].asset][reward].usersData[user].accrued;
+            unclaimedRewards += _localAssetData[userAssetBalances[i].asset][reward].usersData[user].accrued;
 
-            if (_userAssetBalances[i].scaledBalance == 0) continue;
+            if (userAssetBalances[i].scaledBalance == 0) continue;
 
-            unclaimedRewards += _getPendingRewards(user, reward, _userAssetBalances[i]);
+            unclaimedRewards += _getPendingRewards(user, reward, userAssetBalances[i]);
         }
     }
 
     /// @dev Computes the pending (not yet accrued) rewards since the last user action.
     /// @param user The address of the user.
     /// @param reward The address of the reward token.
-    /// @param _userAssetBalance The struct with the user balance and total supply of the incentivized asset.
+    /// @param userAssetBalance The struct with the user balance and total supply of the incentivized asset.
     /// @return The pending rewards for the user since the last user action.
-    function _getPendingRewards(address user, address reward, UserAssetBalance memory _userAssetBalance)
+    function _getPendingRewards(address user, address reward, UserAssetBalance memory userAssetBalance)
         internal
         view
         returns (uint256)
     {
-        RewardData storage localRewardData = _localAssetData[_userAssetBalance.asset][reward];
+        RewardData storage localRewardData = _localAssetData[userAssetBalance.asset][reward];
 
         uint256 assetUnit;
         unchecked {
-            assetUnit = 10 ** _REWARDS_CONTROLLER.getAssetDecimals(_userAssetBalance.asset);
+            assetUnit = 10 ** _REWARDS_CONTROLLER.getAssetDecimals(userAssetBalance.asset);
         }
 
         (, uint256 nextIndex) = _getAssetIndex(
-            localRewardData, _userAssetBalance.asset, reward, _userAssetBalance.scaledTotalSupply, assetUnit
+            localRewardData, userAssetBalance.asset, reward, userAssetBalance.scaledTotalSupply, assetUnit
         );
 
-        return _getRewards(_userAssetBalance.scaledBalance, nextIndex, localRewardData.usersData[user].index, assetUnit);
+        return _getRewards(userAssetBalance.scaledBalance, nextIndex, localRewardData.usersData[user].index, assetUnit);
     }
 
     /// @dev Computes user's accrued rewards on a distribution.
     /// @param userBalance The current user asset balance.
-    /// @param _reserveIndex The current index of the distribution.
-    /// @param _userIndex The index stored for the user, representing its staking moment.
+    /// @param reserveIndex The current index of the distribution.
+    /// @param userIndex The index stored for the user, representing its staking moment.
     /// @param assetUnit The asset's unit (10**decimals).
     /// @return rewards The rewards accrued.
-    function _getRewards(uint256 userBalance, uint256 _reserveIndex, uint256 _userIndex, uint256 assetUnit)
+    function _getRewards(uint256 userBalance, uint256 reserveIndex, uint256 userIndex, uint256 assetUnit)
         internal
         pure
         returns (uint256 rewards)
     {
-        rewards = userBalance * (_reserveIndex - _userIndex);
+        rewards = userBalance * (reserveIndex - userIndex);
         assembly {
             rewards := div(rewards, assetUnit)
         }
