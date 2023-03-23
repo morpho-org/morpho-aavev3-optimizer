@@ -244,10 +244,16 @@ contract RewardsManager is IRewardsManager, Initializable {
         uint256 oldIndex;
         (oldIndex, newIndex) = _getAssetIndex(localRewardData, asset, reward, totalSupply, assetUnit);
 
+        // If this is the first initiation of the distribution, set the starting index.
+        // In the case that rewards have already started accumulating, rewards will not be credited before this starting index.
+        if (localRewardData.lastUpdateTimestamp == 0) {
+            (,, uint256 lastUpdatedTimestampRC,) = _REWARDS_CONTROLLER.getRewardsData(asset, reward);
+            // If the rewards controller has already started distributing rewards, set the starting index to the new index.
+            // Rewards before this index will not be credited.
+            if (lastUpdatedTimestampRC != 0) localRewardData.startingIndex = newIndex.toUint104();
+        }
+
         if (newIndex != oldIndex) {
-            if (oldIndex == 0) {
-                localRewardData.startingIndex = newIndex.toUint104();
-            }
             indexUpdated = true;
             localRewardData.index = newIndex.toUint104();
         }
