@@ -6,7 +6,7 @@ end
 module Pool
 use export PoolSetup
 
-type pool_storage = private {
+type pool_market_storage = private {
     mutable suppliable: int; (* The amount that can be supplied on the pool before reaching the supply cap *)
     mutable supply_on_pool: int; (* The supply on pool of the Morpho contract *)
     mutable borrow_on_pool: int; (* The borrow on pool of the Morpho contract *)
@@ -20,26 +20,26 @@ type pool_storage = private {
     borrow_on_pool = 0;
 }
 
-val supply_to_pool (p: pool_storage) (amount: int) : unit
+val supply_to_pool (p: pool_market_storage) (amount: int) : unit
     requires { 0 <= amount }
     writes { p.supply_on_pool, p.suppliable }
     ensures { p.supply_on_pool = (old p).supply_on_pool + amount }
     ensures { p.suppliable = (old p).suppliable - amount }
     raises { SupplyCapReached -> amount > (old p).suppliable }
 
-val borrow_from_pool (p: pool_storage) (amount: int) : unit
+val borrow_from_pool (p: pool_market_storage) (amount: int) : unit
     requires { 0 <= amount }
     writes { p.borrow_on_pool }
     ensures { p.borrow_on_pool = (old p).borrow_on_pool + amount }
 
-val withdraw_from_pool (p: pool_storage) (amount: int) : unit
+val withdraw_from_pool (p: pool_market_storage) (amount: int) : unit
     requires { 0 <= amount }
     writes { p.supply_on_pool, p.suppliable }
     ensures { p.supply_on_pool = (old p).supply_on_pool - amount }
     ensures { p.suppliable = (old p).suppliable + amount }
     raises { Underflow -> amount > (old p).supply_on_pool }
 
-val repay_to_pool (p: pool_storage) (amount: int) : unit
+val repay_to_pool (p: pool_market_storage) (amount: int) : unit
     requires { 0 <= amount <= p.borrow_on_pool }
     writes { p.borrow_on_pool }
     ensures { p.borrow_on_pool = (old p).borrow_on_pool - amount }
@@ -49,7 +49,7 @@ end
 module PoolRealize
 use export PoolSetup
 
-type pool_storage = {
+type pool_market_storage = {
     mutable suppliable: int;
     mutable supply_on_pool: int;
     mutable borrow_on_pool: int;
@@ -63,7 +63,7 @@ type pool_storage = {
     borrow_on_pool = 0;
 }
 
-let supply_to_pool (p: pool_storage) (amount: int) : unit
+let supply_to_pool (p: pool_market_storage) (amount: int) : unit
     requires { 0 <= amount }
     writes { p.supply_on_pool, p.suppliable }
     ensures { p.supply_on_pool = (old p).supply_on_pool + amount }
@@ -74,14 +74,14 @@ let supply_to_pool (p: pool_storage) (amount: int) : unit
     p.supply_on_pool <- p.supply_on_pool + amount;
     p.suppliable <- p.suppliable - amount
 
-let borrow_from_pool (p: pool_storage) (amount: int) : unit
+let borrow_from_pool (p: pool_market_storage) (amount: int) : unit
     requires { 0 <= amount }
     writes { p.borrow_on_pool }
     ensures { p.borrow_on_pool = (old p).borrow_on_pool + amount }
 =
     p.borrow_on_pool <- p.borrow_on_pool + amount
 
-let withdraw_from_pool (p: pool_storage) (amount: int) : unit
+let withdraw_from_pool (p: pool_market_storage) (amount: int) : unit
     requires { 0 <= amount }
     writes { p.supply_on_pool, p.suppliable }
     ensures { p.supply_on_pool = (old p).supply_on_pool - amount }
@@ -92,7 +92,7 @@ let withdraw_from_pool (p: pool_storage) (amount: int) : unit
     p.supply_on_pool <- p.supply_on_pool - amount;
     p.suppliable <- p.suppliable + amount
 
-let repay_to_pool (p: pool_storage) (amount: int) : unit
+let repay_to_pool (p: pool_market_storage) (amount: int) : unit
     requires { 0 <= amount <= p.borrow_on_pool }
     writes { p.borrow_on_pool }
     ensures { p.borrow_on_pool = (old p).borrow_on_pool - amount }
@@ -101,5 +101,5 @@ let repay_to_pool (p: pool_storage) (amount: int) : unit
     if amount > p.borrow_on_pool then raise Underflow;
     p.borrow_on_pool <- p.borrow_on_pool - amount
 
-clone Pool with type pool_storage, val supply_to_pool, val borrow_from_pool, val withdraw_from_pool, val repay_to_pool
+clone Pool with type pool_market_storage, val supply_to_pool, val borrow_from_pool, val withdraw_from_pool, val repay_to_pool
 end
