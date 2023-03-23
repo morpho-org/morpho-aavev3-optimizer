@@ -2,7 +2,6 @@
 pragma solidity ^0.8.17;
 
 import {IMorpho} from "./interfaces/IMorpho.sol";
-import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IPoolToken} from "./interfaces/aave/IPoolToken.sol";
 import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IScaledBalanceToken} from "@aave-v3-core/interfaces/IScaledBalanceToken.sol";
@@ -49,9 +48,6 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     /// @dev The address of the Morpho protocol.
     IMorpho internal immutable _MORPHO;
-
-    /// @dev The address of the Aave pool.
-    IPool internal immutable _POOL;
 
     /* STORAGE */
 
@@ -101,7 +97,6 @@ contract RewardsManager is IRewardsManager, Initializable {
 
         _REWARDS_CONTROLLER = IRewardsController(rewardsController);
         _MORPHO = IMorpho(morpho);
-        _POOL = IPool(IMorpho(morpho).pool());
     }
 
     /* EXTERNAL */
@@ -145,11 +140,6 @@ contract RewardsManager is IRewardsManager, Initializable {
     }
 
     /* GETTERS */
-
-    /// @notice Returns the pool address.
-    function POOL() external view returns (address) {
-        return address(_POOL);
-    }
 
     /// @notice Returns the Morpho protocol address.
     function MORPHO() external view returns (address) {
