@@ -145,7 +145,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomBorrowable(seed)];
 
         amount = _boundBorrow(market, amount);
-        amount = Math.max(1, Math.min(type(uint128).max, amount));
 
         address spender = address(morpho);
 
@@ -188,7 +187,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomBorrowable(seed)];
 
         amount = _boundBorrow(market, amount);
-        amount = Math.max(1, Math.min(type(uint128).max, amount));
 
         address spender = address(morpho);
 
