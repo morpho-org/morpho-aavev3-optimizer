@@ -171,6 +171,46 @@ contract TestIntegrationPermit2 is IntegrationTest {
         assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
     }
 
+    function testRepayAllWithPermit2(
+        uint256 privateKey,
+        uint256 deadline,
+        uint256 amount,
+        uint256 seed,
+        address onBehalf,
+        uint256 timestamp
+    ) public {
+        deadline = bound(deadline, block.timestamp, type(uint32).max);
+        privateKey = bound(privateKey, 1, type(uint160).max);
+        address delegator = vm.addr(privateKey);
+
+        onBehalf = _boundOnBehalf(onBehalf);
+
+        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+
+        amount = _boundBorrow(market, amount);
+        amount = Math.max(1, Math.min(type(uint128).max, amount));
+
+        address spender = address(morpho);
+
+        _borrowWithoutCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
+
+        vm.prank(delegator);
+        ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
+
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
+        vm.warp(block.timestamp + timestamp);
+
+        Types.Signature memory sig =
+            _signPermit2(market.underlying, delegator, spender, type(uint160).max, deadline, privateKey);
+
+        _deal(market.underlying, delegator, type(uint160).max);
+
+        vm.prank(delegator);
+        morpho.repayWithPermit(market.underlying, type(uint160).max, onBehalf, deadline, sig);
+
+        assertEq(morpho.borrowBalance(market.underlying, onBehalf), 0, "Incorrect Borrow Balance");
+    }
+
     function testSupplyWithPermit2ShouldRevertBecauseDeadlinePassed(
         uint256 privateKey,
         uint256 deadline,
