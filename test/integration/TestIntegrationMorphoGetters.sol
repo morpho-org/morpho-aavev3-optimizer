@@ -60,40 +60,36 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
         assertEq(defaultIterations.withdraw, DEFAULT_MAX_ITERATIONS);
     }
 
-    function testUpdatedPoolIndexes(uint256 blocks, uint256 supplied, uint256 borrowed) public {
+    function testUpdatedPoolIndexes(uint256 seed, uint256 blocks, uint256 supplied, uint256 borrowed) public {
         blocks = _boundBlocks(blocks);
 
-        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
-            _revert();
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
-            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
+        supplied = _boundSupply(market, supplied);
+        borrowed = _boundBorrow(market, borrowed);
 
-            supplied = _boundSupply(market, supplied);
-            borrowed = _boundBorrow(market, borrowed);
-
-            user.approve(market.underlying, supplied);
-            user.supply(market.underlying, supplied);
-            if (market.isBorrowable) {
-                _borrowWithoutCollateral(
-                    address(user), market, supplied, address(user), address(user), DEFAULT_MAX_ITERATIONS
-                );
-            }
-
-            _forward(blocks);
-
-            Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
-
-            assertEq(
-                indexes.supply.poolIndex,
-                pool.getReserveNormalizedIncome(market.underlying),
-                "poolSupplyIndex != truePoolSupplyIndex"
-            );
-
-            assertEq(
-                indexes.borrow.poolIndex,
-                pool.getReserveNormalizedVariableDebt(market.underlying),
-                "poolBorrowIndex != truePoolBorrowIndex"
+        user.approve(market.underlying, supplied);
+        user.supply(market.underlying, supplied);
+        if (market.isBorrowable) {
+            _borrowWithoutCollateral(
+                address(user), market, supplied, address(user), address(user), DEFAULT_MAX_ITERATIONS
             );
         }
+
+        _forward(blocks);
+
+        Types.Indexes256 memory indexes = morpho.updatedIndexes(market.underlying);
+
+        assertEq(
+            indexes.supply.poolIndex,
+            pool.getReserveNormalizedIncome(market.underlying),
+            "poolSupplyIndex != truePoolSupplyIndex"
+        );
+
+        assertEq(
+            indexes.borrow.poolIndex,
+            pool.getReserveNormalizedVariableDebt(market.underlying),
+            "poolBorrowIndex != truePoolBorrowIndex"
+        );
     }
 }

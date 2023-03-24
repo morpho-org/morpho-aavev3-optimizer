@@ -47,6 +47,7 @@ contract TestIntegrationEModeNative is IntegrationTest {
     }
 
     function testShouldNotLeverageNotStakedNative(
+        uint256 seed,
         uint256 rawCollateral,
         uint256 borrowed,
         address onBehalf,
@@ -60,49 +61,37 @@ contract TestIntegrationEModeNative is IntegrationTest {
 
         TestMarket storage wNativeMarket = testMarkets[wNative];
 
-        for (
-            uint256 collateralMarketIndex; collateralMarketIndex < collateralUnderlyings.length; ++collateralMarketIndex
-        ) {
-            _revert();
+        TestMarket storage collateralMarket = testMarkets[_randomCollateral(seed)];
 
-            TestMarket storage collateralMarket = testMarkets[collateralUnderlyings[collateralMarketIndex]];
+        vm.assume(collateralMarket.underlying != wNative && collateralMarket.underlying != sNative);
 
-            if (collateralMarket.underlying == wNative || collateralMarket.underlying == sNative) continue;
+        rawCollateral = _boundCollateral(collateralMarket, rawCollateral, wNativeMarket);
+        borrowed = bound(
+            borrowed,
+            wNativeMarket.borrowable(collateralMarket, rawCollateral, 0).percentAdd(20),
+            wNativeMarket.borrowable(collateralMarket, rawCollateral, collateralMarket.eModeCategoryId).percentAdd(20)
+        );
 
-            rawCollateral = _boundCollateral(collateralMarket, rawCollateral, wNativeMarket);
-            borrowed = bound(
-                borrowed,
-                wNativeMarket.borrowable(collateralMarket, rawCollateral, 0).percentAdd(20),
-                wNativeMarket.borrowable(collateralMarket, rawCollateral, collateralMarket.eModeCategoryId).percentAdd(
-                    20
-                )
-            );
+        user.approve(collateralMarket.underlying, rawCollateral);
+        user.supplyCollateral(collateralMarket.underlying, rawCollateral, onBehalf);
 
-            user.approve(collateralMarket.underlying, rawCollateral);
-            user.supplyCollateral(collateralMarket.underlying, rawCollateral, onBehalf);
-
-            vm.expectRevert(Errors.UnauthorizedBorrow.selector);
-            user.borrow(wNative, borrowed, onBehalf, receiver);
-        }
+        vm.expectRevert(Errors.UnauthorizedBorrow.selector);
+        user.borrow(wNative, borrowed, onBehalf, receiver);
     }
 
-    function testShouldNotBorrowNotNative(uint256 amount, address onBehalf, address receiver) public {
+    function testShouldNotBorrowNotNative(uint256 seed, uint256 amount, address onBehalf, address receiver) public {
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
-            _revert();
+        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
 
-            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+        vm.assume(market.underlying != wNative && market.underlying != sNative);
 
-            if (market.underlying == wNative || market.underlying == sNative) continue;
+        amount = _boundBorrow(market, amount);
 
-            amount = _boundBorrow(market, amount);
-
-            vm.expectRevert(Errors.InconsistentEMode.selector);
-            user.borrow(market.underlying, amount, onBehalf, receiver);
-        }
+        vm.expectRevert(Errors.InconsistentEMode.selector);
+        user.borrow(market.underlying, amount, onBehalf, receiver);
     }
 }
