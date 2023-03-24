@@ -43,8 +43,8 @@ contract Snippet {
     /// @param config The configuration of the Morpho's user on Aave.
     /// @param underlying The address of the underlying asset to get the Price.
     /// @return underlyingPrice The current underlying price of the asset given Morpho's configuration
-    function getUnderlyingPrice(DataTypes.ReserveConfigurationMap memory config, address underlying)
-        public
+    function _getUnderlyingPrice(DataTypes.ReserveConfigurationMap memory config, address underlying)
+        internal
         view
         returns (uint256 underlyingPrice)
     {
@@ -83,7 +83,7 @@ contract Snippet {
             DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(underlying);
 
             uint256 marketPoolSupplyAmount = IAToken(market.aToken).balanceOf(address(morpho));
-            underlyingPrice = getUnderlyingPrice(config, underlying);
+            underlyingPrice = _getUnderlyingPrice(config, underlying);
             Types.Indexes256 memory indexes = morpho.updatedIndexes(underlying);
 
             uint256 assetUnit = 10 ** config.getDecimals();
@@ -124,7 +124,7 @@ contract Snippet {
 
             uint256 marketPoolBorrowAmount = ERC20(market.variableDebtToken).balanceOf(address(morpho));
 
-            underlyingPrice = getUnderlyingPrice(config, underlying);
+            underlyingPrice = _getUnderlyingPrice(config, underlying);
             Types.Indexes256 memory indexes = morpho.updatedIndexes(underlying);
 
             uint256 assetUnit = 10 ** config.getDecimals();
@@ -390,18 +390,22 @@ contract Snippet {
     /// @notice Computes and returns the current supply rate per year experienced on average on a given market.
     /// @param underlying The address of the underlying asset.
     /// @return avgSupplyRatePerYear The market's average supply rate per year (in ray).
-    /// @return p2pSupplyAmount The total supplied amount matched peer-to-peer, subtracting the supply delta (in underlying).
-    /// @return poolSupplyAmount The total supplied amount on the underlying pool, adding the supply delta (in underlying).
-    function getAverageSupplyRatePerYear(address underlying) public view returns (uint256 avgSupplyRatePerYear) {
+    /// @return p2pSupplyRatePerYear The market's supply rate per year in P2P (in ray).
+    /// @return poolSupplyRatePerYear The market's average supply rate per year on Pool (in ray).
+    function getAverageSupplyRatePerYear(address underlying)
+        public
+        view
+        returns (uint256 avgSupplyRatePerYear, uint256 p2pSupplyRatePerYear, uint256 poolSupplyRatePerYear)
+    {
+        uint256 poolBorrowRatePerYear;
         Types.Market memory market = morpho.market(underlying);
 
-        DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
-        (uint256 poolSupplyRate, uint256 poolBorrowRate) = _getPoolRatesPerYear(underlying);
+        (poolSupplyRatePerYear, poolBorrowRatePerYear) = _getPoolRatesPerYear(underlying);
 
-        uint256 p2pSupplyRate = computeP2PSupplyRatePerYear(
+        p2pSupplyRatePerYear = computeP2PSupplyRatePerYear(
             P2PRateComputeParams({
-                poolSupplyRatePerYear: poolSupplyRate,
-                poolBorrowRatePerYear: poolBorrowRate,
+                poolSupplyRatePerYear: poolSupplyRatePerYear,
+                poolBorrowRatePerYear: poolBorrowRatePerYear,
                 poolIndex: market.indexes.supply.poolIndex,
                 p2pIndex: market.indexes.supply.p2pIndex,
                 proportionIdle: getProportionIdle(market),
@@ -412,9 +416,46 @@ contract Snippet {
             })
         );
 
-        (uint256 p2pSupplyAmount, uint256 poolSupplyAmount, uint256 idleSupply) = getTotalMarketSupply(underlying);
+        (avgSupplyRatePerYear,) = _getWeightedRate(
+            p2pSupplyRatePerYear,
+            poolSupplyRatePerYear,
+            market.deltas.supply.scaledP2PTotal.rayMul(market.indexes.supply.p2pIndex),
+            IAToken(market.aToken).balanceOf(address(morpho)).zeroFloorSub(
+                market.deltas.supply.scaledDelta.rayMul(market.indexes.supply.poolIndex)
+            )
+        );
+    }
 
-        (avgSupplyRatePerYear,) =
-            _getWeightedRate(p2pSupplyRatePerYear, poolSupplyRatePerYear, p2pSupplyAmount, poolSupplyAmount);
+    /// @notice Returns the health factor of a given user, using virtually updated pool & peer-to-peer indexes for all markets.
+    /// @param user The user of whom to get the health factor.
+    /// @return healthFactor The health factor of the given user (in wad).
+    function getUserHealthFactor(address user) public view returns (uint256 healthFactor) {
+        address[] memory collateralAddresses = morpho.userCollaterals(user);
+        address[] memory borrowAddresses = morpho.userBorrows(user);
+
+        uint256 collateralAmount;
+        uint256 borrowAmount;
+        uint256 maxDebt;
+        uint256 debt;
+        for (uint256 i = 0; i < collateralAddresses.length; ++i) {
+            collateralAmount = morpho.supplyBalance(collateralAddresses[i], user);
+            DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(collateralAddresses[i]);
+            uint256 underlyingPrice = _getUnderlyingPrice(config, collateralAddresses[i]);
+
+            uint256 assetUnit = 10 ** config.getDecimals();
+            uint256 liquidationThreshold = config.getLiquidationThreshold();
+
+            maxDebt += ((collateralAmount * underlyingPrice).percentMulDown(liquidationThreshold)) / assetUnit;
+        }
+        for (uint256 i = 0; i < borrowAddresses.length; ++i) {
+            borrowAmount = morpho.supplyBalance(borrowAddresses[i], user);
+            DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(borrowAddresses[i]);
+            uint256 underlyingPrice = _getUnderlyingPrice(config, borrowAddresses[i]);
+
+            uint256 assetUnit = 10 ** config.getDecimals();
+
+            debt += (borrowAmount * underlyingPrice).divUp(assetUnit);
+        }
+        healthFactor = debt > 0 ? maxDebt.wadDiv(debt) : type(uint256).max;
     }
 }
