@@ -5,7 +5,7 @@ import {RewardsManagerMock} from "test/mocks/RewardsManagerMock.sol";
 
 import "test/helpers/InternalTest.sol";
 
-contract TestUnitClaimRewards is InternalTest {
+contract TestInternalClaimRewards is InternalTest {
     using TestConfigLib for TestConfig;
 
     function setUp() public override {

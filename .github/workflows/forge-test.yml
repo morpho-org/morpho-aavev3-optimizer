@@ -1,4 +1,4 @@
-name: Forge
+name: Forge tests
 
 on:
   workflow_call:
@@ -22,6 +22,16 @@ on:
         required: false
         default: 32
         type: number
+      invariant-runs:
+        description: The number of runs to perform for invariant tests.
+        required: false
+        default: 4
+        type: number
+      invariant-depth:
+        description: The depth of invariant tests.
+        required: false
+        default: 128
+        type: number
       coverageThreshold:
         description: The coverage threshold below which to fail the action.
         required: false
@@ -37,9 +47,13 @@ on:
 env:
   FOUNDRY_PROFILE: ci
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    name: Compilation
+  build-via-ir:
+    name: Compilation (via IR)
     runs-on: ubuntu-latest
 
     steps:
@@ -53,11 +67,34 @@ jobs:
         with:
           version: nightly
 
-      - name: Build contracts & check sizes
+      - name: Build contracts via IR & check sizes
         run: make contracts # don't use compilation cache
 
+  build-no-ir:
+    name: Compilation (without IR)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
+
+      - uses: ./.github/actions/install
+
+      - name: Build contracts without IR
+        run: forge build
+
+      - name: Save forge compilation cache
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            cache
+            out
+          key: forge-${{ github.ref_name }}
+
   test-unit:
-    needs: build
+    needs: build-no-ir
 
     name: Unit tests (${{ inputs.network }})
     runs-on: ubuntu-latest
@@ -79,7 +116,7 @@ jobs:
           FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
 
   test-internal:
-    needs: build
+    needs: build-no-ir
 
     name: Internal tests (${{ inputs.network }})
     runs-on: ubuntu-latest
@@ -101,7 +138,7 @@ jobs:
           FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
 
   test-integration:
-    needs: build
+    needs: build-no-ir
 
     name: Integration tests (${{ inputs.network }})
     runs-on: ubuntu-latest
@@ -129,11 +166,35 @@ jobs:
           match: src/Morpho.sol
           report: ${{ inputs.network }}.gasreport.ansi
 
+  test-invariant:
+    needs: build-no-ir
+
+    name: Invariant tests (${{ inputs.network }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
+
+      - uses: ./.github/actions/install
+
+      - name: Run invariant tests
+        run: make test-invariant
+        env:
+          NETWORK: ${{ inputs.network }}
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
+          FOUNDRY_INVARIANT_RUNS: ${{ inputs.invariant-runs }}
+          FOUNDRY_INVARIANT_DEPTH: ${{ inputs.invariant-depth }}
+          FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
+
   coverage:
     needs:
       - test-unit
       - test-internal
       - test-integration
+      - test-invariant
     if: inputs.coverageThreshold != ''
 
     name: Coverage (${{ inputs.network }})

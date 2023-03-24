@@ -45,7 +45,7 @@ library MarketSideDeltaLib {
     /// @param amount The amount to supply/borrow (in underlying).
     /// @param poolIndex The current pool index.
     /// @param borrowSide Whether the market side is borrow.
-    /// @return The amount left to process and the amount to repay/withdraw.
+    /// @return The amount left to process (in underlying) and the amount to repay/withdraw (in underlying).
     function decreaseDelta(
         Types.MarketSideDelta storage delta,
         address underlying,

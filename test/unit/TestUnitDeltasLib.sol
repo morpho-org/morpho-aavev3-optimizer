@@ -41,7 +41,7 @@ contract TestUnitDeltasLib is BaseTest {
             address(1),
             totalP2PSupply + promoted.rayDiv(indexes.supply.p2pIndex),
             totalP2PBorrow + amount.rayDiv(indexes.borrow.p2pIndex)
-            );
+        );
 
         uint256 p2pIncrease = this.increaseP2P(address(1), promoted, amount, false);
         assertEq(p2pIncrease, amount.rayDiv(indexes.supply.p2pIndex), "p2pIncrease");
@@ -64,7 +64,7 @@ contract TestUnitDeltasLib is BaseTest {
             address(1),
             totalP2PSupply + amount.rayDiv(indexes.supply.p2pIndex),
             totalP2PBorrow + promoted.rayDiv(indexes.borrow.p2pIndex)
-            );
+        );
 
         uint256 p2pIncrease = this.increaseP2P(address(1), promoted, amount, true);
         assertEq(p2pIncrease, amount.rayDiv(indexes.borrow.p2pIndex), "p2pIncrease");
@@ -99,7 +99,7 @@ contract TestUnitDeltasLib is BaseTest {
             address(1),
             totalP2PSupply.zeroFloorSub(demoted.rayDiv(indexes.supply.p2pIndex)),
             totalP2PBorrow.zeroFloorSub(amount.rayDiv(indexes.borrow.p2pIndex))
-            );
+        );
 
         this.decreaseP2P(address(1), demoted, amount, false);
         assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply.zeroFloorSub(demoted.rayDiv(indexes.supply.p2pIndex)));
@@ -121,7 +121,7 @@ contract TestUnitDeltasLib is BaseTest {
             address(1),
             totalP2PSupply.zeroFloorSub(amount.rayDiv(indexes.supply.p2pIndex)),
             totalP2PBorrow.zeroFloorSub(demoted.rayDiv(indexes.borrow.p2pIndex))
-            );
+        );
 
         this.decreaseP2P(address(1), demoted, amount, true);
         assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply.zeroFloorSub(amount.rayDiv(indexes.supply.p2pIndex)));

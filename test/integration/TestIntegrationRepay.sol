@@ -15,6 +15,8 @@ contract TestIntegrationRepay is IntegrationTest {
         uint256 morphoSupplyBefore;
         uint256 scaledP2PBorrow;
         uint256 scaledPoolBorrow;
+        address[] collaterals;
+        address[] borrows;
         Types.Indexes256 indexes;
         Types.Market morphoMarket;
     }
@@ -49,6 +51,8 @@ contract TestIntegrationRepay is IntegrationTest {
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
             test.scaledPoolBorrow = morpho.scaledPoolBorrowBalance(market.underlying, onBehalf);
+            test.collaterals = morpho.userCollaterals(onBehalf);
+            test.borrows = morpho.userBorrows(onBehalf);
             uint256 p2pBorrow = test.scaledP2PBorrow.rayMul(test.indexes.borrow.p2pIndex);
             uint256 poolBorrow = test.scaledPoolBorrow.rayMul(test.indexes.borrow.poolIndex);
             uint256 remaining = test.borrowed - test.repaid;
@@ -58,6 +62,10 @@ contract TestIntegrationRepay is IntegrationTest {
             assertLe(poolBorrow, remaining, "poolBorrow > remaining");
             assertApproxEqDust(test.repaid, amount, "repaid != amount");
             assertApproxEqDust(p2pBorrow, promoted, "p2pBorrow != promoted");
+
+            assertEq(test.collaterals.length, 0, "collaterals.length");
+            assertEq(test.borrows.length, 1, "borrows.length");
+            assertEq(test.borrows[0], market.underlying, "borrows[0]");
 
             // Assert Morpho getters.
             assertApproxEqDust(morpho.borrowBalance(market.underlying, onBehalf), remaining, "borrow != remaining");
@@ -130,6 +138,8 @@ contract TestIntegrationRepay is IntegrationTest {
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
             test.scaledPoolBorrow = morpho.scaledPoolBorrowBalance(market.underlying, onBehalf);
+            test.collaterals = morpho.userCollaterals(onBehalf);
+            test.borrows = morpho.userBorrows(onBehalf);
 
             // Assert balances on Morpho.
             assertEq(test.scaledP2PBorrow, 0, "scaledP2PBorrow != 0");
@@ -138,6 +148,9 @@ contract TestIntegrationRepay is IntegrationTest {
             assertEq(
                 morpho.scaledP2PSupplyBalance(market.underlying, address(promoter1)), 0, "promoterScaledP2PSupply != 0"
             );
+
+            assertEq(test.collaterals.length, 0, "collaterals.length");
+            assertEq(test.borrows.length, 0, "borrows.length");
 
             // Assert Morpho getters.
             assertEq(morpho.borrowBalance(market.underlying, onBehalf), 0, "borrow != 0");
@@ -214,11 +227,16 @@ contract TestIntegrationRepay is IntegrationTest {
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
             test.scaledPoolBorrow = morpho.scaledPoolBorrowBalance(market.underlying, onBehalf);
+            test.collaterals = morpho.userCollaterals(onBehalf);
+            test.borrows = morpho.userBorrows(onBehalf);
 
             // Assert balances on Morpho.
             assertEq(test.scaledP2PBorrow, 0, "scaledP2PBorrow != 0");
             assertEq(test.scaledPoolBorrow, 0, "scaledPoolBorrow != 0");
             assertApproxEqDust(test.repaid, test.borrowed, "repaid != amount");
+
+            assertEq(test.collaterals.length, 0, "collaterals.length");
+            assertEq(test.borrows.length, 0, "borrows.length");
 
             // Assert Morpho getters.
             assertEq(morpho.borrowBalance(market.underlying, onBehalf), 0, "borrow != 0");
@@ -301,6 +319,8 @@ contract TestIntegrationRepay is IntegrationTest {
             test.indexes = morpho.updatedIndexes(market.underlying);
             test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
             test.scaledPoolBorrow = morpho.scaledPoolBorrowBalance(market.underlying, onBehalf);
+            test.collaterals = morpho.userCollaterals(onBehalf);
+            test.borrows = morpho.userBorrows(onBehalf);
 
             // Assert balances on Morpho.
             assertEq(test.scaledP2PBorrow, 0, "scaledP2PBorrow != 0");
@@ -311,6 +331,9 @@ contract TestIntegrationRepay is IntegrationTest {
                 0,
                 "promoterScaledPoolSupply != 0"
             );
+
+            assertEq(test.collaterals.length, 0, "collaterals.length");
+            assertEq(test.borrows.length, 0, "borrows.length");
 
             // Assert Morpho getters.
             assertEq(morpho.borrowBalance(market.underlying, onBehalf), 0, "borrow != 0");
@@ -360,15 +383,15 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldNotRepayWhenNoBorrow(uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[underlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
-            vm.expectRevert(Errors.AmountIsZero.selector);
+            vm.expectRevert(Errors.DebtIsZero.selector);
             user.repay(market.underlying, amount, onBehalf);
         }
     }
@@ -407,25 +430,25 @@ contract TestIntegrationRepay is IntegrationTest {
     function testShouldRevertRepayZero(address onBehalf) public {
         onBehalf = _boundReceiver(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AmountIsZero.selector);
-            user.repay(testMarkets[underlyings[marketIndex]].underlying, 0, onBehalf);
+            user.repay(testMarkets[allUnderlyings[marketIndex]].underlying, 0, onBehalf);
         }
     }
 
     function testShouldRevertRepayOnBehalfZero(uint256 amount) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             vm.expectRevert(Errors.AddressIsZero.selector);
-            user.repay(testMarkets[underlyings[marketIndex]].underlying, amount, address(0));
+            user.repay(testMarkets[allUnderlyings[marketIndex]].underlying, amount, address(0));
         }
     }
 
     function testShouldRevertRepayWhenMarketNotCreated(address underlying, uint256 amount, address onBehalf) public {
         _assumeNotUnderlying(underlying);
 
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
@@ -433,13 +456,13 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldRevertRepayWhenRepayPaused(uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < underlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket memory market = testMarkets[underlyings[marketIndex]];
+            TestMarket memory market = testMarkets[allUnderlyings[marketIndex]];
 
             morpho.setIsRepayPaused(market.underlying, true);
 
@@ -449,7 +472,7 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldRepayWhenEverythingElsePaused(uint256 borrowed, uint256 amount, address onBehalf) public {
-        amount = _boundAmount(amount);
+        amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
         for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {

@@ -29,116 +29,139 @@ library MarketLib {
     using ReserveDataLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
+    /// @notice Returns whether the `market` is created or not.
     function isCreated(Types.Market storage market) internal view returns (bool) {
         return market.aToken != address(0);
     }
 
+    /// @notice Returns whether supply is paused on `market` or not.
     function isSupplyPaused(Types.Market storage market) internal view returns (bool) {
         return market.pauseStatuses.isSupplyPaused;
     }
 
+    /// @notice Returns whether supply collateral is paused on `market` or not.
     function isSupplyCollateralPaused(Types.Market storage market) internal view returns (bool) {
         return market.pauseStatuses.isSupplyCollateralPaused;
     }
 
+    /// @notice Returns whether borrow is paused on `market` or not.
     function isBorrowPaused(Types.Market storage market) internal view returns (bool) {
         return market.pauseStatuses.isBorrowPaused;
     }
 
+    /// @notice Returns whether repay is paused on `market` or not.
     function isRepayPaused(Types.Market storage market) internal view returns (bool) {
         return market.pauseStatuses.isRepayPaused;
     }
 
+    /// @notice Returns whether withdraw is paused on `market` or not.
     function isWithdrawPaused(Types.Market storage market) internal view returns (bool) {
         return market.pauseStatuses.isWithdrawPaused;
     }
 
+    /// @notice Returns whether withdraw collateral is paused on `market` or not.
     function isWithdrawCollateralPaused(Types.Market storage market) internal view returns (bool) {
         return market.pauseStatuses.isWithdrawCollateralPaused;
     }
 
+    /// @notice Returns whether liquidate collateral is paused on `market` or not.
     function isLiquidateCollateralPaused(Types.Market storage market) internal view returns (bool) {
         return market.pauseStatuses.isLiquidateCollateralPaused;
     }
 
+    /// @notice Returns whether liquidate borrow is paused on `market` or not.
     function isLiquidateBorrowPaused(Types.Market storage market) internal view returns (bool) {
         return market.pauseStatuses.isLiquidateBorrowPaused;
     }
 
+    /// @notice Returns whether the `market` is deprecated or not.
     function isDeprecated(Types.Market storage market) internal view returns (bool) {
         return market.pauseStatuses.isDeprecated;
     }
 
+    /// @notice Returns whether the peer-to-peer is disabled on `market` or not.
     function isP2PDisabled(Types.Market storage market) internal view returns (bool) {
         return market.pauseStatuses.isP2PDisabled;
     }
 
+    /// @notice Sets the `market` as `isCollateral` on Morpho.
     function setAssetIsCollateral(Types.Market storage market, bool isCollateral) internal {
         market.isCollateral = isCollateral;
 
         emit Events.IsCollateralSet(market.underlying, isCollateral);
     }
 
+    /// @notice Sets the `market` supply pause status as `isPaused` on Morpho.
     function setIsSupplyPaused(Types.Market storage market, bool isPaused) internal {
         market.pauseStatuses.isSupplyPaused = isPaused;
 
         emit Events.IsSupplyPausedSet(market.underlying, isPaused);
     }
 
+    /// @notice Sets the `market` supply collateral pause status as `isPaused` on Morpho.
     function setIsSupplyCollateralPaused(Types.Market storage market, bool isPaused) internal {
         market.pauseStatuses.isSupplyCollateralPaused = isPaused;
 
         emit Events.IsSupplyCollateralPausedSet(market.underlying, isPaused);
     }
 
+    /// @notice Sets the `market` borrow pause status as `isPaused` on Morpho.
     function setIsBorrowPaused(Types.Market storage market, bool isPaused) internal {
         market.pauseStatuses.isBorrowPaused = isPaused;
 
         emit Events.IsBorrowPausedSet(market.underlying, isPaused);
     }
 
+    /// @notice Sets the `market` repay pause status as `isPaused` on Morpho.
     function setIsRepayPaused(Types.Market storage market, bool isPaused) internal {
         market.pauseStatuses.isRepayPaused = isPaused;
 
         emit Events.IsRepayPausedSet(market.underlying, isPaused);
     }
 
+    /// @notice Sets the `market` withdraw pause status as `isPaused` on Morpho.
     function setIsWithdrawPaused(Types.Market storage market, bool isPaused) internal {
         market.pauseStatuses.isWithdrawPaused = isPaused;
 
         emit Events.IsWithdrawPausedSet(market.underlying, isPaused);
     }
 
+    /// @notice Sets the `market` withdraw collateral pause status as `isPaused` on Morpho.
     function setIsWithdrawCollateralPaused(Types.Market storage market, bool isPaused) internal {
         market.pauseStatuses.isWithdrawCollateralPaused = isPaused;
 
         emit Events.IsWithdrawCollateralPausedSet(market.underlying, isPaused);
     }
 
+    /// @notice Sets the `market` liquidate collateral pause status as `isPaused` on Morpho.
     function setIsLiquidateCollateralPaused(Types.Market storage market, bool isPaused) internal {
         market.pauseStatuses.isLiquidateCollateralPaused = isPaused;
 
         emit Events.IsLiquidateCollateralPausedSet(market.underlying, isPaused);
     }
 
+    /// @notice Sets the `market` liquidate borrow pause status as `isPaused` on Morpho.
     function setIsLiquidateBorrowPaused(Types.Market storage market, bool isPaused) internal {
         market.pauseStatuses.isLiquidateBorrowPaused = isPaused;
 
         emit Events.IsLiquidateBorrowPausedSet(market.underlying, isPaused);
     }
 
+    /// @notice Sets the `market` as `deprecated` on Morpho.
     function setIsDeprecated(Types.Market storage market, bool deprecated) internal {
         market.pauseStatuses.isDeprecated = deprecated;
 
         emit Events.IsDeprecatedSet(market.underlying, deprecated);
     }
 
+    /// @notice Sets the `market` peer-to-peer as `p2pDisabled` on Morpho.
     function setIsP2PDisabled(Types.Market storage market, bool p2pDisabled) internal {
         market.pauseStatuses.isP2PDisabled = p2pDisabled;
 
         emit Events.IsP2PDisabledSet(market.underlying, p2pDisabled);
     }
 
+    /// @notice Sets the `market` peer-to-peer reserve factor to `reserveFactor`.
     function setReserveFactor(Types.Market storage market, uint16 reserveFactor) internal {
         if (reserveFactor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
         market.reserveFactor = reserveFactor;
@@ -146,6 +169,7 @@ library MarketLib {
         emit Events.ReserveFactorSet(market.underlying, reserveFactor);
     }
 
+    /// @notice Sets the `market` peer-to-peer index cursor to `p2pIndexCursor`.
     function setP2PIndexCursor(Types.Market storage market, uint16 p2pIndexCursor) internal {
         if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
         market.p2pIndexCursor = p2pIndexCursor;
@@ -153,6 +177,7 @@ library MarketLib {
         emit Events.P2PIndexCursorSet(market.underlying, p2pIndexCursor);
     }
 
+    /// @notice Sets the `market` indexes to `indexes`.
     function setIndexes(Types.Market storage market, Types.Indexes256 memory indexes) internal {
         market.indexes.supply.poolIndex = indexes.supply.poolIndex.toUint128();
         market.indexes.supply.p2pIndex = indexes.supply.p2pIndex.toUint128();
@@ -165,9 +190,10 @@ library MarketLib {
             indexes.supply.p2pIndex,
             indexes.borrow.poolIndex,
             indexes.borrow.p2pIndex
-            );
+        );
     }
 
+    /// @notice Returns the supply indexes of `market`.
     function getSupplyIndexes(Types.Market storage market)
         internal
         view
@@ -177,6 +203,7 @@ library MarketLib {
         supplyIndexes.p2pIndex = uint256(market.indexes.supply.p2pIndex);
     }
 
+    /// @notice Returns the borrow indexes of `market`.
     function getBorrowIndexes(Types.Market storage market)
         internal
         view
@@ -186,20 +213,24 @@ library MarketLib {
         borrowIndexes.p2pIndex = uint256(market.indexes.borrow.p2pIndex);
     }
 
+    /// @notice Returns the indexes of `market`.
     function getIndexes(Types.Market storage market) internal view returns (Types.Indexes256 memory indexes) {
         indexes.supply = getSupplyIndexes(market);
         indexes.borrow = getBorrowIndexes(market);
     }
 
+    /// @notice Returns the proportion of idle supply in `market` over the total peer-to-peer amount in supply.
     function getProportionIdle(Types.Market storage market) internal view returns (uint256) {
         uint256 idleSupply = market.idleSupply;
         if (idleSupply == 0) return 0;
 
         uint256 totalP2PSupplied = market.deltas.supply.scaledP2PTotal.rayMul(market.indexes.supply.p2pIndex);
-        return idleSupply.rayDivUp(totalP2PSupplied);
+
+        // We take the minimum to handle the case where the proportion is rounded to greater than 1.
+        return Math.min(idleSupply.rayDivUp(totalP2PSupplied), WadRayMath.RAY);
     }
 
-    /// @dev Increases the idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
+    /// @notice Increases the idle supply if the supply cap is reached in a breaking repay, and returns a new toSupply amount.
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to repay. (by supplying on pool)
@@ -232,7 +263,7 @@ library MarketLib {
         return (suppliable, idleSupplyIncrease);
     }
 
-    /// @dev Decreases the idle supply.
+    /// @notice Decreases the idle supply.
     /// @param market The market storage.
     /// @param underlying The underlying address.
     /// @param amount The amount to borrow.

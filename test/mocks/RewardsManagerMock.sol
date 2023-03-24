@@ -12,12 +12,24 @@ contract RewardsManagerMock is IRewardsManager {
 
     constructor(address morpho) {
         MORPHO = morpho;
-        POOL = IMorpho(morpho).POOL();
+        POOL = IMorpho(morpho).pool();
     }
 
     function REWARDS_CONTROLLER() external pure returns (address) {
         revert RewardsControllerCall();
     }
+
+    function getRewardData(address asset, address reward)
+        external
+        view
+        returns (uint256 index, uint256 lastUpdateTimestamp)
+    {}
+
+    function getUserData(address asset, address reward, address user)
+        external
+        view
+        returns (uint256 index, uint256 accrued)
+    {}
 
     function getAllUserRewards(address[] calldata assets, address user)
         external
@@ -33,6 +45,7 @@ contract RewardsManagerMock is IRewardsManager {
     {}
 
     function getUserAssetIndex(address user, address asset, address reward) external view returns (uint256) {}
+    function getAssetIndex(address asset, address reward) external view returns (uint256 assetIndex) {}
 
     function claimRewards(address[] calldata assets, address user)
         external

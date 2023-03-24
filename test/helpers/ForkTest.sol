@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IAToken} from "src/interfaces/aave/IAToken.sol";
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
+import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
 import {IACLManager} from "@aave-v3-core/interfaces/IACLManager.sol";
 import {IPoolConfigurator} from "@aave-v3-core/interfaces/IPoolConfigurator.sol";
 import {IPoolDataProvider} from "@aave-v3-core/interfaces/IPoolDataProvider.sol";
@@ -10,6 +11,8 @@ import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol"
 import {IStableDebtToken} from "@aave-v3-core/interfaces/IStableDebtToken.sol";
 import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
 
+import {ReserveDataLib} from "src/libraries/ReserveDataLib.sol";
+import {ReserveDataTestLib} from "test/helpers/ReserveDataTestLib.sol";
 import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
 import {MathUtils} from "@aave-v3-core/protocol/libraries/math/MathUtils.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
@@ -25,8 +28,10 @@ import "./BaseTest.sol";
 contract ForkTest is BaseTest {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
-    using TestConfigLib for TestConfig;
     using SafeTransferLib for ERC20;
+    using TestConfigLib for TestConfig;
+    using ReserveDataLib for DataTypes.ReserveData;
+    using ReserveDataTestLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /* STRUCTS */
@@ -48,11 +53,13 @@ contract ForkTest is BaseTest {
 
     address internal dai;
     address internal usdc;
+    address internal usdt;
     address internal aave;
     address internal link;
     address internal wbtc;
     address internal weth;
     address internal wNative;
+    address internal sNative;
     address[] internal allUnderlyings;
 
     IPool internal pool;
@@ -124,13 +131,15 @@ contract ForkTest is BaseTest {
 
         dai = config.getAddress("DAI");
         usdc = config.getAddress("USDC");
+        usdt = config.getAddress("USDT");
         aave = config.getAddress("AAVE");
         link = config.getAddress("LINK");
         wbtc = config.getAddress("WBTC");
         weth = config.getAddress("WETH");
         wNative = config.getWrappedNative();
+        sNative = config.getStakedNative();
 
-        allUnderlyings = [dai, usdc, aave, wbtc, weth];
+        allUnderlyings = [dai, usdc, aave, usdt, wbtc, weth, sNative];
     }
 
     function _label() internal virtual {
@@ -188,7 +197,6 @@ contract ForkTest is BaseTest {
     }
 
     /// @dev Avoids to revert because of AAVE token snapshots: https://github.com/aave/aave-token-v2/blob/master/contracts/token/base/GovernancePowerDelegationERC20.sol#L174
-
     function _deal(address underlying, address user, uint256 amount) internal {
         if (amount == 0) return;
 
@@ -215,58 +223,17 @@ contract ForkTest is BaseTest {
         snapshotId = vm.snapshot();
     }
 
-    /// @dev Calculates the amount accrued to AaveV3's treasury
-    /// @return The scaled treasury amount (to scale by pool supply index)
-    function _accruedToTreasury(address underlying) internal view returns (uint256) {
+    /// @dev Returns the total supply used towards the supply cap.
+    function _totalSupplyToCap(address underlying) internal view returns (uint256) {
         DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
         uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
         uint256 poolBorrowIndex = pool.getReserveNormalizedVariableDebt(underlying);
 
-        StableDebtSupplyData memory vars;
-        (
-            vars.currPrincipalStableDebt,
-            vars.currTotalStableDebt,
-            vars.currAvgStableBorrowRate,
-            vars.stableDebtLastUpdateTimestamp
-        ) = IStableDebtToken(reserve.stableDebtTokenAddress).getSupplyData();
-        uint256 scaledTotalVariableDebt = IVariableDebtToken(reserve.variableDebtTokenAddress).scaledTotalSupply();
-
-        uint256 currTotalVariableDebt = scaledTotalVariableDebt.rayMul(poolBorrowIndex);
-        uint256 prevTotalVariableDebt = scaledTotalVariableDebt.rayMul(reserve.variableBorrowIndex);
-        uint256 prevTotalStableDebt = vars.currPrincipalStableDebt.rayMul(
-            MathUtils.calculateCompoundedInterest(
-                vars.currAvgStableBorrowRate, vars.stableDebtLastUpdateTimestamp, reserve.lastUpdateTimestamp
-            )
-        );
-
-        uint256 accruedTotalDebt =
-            currTotalVariableDebt + vars.currTotalStableDebt - prevTotalVariableDebt - prevTotalStableDebt;
-        uint256 newAccruedToTreasury =
-            accruedTotalDebt.percentMul(reserve.configuration.getReserveFactor()).rayDiv(poolSupplyIndex);
-
-        return (reserve.accruedToTreasury + newAccruedToTreasury);
+        return reserve.totalSupplyToCap(poolSupplyIndex, poolBorrowIndex);
     }
 
-    function _setSupplyGap(address underlying, uint256 supplyGap) internal returns (uint256) {
-        DataTypes.ReserveConfigurationMap memory reserveConfig = pool.getConfiguration(underlying);
-
-        uint256 tokenUnit = 10 ** reserveConfig.getDecimals();
-        uint256 totalSupplyToCap = _totalSupplyToCap(underlying);
-        uint256 newSupplyCap = (totalSupplyToCap + supplyGap) / tokenUnit;
-
-        poolAdmin.setSupplyCap(underlying, newSupplyCap);
-        return newSupplyCap * tokenUnit - totalSupplyToCap;
-    }
-
-    function _totalSupplyToCap(address underlying) internal view returns (uint256) {
-        DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
-        return (IAToken(reserve.aTokenAddress).scaledTotalSupply() + _accruedToTreasury(underlying)).rayMul(
-            pool.getReserveNormalizedIncome(underlying)
-        );
-    }
-
-    // @dev  Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
-    // https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/pool/PoolConfigurator.sol#L369-L376
+    /// @dev Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
+    /// https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/pool/PoolConfigurator.sol#L369-L376
     function _getLtvLt(address underlying, uint8 eModeCategoryId)
         internal
         view
@@ -302,5 +269,15 @@ contract ForkTest is BaseTest {
             ""
         );
         poolAdmin.setAssetEModeCategory(underlying, eModeCategoryId);
+    }
+
+    function _assumeNotUnderlying(address input) internal view {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.assume(input != allUnderlyings[i]);
+        }
+    }
+
+    function _randomUnderlying(uint256 seed) internal view returns (address) {
+        return allUnderlyings[uint256(keccak256(abi.encode(seed))) % allUnderlyings.length];
     }
 }

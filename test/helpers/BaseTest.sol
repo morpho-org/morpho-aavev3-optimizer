@@ -6,11 +6,13 @@ import {Events} from "src/libraries/Events.sol";
 import {Errors} from "src/libraries/Errors.sol";
 import {Constants} from "src/libraries/Constants.sol";
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
+import {collateralValue, rawCollateralValue} from "test/helpers/Utils.sol";
 
 import {stdStorage, StdStorage} from "@forge-std/StdStorage.sol";
 import {console2} from "@forge-std/console2.sol";
@@ -66,8 +68,19 @@ contract BaseTest is Test {
         return bound(amount, 1, MAX_AMOUNT);
     }
 
+    /// @dev Bounds the fuzzing input to a non-zero 256 bits unsigned integer.
+    function _boundNotZero(uint256 input) internal view virtual returns (uint256) {
+        return bound(input, 1, type(uint256).max);
+    }
+
     /// @dev Bounds the fuzzing input to a non-zero address.
     function _boundAddressNotZero(address input) internal view virtual returns (address) {
         return address(uint160(bound(uint256(uint160(input)), 1, type(uint160).max)));
+    }
+
+    /// @dev Assumes the receiver is able to receive ETH without reverting.
+    function _assumeETHReceiver(address receiver) internal {
+        (bool success,) = receiver.call("");
+        vm.assume(success);
     }
 }

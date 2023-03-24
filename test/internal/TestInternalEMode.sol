@@ -36,6 +36,8 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     }
 
     function setUp() public virtual override {
+        super.setUp();
+
         _defaultIterations = Types.Iterations(10, 10);
         _createMarket(dai, 0, 3_333);
         _createMarket(wbtc, 0, 3_333);
@@ -44,27 +46,22 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
 
         _setBalances(address(this), type(uint256).max);
 
-        ERC20(dai).approve(address(_POOL), type(uint256).max);
-        ERC20(wbtc).approve(address(_POOL), type(uint256).max);
-        ERC20(usdc).approve(address(_POOL), type(uint256).max);
-        ERC20(wNative).approve(address(_POOL), type(uint256).max);
+        ERC20(dai).approve(address(_pool), type(uint256).max);
+        ERC20(wbtc).approve(address(_pool), type(uint256).max);
+        ERC20(usdc).approve(address(_pool), type(uint256).max);
+        ERC20(wNative).approve(address(_pool), type(uint256).max);
 
-        _POOL.supplyToPool(dai, 100 ether);
-        _POOL.supplyToPool(wbtc, 1e8);
-        _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(wNative, 1 ether);
-    }
-
-    function testInitializeEMode() public {
-        uint256 eModeCategoryId = vm.envOr("E_MODE_CATEGORY_ID", uint256(0));
-        assertEq(_E_MODE_CATEGORY_ID, eModeCategoryId);
+        _pool.supplyToPool(dai, 100 ether, _pool.getReserveNormalizedIncome(dai));
+        _pool.supplyToPool(wbtc, 1e8, _pool.getReserveNormalizedIncome(wbtc));
+        _pool.supplyToPool(usdc, 1e8, _pool.getReserveNormalizedIncome(usdc));
+        _pool.supplyToPool(wNative, 1 ether, _pool.getReserveNormalizedIncome(wNative));
     }
 
     function testLtvLiquidationThresholdPriceSourceEMode(AssetData memory assetData) public {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             address underlying = allUnderlyings[i];
             (uint256 ltvBound, uint256 ltBound, uint256 ltvConfig, uint256 ltConfig) =
-                _getLtvLt(underlying, _E_MODE_CATEGORY_ID);
+                _getLtvLt(underlying, _eModeCategoryId);
 
             assetData.ltEMode = uint16(bound(assetData.ltEMode, ltBound + 1, type(uint16).max));
             assetData.ltvEMode = uint16(bound(assetData.ltvEMode, ltvBound + 1, assetData.ltEMode));
@@ -83,8 +80,8 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
                 priceSource: address(1),
                 label: ""
             });
-            if (_E_MODE_CATEGORY_ID != 0) {
-                _setEModeCategoryAsset(eModeCategory, underlying, _E_MODE_CATEGORY_ID);
+            if (_eModeCategoryId != 0) {
+                _setEModeCategoryAsset(eModeCategory, underlying, _eModeCategoryId);
             }
 
             oracle.setAssetPrice(address(1), assetData.underlyingPriceEMode);
@@ -98,17 +95,17 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
 
             assertEq(
                 uint16(ltv),
-                _E_MODE_CATEGORY_ID != 0 && ltvConfig != 0 ? assetData.ltvEMode : ltvConfig,
+                _eModeCategoryId != 0 && ltvConfig != 0 ? assetData.ltvEMode : ltvConfig,
                 "Loan to value E-mode"
             );
             assertEq(
                 uint16(lt),
-                _E_MODE_CATEGORY_ID != 0 && ltvConfig != 0 ? assetData.ltEMode : ltConfig,
+                _eModeCategoryId != 0 && ltvConfig != 0 ? assetData.ltEMode : ltConfig,
                 "Liquidation Threshold E-Mode"
             );
             assertEq(
                 assetPrice,
-                _E_MODE_CATEGORY_ID != 0 && assetData.underlyingPriceEMode != 0
+                _eModeCategoryId != 0 && assetData.underlyingPriceEMode != 0
                     ? assetData.underlyingPriceEMode
                     : assetData.underlyingPrice,
                 "Underlying Price E-Mode"
@@ -119,6 +116,8 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     function testIsInEModeCategory(uint8 eModeCategoryId, uint16 lt, uint16 ltv, uint16 liquidationBonus) public {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             address underlying = allUnderlyings[i];
+
+            eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
             (uint256 ltvBound, uint256 ltBound,,) = _getLtvLt(underlying, eModeCategoryId);
 
             address priceSourceEMode = address(1);
@@ -126,8 +125,6 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
             lt = uint16(bound(lt, Math.max(ltv + 1, ltBound + 1), PercentageMath.PERCENTAGE_FACTOR));
             liquidationBonus = uint16(bound(liquidationBonus, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max));
             vm.assume(uint256(lt).percentMul(liquidationBonus) <= PercentageMath.PERCENTAGE_FACTOR);
-
-            eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
 
             DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
                 ltv: ltv,
@@ -139,41 +136,51 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
 
             _setEModeCategoryAsset(eModeCategory, underlying, eModeCategoryId);
 
-            DataTypes.ReserveConfigurationMap memory config = _POOL.getConfiguration(underlying);
+            DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
 
-            bool expectedIsInEMode = _E_MODE_CATEGORY_ID == eModeCategoryId && _E_MODE_CATEGORY_ID != 0;
+            bool expectedIsInEMode = _eModeCategoryId == eModeCategoryId && _eModeCategoryId != 0;
             bool isInEMode = _isInEModeCategory(config);
 
             assertEq(isInEMode, expectedIsInEMode, "Wrong E-Mode");
         }
     }
 
-    function testAssetPriceEMode(
+    function testAssetDataEMode(
         address underlying,
         address priceSourceEMode,
         uint256 underlyingPriceEMode,
-        uint256 underlyingPrice
+        uint256 underlyingPrice,
+        uint8 eModeCategoryId
     ) public {
+        eModeCategoryId = uint8(bound(eModeCategoryId, 1, type(uint8).max));
         priceSourceEMode = _boundAddressNotZero(priceSourceEMode);
         vm.assume(underlying != priceSourceEMode);
-        bool isInEMode = true;
         underlyingPriceEMode = bound(underlyingPriceEMode, 1, type(uint256).max);
         underlyingPrice = bound(underlyingPrice, 0, type(uint256).max);
 
         oracle.setAssetPrice(underlying, underlyingPrice);
         oracle.setAssetPrice(priceSourceEMode, underlyingPriceEMode);
 
-        uint256 price = _getAssetPrice(underlying, oracle, isInEMode, priceSourceEMode);
+        DataTypes.ReserveConfigurationMap memory configuration = pool.getConfiguration(underlying);
 
+        _eModeCategoryId = eModeCategoryId;
+        configuration.setEModeCategory(eModeCategoryId);
+
+        (bool isInEMode, uint256 price, uint256 assetUnit) =
+            _assetData(underlying, oracle, configuration, priceSourceEMode);
+
+        assertEq(isInEMode, true, "isInEMode");
         assertEq(price, underlyingPriceEMode, "price != expected price");
+        assertEq(assetUnit, 10 ** configuration.getDecimals(), "assetUnit");
     }
 
-    function testAssetPriceEModeWithPriceSourceZero(
+    function testAssetDataEModeWithPriceSourceZero(
         address underlying,
         uint256 underlyingPrice,
-        uint256 underlyingPriceEMode
+        uint256 underlyingPriceEMode,
+        uint8 eModeCategoryId
     ) public {
-        bool isInEMode = true;
+        eModeCategoryId = uint8(bound(eModeCategoryId, 1, type(uint8).max));
         underlying = _boundAddressNotZero(underlying);
         underlyingPriceEMode = bound(underlyingPriceEMode, 1, type(uint256).max);
         underlyingPrice = bound(underlyingPrice, 0, type(uint256).max);
@@ -181,47 +188,69 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         oracle.setAssetPrice(underlying, underlyingPrice);
         oracle.setAssetPrice(address(0), underlyingPriceEMode);
 
-        uint256 price = _getAssetPrice(underlying, oracle, isInEMode, address(0));
+        DataTypes.ReserveConfigurationMap memory configuration = pool.getConfiguration(underlying);
 
+        _eModeCategoryId = eModeCategoryId;
+        configuration.setEModeCategory(eModeCategoryId);
+
+        (bool isInEMode, uint256 price, uint256 assetUnit) = _assetData(underlying, oracle, configuration, address(0));
+
+        assertEq(isInEMode, true, "isInEMode");
         assertEq(price, underlyingPrice, "price != expected price");
+        assertEq(assetUnit, 10 ** configuration.getDecimals(), "assetUnit");
     }
 
-    function testAssetPriceNonEMode(
+    function testAssetDataNonEMode(
         address underlying,
         address priceSourceEMode,
         uint256 underlyingPriceEMode,
-        uint256 underlyingPrice
+        uint256 underlyingPrice,
+        uint8 eModeCategoryId
     ) public {
         priceSourceEMode = _boundAddressNotZero(priceSourceEMode);
         vm.assume(underlying != priceSourceEMode);
-        bool isInEMode = false;
         underlyingPriceEMode = bound(underlyingPriceEMode, 1, type(uint256).max);
         underlyingPrice = bound(underlyingPrice, 0, type(uint256).max);
 
         oracle.setAssetPrice(underlying, underlyingPrice);
         oracle.setAssetPrice(priceSourceEMode, underlyingPriceEMode);
 
-        uint256 price = _getAssetPrice(underlying, oracle, isInEMode, priceSourceEMode);
+        DataTypes.ReserveConfigurationMap memory configuration = pool.getConfiguration(underlying);
+        configuration.setEModeCategory(eModeCategoryId);
 
+        (bool isInEMode, uint256 price, uint256 assetUnit) =
+            _assetData(underlying, oracle, configuration, priceSourceEMode);
+
+        assertEq(isInEMode, false, "isInEMode");
         assertEq(price, underlyingPrice, "price != expected price");
+        assertEq(assetUnit, 10 ** configuration.getDecimals(), "assetUnit");
     }
 
-    function testAssetPriceEModeWithEModePriceZero(
+    function testAssetDataEModeWithEModePriceZero(
         address underlying,
         address priceSourceEMode,
-        uint256 underlyingPrice
+        uint256 underlyingPrice,
+        uint8 eModeCategoryId
     ) public {
+        eModeCategoryId = uint8(bound(eModeCategoryId, 1, type(uint8).max));
         priceSourceEMode = _boundAddressNotZero(priceSourceEMode);
         vm.assume(underlying != priceSourceEMode);
-        bool isInEMode = true;
         underlyingPrice = bound(underlyingPrice, 0, type(uint256).max);
 
         oracle.setAssetPrice(underlying, underlyingPrice);
         oracle.setAssetPrice(priceSourceEMode, 0);
 
-        uint256 price = _getAssetPrice(underlying, oracle, isInEMode, priceSourceEMode);
+        DataTypes.ReserveConfigurationMap memory configuration = pool.getConfiguration(underlying);
 
+        _eModeCategoryId = eModeCategoryId;
+        configuration.setEModeCategory(eModeCategoryId);
+
+        (bool isInEMode, uint256 price, uint256 assetUnit) =
+            _assetData(underlying, oracle, configuration, priceSourceEMode);
+
+        assertEq(isInEMode, true, "isInEMode");
         assertEq(price, underlyingPrice, "price != expected price");
+        assertEq(assetUnit, 10 ** configuration.getDecimals(), "assetUnit");
     }
 
     function testShouldNotAuthorizeBorrowInconsistentEmode(
@@ -260,9 +289,9 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         indexes.borrow.p2pIndex = bound(indexes.borrow.p2pIndex, 0, type(uint96).max);
         indexes.borrow.poolIndex = bound(indexes.borrow.poolIndex, indexes.borrow.p2pIndex, type(uint96).max);
 
-        // Keep the condition because the test reverts if _E_MODE_CATEGORY_ID == 0
-        if (_E_MODE_CATEGORY_ID != 0) {
-            vm.assume(_E_MODE_CATEGORY_ID != eModeCategoryId);
+        // Keep the condition because the test reverts if _eModeCategoryId == 0
+        if (_eModeCategoryId != 0) {
+            vm.assume(_eModeCategoryId != eModeCategoryId);
             vm.expectRevert(Errors.InconsistentEMode.selector);
         }
         this.authorizeBorrow(dai, 0, indexes);
