@@ -233,7 +233,7 @@ contract Snippet {
         if (idleSupply == 0) return 0;
 
         uint256 totalP2PSupplied = market.deltas.supply.scaledP2PTotal.rayMul(market.indexes.supply.p2pIndex);
-        return idleSupply.rayDivUp(totalP2PSupplied);
+        return Math.min(idleSupply.rayDivUp(totalP2PSupplied), WadRayMath.RAY);
     }
 
     /// @notice Returns the supply rate per year a given user is currently experiencing on a given market.
