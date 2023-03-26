@@ -86,7 +86,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     }
 
     function testShouldNotWithdrawCollateralWhenLowHealthFactor(
-        uint256 seed,
+        uint256 collateralSeed,
+        uint256 borrowableSeed,
         uint256 rawCollateral,
         uint256 borrowed,
         uint256 withdrawn,
@@ -98,8 +99,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage collateralMarket = testMarkets[_randomCollateral(seed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
 
         rawCollateral = _boundCollateral(collateralMarket, rawCollateral, borrowedMarket);
         borrowed = bound(

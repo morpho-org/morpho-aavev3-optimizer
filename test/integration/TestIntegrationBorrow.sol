@@ -391,7 +391,8 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function testShouldNotBorrowMoreThanLtv(
-        uint256 seed,
+        uint256 collateralSeed,
+        uint256 borrowableSeed,
         uint256 collateral,
         uint256 borrowed,
         address onBehalf,
@@ -402,8 +403,8 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage collateralMarket = testMarkets[_randomCollateral(seed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
 
         collateral = _boundCollateral(collateralMarket, collateral, borrowedMarket);
         borrowed = bound(
@@ -580,7 +581,8 @@ contract TestIntegrationBorrow is IntegrationTest {
     }
 
     function testShouldNotBeAbleToBorrowPastLtvAfterBorrow(
-        uint256 seed,
+        uint256 collateralSeed,
+        uint256 borrowableSeed,
         uint256 collateral,
         uint256 borrowed,
         address onBehalf,
@@ -591,8 +593,8 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage collateralMarket = testMarkets[_randomCollateral(seed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
 
         collateral = _boundCollateral(collateralMarket, collateral, borrowedMarket);
         borrowed = bound(
