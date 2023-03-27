@@ -69,21 +69,16 @@ contract Snippet {
         for (uint256 i; i < nbMarkets;) {
             address underlying = marketAddresses[i];
 
-            Types.Market memory market = morpho.market(underlying);
             DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(underlying);
-
-            uint256 marketPoolSupplyAmount = IAToken(market.aToken).balanceOf(address(morpho));
             underlyingPrice = _getUnderlyingPrice(config, underlying);
-            Types.Indexes256 memory indexes = morpho.updatedIndexes(underlying);
-
             uint256 assetUnit = 10 ** config.getDecimals();
-            uint256 marketP2PSupplyAmount = market.deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex)
-                .zeroFloorSub(market.deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)).zeroFloorSub(
-                market.idleSupply
-            );
+
+            (uint256 marketP2PSupplyAmount, uint256 marketPoolSupplyAmount, uint256 marketIdleSupplyAmount) =
+                getMarketSupply(underlying);
+
             p2pSupplyAmount += (marketP2PSupplyAmount * underlyingPrice) / assetUnit;
             poolSupplyAmount += (marketPoolSupplyAmount * underlyingPrice) / assetUnit;
-            idleSupplyAmount += (market.idleSupply * underlyingPrice) / assetUnit;
+            idleSupplyAmount += (marketIdleSupplyAmount * underlyingPrice) / assetUnit;
 
             unchecked {
                 ++i;
@@ -109,17 +104,12 @@ contract Snippet {
         for (uint256 i; i < nbMarkets;) {
             address underlying = marketAddresses[i];
 
-            Types.Market memory market = morpho.market(underlying);
             DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(underlying);
-
-            uint256 marketPoolBorrowAmount = ERC20(market.variableDebtToken).balanceOf(address(morpho));
-
             underlyingPrice = _getUnderlyingPrice(config, underlying);
-            Types.Indexes256 memory indexes = morpho.updatedIndexes(underlying);
-
             uint256 assetUnit = 10 ** config.getDecimals();
-            uint256 marketP2PBorrowAmount = market.deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex)
-                .zeroFloorSub(market.deltas.borrow.scaledDelta.rayMul(indexes.borrow.poolIndex));
+
+            (uint256 marketP2PBorrowAmount, uint256 marketPoolBorrowAmount) = getMarketBorrow(underlying);
+
             p2pBorrowAmount += (marketP2PBorrowAmount * underlyingPrice) / assetUnit;
             poolBorrowAmount += (marketPoolBorrowAmount * underlyingPrice) / assetUnit;
 
@@ -135,11 +125,7 @@ contract Snippet {
     /// @param underlying The address of the underlying asset.
     /// @param user The user to compute the supply rate per year for.
     /// @return supplyRatePerYear The supply rate per year the user is currently experiencing (in ray).
-    function getCurrentUserSupplyRatePerYear(address underlying, address user)
-        external
-        view
-        returns (uint256 supplyRatePerYear)
-    {
+    function supplyAPR(address underlying, address user) external view returns (uint256 supplyRatePerYear) {
         (uint256 balanceInP2P, uint256 balanceOnPool,) = getCurrentSupplyBalanceInOf(underlying, user);
         (uint256 poolSupplyRate, uint256 poolBorrowRate) = _getPoolRatesPerYear(underlying);
         Types.Market memory market = morpho.market(underlying);
@@ -164,11 +150,7 @@ contract Snippet {
     /// @param underlying The address of the underlying asset.
     /// @param user The user to compute the borrow rate per year for.
     /// @return borrowRatePerYear The borrow rate per year the user is currently experiencing (in ray).
-    function getCurrentUserBorrowRatePerYear(address underlying, address user)
-        external
-        view
-        returns (uint256 borrowRatePerYear)
-    {
+    function borrowAPR(address underlying, address user) external view returns (uint256 borrowRatePerYear) {
         (uint256 balanceInP2P, uint256 balanceOnPool,) = getCurrentBorrowBalanceInOf(underlying, user);
         (uint256 poolSupplyRate, uint256 poolBorrowRate) = _getPoolRatesPerYear(underlying);
         Types.Market memory market = morpho.market(underlying);
@@ -194,7 +176,7 @@ contract Snippet {
     /// @return avgSupplyRatePerYear The market's average supply rate per year (in ray).
     /// @return p2pSupplyRatePerYear The market's p2p supply rate per year (in ray).
     ///@return poolSupplyRatePerYear The market's pool supply rate per year (in ray).
-    function getAverageSupplyRatesPerYear(address underlying)
+    function avgSupplyAPR(address underlying)
         external
         view
         returns (uint256 avgSupplyRatePerYear, uint256 p2pSupplyRatePerYear, uint256 poolSupplyRatePerYear)
@@ -233,7 +215,7 @@ contract Snippet {
     /// @return avgBorrowRatePerYear The market's average borrow rate per year (in ray).
     /// @return p2pBorrowRatePerYear The market's p2p borrow rate per year (in ray).
     ///@return poolBorrowRatePerYear The market's pool borrow rate per year (in ray).
-    function getAverageBorrowRatesPerYear(address underlying)
+    function avgBorrowAPR(address underlying)
         external
         view
         returns (uint256 avgBorrowRatePerYear, uint256 p2pBorrowRatePerYear, uint256 poolBorrowRatePerYear)
@@ -271,36 +253,9 @@ contract Snippet {
     /// @param user The user of whom to get the health factor.
     /// @return healthFactor The health factor of the given user (in wad).
     function getUserHealthFactor(address user) external view returns (uint256 healthFactor) {
-        address[] memory collateralAddresses = morpho.userCollaterals(user);
-        address[] memory borrowAddresses = morpho.userBorrows(user);
+        Types.LiquidityData memory liquidityData = morpho.liquidityData(user);
 
-        uint256 collateralAmount;
-        uint256 borrowAmount;
-        uint256 maxDebt;
-        uint256 debt;
-
-        for (uint256 i = 0; i < collateralAddresses.length; ++i) {
-            collateralAmount = morpho.supplyBalance(collateralAddresses[i], user);
-            DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(collateralAddresses[i]);
-            uint256 underlyingPrice = _getUnderlyingPrice(config, collateralAddresses[i]);
-
-            uint256 assetUnit = 10 ** config.getDecimals();
-            uint256 liquidationThreshold = config.getLiquidationThreshold();
-
-            maxDebt += ((collateralAmount * underlyingPrice).percentMulDown(liquidationThreshold)) / assetUnit;
-        }
-
-        for (uint256 i = 0; i < borrowAddresses.length; ++i) {
-            borrowAmount = morpho.supplyBalance(borrowAddresses[i], user);
-            DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(borrowAddresses[i]);
-            uint256 underlyingPrice = _getUnderlyingPrice(config, borrowAddresses[i]);
-
-            uint256 assetUnit = 10 ** config.getDecimals();
-
-            debt += (borrowAmount * underlyingPrice).divUp(assetUnit);
-        }
-
-        healthFactor = debt > 0 ? maxDebt.wadDiv(debt) : type(uint256).max;
+        healthFactor = liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
     }
 
     /// @notice Computes and returns the total distribution of supply for a given market, using virtually updated indexes.
@@ -308,7 +263,7 @@ contract Snippet {
     /// @return p2pSupplyAmount The total supplied amount matched peer-to-peer, subtracting the supply delta (in underlying) and the idle supply (in underlying).
     /// @return poolSupplyAmount The total supplied amount on the underlying pool, adding the supply delta (in underlying).
     /// @return idleSupplyAmount The total idle amount on the morpho's contract (in underlying).
-    function getTotalMarketSupply(address underlying)
+    function getMarketSupply(address underlying)
         public
         view
         returns (uint256 p2pSupplyAmount, uint256 poolSupplyAmount, uint256 idleSupplyAmount)
@@ -328,7 +283,7 @@ contract Snippet {
     /// @param underlying The address of the underlying asset to check.
     /// @return p2pBorrowAmount The total borrowed amount matched peer-to-peer, subtracting the borrow delta (in underlying).
     /// @return poolBorrowAmount The total borrowed amount on the underlying pool, adding the borrow delta (in underlying).
-    function getTotalMarketBorrow(address underlying)
+    function getMarketBorrow(address underlying)
         public
         view
         returns (uint256 p2pBorrowAmount, uint256 poolBorrowAmount)
