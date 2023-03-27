@@ -44,8 +44,8 @@ contract Snippet {
     IPool public pool;
     uint8 public eModeCategoryId;
 
-    constructor(address _morpho) {
-        morpho = IMorpho(_morpho);
+    constructor(address morphoAddress) {
+        morpho = IMorpho(morphoAddress);
         pool = IPool(morpho.pool());
         addressesProvider = IPoolAddressesProvider(morpho.addressesProvider());
         eModeCategoryId = uint8(morpho.eModeCategoryId());
@@ -55,7 +55,7 @@ contract Snippet {
     /// @return p2pSupplyAmount The total supplied amount matched peer-to-peer, subtracting the supply delta and the idle supply on Morpho's contract (in USD).
     /// @return poolSupplyAmount The total supplied amount on the underlying pool, adding the supply delta (in USD).
     /// @return idleSupplyAmount The total idle supply amount on the Morpho's contract (in USD).
-    /// @return totalSupplyAmount The total amount supplied through Morpho.
+    /// @return totalSupplyAmount The total amount supplied through Morpho (in USD).
     function getTotalSupply()
         external
         view
@@ -289,7 +289,7 @@ contract Snippet {
     /// @param underlying The address of the underlying asset to check.
     /// @return p2pSupplyAmount The total supplied amount matched peer-to-peer, subtracting the supply delta (in underlying) and the idle supply (in underlying).
     /// @return poolSupplyAmount The total supplied amount on the underlying pool, adding the supply delta (in underlying).
-    /// @return idleSupplyAmount The total idle amount on the morpho's contract.
+    /// @return idleSupplyAmount The total idle amount on the morpho's contract (in underlying).
     function getTotalMarketSupply(address underlying)
         public
         view
