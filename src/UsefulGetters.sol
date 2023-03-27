@@ -305,7 +305,7 @@ contract Snippet {
     /// @return balanceInP2P The balance in peer-to-peer of the user (in underlying).
     /// @return balanceOnPool The balance on pool of the user (in underlying).
     /// @return totalBalance The total balance of the user (in underlying).
-    function getCurrentSupplyBalanceInOf(address underlying, address user)
+    function getSupplyBalanceInOf(address underlying, address user)
         public
         view
         returns (uint256 balanceInP2P, uint256 balanceOnPool, uint256 totalBalance)
@@ -322,7 +322,7 @@ contract Snippet {
     /// @return balanceInP2P The balance in peer-to-peer of the user (in underlying).
     /// @return balanceOnPool The balance on pool of the user (in underlying).
     /// @return totalBalance The total balance of the user (in underlying).
-    function getCurrentBorrowBalanceInOf(address underlying, address user)
+    function getBorrowBalanceInOf(address underlying, address user)
         public
         view
         returns (uint256 balanceInP2P, uint256 balanceOnPool, uint256 totalBalance)
