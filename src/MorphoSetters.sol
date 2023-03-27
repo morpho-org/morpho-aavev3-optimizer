@@ -28,7 +28,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     /// @notice Prevents to update a market not created yet.
     /// @param underlying The address of the underlying market.
     modifier isMarketCreated(address underlying) {
-        if (!_market[underlying].isCreated()) revert Errors.MarketNotCreated();
+        if (!_market[underlying].isCreated()) revert("Errors.MarketNotCreated()");
         _;
     }
 
@@ -60,7 +60,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
     /// @notice Sets `_positionsManager` to `positionsManager`.
     function setPositionsManager(address positionsManager) external onlyOwner {
-        if (positionsManager == address(0)) revert Errors.AddressIsZero();
+        if (positionsManager == address(0)) revert("Errors.AddressIsZero()");
         _positionsManager = positionsManager;
         emit Events.PositionsManagerSet(positionsManager);
     }
@@ -86,7 +86,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         onlyOwner
         isMarketCreated(underlying)
     {
-        if (_market[underlying].isCollateral) revert Errors.AssetIsCollateralOnMorpho();
+        if (_market[underlying].isCollateral) revert("Errors.AssetIsCollateralOnMorpho()");
 
         _pool.setUserUseReserveAsCollateral(underlying, isCollateral);
     }
@@ -99,7 +99,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
         isMarketCreated(underlying)
     {
         if (!_pool.getUserConfiguration(address(this)).isUsingAsCollateral(_pool.getReserveData(underlying).id)) {
-            revert Errors.AssetNotCollateralOnPool();
+            revert("Errors.AssetNotCollateralOnPool()");
         }
 
         _market[underlying].setAssetIsCollateral(isCollateral);
@@ -148,7 +148,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     /// @notice Sets the borrow pause status to `isPaused` on the `underlying` market.
     function setIsBorrowPaused(address underlying, bool isPaused) external onlyOwner isMarketCreated(underlying) {
         Types.Market storage market = _market[underlying];
-        if (!isPaused && market.isDeprecated()) revert Errors.MarketIsDeprecated();
+        if (!isPaused && market.isDeprecated()) revert("Errors.MarketIsDeprecated()");
 
         market.setIsBorrowPaused(isPaused);
     }
@@ -211,7 +211,7 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     /// @notice Sets the deprecation status to `isDeprecated` on the `underlying` market.
     function setIsDeprecated(address underlying, bool isDeprecated) external onlyOwner isMarketCreated(underlying) {
         Types.Market storage market = _market[underlying];
-        if (!market.isBorrowPaused()) revert Errors.BorrowNotPaused();
+        if (!market.isBorrowPaused()) revert("Errors.BorrowNotPaused()");
 
         market.setIsDeprecated(isDeprecated);
     }

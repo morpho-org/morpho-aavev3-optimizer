@@ -16,7 +16,7 @@ contract RewardsManagerMock is IRewardsManager {
     }
 
     function REWARDS_CONTROLLER() external pure returns (address) {
-        revert RewardsControllerCall();
+        revert("RewardsControllerCall()");
     }
 
     function getAllUserRewards(address[] calldata assets, address user)

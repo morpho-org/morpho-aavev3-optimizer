@@ -234,9 +234,9 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external {
-        if (uint256(signature.s) > Constants.MAX_VALID_ECDSA_S) revert Errors.InvalidValueS();
+        if (uint256(signature.s) > Constants.MAX_VALID_ECDSA_S) revert("Errors.InvalidValueS()");
         // v ∈ {27, 28} (source: https://ethereum.github.io/yellowpaper/paper.pdf #308)
-        if (signature.v != 27 && signature.v != 28) revert Errors.InvalidValueV();
+        if (signature.v != 27 && signature.v != 28) revert("Errors.InvalidValueV()");
 
         bytes32 structHash = keccak256(
             abi.encode(Constants.EIP712_AUTHORIZATION_TYPEHASH, delegator, manager, isAllowed, nonce, deadline)
@@ -244,11 +244,11 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         bytes32 digest = _hashEIP712TypedData(structHash);
         address signatory = ecrecover(digest, signature.v, signature.r, signature.s);
 
-        if (signatory == address(0) || delegator != signatory) revert Errors.InvalidSignatory();
-        if (block.timestamp >= deadline) revert Errors.SignatureExpired();
+        if (signatory == address(0) || delegator != signatory) revert("Errors.InvalidSignatory()");
+        if (block.timestamp >= deadline) revert("Errors.SignatureExpired()");
 
         uint256 usedNonce = _userNonce[signatory]++;
-        if (nonce != usedNonce) revert Errors.InvalidNonce();
+        if (nonce != usedNonce) revert("Errors.InvalidNonce()");
 
         emit Events.UserNonceIncremented(msg.sender, signatory, usedNonce);
 
@@ -264,8 +264,8 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         external
         returns (address[] memory rewardTokens, uint256[] memory claimedAmounts)
     {
-        if (address(_rewardsManager) == address(0)) revert Errors.AddressIsZero();
-        if (_isClaimRewardsPaused) revert Errors.ClaimRewardsPaused();
+        if (address(_rewardsManager) == address(0)) revert("Errors.AddressIsZero()");
+        if (_isClaimRewardsPaused) revert("Errors.ClaimRewardsPaused()");
 
         (rewardTokens, claimedAmounts) = _rewardsManager.claimRewards(assets, onBehalf);
         IRewardsController(_rewardsManager.REWARDS_CONTROLLER()).claimAllRewardsToSelf(assets);

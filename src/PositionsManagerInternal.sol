@@ -50,7 +50,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
     /// @dev Validates the manager's permission.
     function _validatePermission(address delegator, address manager) internal view {
-        if (!(delegator == manager || _isManaging[delegator][manager])) revert Errors.PermissionDenied();
+        if (!(delegator == manager || _isManaging[delegator][manager])) revert("Errors.PermissionDenied()");
     }
 
     /// @dev Validates the input.
@@ -59,11 +59,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         view
         returns (Types.Market storage market)
     {
-        if (user == address(0)) revert Errors.AddressIsZero();
-        if (amount == 0) revert Errors.AmountIsZero();
+        if (user == address(0)) revert("Errors.AddressIsZero()");
+        if (amount == 0) revert("Errors.AmountIsZero()");
 
         market = _market[underlying];
-        if (!market.isCreated()) revert Errors.MarketNotCreated();
+        if (!market.isCreated()) revert("Errors.MarketNotCreated()");
     }
 
     /// @dev Validates the manager's permission and the input.
@@ -72,7 +72,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         view
         returns (Types.Market storage market)
     {
-        if (receiver == address(0)) revert Errors.AddressIsZero();
+        if (receiver == address(0)) revert("Errors.AddressIsZero()");
 
         market = _validateInput(underlying, amount, onBehalf);
 
@@ -86,14 +86,14 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         returns (Types.Market storage market)
     {
         market = _validateInput(underlying, amount, user);
-        if (market.isSupplyPaused()) revert Errors.SupplyIsPaused();
+        if (market.isSupplyPaused()) revert("Errors.SupplyIsPaused()");
     }
 
     /// @dev Validates a supply collateral action.
     function _validateSupplyCollateral(address underlying, uint256 amount, address user) internal view {
         Types.Market storage market = _validateInput(underlying, amount, user);
-        if (market.isSupplyCollateralPaused()) revert Errors.SupplyCollateralIsPaused();
-        if (!market.isCollateral) revert Errors.AssetNotCollateralOnMorpho();
+        if (market.isSupplyCollateralPaused()) revert("Errors.SupplyCollateralIsPaused()");
+        if (!market.isCollateral) revert("Errors.AssetNotCollateralOnMorpho()");
     }
 
     /// @dev Validates a borrow action.
@@ -103,21 +103,21 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         returns (Types.Market storage market)
     {
         market = _validateManagerInput(underlying, amount, borrower, receiver);
-        if (market.isBorrowPaused()) revert Errors.BorrowIsPaused();
+        if (market.isBorrowPaused()) revert("Errors.BorrowIsPaused()");
     }
 
     /// @dev Authorizes a borrow action.
     function _authorizeBorrow(address underlying, uint256 amount, Types.Indexes256 memory indexes) internal view {
         DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
-        if (!config.getBorrowingEnabled()) revert Errors.BorrowNotEnabled();
+        if (!config.getBorrowingEnabled()) revert("Errors.BorrowNotEnabled()");
 
         address priceOracleSentinel = _addressesProvider.getPriceOracleSentinel();
         if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isBorrowAllowed()) {
-            revert Errors.SentinelBorrowNotEnabled();
+            revert("Errors.SentinelBorrowNotEnabled()");
         }
 
         if (_eModeCategoryId != 0 && _eModeCategoryId != config.getEModeCategory()) {
-            revert Errors.InconsistentEMode();
+            revert("Errors.InconsistentEMode()");
         }
 
         Types.Market storage market = _market[underlying];
@@ -131,7 +131,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             uint256 poolDebt =
                 ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
 
-            if (amount + totalP2P + poolDebt > borrowCap) revert Errors.ExceedsBorrowCap();
+            if (amount + totalP2P + poolDebt > borrowCap) revert("Errors.ExceedsBorrowCap()");
         }
     }
 
@@ -142,7 +142,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         returns (Types.Market storage market)
     {
         market = _validateInput(underlying, amount, user);
-        if (market.isRepayPaused()) revert Errors.RepayIsPaused();
+        if (market.isRepayPaused()) revert("Errors.RepayIsPaused()");
     }
 
     /// @dev Validates a withdraw action.
@@ -152,7 +152,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         returns (Types.Market storage market)
     {
         market = _validateManagerInput(underlying, amount, supplier, receiver);
-        if (market.isWithdrawPaused()) revert Errors.WithdrawIsPaused();
+        if (market.isWithdrawPaused()) revert("Errors.WithdrawIsPaused()");
     }
 
     /// @dev Validates a withdraw collateral action.
@@ -162,7 +162,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         returns (Types.Market storage market)
     {
         market = _validateManagerInput(underlying, amount, supplier, receiver);
-        if (market.isWithdrawCollateralPaused()) revert Errors.WithdrawCollateralIsPaused();
+        if (market.isWithdrawCollateralPaused()) revert("Errors.WithdrawCollateralIsPaused()");
     }
 
     /// @dev Validates a liquidate action.
@@ -173,11 +173,11 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         Types.Market storage borrowMarket = _market[underlyingBorrowed];
         Types.Market storage collateralMarket = _market[underlyingCollateral];
 
-        if (borrower == address(0)) revert Errors.AddressIsZero();
+        if (borrower == address(0)) revert("Errors.AddressIsZero()");
 
-        if (!borrowMarket.isCreated() || !collateralMarket.isCreated()) revert Errors.MarketNotCreated();
-        if (collateralMarket.isLiquidateCollateralPaused()) revert Errors.LiquidateCollateralIsPaused();
-        if (borrowMarket.isLiquidateBorrowPaused()) revert Errors.LiquidateBorrowIsPaused();
+        if (!borrowMarket.isCreated() || !collateralMarket.isCreated()) revert("Errors.MarketNotCreated()");
+        if (collateralMarket.isLiquidateCollateralPaused()) revert("Errors.LiquidateCollateralIsPaused()");
+        if (borrowMarket.isLiquidateBorrowPaused()) revert("Errors.LiquidateBorrowIsPaused()");
     }
 
     /// @dev Authorizes a liquidate action.
@@ -186,7 +186,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         uint256 healthFactor = _getUserHealthFactor(borrower);
         if (healthFactor >= Constants.DEFAULT_LIQUIDATION_MAX_HF) {
-            revert Errors.UnauthorizedLiquidate();
+            revert("Errors.UnauthorizedLiquidate()");
         }
 
         if (healthFactor >= Constants.DEFAULT_LIQUIDATION_MIN_HF) {
@@ -194,7 +194,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
             if (priceOracleSentinel != address(0) && !IPriceOracleSentinel(priceOracleSentinel).isLiquidationAllowed())
             {
-                revert Errors.SentinelLiquidateNotEnabled();
+                revert("Errors.SentinelLiquidateNotEnabled()");
             }
         }
 

@@ -163,7 +163,7 @@ library MarketLib {
 
     /// @notice Sets the `market` peer-to-peer reserve factor to `reserveFactor`.
     function setReserveFactor(Types.Market storage market, uint16 reserveFactor) internal {
-        if (reserveFactor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
+        if (reserveFactor > PercentageMath.PERCENTAGE_FACTOR) revert("Errors.ExceedsMaxBasisPoints()");
         market.reserveFactor = reserveFactor;
 
         emit Events.ReserveFactorSet(market.underlying, reserveFactor);
@@ -171,7 +171,7 @@ library MarketLib {
 
     /// @notice Sets the `market` peer-to-peer index cursor to `p2pIndexCursor`.
     function setP2PIndexCursor(Types.Market storage market, uint16 p2pIndexCursor) internal {
-        if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR) revert Errors.ExceedsMaxBasisPoints();
+        if (p2pIndexCursor > PercentageMath.PERCENTAGE_FACTOR) revert("Errors.ExceedsMaxBasisPoints()");
         market.p2pIndexCursor = p2pIndexCursor;
 
         emit Events.P2PIndexCursorSet(market.underlying, p2pIndexCursor);

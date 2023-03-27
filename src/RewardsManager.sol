@@ -81,7 +81,7 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     /// @notice Prevents a user to call function allowed for the main Morpho contract only.
     modifier onlyMorpho() {
-        if (msg.sender != address(_MORPHO)) revert OnlyMorpho();
+        if (msg.sender != address(_MORPHO)) revert("OnlyMorpho()");
         _;
     }
 
@@ -92,7 +92,7 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @param rewardsController The address of the Aave rewards controller.
     /// @param morpho The address of the main Morpho contract.
     constructor(address rewardsController, address morpho) {
-        if (rewardsController == address(0) || morpho == address(0)) revert AddressIsZero();
+        if (rewardsController == address(0) || morpho == address(0)) revert("AddressIsZero()");
         _disableInitializers();
 
         _REWARDS_CONTROLLER = IRewardsController(rewardsController);
@@ -440,7 +440,7 @@ contract RewardsManager is IRewardsManager, Initializable {
             } else if (asset == market.variableDebtToken) {
                 userAssetBalances[i].scaledBalance = _MORPHO.scaledPoolBorrowBalance(market.underlying, user);
             } else {
-                revert InvalidAsset();
+                revert("InvalidAsset()");
             }
 
             userAssetBalances[i].scaledTotalSupply = IScaledBalanceToken(asset).scaledTotalSupply();

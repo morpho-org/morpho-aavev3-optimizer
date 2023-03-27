@@ -67,23 +67,23 @@ abstract contract MorphoInternal is MorphoStorage {
 
     /// @dev Creates a new market for the `underlying` token with a given `reserveFactor` (in bps) and a given `p2pIndexCursor` (in bps).
     function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
-        if (underlying == address(0)) revert Errors.AddressIsZero();
+        if (underlying == address(0)) revert("Errors.AddressIsZero()");
 
         DataTypes.ReserveData memory reserve = _pool.getReserveData(underlying);
-        if (!reserve.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
-        if (reserve.configuration.getSiloedBorrowing()) revert Errors.SiloedBorrowMarket();
+        if (!reserve.configuration.getActive()) revert("Errors.MarketIsNotListedOnAave()");
+        if (reserve.configuration.getSiloedBorrowing()) revert("Errors.SiloedBorrowMarket()");
 
         // `liquidationThreshold < Constants.LT_LOWER_BOUND` checks that the asset's LT is not too low to be listed as a collateral on Morpho.
         // If the LT is 0, the check is skipped to be able to create markets for non-collateral assets.
         // The check still works for e-mode assets since if the "standard" LT is 0, then the e-mode LT is also 0.
         uint256 liquidationThreshold = reserve.configuration.getLiquidationThreshold();
         if (liquidationThreshold > 0 && liquidationThreshold < Constants.LT_LOWER_BOUND) {
-            revert Errors.MarketLtTooLow();
+            revert("Errors.MarketLtTooLow()");
         }
 
         Types.Market storage market = _market[underlying];
 
-        if (market.isCreated()) revert Errors.MarketAlreadyCreated();
+        if (market.isCreated()) revert("Errors.MarketAlreadyCreated()");
 
         market.underlying = underlying;
         market.aToken = reserve.aTokenAddress;
@@ -110,7 +110,7 @@ abstract contract MorphoInternal is MorphoStorage {
     ///      Claiming on a market where there are some rewards might steal users' rewards.
     function _claimToTreasury(address[] calldata underlyings, uint256[] calldata amounts) internal {
         address treasuryVault = _treasuryVault;
-        if (treasuryVault == address(0)) revert Errors.AddressIsZero();
+        if (treasuryVault == address(0)) revert("Errors.AddressIsZero()");
 
         for (uint256 i; i < underlyings.length; ++i) {
             address underlying = underlyings[i];
@@ -149,7 +149,7 @@ abstract contract MorphoInternal is MorphoStorage {
                 )
             )
         );
-        if (amount == 0) revert Errors.AmountIsZero();
+        if (amount == 0) revert("Errors.AmountIsZero()");
 
         uint256 newSupplyDelta = deltas.supply.scaledDelta + amount.rayDiv(poolSupplyIndex);
         uint256 newBorrowDelta = deltas.borrow.scaledDelta + amount.rayDiv(poolBorrowIndex);

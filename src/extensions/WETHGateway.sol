@@ -43,7 +43,7 @@ contract WETHGateway is IWETHGateway {
     /// @notice Contract constructor.
     /// @param morpho The address of the Morpho protocol.
     constructor(address morpho) {
-        if (morpho == address(0)) revert AddressIsZero();
+        if (morpho == address(0)) revert("AddressIsZero()");
 
         _MORPHO = IMorpho(morpho);
         ERC20(_WETH).safeApprove(morpho, type(uint256).max);
@@ -127,20 +127,20 @@ contract WETHGateway is IWETHGateway {
 
     /// @dev Only the WETH contract is allowed to transfer ETH to this contracts.
     receive() external payable {
-        if (msg.sender != _WETH) revert OnlyWETH();
+        if (msg.sender != _WETH) revert("OnlyWETH()");
     }
 
     /* INTERNAL */
 
     /// @dev Wraps `amount` of ETH to WETH.
     function _wrapETH(uint256 amount) internal {
-        if (amount == 0) revert AmountIsZero();
+        if (amount == 0) revert("AmountIsZero()");
         IWETH(_WETH).deposit{value: amount}();
     }
 
     /// @dev Unwraps `amount` of WETH to ETH and transfers it to `receiver`.
     function _unwrapAndTransferETH(uint256 amount, address receiver) internal {
-        if (amount == 0) revert AmountIsZero();
+        if (amount == 0) revert("AmountIsZero()");
         IWETH(_WETH).withdraw(amount);
         SafeTransferLib.safeTransferETH(receiver, amount);
     }
