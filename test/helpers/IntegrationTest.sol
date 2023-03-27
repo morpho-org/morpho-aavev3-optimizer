@@ -9,6 +9,7 @@ import {TestMarket, TestMarketLib} from "test/helpers/TestMarketLib.sol";
 
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
@@ -160,11 +161,14 @@ contract IntegrationTest is ForkTest {
 
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
 
+        // Supply dust to:
+        // 1. account for roundings upon borrow or withdraw.
+        // 2. make UserConfigurationMap.isUsingAsCollateral() return true (cannot enable the asset as collateral on the pool if Morpho has no aToken).
+        _deposit(market, 10 ** (market.decimals / 2), address(morpho));
+
         if (market.isCollateral) {
             collateralUnderlyings.push(underlying);
 
-            // Supply dust to make UserConfigurationMap.isUsingAsCollateral() return true (cannot enable the asset as collateral on the pool if Morpho has no aToken).
-            _deposit(market, 10 ** (market.decimals / 2), address(morpho));
             morpho.setAssetIsCollateral(market.underlying, true);
         }
 
@@ -172,11 +176,11 @@ contract IntegrationTest is ForkTest {
     }
 
     function _randomCollateral(uint256 seed) internal view returns (address) {
-        return collateralUnderlyings[seed % collateralUnderlyings.length];
+        return collateralUnderlyings[uint256(keccak256(abi.encode(seed))) % collateralUnderlyings.length];
     }
 
     function _randomBorrowable(uint256 seed) internal view returns (address) {
-        return borrowableUnderlyings[seed % borrowableUnderlyings.length];
+        return borrowableUnderlyings[uint256(keccak256(abi.encode(seed))) % borrowableUnderlyings.length];
     }
 
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.

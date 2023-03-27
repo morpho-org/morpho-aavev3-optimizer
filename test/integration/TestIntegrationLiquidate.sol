@@ -463,7 +463,12 @@ contract TestIntegrationLiquidate is IntegrationTest {
         TestMarket storage collateralMarket,
         address borrower
     ) internal {
-        assertLe(test.repaid, test.borrowedBalanceBefore.percentMul(Constants.DEFAULT_CLOSE_FACTOR));
+        assertLe(test.seized, test.collateralBalanceBefore, "seized > collateral");
+        assertLe(
+            test.repaid,
+            test.borrowedBalanceBefore.percentMul(Constants.DEFAULT_CLOSE_FACTOR),
+            "repaid > borrowed * closeFactor"
+        );
 
         assertApproxEqAbs(
             morpho.borrowBalance(borrowedMarket.underlying, borrower) + test.repaid,
@@ -485,7 +490,12 @@ contract TestIntegrationLiquidate is IntegrationTest {
         TestMarket storage collateralMarket,
         address borrower
     ) internal {
-        assertLe(test.repaid, test.borrowedBalanceBefore.percentMul(Constants.MAX_CLOSE_FACTOR));
+        assertLe(test.seized, test.collateralBalanceBefore, "seized > collateral");
+        assertLe(
+            test.repaid,
+            test.borrowedBalanceBefore.percentMul(Constants.MAX_CLOSE_FACTOR),
+            "repaid > borrowed * closeFactor"
+        );
 
         assertApproxEqAbs(
             morpho.borrowBalance(borrowedMarket.underlying, borrower) + test.repaid,
