@@ -579,4 +579,40 @@ contract TestIntegrationWithdraw is IntegrationTest {
             user.withdraw(market.underlying, amount);
         }
     }
+
+    function testShouldNotWithdrawAlreadyWithdrawn(
+        uint256 amountToSupply,
+        uint256 amountToWithdraw,
+        address onBehalf,
+        address receiver
+    ) public {
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
+
+            amountToSupply = _boundSupply(market, amountToSupply);
+            amountToWithdraw = bound(amountToWithdraw, Math.max(market.minAmount, amountToSupply / 10), amountToSupply);
+
+            user.approve(market.underlying, amountToSupply);
+            user.supply(market.underlying, amountToSupply, onBehalf);
+
+            uint256 supplyBalance = morpho.supplyBalance(market.underlying, address(onBehalf));
+
+            while (supplyBalance > 0) {
+                user.withdraw(market.underlying, amountToWithdraw, onBehalf, receiver);
+                uint256 newSupplyBalance = morpho.supplyBalance(market.underlying, address(onBehalf));
+                assertLt(newSupplyBalance, supplyBalance);
+                supplyBalance = newSupplyBalance;
+            }
+
+            vm.expectRevert(Errors.SupplyIsZero.selector);
+            user.withdraw(market.underlying, amountToWithdraw, onBehalf, receiver);
+        }
+    }
 }

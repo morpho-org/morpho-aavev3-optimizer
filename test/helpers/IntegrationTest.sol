@@ -9,6 +9,7 @@ import {TestMarket, TestMarketLib} from "test/helpers/TestMarketLib.sol";
 
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
@@ -175,11 +176,11 @@ contract IntegrationTest is ForkTest {
     }
 
     function _randomCollateral(uint256 seed) internal view returns (address) {
-        return collateralUnderlyings[seed % collateralUnderlyings.length];
+        return collateralUnderlyings[uint256(keccak256(abi.encode(seed))) % collateralUnderlyings.length];
     }
 
     function _randomBorrowable(uint256 seed) internal view returns (address) {
-        return borrowableUnderlyings[seed % borrowableUnderlyings.length];
+        return borrowableUnderlyings[uint256(keccak256(abi.encode(seed))) % borrowableUnderlyings.length];
     }
 
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
