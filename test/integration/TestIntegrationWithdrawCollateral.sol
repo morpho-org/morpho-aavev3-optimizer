@@ -290,7 +290,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+        TestMarket storage market = testMarkets[_randomCollateral(seed)];
 
         amountToSupply = _boundSupply(market, amountToSupply);
         amountToWithdraw = bound(amountToWithdraw, Math.max(market.minAmount, amountToSupply / 10), amountToSupply);

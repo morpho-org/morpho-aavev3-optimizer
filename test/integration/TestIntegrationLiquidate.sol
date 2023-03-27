@@ -42,19 +42,19 @@ contract TestIntegrationLiquidate is IntegrationTest {
     }
 
     function testShouldNotSeizeCollateralOfUserNotOnCollateralMarket(
-        uint256 collateralSeed1,
-        uint256 collateralSeed2,
+        uint256 collateralSeed,
+        uint256 collateralSeedShift,
         uint256 borrowableSeed,
         address borrower,
         uint256 borrowed,
         uint256 promotionFactor,
         uint256 toRepay,
-        uint256 indexShift,
         uint256 healthFactor
     ) public {
+        vm.assume(collateralSeed > collateralUnderlyings.length);
+        collateralSeedShift = bound(collateralSeedShift, 1, collateralUnderlyings.length - 1);
         borrower = _boundAddressNotZero(borrower);
         promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
-        indexShift = bound(indexShift, 1, collateralUnderlyings.length - 1);
         toRepay = bound(toRepay, 1, type(uint256).max);
         healthFactor = bound(
             healthFactor,
@@ -62,48 +62,48 @@ contract TestIntegrationLiquidate is IntegrationTest {
             Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(10)
         );
 
-        TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed1)];
+        TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
         TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
 
         _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
 
         user.approve(borrowedMarket.underlying, toRepay);
 
-        address collateralUnderlying = _randomCollateral(collateralSeed2);
+        address collateralUnderlying = _randomCollateral(collateralSeed - collateralSeedShift);
 
         vm.expectRevert(Errors.CollateralIsZero.selector);
         user.liquidate(borrowedMarket.underlying, collateralUnderlying, borrower, toRepay);
     }
 
     function testShouldNotLiquidateUserNotInBorrowMarket(
-        uint256 collateralSeed1,
-        uint256 collateralSeed2,
+        uint256 collateralSeed,
         uint256 borrowableSeed,
+        uint256 borrowableSeedShift,
         address borrower,
         uint256 borrowed,
         uint256 promotionFactor,
         uint256 toRepay,
-        uint256 indexShift,
         uint256 healthFactor
     ) public {
+        vm.assume(borrowableSeed > borrowableUnderlyings.length);
+        borrowableSeedShift = bound(borrowableSeedShift, 1, borrowableUnderlyings.length - 1);
         borrower = _boundAddressNotZero(borrower);
         promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         toRepay = bound(toRepay, 1, type(uint256).max);
-        indexShift = bound(indexShift, 1, borrowableUnderlyings.length - 1);
         healthFactor = bound(
             healthFactor,
             Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(10),
             Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(10)
         );
 
-        TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed1)];
+        TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
         TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
 
         _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
 
         user.approve(borrowedMarket.underlying, toRepay);
 
-        address borrowedUnderlying = _randomBorrowable(collateralSeed2);
+        address borrowedUnderlying = _randomBorrowable(borrowableSeed - borrowableSeedShift);
 
         vm.expectRevert(Errors.DebtIsZero.selector);
         user.liquidate(borrowedUnderlying, collateralMarket.underlying, borrower, toRepay);
