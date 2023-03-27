@@ -192,17 +192,19 @@ contract Snippet {
     /// @notice Computes and returns the current supply rate per year experienced on average on a given market.
     /// @param underlying The address of the underlying asset.
     /// @return avgSupplyRatePerYear The market's average supply rate per year (in ray).
-    /// @return avgBorrowRatePerYear The market's average borrow rate per year (in ray).
-    function getAverageRatesPerYear(address underlying)
+    /// @return p2pSupplyRatePerYear The market's p2p supply rate per year (in ray).
+    ///@return poolSupplyRatePerYear The market's pool supply rate per year (in ray).
+    function getAverageSupplyRatesPerYear(address underlying)
         external
         view
-        returns (uint256 avgSupplyRatePerYear, uint256 avgBorrowRatePerYear)
+        returns (uint256 avgSupplyRatePerYear, uint256 p2pSupplyRatePerYear, uint256 poolSupplyRatePerYear)
     {
+        uint256 poolBorrowRatePerYear;
         Types.Market memory market = morpho.market(underlying);
 
-        (uint256 poolSupplyRatePerYear, uint256 poolBorrowRatePerYear) = _getPoolRatesPerYear(underlying);
+        (poolSupplyRatePerYear, poolBorrowRatePerYear) = _getPoolRatesPerYear(underlying);
 
-        uint256 p2pSupplyRatePerYear = computeP2PSupplyRatePerYear(
+        p2pSupplyRatePerYear = computeP2PSupplyRatePerYear(
             P2PRateComputeParams({
                 poolSupplyRatePerYear: poolSupplyRatePerYear,
                 poolBorrowRatePerYear: poolBorrowRatePerYear,
@@ -224,8 +226,24 @@ contract Snippet {
                 market.deltas.supply.scaledDelta.rayMul(market.indexes.supply.poolIndex)
             )
         );
+    }
 
-        uint256 p2pBorrowRatePerYear = computeP2PBorrowRatePerYear(
+    /// @notice Computes and returns the current borrow rate per year experienced on average on a given market.
+    /// @param underlying The address of the underlying asset.
+    /// @return avgBorrowRatePerYear The market's average borrow rate per year (in ray).
+    /// @return p2pBorrowRatePerYear The market's p2p borrow rate per year (in ray).
+    ///@return poolBorrowRatePerYear The market's pool borrow rate per year (in ray).
+    function getAverageBorrowRatesPerYear(address underlying)
+        external
+        view
+        returns (uint256 avgBorrowRatePerYear, uint256 p2pBorrowRatePerYear, uint256 poolBorrowRatePerYear)
+    {
+        uint256 poolSupplyRatePerYear;
+        Types.Market memory market = morpho.market(underlying);
+
+        (poolSupplyRatePerYear, poolBorrowRatePerYear) = _getPoolRatesPerYear(underlying);
+
+        p2pBorrowRatePerYear = computeP2PBorrowRatePerYear(
             P2PRateComputeParams({
                 poolSupplyRatePerYear: poolSupplyRatePerYear,
                 poolBorrowRatePerYear: poolBorrowRatePerYear,
