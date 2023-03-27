@@ -148,7 +148,6 @@ contract IntegrationTest is ForkTest {
 
         market.isCollateral = market.getLt(eModeCategoryId) > 0 && reserve.configuration.getDebtCeiling() == 0;
         market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
-            && !reserve.configuration.getBorrowableInIsolation()
             && (eModeCategoryId == 0 || eModeCategoryId == market.eModeCategoryId);
 
         vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
