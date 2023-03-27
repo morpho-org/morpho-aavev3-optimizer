@@ -9,6 +9,7 @@ import {TestMarket, TestMarketLib} from "test/helpers/TestMarketLib.sol";
 
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
@@ -18,6 +19,7 @@ import "./ForkTest.sol";
 
 contract IntegrationTest is ForkTest {
     using stdStorage for StdStorage;
+    using SafeTransferLib for ERC20;
     using Math for uint256;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
@@ -57,8 +59,6 @@ contract IntegrationTest is ForkTest {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             _createTestMarket(allUnderlyings[i], 0, 33_33);
         }
-
-        _setAllAssetsAsCollateral();
 
         _forward(1); // All markets are outdated in Morpho's storage.
 
@@ -146,6 +146,7 @@ contract IntegrationTest is ForkTest {
         market.eModeCategoryId = uint8(reserve.configuration.getEModeCategory());
         market.eModeCategory = pool.getEModeCategoryData(market.eModeCategoryId);
 
+        market.isCollateral = market.getLt(eModeCategoryId) > 0 && reserve.configuration.getDebtCeiling() == 0;
         market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
             && !reserve.configuration.getBorrowableInIsolation()
             && (eModeCategoryId == 0 || eModeCategoryId == market.eModeCategoryId);
@@ -158,30 +159,28 @@ contract IntegrationTest is ForkTest {
     function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         (TestMarket storage market,) = _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
-        if (market.ltv > 0) collateralUnderlyings.push(underlying);
-        if (market.isBorrowable) borrowableUnderlyings.push(underlying);
-
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
-    }
 
-    function _setAllAssetsAsCollateral() internal {
-        for (uint256 i; i < allUnderlyings.length; ++i) {
-            _setAssetAsCollateral(testMarkets[allUnderlyings[i]]);
+        // Supply dust to:
+        // 1. account for roundings upon borrow or withdraw.
+        // 2. make UserConfigurationMap.isUsingAsCollateral() return true (cannot enable the asset as collateral on the pool if Morpho has no aToken).
+        _deposit(market, 10 ** (market.decimals / 2), address(morpho));
+
+        if (market.isCollateral) {
+            collateralUnderlyings.push(underlying);
+
+            morpho.setAssetIsCollateral(market.underlying, true);
         }
-    }
 
-    function _setAssetAsCollateral(TestMarket storage market) internal {
-        // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() return true.
-        _deposit(market, (10 ** market.decimals) / 1e6, address(morpho));
-        morpho.setAssetIsCollateral(market.underlying, true);
+        if (market.isBorrowable) borrowableUnderlyings.push(underlying);
     }
 
     function _randomCollateral(uint256 seed) internal view returns (address) {
-        return collateralUnderlyings[seed % collateralUnderlyings.length];
+        return collateralUnderlyings[uint256(keccak256(abi.encode(seed))) % collateralUnderlyings.length];
     }
 
     function _randomBorrowable(uint256 seed) internal view returns (address) {
-        return borrowableUnderlyings[seed % borrowableUnderlyings.length];
+        return borrowableUnderlyings[uint256(keccak256(abi.encode(seed))) % borrowableUnderlyings.length];
     }
 
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
@@ -224,14 +223,14 @@ contract IntegrationTest is ForkTest {
         bypassSupplyCap(market, amount)
     {
         deal(market.underlying, address(this), type(uint256).max);
-        ERC20(market.underlying).approve(address(pool), amount);
+        ERC20(market.underlying).safeApprove(address(pool), amount);
         pool.deposit(market.underlying, amount, onBehalf, 0);
     }
 
     /// @dev Deposits the given amount of tokens on behalf of the given address, on AaveV3.
     function _depositSimple(address underlying, uint256 amount, address onBehalf) internal {
         deal(underlying, address(this), amount);
-        ERC20(underlying).approve(address(pool), amount);
+        ERC20(underlying).safeApprove(address(pool), amount);
         pool.deposit(underlying, amount, onBehalf, 0);
     }
 
@@ -306,7 +305,7 @@ contract IntegrationTest is ForkTest {
         _deal(collateralMarket.underlying, borrower, collateral);
 
         vm.startPrank(borrower);
-        ERC20(collateralMarket.underlying).approve(address(morpho), collateral);
+        ERC20(collateralMarket.underlying).safeApprove(address(morpho), collateral);
         collateral = morpho.supplyCollateral(collateralMarket.underlying, collateral, borrower);
         borrowed = morpho.borrow(borrowedMarket.underlying, amount, onBehalf, receiver, maxIterations);
         vm.stopPrank();
@@ -326,7 +325,9 @@ contract IntegrationTest is ForkTest {
         vm.prank(borrower);
         borrowed = morpho.borrow(market.underlying, amount, onBehalf, receiver, maxIterations);
 
-        _deposit(market, market.minBorrowCollateral(market, borrowed, eModeCategoryId), address(morpho)); // Make Morpho able to borrow again with some collateral.
+        _deposit(
+            testMarkets[dai], testMarkets[dai].minBorrowCollateral(market, borrowed, eModeCategoryId), address(morpho)
+        ); // Make Morpho able to borrow again with some collateral. The DAI market is used here because some `market` can't be used as collateral such as USDT.
 
         oracle.setAssetPrice(market.underlying, market.price);
     }
@@ -344,7 +345,9 @@ contract IntegrationTest is ForkTest {
         try promoter.borrow(market.underlying, amount) returns (uint256 borrowed) {
             amount = borrowed;
 
-            _deposit(market, market.minBorrowCollateral(market, amount, eModeCategoryId), address(morpho)); // Make Morpho able to borrow again with some collateral.
+            _deposit(
+                testMarkets[dai], testMarkets[dai].minBorrowCollateral(market, amount, eModeCategoryId), address(morpho)
+            ); // Make Morpho able to borrow again with some collateral. The DAI market is used here because some `market` can't be used as collateral such as USDT.
         } catch {
             amount = 0;
         }

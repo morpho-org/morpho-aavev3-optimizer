@@ -139,7 +139,7 @@ contract ForkTest is BaseTest {
         wNative = config.getWrappedNative();
         sNative = config.getStakedNative();
 
-        allUnderlyings = [dai, usdc, aave, wbtc, weth, sNative];
+        allUnderlyings = [dai, usdc, aave, usdt, wbtc, weth, sNative];
     }
 
     function _label() internal virtual {
@@ -278,6 +278,6 @@ contract ForkTest is BaseTest {
     }
 
     function _randomUnderlying(uint256 seed) internal view returns (address) {
-        return allUnderlyings[seed % allUnderlyings.length];
+        return allUnderlyings[uint256(keccak256(abi.encode(seed))) % allUnderlyings.length];
     }
 }
