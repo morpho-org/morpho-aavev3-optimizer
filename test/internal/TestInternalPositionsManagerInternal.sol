@@ -31,13 +31,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         for (uint256 i; i < allUnderlyings.length; ++i) {
             _createMarket(allUnderlyings[i], 0, 33_33);
         }
-
-        _setBalances(address(this), type(uint256).max);
-
-        _pool.supplyToPool(dai, 100 ether, _pool.getReserveNormalizedIncome(dai));
-        _pool.supplyToPool(wbtc, 1e8, _pool.getReserveNormalizedIncome(wbtc));
-        _pool.supplyToPool(usdc, 1e8, _pool.getReserveNormalizedIncome(usdc));
-        _pool.supplyToPool(wNative, 1 ether, _pool.getReserveNormalizedIncome(wNative));
     }
 
     function testValidatePermission(address owner, address manager) public {
@@ -103,12 +96,13 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testValidateSupplyCollateralShouldRevertIfNotCollateral() public {
-        vm.expectRevert(abi.encodeWithSelector(Errors.AssetNotCollateralOnMorpho.selector));
+        vm.expectRevert(Errors.AssetNotCollateralOnMorpho.selector);
         this.validateSupplyCollateral(dai, 1, address(1));
     }
 
     function testValidateSupplyCollateral() public {
         _market[dai].isCollateral = true;
+
         this.validateSupplyCollateral(dai, 1, address(1));
     }
 
@@ -218,7 +212,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfDeprecatedBorrow() public {
-        _market[dai].isCollateral = true;
         _userCollaterals[address(this)].add(dai);
         _userBorrows[address(this)].add(dai);
         _market[dai].pauseStatuses.isDeprecated = true;

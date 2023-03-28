@@ -155,6 +155,27 @@ contract TestInvariantMorpho is InvariantTest {
         assertGt(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF, "healthFactor");
     }
 
+    function invariantCollateralsAndBorrows() public {
+        address[] memory senders = targetSenders();
+
+        for (uint256 i; i < senders.length; i++) {
+            address[] memory userCollaterals = morpho.userCollaterals(senders[i]);
+            address[] memory userBorrows = morpho.userBorrows(senders[i]);
+            for (uint256 j; j < allUnderlyings.length; ++j) {
+                assertEq(
+                    morpho.collateralBalance(allUnderlyings[j], senders[i]) > 0,
+                    _contains(userCollaterals, allUnderlyings[j]),
+                    "collateral"
+                );
+                assertEq(
+                    morpho.borrowBalance(allUnderlyings[j], senders[i]) > 0,
+                    _contains(userBorrows, allUnderlyings[j]),
+                    "borrow"
+                );
+            }
+        }
+    }
+
     function invariantCannotBorrowOverLtv() public {
         address[] memory senders = targetSenders();
 
