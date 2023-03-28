@@ -87,6 +87,7 @@ contract TestIntegrationEModeNative is IntegrationTest {
 
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
+        // AAVE will not produce the expected error since it is not borrowable from the pool.
         vm.assume(market.underlying != aave && market.underlying != wNative && market.underlying != sNative);
 
         amount = _boundBorrow(market, amount);
