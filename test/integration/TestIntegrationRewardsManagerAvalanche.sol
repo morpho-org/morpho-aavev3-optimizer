@@ -16,17 +16,21 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
     );
 
     address[] internal assets;
-    address internal aToken;
-    address internal variableDebtToken;
+    address internal aTokenDai;
+    address internal variableDebtTokenDai;
+    address internal aTokenUsdc;
+    address internal variableDebtTokenUsdc;
 
     function setUp() public virtual override {
         super.setUp();
         rewardsController = IRewardsController(config.getRewardsController());
         rewardsManager = IRewardsManager(new RewardsManager(address(rewardsController), address(morpho)));
         morpho.setRewardsManager(address(rewardsManager));
-        aToken = testMarkets[dai].aToken;
-        variableDebtToken = testMarkets[dai].variableDebtToken;
-        assets = [aToken, variableDebtToken];
+        aTokenDai = testMarkets[dai].aToken;
+        variableDebtTokenDai = testMarkets[dai].variableDebtToken;
+        aTokenUsdc = testMarkets[usdc].aToken;
+        variableDebtTokenUsdc = testMarkets[usdc].variableDebtToken;
+        assets = [aTokenDai, variableDebtTokenDai, aTokenUsdc, variableDebtTokenUsdc];
     }
 
     /// @dev We can only use avalanche mainnet because mainnet doesn't have a rewards controller yet
@@ -45,7 +49,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
     function testGetRewardData(uint256 amount, uint256 blocks) public {
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
         blocks = bound(blocks, 0, MAX_BLOCKS);
-        (uint256 index, uint256 lastUpdateTimestamp) = rewardsManager.getRewardData(aToken, wNative);
+        (uint256 index, uint256 lastUpdateTimestamp) = rewardsManager.getRewardData(aTokenDai, wNative);
 
         assertEq(index, 0, "index before");
         assertEq(lastUpdateTimestamp, 0, "lastUpdateTimestamp before");
@@ -53,16 +57,16 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         user.approve(dai, amount);
         user.supply(dai, amount);
 
-        uint256 expectedIndex = rewardsManager.getAssetIndex(aToken, wNative);
+        uint256 expectedIndex = rewardsManager.getAssetIndex(aTokenDai, wNative);
         uint256 expectedTimestamp = block.timestamp;
 
-        (index, lastUpdateTimestamp) = rewardsManager.getRewardData(aToken, wNative);
+        (index, lastUpdateTimestamp) = rewardsManager.getRewardData(aTokenDai, wNative);
         assertEq(index, expectedIndex, "index after supply");
         assertEq(lastUpdateTimestamp, expectedTimestamp, "lastUpdateTimestamp after supply");
 
         _forward(blocks);
 
-        (index, lastUpdateTimestamp) = rewardsManager.getRewardData(aToken, wNative);
+        (index, lastUpdateTimestamp) = rewardsManager.getRewardData(aTokenDai, wNative);
         assertEq(index, expectedIndex, "index after forward");
         assertEq(lastUpdateTimestamp, expectedTimestamp, "lastUpdateTimestamp after forward");
     }
@@ -70,7 +74,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
     function testGetUserData(uint256 amount, uint256 blocks) public {
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
         blocks = bound(blocks, 1, MAX_BLOCKS);
-        (uint256 index, uint256 accrued) = rewardsManager.getUserData(aToken, wNative, address(user));
+        (uint256 index, uint256 accrued) = rewardsManager.getUserData(aTokenDai, wNative, address(user));
 
         assertEq(index, 0, "index before");
         assertEq(accrued, 0, "accrued before");
@@ -78,7 +82,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         user.approve(dai, amount);
         user.supply(dai, amount);
 
-        (index, accrued) = rewardsManager.getUserData(aToken, wNative, address(user));
+        (index, accrued) = rewardsManager.getUserData(aTokenDai, wNative, address(user));
 
         // The user's first index is expected to be zero because on the first reward update, the update is bypassed as the reward starting index is set to zero.
         assertEq(index, 0, "index after supply");
@@ -89,28 +93,87 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         user.approve(dai, amount);
         user.supply(dai, amount);
 
-        uint256 expectedIndex = rewardsManager.getAssetIndex(aToken, wNative);
+        uint256 expectedIndex = rewardsManager.getAssetIndex(aTokenDai, wNative);
         uint256 expectedAccrued = rewardsManager.getUserRewards(assets, address(user), wNative);
 
-        (index, accrued) = rewardsManager.getUserData(aToken, wNative, address(user));
+        (index, accrued) = rewardsManager.getUserData(aTokenDai, wNative, address(user));
 
         assertEq(index, expectedIndex, "index after forward");
         assertEq(accrued, expectedAccrued, "accrued after forward");
 
         user.withdraw(dai, type(uint256).max);
 
-        expectedIndex = rewardsManager.getAssetIndex(aToken, wNative);
+        expectedIndex = rewardsManager.getAssetIndex(aTokenDai, wNative);
         expectedAccrued = rewardsManager.getUserRewards(assets, address(user), wNative);
 
-        (index, accrued) = rewardsManager.getUserData(aToken, wNative, address(user));
+        (index, accrued) = rewardsManager.getUserData(aTokenDai, wNative, address(user));
 
         assertEq(index, expectedIndex, "index after withdraw");
         assertEq(accrued, expectedAccrued, "accrued after withdraw");
     }
 
-    function testGetAllUserRewards() public {}
+    // TODO: Figure out how to have multiple reward tokens for testing this.
+    // function testGetAllUserRewards() public {}
 
-    function testGetUserRewards() public {}
+    struct TestRewardStruct {
+        uint256 collateralDai;
+        uint256 collateralUsdc;
+        uint256 supplyDai;
+        uint256 supplyUsdc;
+        uint256 borrowDai;
+        uint256 blocks;
+    }
+
+    function testGetUserRewards(TestRewardStruct memory params) public {
+        params.collateralDai = _boundSupply(testMarkets[dai], params.collateralDai);
+        params.collateralUsdc = _boundSupply(testMarkets[usdc], params.collateralUsdc);
+        params.supplyDai = _boundSupply(testMarkets[dai], params.supplyDai);
+        params.supplyUsdc = _boundSupply(testMarkets[usdc], params.supplyUsdc);
+        params.borrowDai = _boundBorrow(testMarkets[dai], params.borrowDai);
+        params.blocks = bound(params.blocks, 0, MAX_BLOCKS);
+
+        // Initialize asset indexes for each asset
+        hacker.approve(dai, 1000);
+        hacker.supplyCollateral(dai, 1000);
+        hacker.approve(usdc, 1000);
+        hacker.supplyCollateral(usdc, 1000);
+        hacker.borrow(dai, 100);
+        hacker.borrow(usdc, 100);
+
+        _forward(1);
+
+        user.approve(dai, params.collateralDai);
+        user.supplyCollateral(dai, params.collateralDai);
+        user.approve(usdc, params.collateralUsdc);
+        user.supplyCollateral(usdc, params.collateralUsdc);
+        user.approve(dai, params.supplyDai);
+        user.supply(dai, params.supplyDai);
+        user.approve(usdc, params.supplyUsdc);
+        user.supply(usdc, params.supplyUsdc);
+        _borrowWithoutCollateral(address(user), testMarkets[dai], params.borrowDai, address(user), address(user), 0);
+
+        uint256 scaledCollateralDai = morpho.scaledCollateralBalance(dai, address(user));
+        uint256 scaledCollateralUsdc = morpho.scaledCollateralBalance(usdc, address(user));
+        uint256 scaledSupplyDai = morpho.scaledPoolSupplyBalance(dai, address(user));
+        uint256 scaledSupplyUsdc = morpho.scaledPoolSupplyBalance(usdc, address(user));
+        uint256 scaledBorrowDai = morpho.scaledPoolBorrowBalance(dai, address(user));
+
+        (uint256 accrued) = rewardsManager.getUserRewards(assets, address(user), wNative);
+        assertEq(accrued, 0, "accrued 1");
+
+        _forward(params.blocks);
+
+        uint256[] memory assetIndexes = new uint256[](assets.length);
+        uint256[] memory userIndexes = new uint256[](assets.length);
+        for (uint256 i = 0; i < assets.length; i++) {
+            assetIndexes[i] = rewardsManager.getAssetIndex(assets[i], wNative);
+            userIndexes[i] = rewardsManager.getUserAssetIndex(address(user), assets[i], wNative);
+        }
+
+        (accrued) = rewardsManager.getUserRewards(assets, address(user), wNative);
+        // TODO: Make this test more accurate with math from previous variables.
+        assertGe(accrued, 0, "accrued 2");
+    }
 
     function testGetUserAssetIndex() public {}
 
@@ -141,7 +204,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
 
         vm.expectEmit(true, true, true, true);
         emit Accrued(
-            testMarkets[dai].aToken,
+            aTokenDai,
             wNative,
             address(user),
             rewardsManager.getAssetIndex(testMarkets[dai].aToken, wNative),
@@ -186,11 +249,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
 
         vm.expectEmit(true, true, true, true);
         emit Accrued(
-            testMarkets[dai].aToken,
-            wNative,
-            address(user),
-            rewardsManager.getAssetIndex(testMarkets[dai].aToken, wNative),
-            accruedRewards
+            aTokenDai, wNative, address(user), rewardsManager.getAssetIndex(aTokenDai, wNative), accruedRewards
         );
         vm.expectEmit(true, true, true, true);
         emit Events.RewardsClaimed(address(this), address(user), wNative, accruedRewards);
@@ -234,7 +293,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
 
         vm.expectEmit(true, true, true, true);
         emit Accrued(
-            testMarkets[dai].variableDebtToken,
+            variableDebtTokenDai,
             wNative,
             address(user),
             rewardsManager.getAssetIndex(testMarkets[dai].variableDebtToken, wNative),
