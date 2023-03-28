@@ -105,4 +105,10 @@ library DeltasLib {
             deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
         ).zeroFloorSub(idleSupply);
     }
+
+    function p2pBorrow(Types.Deltas storage deltas, Types.Indexes256 memory indexes) internal view returns (uint256) {
+        return deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+            deltas.borrow.scaledDelta.rayMul(indexes.borrow.poolIndex)
+        );
+    }
 }
