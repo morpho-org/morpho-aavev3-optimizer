@@ -57,7 +57,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 
@@ -99,7 +98,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomCollateral(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 
@@ -226,7 +224,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
         Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
@@ -261,7 +258,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 
@@ -300,7 +296,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 
@@ -334,7 +329,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
         supplied = bound(supplied, 0, amount - 1);
 
         address spender = address(morpho);
@@ -372,7 +366,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 
