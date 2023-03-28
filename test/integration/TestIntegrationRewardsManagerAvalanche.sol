@@ -34,10 +34,6 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         return "avalanche-mainnet";
     }
 
-    function testGetPool() public {
-        assertEq(rewardsManager.POOL(), address(morpho.pool()));
-    }
-
     function testGetMorpho() public {
         assertEq(rewardsManager.MORPHO(), address(morpho));
     }
@@ -73,7 +69,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
 
     function testGetUserData(uint256 amount, uint256 blocks) public {
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
-        blocks = bound(blocks, 0, MAX_BLOCKS);
+        blocks = bound(blocks, 1, MAX_BLOCKS);
         (uint256 index, uint256 accrued) = rewardsManager.getUserData(aToken, wNative, address(user));
 
         assertEq(index, 0, "index before");
@@ -82,24 +78,29 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         user.approve(dai, amount);
         user.supply(dai, amount);
 
-        uint256 expectedIndex = rewardsManager.getAssetIndex(aToken, wNative);
-
         (index, accrued) = rewardsManager.getUserData(aToken, wNative, address(user));
 
-        assertEq(index, expectedIndex, "index after supply");
+        // The user's first index is expected to be zero because on the first reward update, the update is bypassed as the reward starting index is set to zero.
+        assertEq(index, 0, "index after supply");
         assertEq(accrued, 0, "accrued after supply");
 
         _forward(blocks);
 
+        user.approve(dai, amount);
+        user.supply(dai, amount);
+
+        uint256 expectedIndex = rewardsManager.getAssetIndex(aToken, wNative);
+        uint256 expectedAccrued = rewardsManager.getUserRewards(assets, address(user), wNative);
+
         (index, accrued) = rewardsManager.getUserData(aToken, wNative, address(user));
 
         assertEq(index, expectedIndex, "index after forward");
-        assertEq(accrued, 0, "accrued after forward");
-
-        expectedIndex = rewardsManager.getAssetIndex(aToken, wNative);
-        uint256 expectedAccrued = rewardsManager.getUserRewards(assets, address(user), wNative);
+        assertEq(accrued, expectedAccrued, "accrued after forward");
 
         user.withdraw(dai, type(uint256).max);
+
+        expectedIndex = rewardsManager.getAssetIndex(aToken, wNative);
+        expectedAccrued = rewardsManager.getUserRewards(assets, address(user), wNative);
 
         (index, accrued) = rewardsManager.getUserData(aToken, wNative, address(user));
 

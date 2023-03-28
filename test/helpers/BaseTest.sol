@@ -83,4 +83,14 @@ contract BaseTest is Test {
         (bool success,) = receiver.call("");
         vm.assume(success);
     }
+
+    /// @dev Returns true if `addrs` contains `addr`, and false otherwise.
+    function _contains(address[] memory addrs, address addr) internal pure returns (bool) {
+        for (uint256 i = 0; i < addrs.length; i++) {
+            if (addrs[i] == addr) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -11,6 +11,18 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
     uint16 private constant DEFAULT_P2P_INDEX_CURSOR = 1_000;
     address private constant DEFAULT_PRANKER = address(uint160(uint256(keccak256(abi.encode(42069)))));
 
+    function testShouldBeInitialized() public {
+        assertEq(Ownable2StepUpgradeable(address(morpho)).owner(), address(this), "owner");
+        assertEq(morpho.pool(), address(pool), "pool");
+        assertEq(morpho.addressesProvider(), address(addressesProvider), "addressesProvider");
+        assertEq(morpho.eModeCategoryId(), eModeCategoryId, "eModeCategoryId");
+        Types.Iterations memory iterations = morpho.defaultIterations();
+        assertEq(iterations.repay, 10, "defaultIterations.repay");
+        assertEq(iterations.withdraw, 10, "defaultIterations.withdraw");
+        assertEq(pool.getUserEMode(address(morpho)), eModeCategoryId, "getUserEMode");
+        assertEq(morpho.positionsManager(), address(positionsManager), "positionsManager");
+    }
+
     function testShouldNotCreateSiloedBorrowMarket(uint16 reserveFactor, uint16 p2pIndexCursor) public {
         DataTypes.ReserveData memory reserve = pool.getReserveData(link);
         reserve.configuration.setSiloedBorrowing(true);

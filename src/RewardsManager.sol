@@ -2,7 +2,6 @@
 pragma solidity ^0.8.17;
 
 import {IMorpho} from "./interfaces/IMorpho.sol";
-import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IPoolToken} from "./interfaces/aave/IPoolToken.sol";
 import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
 import {IScaledBalanceToken} from "@aave-v3-core/interfaces/IScaledBalanceToken.sol";
@@ -30,13 +29,14 @@ contract RewardsManager is IRewardsManager, Initializable {
     }
 
     struct UserData {
-        uint128 index; // The user's index for a specific (asset, reward) pair.
+        uint104 index; // The user's index for a specific (asset, reward) pair.
         uint128 accrued; // The user's accrued rewards for a specific (asset, reward) pair (in reward token decimals).
     }
 
     struct RewardData {
-        uint128 index; // The current index for a specific reward token.
-        uint128 lastUpdateTimestamp; // The last timestamp the index was updated.
+        uint104 startingIndex; // The index from which the RewardsManager begins tracking the RewardsController's index.
+        uint104 index; // The current index for a specific reward token.
+        uint32 lastUpdateTimestamp; // The last timestamp the index was updated.
         mapping(address => UserData) usersData; // Users data. user -> UserData
     }
 
@@ -49,9 +49,6 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     /// @dev The address of the Morpho protocol.
     IMorpho internal immutable _MORPHO;
-
-    /// @dev The address of the Aave pool.
-    IPool internal immutable _POOL;
 
     /* STORAGE */
 
@@ -101,7 +98,6 @@ contract RewardsManager is IRewardsManager, Initializable {
 
         _REWARDS_CONTROLLER = IRewardsController(rewardsController);
         _MORPHO = IMorpho(morpho);
-        _POOL = IPool(IMorpho(morpho).pool());
     }
 
     /* EXTERNAL */
@@ -145,11 +141,6 @@ contract RewardsManager is IRewardsManager, Initializable {
     }
 
     /* GETTERS */
-
-    /// @notice Returns the pool address.
-    function POOL() external view returns (address) {
-        return address(_POOL);
-    }
 
     /// @notice Returns the Morpho protocol address.
     function MORPHO() external view returns (address) {
@@ -195,6 +186,7 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @notice Returns user's accrued rewards for the specified assets and reward token
     /// @param assets The list of assets to retrieve accrued rewards.
     /// @param user The address of the user.
+    /// @param reward The address of the reward token.
     /// @return totalAccrued The total amount of accrued rewards.
     function getUserAccruedRewards(address[] calldata assets, address user, address reward)
         external
@@ -251,7 +243,7 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @param reward The address of the reward token.
     /// @return The user's index.
     function getUserAssetIndex(address user, address asset, address reward) external view returns (uint256) {
-        return _localAssetData[asset][reward].usersData[user].index;
+        return _computeUserIndex(_localAssetData[asset][reward], user);
     }
 
     /// @notice Returns the virtually updated asset index for the specified asset and reward token.
@@ -288,13 +280,21 @@ contract RewardsManager is IRewardsManager, Initializable {
         uint256 oldIndex;
         (oldIndex, newIndex) = _getAssetIndex(localRewardData, asset, reward, scaledTotalSupply, assetUnit);
 
-        if (newIndex != oldIndex) {
-            indexUpdated = true;
-            localRewardData.index = newIndex.toUint128();
+        // If this is the first initiation of the distribution, set the starting index.
+        // In the case that rewards have already started accumulating, rewards will not be credited before this starting index.
+        if (localRewardData.lastUpdateTimestamp == 0) {
+            (,, uint256 lastUpdatedTimestampRC,) = _REWARDS_CONTROLLER.getRewardsData(asset, reward);
+            // If the rewards controller has already started distributing rewards, set the starting index to the new index.
+            // Rewards before this index will not be credited.
+            if (lastUpdatedTimestampRC != 0) localRewardData.startingIndex = newIndex.toUint104();
         }
 
-        // Not safe casting because 2^128 is large enough.
-        localRewardData.lastUpdateTimestamp = uint128(block.timestamp);
+        if (newIndex != oldIndex) {
+            indexUpdated = true;
+            localRewardData.index = newIndex.toUint104();
+        }
+
+        localRewardData.lastUpdateTimestamp = block.timestamp.toUint32();
     }
 
     /// @dev Updates the state of the distribution for the specific user.
@@ -312,11 +312,11 @@ contract RewardsManager is IRewardsManager, Initializable {
         uint256 newAssetIndex,
         uint256 assetUnit
     ) internal returns (uint256 rewardsAccrued, bool dataUpdated) {
-        uint256 userIndex = localRewardData.usersData[user].index;
+        uint256 userIndex = _computeUserIndex(localRewardData, user);
 
         if ((dataUpdated = userIndex != newAssetIndex)) {
             // Already checked for overflow in _updateRewardData.
-            localRewardData.usersData[user].index = uint128(newAssetIndex);
+            localRewardData.usersData[user].index = uint104(newAssetIndex);
 
             if (userBalance != 0) {
                 rewardsAccrued = _getRewards(userBalance, newAssetIndex, userIndex, assetUnit);
@@ -339,7 +339,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         unchecked {
             uint256 assetUnit = 10 ** _REWARDS_CONTROLLER.getAssetDecimals(asset);
 
-            for (uint128 i; i < availableRewards.length; ++i) {
+            for (uint256 i; i < availableRewards.length; ++i) {
                 address reward = availableRewards[i];
                 RewardData storage localRewardData = _localAssetData[asset][reward];
 
@@ -358,14 +358,14 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     /// @dev Accrues all the rewards of the assets specified in the userAssetBalances list.
     /// @param user The address of the user.
-    /// @param _userAssetBalances The list of structs with the user balance and total supply of a set of assets.
-    function _updateDataMultiple(address user, UserAssetBalance[] memory _userAssetBalances) internal {
-        for (uint256 i; i < _userAssetBalances.length; ++i) {
+    /// @param userAssetBalances The list of structs with the user balance and total supply of a set of assets.
+    function _updateDataMultiple(address user, UserAssetBalance[] memory userAssetBalances) internal {
+        for (uint256 i; i < userAssetBalances.length; ++i) {
             _updateData(
                 user,
-                _userAssetBalances[i].asset,
-                _userAssetBalances[i].scaledBalance,
-                _userAssetBalances[i].scaledTotalSupply
+                userAssetBalances[i].asset,
+                userAssetBalances[i].scaledBalance,
+                userAssetBalances[i].scaledTotalSupply
             );
         }
     }
@@ -373,61 +373,65 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @dev Returns the accrued unclaimed amount of a reward from a user over a list of distribution.
     /// @param user The address of the user.
     /// @param reward The address of the reward token.
-    /// @param _userAssetBalances List of structs with the user balance and total supply of a set of assets.
+    /// @param userAssetBalances List of structs with the user balance and total supply of a set of assets.
     /// @return unclaimedRewards The accrued rewards for the user until the moment.
-    function _getUserReward(address user, address reward, UserAssetBalance[] memory _userAssetBalances)
+    function _getUserReward(address user, address reward, UserAssetBalance[] memory userAssetBalances)
         internal
         view
         returns (uint256 unclaimedRewards)
     {
-        uint256 userAssetBalancesLength = _userAssetBalances.length;
+        uint256 userAssetBalancesLength = userAssetBalances.length;
 
         // Add unrealized rewards.
         for (uint256 i; i < userAssetBalancesLength; ++i) {
-            unclaimedRewards += _localAssetData[_userAssetBalances[i].asset][reward].usersData[user].accrued;
+            unclaimedRewards += _localAssetData[userAssetBalances[i].asset][reward].usersData[user].accrued;
 
-            if (_userAssetBalances[i].scaledBalance == 0) continue;
+            if (userAssetBalances[i].scaledBalance == 0) continue;
 
-            unclaimedRewards += _getPendingRewards(user, reward, _userAssetBalances[i]);
+            unclaimedRewards += _getPendingRewards(user, reward, userAssetBalances[i]);
         }
     }
 
     /// @dev Computes the pending (not yet accrued) rewards since the last user action.
     /// @param user The address of the user.
     /// @param reward The address of the reward token.
-    /// @param _userAssetBalance The struct with the user balance and total supply of the incentivized asset.
+    /// @param userAssetBalance The struct with the user balance and total supply of the incentivized asset.
     /// @return The pending rewards for the user since the last user action.
-    function _getPendingRewards(address user, address reward, UserAssetBalance memory _userAssetBalance)
+    function _getPendingRewards(address user, address reward, UserAssetBalance memory userAssetBalance)
         internal
         view
         returns (uint256)
     {
-        RewardData storage localRewardData = _localAssetData[_userAssetBalance.asset][reward];
+        RewardData storage localRewardData = _localAssetData[userAssetBalance.asset][reward];
 
         uint256 assetUnit;
         unchecked {
-            assetUnit = 10 ** _REWARDS_CONTROLLER.getAssetDecimals(_userAssetBalance.asset);
+            assetUnit = 10 ** _REWARDS_CONTROLLER.getAssetDecimals(userAssetBalance.asset);
         }
 
         (, uint256 nextIndex) = _getAssetIndex(
-            localRewardData, _userAssetBalance.asset, reward, _userAssetBalance.scaledTotalSupply, assetUnit
+            localRewardData, userAssetBalance.asset, reward, userAssetBalance.scaledTotalSupply, assetUnit
         );
 
-        return _getRewards(_userAssetBalance.scaledBalance, nextIndex, localRewardData.usersData[user].index, assetUnit);
+        return
+            _getRewards(userAssetBalance.scaledBalance, nextIndex, _computeUserIndex(localRewardData, user), assetUnit);
     }
 
     /// @dev Computes user's accrued rewards on a distribution.
     /// @param userBalance The current user asset balance.
-    /// @param _reserveIndex The current index of the distribution.
-    /// @param _userIndex The index stored for the user, representing its staking moment.
+    /// @param reserveIndex The current index of the distribution.
+    /// @param userIndex The index stored for the user, representing its staking moment.
     /// @param assetUnit The asset's unit (10**decimals).
     /// @return rewards The rewards accrued.
-    function _getRewards(uint256 userBalance, uint256 _reserveIndex, uint256 _userIndex, uint256 assetUnit)
+    function _getRewards(uint256 userBalance, uint256 reserveIndex, uint256 userIndex, uint256 assetUnit)
         internal
         pure
         returns (uint256 rewards)
     {
-        rewards = userBalance * (_reserveIndex - _userIndex);
+        // If `userIndex` is 0, it means that it has not accrued reward yet.
+        if (userIndex == 0) return 0;
+
+        rewards = userBalance * (reserveIndex - userIndex);
         assembly {
             rewards := div(rewards, assetUnit)
         }
@@ -499,5 +503,14 @@ contract RewardsManager is IRewardsManager, Initializable {
 
             userAssetBalances[i].scaledTotalSupply = IScaledBalanceToken(asset).scaledTotalSupply();
         }
+    }
+
+    /// @dev Computes the index of a user for a specific reward distribution.
+    /// @param localRewardData The local reward's data.
+    /// @param user The address of the user.
+    /// @return The index of the user for the distribution.
+    function _computeUserIndex(RewardData storage localRewardData, address user) internal view returns (uint256) {
+        uint256 index = uint256(localRewardData.usersData[user].index);
+        return index == 0 ? localRewardData.startingIndex : index;
     }
 }

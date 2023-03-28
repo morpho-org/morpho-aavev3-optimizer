@@ -9,6 +9,7 @@ import {TestMarket, TestMarketLib} from "test/helpers/TestMarketLib.sol";
 
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2StepUpgradeable.sol";
 
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
@@ -58,8 +59,6 @@ contract IntegrationTest is ForkTest {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             _createTestMarket(allUnderlyings[i], 0, 33_33);
         }
-
-        _setAllAssetsAsCollateral();
 
         _forward(1); // All markets are outdated in Morpho's storage.
 
@@ -121,13 +120,13 @@ contract IntegrationTest is ForkTest {
         internal
         returns (TestMarket storage market, DataTypes.ReserveData memory reserve)
     {
+        market = testMarkets[underlying];
         reserve = pool.getReserveData(underlying);
 
-        market = testMarkets[underlying];
+        market.underlying = underlying;
         market.aToken = reserve.aTokenAddress;
         market.variableDebtToken = reserve.variableDebtTokenAddress;
         market.stableDebtToken = reserve.stableDebtTokenAddress;
-        market.underlying = underlying;
         market.symbol = ERC20(underlying).symbol();
         market.reserveFactor = reserveFactor;
         market.p2pIndexCursor = p2pIndexCursor;
@@ -151,8 +150,8 @@ contract IntegrationTest is ForkTest {
         market.eModeCategoryId = uint8(reserve.configuration.getEModeCategory());
         market.eModeCategory = pool.getEModeCategoryData(market.eModeCategoryId);
 
+        market.isCollateral = market.getLt(eModeCategoryId) > 0 && reserve.configuration.getDebtCeiling() == 0;
         market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
-            && !reserve.configuration.getBorrowableInIsolation()
             && (eModeCategoryId == 0 || eModeCategoryId == market.eModeCategoryId);
 
         vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
@@ -163,30 +162,28 @@ contract IntegrationTest is ForkTest {
     function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         (TestMarket storage market,) = _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
-        if (market.ltv > 0) collateralUnderlyings.push(underlying);
-        if (market.isBorrowable) borrowableUnderlyings.push(underlying);
-
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
-    }
 
-    function _setAllAssetsAsCollateral() internal {
-        for (uint256 i; i < collateralUnderlyings.length; ++i) {
-            _setAssetAsCollateral(testMarkets[collateralUnderlyings[i]]);
+        // Supply dust to:
+        // 1. account for roundings upon borrow or withdraw.
+        // 2. make UserConfigurationMap.isUsingAsCollateral() return true (cannot enable the asset as collateral on the pool if Morpho has no aToken).
+        _deposit(market.underlying, 10 ** (market.decimals / 2), address(morpho));
+
+        if (market.isCollateral) {
+            collateralUnderlyings.push(underlying);
+
+            morpho.setAssetIsCollateral(market.underlying, true);
         }
-    }
 
-    function _setAssetAsCollateral(TestMarket storage market) internal {
-        // Supply dust to make UserConfigurationMap.isUsingAsCollateralOne() return true.
-        _deposit(market, (10 ** market.decimals) / 1e6, address(morpho));
-        morpho.setAssetIsCollateral(market.underlying, true);
+        if (market.isBorrowable) borrowableUnderlyings.push(underlying);
     }
 
     function _randomCollateral(uint256 seed) internal view returns (address) {
-        return collateralUnderlyings[seed % collateralUnderlyings.length];
+        return collateralUnderlyings[uint256(keccak256(abi.encode(seed))) % collateralUnderlyings.length];
     }
 
     function _randomBorrowable(uint256 seed) internal view returns (address) {
-        return borrowableUnderlyings[seed % borrowableUnderlyings.length];
+        return borrowableUnderlyings[uint256(keccak256(abi.encode(seed))) % borrowableUnderlyings.length];
     }
 
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
@@ -213,7 +210,9 @@ contract IntegrationTest is ForkTest {
         poolAdmin.setBorrowCap(market.underlying, borrowCap);
     }
 
-    modifier bypassSupplyCap(TestMarket storage market, uint256 amount) {
+    modifier bypassSupplyCap(address underlying, uint256 amount) {
+        TestMarket storage market = testMarkets[underlying];
+
         uint256 supplyCapBefore = market.supplyCap;
         bool disableSupplyCap = amount < type(uint256).max - supplyCapBefore;
         if (disableSupplyCap) _setSupplyCap(market, 0);
@@ -224,18 +223,11 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Deposits the given amount of tokens on behalf of the given address, on AaveV3, increasing the supply cap if necessary.
-    function _deposit(TestMarket storage market, uint256 amount, address onBehalf)
+    function _deposit(address underlying, uint256 amount, address onBehalf)
         internal
-        bypassSupplyCap(market, amount)
+        bypassSupplyCap(underlying, amount)
     {
-        deal(market.underlying, address(this), type(uint256).max);
-        ERC20(market.underlying).safeApprove(address(pool), amount);
-        pool.deposit(market.underlying, amount, onBehalf, 0);
-    }
-
-    /// @dev Deposits the given amount of tokens on behalf of the given address, on AaveV3.
-    function _depositSimple(address underlying, uint256 amount, address onBehalf) internal {
-        deal(underlying, address(this), amount);
+        deal(underlying, address(this), type(uint256).max);
         ERC20(underlying).safeApprove(address(pool), amount);
         pool.deposit(underlying, amount, onBehalf, 0);
     }
@@ -332,7 +324,9 @@ contract IntegrationTest is ForkTest {
         borrowed = morpho.borrow(market.underlying, amount, onBehalf, receiver, maxIterations);
 
         _deposit(
-            testMarkets[dai], testMarkets[dai].minBorrowCollateral(market, borrowed, eModeCategoryId), address(morpho)
+            testMarkets[dai].underlying,
+            testMarkets[dai].minBorrowCollateral(market, borrowed, eModeCategoryId),
+            address(morpho)
         ); // Make Morpho able to borrow again with some collateral. The DAI market is used here because some `market` can't be used as collateral such as USDT.
 
         oracle.setAssetPrice(market.underlying, market.price);
@@ -341,7 +335,7 @@ contract IntegrationTest is ForkTest {
     /// @dev Promotes the incoming (or already provided) supply, without collateral.
     function _promoteSupply(UserMock promoter, TestMarket storage market, uint256 amount) internal returns (uint256) {
         uint256 liquidity = market.liquidity();
-        if (amount > liquidity) _deposit(market, amount - liquidity, address(0xdead));
+        if (amount > liquidity) _deposit(market.underlying, amount - liquidity, address(0xdead));
         if (amount > market.borrowGap()) {
             _setBorrowCap(market, (market.totalBorrow() + amount).divUp(10 ** market.decimals));
         }
@@ -352,7 +346,9 @@ contract IntegrationTest is ForkTest {
             amount = borrowed;
 
             _deposit(
-                testMarkets[dai], testMarkets[dai].minBorrowCollateral(market, amount, eModeCategoryId), address(morpho)
+                testMarkets[dai].underlying,
+                testMarkets[dai].minBorrowCollateral(market, amount, eModeCategoryId),
+                address(morpho)
             ); // Make Morpho able to borrow again with some collateral. The DAI market is used here because some `market` can't be used as collateral such as USDT.
         } catch {
             amount = 0;
@@ -366,7 +362,7 @@ contract IntegrationTest is ForkTest {
     /// @dev Promotes the incoming (or already provided) borrow.
     function _promoteBorrow(UserMock promoter, TestMarket storage market, uint256 amount)
         internal
-        bypassSupplyCap(market, amount)
+        bypassSupplyCap(market.underlying, amount)
         returns (uint256)
     {
         if (amount == 0) return 0;
