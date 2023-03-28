@@ -26,7 +26,7 @@
 [submodule "lib/aave-v3-periphery"]
 	path = lib/aave-v3-periphery
 	url = https://github.com/aave/aave-v3-periphery
-	branch = v3.0.1
+	branch = v2.0.1
 
 [submodule "lib/morpho-data-structures"]
 	path = lib/morpho-data-structures
