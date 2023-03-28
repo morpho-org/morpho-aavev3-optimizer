@@ -42,7 +42,7 @@ library TestConfigLib {
         return getAddress(config, config.json.readString(WRAPPED_NATIVE_PATH));
     }
 
-    function getStakedNative(TestConfig storage config) internal view returns (address) {
+    function getStakedNative(TestConfig storage config) internal returns (address) {
         return getAddress(config, config.json.readString(STAKED_NATIVE_PATH));
     }
 }
