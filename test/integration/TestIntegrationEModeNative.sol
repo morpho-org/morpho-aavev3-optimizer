@@ -92,12 +92,13 @@ contract TestIntegrationEModeNative is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
 
-            if (market.underlying == wNative || market.underlying == sNative) continue;
+            // AAVE will not produce the expected error since it is not borrowable from the pool.
+            if (market.underlying == aave || market.underlying == wNative || market.underlying == sNative) continue;
 
             amount = _boundBorrow(market, amount);
 
