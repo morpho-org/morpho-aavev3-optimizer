@@ -85,9 +85,9 @@ contract TestIntegrationEModeNative is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
-        vm.assume(market.underlying != wNative && market.underlying != sNative);
+        vm.assume(market.underlying != aave && market.underlying != wNative && market.underlying != sNative);
 
         amount = _boundBorrow(market, amount);
 
