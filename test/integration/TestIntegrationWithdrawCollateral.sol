@@ -313,10 +313,10 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
+        for (uint256 marketIndex; marketIndex < collateralUnderlyings.length; ++marketIndex) {
             _revert();
 
-            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
+            TestMarket storage market = testMarkets[collateralUnderlyings[marketIndex]];
 
             amountToSupply = _boundSupply(market, amountToSupply);
             amountToWithdraw = bound(amountToWithdraw, Math.max(market.minAmount, amountToSupply / 10), amountToSupply);
