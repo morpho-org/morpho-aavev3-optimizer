@@ -53,11 +53,13 @@ contract ForkTest is BaseTest {
 
     address internal dai;
     address internal usdc;
+    address internal usdt;
     address internal aave;
     address internal link;
     address internal wbtc;
     address internal weth;
     address internal wNative;
+    address internal sNative;
     address[] internal allUnderlyings;
 
     IPool internal pool;
@@ -129,13 +131,15 @@ contract ForkTest is BaseTest {
 
         dai = config.getAddress("DAI");
         usdc = config.getAddress("USDC");
+        usdt = config.getAddress("USDT");
         aave = config.getAddress("AAVE");
         link = config.getAddress("LINK");
         wbtc = config.getAddress("WBTC");
         weth = config.getAddress("WETH");
         wNative = config.getWrappedNative();
+        sNative = config.getStakedNative();
 
-        allUnderlyings = [dai, usdc, aave, wbtc, weth];
+        allUnderlyings = [dai, usdc, aave, usdt, wbtc, weth, sNative];
     }
 
     function _label() internal virtual {
@@ -193,7 +197,6 @@ contract ForkTest is BaseTest {
     }
 
     /// @dev Avoids to revert because of AAVE token snapshots: https://github.com/aave/aave-token-v2/blob/master/contracts/token/base/GovernancePowerDelegationERC20.sol#L174
-
     function _deal(address underlying, address user, uint256 amount) internal {
         if (amount == 0) return;
 
@@ -229,8 +232,8 @@ contract ForkTest is BaseTest {
         return reserve.totalSupplyToCap(poolSupplyIndex, poolBorrowIndex);
     }
 
-    // @dev  Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
-    // https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/pool/PoolConfigurator.sol#L369-L376
+    /// @dev Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
+    /// https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/pool/PoolConfigurator.sol#L369-L376
     function _getLtvLt(address underlying, uint8 eModeCategoryId)
         internal
         view
@@ -266,5 +269,15 @@ contract ForkTest is BaseTest {
             ""
         );
         poolAdmin.setAssetEModeCategory(underlying, eModeCategoryId);
+    }
+
+    function _assumeNotUnderlying(address input) internal view {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.assume(input != allUnderlyings[i]);
+        }
+    }
+
+    function _randomUnderlying(uint256 seed) internal view returns (address) {
+        return allUnderlyings[uint256(keccak256(abi.encode(seed))) % allUnderlyings.length];
     }
 }

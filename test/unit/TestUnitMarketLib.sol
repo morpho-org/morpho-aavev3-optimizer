@@ -234,7 +234,7 @@ contract TestUnitMarketLib is BaseTest {
             indexes.supply.p2pIndex,
             indexes.borrow.poolIndex,
             indexes.borrow.p2pIndex
-            );
+        );
         market.setIndexes(indexes);
 
         assertEq(market.indexes.supply.poolIndex, indexes.supply.poolIndex);
@@ -291,5 +291,14 @@ contract TestUnitMarketLib is BaseTest {
                 : market.idleSupply.rayDivUp(market.deltas.supply.scaledP2PTotal.rayMul(market.indexes.supply.p2pIndex))
         );
         assertLe(proportionIdle, WadRayMath.RAY);
+    }
+
+    function testSetAssetIsCollateral(bool isCollateral) public {
+        vm.expectEmit(true, true, true, true);
+        emit Events.IsCollateralSet(market.underlying, isCollateral);
+
+        market.setAssetIsCollateral(isCollateral);
+
+        assertEq(market.isCollateral, isCollateral);
     }
 }

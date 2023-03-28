@@ -18,7 +18,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
 
     function testClaimToTreasuryShouldRevertIfTreasuryVaultIsZero(uint256[] calldata amounts) public {
         vm.expectRevert(Errors.AddressIsZero.selector);
-        morpho.claimToTreasury(underlyings, amounts);
+        morpho.claimToTreasury(allUnderlyings, amounts);
     }
 
     function testShouldNotClaimToTreasuryIfMarketNotCreated(address treasuryVault, uint8 nbUnderlyings) public {
@@ -136,7 +136,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
                 emit Events.ReserveFeeClaimed(
                     claimedUnderlyings[i],
                     Math.min(claimedAmounts[i], balanceAmounts[i] - morpho.market(claimedUnderlyings[i]).idleSupply)
-                    );
+                );
             }
             beforeBalanceTreasury[i] = ERC20(claimedUnderlyings[i]).balanceOf(treasuryVault);
         }

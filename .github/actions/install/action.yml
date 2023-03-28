@@ -14,10 +14,13 @@ runs:
       with:
         version: nightly
 
-    - name: Load Foundry compilation cache
-      uses: actions/cache@v3
+    - name: Restore forge compilation cache
+      uses: actions/cache/restore@v3
       with:
         path: |
           cache
           out
-        key: ${{ github.base_ref || github.ref_name }}-forge # always keep compiled contracts from base branch
+        key: forge-${{ github.ref_name }}
+        restore-keys: |
+          forge-${{ github.base_ref }}
+          forge-

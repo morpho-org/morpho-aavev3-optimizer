@@ -15,12 +15,14 @@ library InterestRatesLib {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
+    /// @notice Computes and returns the new peer-to-peer indexes of a market given its parameters.
+    /// @return newP2PSupplyIndex The peer-to-peer supply index.
+    /// @return newP2PBorrowIndex The peer-to-peer borrow index.
     function computeP2PIndexes(Types.IndexesParams memory params)
         internal
         pure
         returns (uint256 newP2PSupplyIndex, uint256 newP2PBorrowIndex)
     {
-        // Compute pool growth factors.
         Types.GrowthFactors memory growthFactors = computeGrowthFactors(
             params.poolSupplyIndex,
             params.poolBorrowIndex,
@@ -105,7 +107,7 @@ library InterestRatesLib {
         uint256 proportionDelta = Math.min(
             scaledDelta.rayMul(lastIndexes.poolIndex).rayDivUp(scaledP2PTotal.rayMul(lastIndexes.p2pIndex)),
             WadRayMath.RAY - proportionIdle // To avoid proportionDelta + proportionIdle > 1 with rounding errors.
-        ); // in ray.
+        ); // In ray.
 
         // Equivalent to:
         // lastP2PIndex * (

@@ -23,6 +23,7 @@ contract TestInternalMorphoInternal is InternalTest {
     using LogarithmicBuckets for LogarithmicBuckets.Buckets;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using Math for uint256;
 
     uint256 internal constant MIN_INDEX = WadRayMath.RAY;
     uint256 internal constant MAX_INDEX = 100 * WadRayMath.RAY;
@@ -42,10 +43,10 @@ contract TestInternalMorphoInternal is InternalTest {
         ERC20(usdc).approve(address(_pool), type(uint256).max);
         ERC20(wNative).approve(address(_pool), type(uint256).max);
 
-        _pool.supplyToPool(dai, 100 ether);
-        _pool.supplyToPool(wbtc, 1e8);
-        _pool.supplyToPool(usdc, 1e8);
-        _pool.supplyToPool(wNative, 1 ether);
+        _pool.supplyToPool(dai, 100 ether, _pool.getReserveNormalizedIncome(dai));
+        _pool.supplyToPool(wbtc, 1e8, _pool.getReserveNormalizedIncome(wbtc));
+        _pool.supplyToPool(usdc, 1e8, _pool.getReserveNormalizedIncome(usdc));
+        _pool.supplyToPool(wNative, 1 ether, _pool.getReserveNormalizedIncome(wNative));
     }
 
     function createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
@@ -70,6 +71,98 @@ contract TestInternalMorphoInternal is InternalTest {
         _marketsCreated.push(underlying);
 
         ERC20(underlying).safeApprove(address(_pool), type(uint256).max);
+    }
+
+    function testIncreaseP2PDeltasRevertsIfAmountIsZero(
+        uint256 p2pSupplyTotal,
+        uint256 p2pBorrowTotal,
+        uint256 supplyDelta,
+        uint256 borrowDelta
+    ) public {
+        p2pSupplyTotal = _boundAmount(p2pSupplyTotal);
+        p2pBorrowTotal = _boundAmount(p2pBorrowTotal);
+        supplyDelta = bound(supplyDelta, 0, p2pSupplyTotal);
+        borrowDelta = bound(borrowDelta, 0, p2pBorrowTotal);
+
+        address underlying = dai;
+        Types.Market storage market = _market[underlying];
+        Types.Deltas storage deltas = market.deltas;
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+
+        deltas.supply.scaledDelta = supplyDelta.rayDivUp(indexes.supply.p2pIndex);
+        deltas.borrow.scaledDelta = borrowDelta.rayDivUp(indexes.borrow.p2pIndex);
+        deltas.supply.scaledP2PTotal = p2pSupplyTotal.rayDivDown(indexes.supply.p2pIndex);
+        deltas.borrow.scaledP2PTotal = p2pBorrowTotal.rayDivDown(indexes.borrow.p2pIndex);
+
+        uint256 amount = 0;
+
+        vm.expectRevert(Errors.AmountIsZero.selector);
+        this.increaseP2PDeltasTest(underlying, amount);
+    }
+
+    function testIncreaseP2PDeltas(
+        uint256 p2pSupplyTotal,
+        uint256 p2pBorrowTotal,
+        uint256 supplyDelta,
+        uint256 borrowDelta,
+        uint256 amount
+    ) public {
+        p2pSupplyTotal = _boundAmount(p2pSupplyTotal);
+        p2pBorrowTotal = _boundAmount(p2pBorrowTotal);
+        supplyDelta = bound(supplyDelta, 0, p2pSupplyTotal);
+        borrowDelta = bound(borrowDelta, 0, p2pBorrowTotal);
+        amount = bound(amount, 0, 10_000_000 ether); // $10m dollars worth
+
+        _pool.supplyToPool(dai, amount * 2, _pool.getReserveNormalizedIncome(dai));
+
+        address underlying = dai;
+        Types.Market storage market = _market[underlying];
+        Types.Deltas storage deltas = market.deltas;
+        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+
+        deltas.supply.scaledDelta = supplyDelta.rayDivUp(indexes.supply.p2pIndex);
+        deltas.borrow.scaledDelta = borrowDelta.rayDivUp(indexes.borrow.p2pIndex);
+        deltas.supply.scaledP2PTotal = p2pSupplyTotal.rayDivDown(indexes.supply.p2pIndex);
+        deltas.borrow.scaledP2PTotal = p2pBorrowTotal.rayDivDown(indexes.borrow.p2pIndex);
+
+        uint256 expectedAmount = Math.min(
+            amount,
+            Math.min(
+                deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                    deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
+                ),
+                deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+                    deltas.borrow.scaledDelta.rayMul(indexes.borrow.poolIndex)
+                )
+            )
+        );
+        vm.assume(expectedAmount > 0);
+
+        uint256 newExpectedSupplyDelta = deltas.supply.scaledDelta + expectedAmount.rayDiv(indexes.supply.poolIndex);
+        uint256 newExpectedBorrowDelta = deltas.borrow.scaledDelta + expectedAmount.rayDiv(indexes.borrow.poolIndex);
+
+        uint256 aTokenBalanceBefore = ERC20(market.aToken).balanceOf(address(this));
+        uint256 variableDebtTokenBalanceBefore = ERC20(market.variableDebtToken).balanceOf(address(this));
+
+        vm.expectEmit(true, true, true, true);
+        emit Events.P2PSupplyDeltaUpdated(underlying, newExpectedSupplyDelta);
+        vm.expectEmit(true, true, true, true);
+        emit Events.P2PBorrowDeltaUpdated(underlying, newExpectedBorrowDelta);
+        vm.expectEmit(true, true, true, true);
+        emit Events.P2PDeltasIncreased(underlying, expectedAmount);
+        this.increaseP2PDeltasTest(underlying, amount);
+
+        assertApproxEqAbs(
+            aTokenBalanceBefore + expectedAmount, ERC20(market.aToken).balanceOf(address(this)), 1, "aToken balance"
+        );
+        assertApproxEqAbs(
+            variableDebtTokenBalanceBefore + expectedAmount,
+            ERC20(market.variableDebtToken).balanceOf(address(this)),
+            1,
+            "variable debt token balance"
+        );
+        assertEq(deltas.supply.scaledDelta, newExpectedSupplyDelta, "supply delta");
+        assertEq(deltas.borrow.scaledDelta, newExpectedBorrowDelta, "borrow delta");
     }
 
     // More detailed index tests to be in InterestRatesLib tests
@@ -300,7 +393,7 @@ contract TestInternalMorphoInternal is InternalTest {
         assertEq(units, 10 ** poolDecimals, "units not equal to pool decimals 2");
     }
 
-    function testLiquidityDataCollateral(uint256 amount) public {
+    function testCollateralDataNoCollateral(uint256 amount) public {
         amount = bound(amount, 0, 1_000_000 ether);
 
         _marketBalances[dai].collateral[address(1)] = amount.rayDivUp(_market[dai].indexes.supply.poolIndex);
@@ -309,17 +402,30 @@ contract TestInternalMorphoInternal is InternalTest {
         Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
 
         (uint256 borrowable, uint256 maxDebt) = _collateralData(dai, vars);
+        assertEq(borrowable, 0, "borrowable != 0");
+        assertEq(maxDebt, 0, "maxDebt != 0");
+    }
 
-        (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 tokenUnit) =
+    function testLiquidityDataCollateral(uint256 amount) public {
+        amount = bound(amount, 0, 1_000_000 ether);
+
+        _market[dai].isCollateral = true;
+        _marketBalances[dai].collateral[address(1)] = amount.rayDivUp(_market[dai].indexes.supply.poolIndex);
+
+        DataTypes.EModeCategory memory eModeCategory = _pool.getEModeCategoryData(0);
+        Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
+
+        (uint256 borrowable, uint256 maxDebt) = _collateralData(dai, vars);
+
+        (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 underlyingUnit) =
             _assetLiquidityData(dai, vars);
 
-        uint256 rawCollateralValue = (
+        uint256 rawCollateral = (
             _getUserCollateralBalanceFromIndex(dai, address(1), _market[dai].indexes.supply.poolIndex)
-        ) * underlyingPrice / tokenUnit;
-        uint256 expectedCollateralValue =
-            ((Constants.LT_LOWER_BOUND - 1) * rawCollateralValue) / Constants.LT_LOWER_BOUND;
-        assertEq(borrowable, expectedCollateralValue.percentMulDown(ltv), "borrowable not equal to expected");
-        assertEq(maxDebt, expectedCollateralValue.percentMulDown(liquidationThreshold), "maxDebt not equal to expected");
+        ) * underlyingPrice / underlyingUnit;
+        uint256 expectedCollateral = collateralValue(rawCollateral);
+        assertEq(borrowable, expectedCollateral.percentMulDown(ltv), "borrowable not equal to expected");
+        assertEq(maxDebt, expectedCollateral.percentMulDown(liquidationThreshold), "maxDebt not equal to expected");
     }
 
     function testLiquidityDataDebt(uint256 amountPool, uint256 amountP2P) public {
@@ -341,10 +447,10 @@ contract TestInternalMorphoInternal is InternalTest {
 
         uint256 debt = _debt(dai, vars);
 
-        (uint256 underlyingPrice,,, uint256 tokenUnit) = _assetLiquidityData(dai, vars);
+        (uint256 underlyingPrice,,, uint256 underlyingUnit) = _assetLiquidityData(dai, vars);
 
         uint256 expectedDebtValue =
-            (_getUserBorrowBalanceFromIndexes(dai, address(1), indexes)) * underlyingPrice / tokenUnit;
+            (_getUserBorrowBalanceFromIndexes(dai, address(1), indexes)) * underlyingPrice / underlyingUnit;
         assertApproxEqAbs(debt, expectedDebtValue, 1, "debtValue not equal to expected");
     }
 
@@ -526,5 +632,9 @@ contract TestInternalMorphoInternal is InternalTest {
     function testApproveManager(address owner, address manager, bool isAllowed) public {
         _approveManager(owner, manager, isAllowed);
         assertEq(_isManaging[owner][manager], isAllowed);
+    }
+
+    function increaseP2PDeltasTest(address underlying, uint256 amount) external {
+        _increaseP2PDeltas(underlying, amount);
     }
 }

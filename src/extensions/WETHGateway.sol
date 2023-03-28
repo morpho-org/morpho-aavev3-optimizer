@@ -16,21 +16,32 @@ contract WETHGateway is IWETHGateway {
 
     /* ERRORS */
 
+    /// @notice Thrown when another address than WETH sends ETH to the contract.
     error OnlyWETH();
 
+    /// @notice Thrown when the `morpho` address passed in the constructor is zero.
     error AddressIsZero();
+
+    /// @notice Thrown when the amount used is zero.
+    error AmountIsZero();
 
     /* CONSTANTS */
 
+    /// @dev The address of the WETH contract.
     address internal constant _WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+
+    /// @dev The address of the Morpho DAO.
     address internal constant _MORPHO_DAO = 0xcBa28b38103307Ec8dA98377ffF9816C164f9AFa;
 
     /* IMMUTABLES */
 
+    /// @dev The address of the Morpho protocol.
     IMorpho internal immutable _MORPHO;
 
     /* CONSTRUCTOR */
 
+    /// @notice Contract constructor.
+    /// @param morpho The address of the Morpho protocol.
     constructor(address morpho) {
         if (morpho == address(0)) revert AddressIsZero();
 
@@ -123,11 +134,13 @@ contract WETHGateway is IWETHGateway {
 
     /// @dev Wraps `amount` of ETH to WETH.
     function _wrapETH(uint256 amount) internal {
+        if (amount == 0) revert AmountIsZero();
         IWETH(_WETH).deposit{value: amount}();
     }
 
     /// @dev Unwraps `amount` of WETH to ETH and transfers it to `receiver`.
     function _unwrapAndTransferETH(uint256 amount, address receiver) internal {
+        if (amount == 0) revert AmountIsZero();
         IWETH(_WETH).withdraw(amount);
         SafeTransferLib.safeTransferETH(receiver, amount);
     }

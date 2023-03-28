@@ -14,6 +14,7 @@ library TestConfigLib {
     string internal constant FORK_BLOCK_NUMBER_PATH = "$.forkBlockNumber";
     string internal constant ADDRESSES_PROVIDER_PATH = "$.addressesProvider";
     string internal constant WRAPPED_NATIVE_PATH = "$.wrappedNative";
+    string internal constant STAKED_NATIVE_PATH = "$.stakedNative";
     string internal constant MARKETS_PATH = "$.markets";
     string internal constant MORPHO_DAO_PATH = "$.morphoDao";
 
@@ -39,5 +40,9 @@ library TestConfigLib {
 
     function getWrappedNative(TestConfig storage config) internal returns (address) {
         return getAddress(config, config.json.readString(WRAPPED_NATIVE_PATH));
+    }
+
+    function getStakedNative(TestConfig storage config) internal view returns (address) {
+        return getAddress(config, config.json.readString(STAKED_NATIVE_PATH));
     }
 }

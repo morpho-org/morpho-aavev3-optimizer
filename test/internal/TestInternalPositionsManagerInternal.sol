@@ -31,13 +31,6 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         for (uint256 i; i < allUnderlyings.length; ++i) {
             _createMarket(allUnderlyings[i], 0, 33_33);
         }
-
-        _setBalances(address(this), type(uint256).max);
-
-        _pool.supplyToPool(dai, 100 ether);
-        _pool.supplyToPool(wbtc, 1e8);
-        _pool.supplyToPool(usdc, 1e8);
-        _pool.supplyToPool(wNative, 1 ether);
     }
 
     function testValidatePermission(address owner, address manager) public {
@@ -102,7 +95,14 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         this.validateSupplyCollateral(dai, 1, address(1));
     }
 
-    function testValidateSupplyCollateral() public view {
+    function testValidateSupplyCollateralShouldRevertIfNotCollateral() public {
+        vm.expectRevert(Errors.AssetNotCollateralOnMorpho.selector);
+        this.validateSupplyCollateral(dai, 1, address(1));
+    }
+
+    function testValidateSupplyCollateral() public {
+        _market[dai].isCollateral = true;
+
         this.validateSupplyCollateral(dai, 1, address(1));
     }
 
@@ -234,15 +234,15 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         _userCollaterals[borrower].add(underlying);
         uint256 collateral = healthFactor.percentDivDown(pool.getConfiguration(underlying).getLiquidationThreshold());
-        uint256 rawCollateral = (Constants.LT_LOWER_BOUND * collateral) / (Constants.LT_LOWER_BOUND - 1);
 
-        _marketBalances[underlying].collateral[borrower] = rawCollateral;
+        _marketBalances[underlying].collateral[borrower] = rawCollateralValue(collateral);
 
         _userBorrows[borrower].add(underlying);
         _updateBorrowerInDS(underlying, borrower, 1 ether, 0, true);
     }
 
     function testAuthorizeLiquidateShouldRevertIfSentinelDisallows(address borrower, uint256 healthFactor) public {
+        _market[dai].isCollateral = true;
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(
             healthFactor,
@@ -259,6 +259,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function testAuthorizeLiquidateShouldRevertIfBorrowerHealthy(address borrower, uint256 healthFactor) public {
+        _market[dai].isCollateral = true;
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentAdd(1), type(uint128).max);
 
@@ -271,6 +272,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     function testAuthorizeLiquidateShouldReturnMaxCloseFactorIfBelowMinThreshold(address borrower, uint256 healthFactor)
         public
     {
+        _market[dai].isCollateral = true;
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(healthFactor, 0, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(1));
 
@@ -284,6 +286,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         address borrower,
         uint256 healthFactor
     ) public {
+        _market[dai].isCollateral = true;
         borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(
             healthFactor,
@@ -387,19 +390,13 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         (,,, vars.borrowedTokenUnit,,) = borrowConfig.getParams();
         (,, vars.liquidationBonus, vars.collateralTokenUnit,,) = collateralConfig.getParams();
 
-        bool isInCollateralEMode = _eModeCategoryId != 0 && _eModeCategoryId == collateralConfig.getEModeCategory();
-        vars.borrowedPrice = _getAssetPrice(
-            wbtc,
-            oracle,
-            _eModeCategoryId != 0 && _eModeCategoryId == borrowConfig.getEModeCategory(),
-            eModeCategory.priceSource
-        );
-        vars.collateralPrice = _getAssetPrice(dai, oracle, isInCollateralEMode, eModeCategory.priceSource);
+        bool isInCollateralEMode;
+        (, vars.borrowedPrice, vars.borrowedTokenUnit) =
+            _assetData(wbtc, oracle, borrowConfig, eModeCategory.priceSource);
+        (isInCollateralEMode, vars.collateralPrice, vars.collateralTokenUnit) =
+            _assetData(dai, oracle, collateralConfig, eModeCategory.priceSource);
 
         if (isInCollateralEMode) vars.liquidationBonus = eModeCategory.liquidationBonus;
-
-        vars.borrowedTokenUnit = 10 ** vars.borrowedTokenUnit;
-        vars.collateralTokenUnit = 10 ** vars.collateralTokenUnit;
 
         TestSeizeVars memory expected;
         TestSeizeVars memory actual;

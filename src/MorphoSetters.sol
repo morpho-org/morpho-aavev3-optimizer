@@ -9,6 +9,9 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
 
+import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {UserConfiguration} from "@aave-v3-core/protocol/libraries/configuration/UserConfiguration.sol";
+
 import {MorphoInternal} from "./MorphoInternal.sol";
 
 /// @title MorphoSetters
@@ -17,6 +20,8 @@ import {MorphoInternal} from "./MorphoInternal.sol";
 /// @notice Abstract contract exposing all setters and governance-related functions.
 abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     using MarketLib for Types.Market;
+
+    using UserConfiguration for DataTypes.UserConfigurationMap;
 
     /* MODIFIERS */
 
@@ -72,6 +77,32 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
     function setTreasuryVault(address treasuryVault) external onlyOwner {
         _treasuryVault = treasuryVault;
         emit Events.TreasuryVaultSet(treasuryVault);
+    }
+
+    /// @notice Sets the `underlying` asset as `isCollateral` on the pool.
+    /// @dev The following invariant must hold: is collateral on Morpho => is collateral on pool.
+    function setAssetIsCollateralOnPool(address underlying, bool isCollateral)
+        external
+        onlyOwner
+        isMarketCreated(underlying)
+    {
+        if (_market[underlying].isCollateral) revert Errors.AssetIsCollateralOnMorpho();
+
+        _pool.setUserUseReserveAsCollateral(underlying, isCollateral);
+    }
+
+    /// @notice Sets the `underlying` asset as `isCollateral` on Morpho.
+    /// @dev The following invariant must hold: is collateral on Morpho => is collateral on pool.
+    function setAssetIsCollateral(address underlying, bool isCollateral)
+        external
+        onlyOwner
+        isMarketCreated(underlying)
+    {
+        if (!_pool.getUserConfiguration(address(this)).isUsingAsCollateral(_pool.getReserveData(underlying).id)) {
+            revert Errors.AssetNotCollateralOnPool();
+        }
+
+        _market[underlying].setAssetIsCollateral(isCollateral);
     }
 
     /// @notice Sets the `underlying`'s reserve factor to `newReserveFactor` (in bps).
