@@ -78,7 +78,7 @@ library DeltasLib {
     /// @param amount The amount to repay/withdraw (in underlying).
     /// @param indexes The current indexes.
     /// @return The new amount left to process (in underlying).
-    function repayFee(Types.Deltas storage deltas, uint256 amount, Types.Indexes256 memory indexes)
+    function repayFee(Types.Deltas storage deltas, uint256 amount, Types.Indexes256 memory indexes, uint256 idleSupply)
         internal
         returns (uint256)
     {
@@ -87,9 +87,7 @@ library DeltasLib {
         uint256 scaledTotalBorrowP2P = deltas.borrow.scaledP2PTotal;
         // Fee = (borrow.totalP2P - borrow.delta) - (supply.totalP2P - supply.delta).
         uint256 feeToRepay = scaledTotalBorrowP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-            deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
-            )
+            p2pSupplyAmount(deltas, indexes, idleSupply)
         );
 
         if (feeToRepay == 0) return amount;
@@ -98,5 +96,15 @@ library DeltasLib {
         deltas.borrow.scaledP2PTotal = scaledTotalBorrowP2P.zeroFloorSub(feeToRepay.rayDivDown(indexes.borrow.p2pIndex)); // P2PTotalsUpdated emitted in `decreaseP2P`.
 
         return amount - feeToRepay;
+    }
+
+    function p2pSupplyAmount(Types.Deltas memory deltas, Types.Indexes256 memory indexes, uint256 idleSupply)
+        internal
+        pure
+        returns (uint256)
+    {
+        return deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+            deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
+        ).zeroFloorSub(idleSupply);
     }
 }

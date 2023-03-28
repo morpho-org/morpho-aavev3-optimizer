@@ -10,6 +10,7 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
+import {DeltasLib} from "./libraries/DeltasLib.sol";
 import {Constants} from "./libraries/Constants.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {InterestRatesLib} from "./libraries/InterestRatesLib.sol";
@@ -36,6 +37,7 @@ import {MorphoStorage} from "./MorphoStorage.sol";
 abstract contract MorphoInternal is MorphoStorage {
     using PoolLib for IPool;
     using MarketLib for Types.Market;
+    using DeltasLib for Types.Deltas;
     using MarketBalanceLib for Types.MarketBalances;
 
     using Math for uint256;
@@ -144,9 +146,7 @@ abstract contract MorphoInternal is MorphoStorage {
                 deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
                     deltas.supply.scaledDelta.rayMul(poolSupplyIndex)
                 ),
-                deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                    deltas.borrow.scaledDelta.rayMul(poolBorrowIndex)
-                )
+                deltas.p2pSupplyAmount(indexes, market.idleSupply)
             )
         );
         if (amount == 0) revert Errors.AmountIsZero();
