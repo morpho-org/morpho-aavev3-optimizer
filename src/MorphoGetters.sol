@@ -165,7 +165,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     function getNext(address underlying, Types.Position position, address user) external view returns (address) {
         LogarithmicBuckets.Buckets storage buckets = _getBuckets(underlying, position);
         uint256 userBalance = buckets.valueOf[user];
-        uint256 userBucket = LogarithmicBuckets.computeBucket(userBalance);
+        uint256 userBucket = LogarithmicBuckets.highestSetBit(userBalance);
 
         return buckets.buckets[userBucket].getNext(user);
     }
