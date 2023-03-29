@@ -301,4 +301,40 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             user.withdrawCollateral(market.underlying, amount, onBehalf);
         }
     }
+
+    function testShouldNotWithdrawCollateralAlreadyWithdrawn(
+        uint256 amountToSupply,
+        uint256 amountToWithdraw,
+        address onBehalf,
+        address receiver
+    ) public {
+        onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
+
+        for (uint256 marketIndex; marketIndex < collateralUnderlyings.length; ++marketIndex) {
+            _revert();
+
+            TestMarket storage market = testMarkets[collateralUnderlyings[marketIndex]];
+
+            amountToSupply = _boundSupply(market, amountToSupply);
+            amountToWithdraw = bound(amountToWithdraw, Math.max(market.minAmount, amountToSupply / 10), amountToSupply);
+
+            user.approve(market.underlying, amountToSupply);
+            user.supplyCollateral(market.underlying, amountToSupply, onBehalf);
+
+            uint256 collateralBalance = morpho.collateralBalance(market.underlying, address(onBehalf));
+
+            while (collateralBalance > 0) {
+                user.withdrawCollateral(market.underlying, amountToWithdraw, onBehalf, receiver);
+                uint256 newCollateralBalance = morpho.collateralBalance(market.underlying, address(onBehalf));
+                assertLt(newCollateralBalance, collateralBalance);
+                collateralBalance = newCollateralBalance;
+            }
+
+            vm.expectRevert(Errors.CollateralIsZero.selector);
+            user.withdrawCollateral(market.underlying, amountToWithdraw, onBehalf, receiver);
+        }
+    }
 }

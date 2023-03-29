@@ -153,7 +153,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
 
                 // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
-                _deposit(collateralMarket, test.collateralBalanceBefore, address(morpho));
+                _deposit(collateralMarket.underlying, test.collateralBalanceBefore, address(morpho));
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -230,7 +230,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 toRepay = bound(toRepay, test.borrowedBalanceBefore, type(uint256).max);
 
                 // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
-                _deposit(collateralMarket, test.collateralBalanceBefore, address(morpho));
+                _deposit(collateralMarket.underlying, test.collateralBalanceBefore, address(morpho));
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -273,7 +273,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                     _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, WadRayMath.WAD, healthFactor); // 100% peer-to-peer.
 
                 // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
-                _deposit(collateralMarket, test.collateralBalanceBefore, address(morpho));
+                _deposit(collateralMarket.underlying, test.collateralBalanceBefore, address(morpho));
 
                 supplyCap = _boundSupplyCapExceeded(borrowedMarket, test.borrowedBalanceBefore, supplyCap);
                 _setSupplyCap(borrowedMarket, supplyCap);
@@ -321,7 +321,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 morpho.setDefaultIterations(Types.Iterations({repay: 0, withdraw: 10}));
 
                 // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
-                _deposit(collateralMarket, test.collateralBalanceBefore, address(morpho));
+                _deposit(collateralMarket.underlying, test.collateralBalanceBefore, address(morpho));
 
                 user.approve(borrowedMarket.underlying, toRepay);
 
@@ -360,7 +360,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
                 toRepay = bound(toRepay, test.borrowedBalanceBefore, type(uint256).max);
 
                 // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
-                _deposit(collateralMarket, test.collateralBalanceBefore, address(morpho));
+                _deposit(collateralMarket.underlying, test.collateralBalanceBefore, address(morpho));
 
                 morpho.setIsBorrowPaused(borrowedMarket.underlying, true);
                 morpho.setIsDeprecated(borrowedMarket.underlying, true);
@@ -463,7 +463,12 @@ contract TestIntegrationLiquidate is IntegrationTest {
         TestMarket storage collateralMarket,
         address borrower
     ) internal {
-        assertLe(test.repaid, test.borrowedBalanceBefore.percentMul(Constants.DEFAULT_CLOSE_FACTOR));
+        assertLe(test.seized, test.collateralBalanceBefore, "seized > collateral");
+        assertLe(
+            test.repaid,
+            test.borrowedBalanceBefore.percentMul(Constants.DEFAULT_CLOSE_FACTOR),
+            "repaid > borrowed * closeFactor"
+        );
 
         assertApproxEqAbs(
             morpho.borrowBalance(borrowedMarket.underlying, borrower) + test.repaid,
@@ -485,7 +490,12 @@ contract TestIntegrationLiquidate is IntegrationTest {
         TestMarket storage collateralMarket,
         address borrower
     ) internal {
-        assertLe(test.repaid, test.borrowedBalanceBefore.percentMul(Constants.MAX_CLOSE_FACTOR));
+        assertLe(test.seized, test.collateralBalanceBefore, "seized > collateral");
+        assertLe(
+            test.repaid,
+            test.borrowedBalanceBefore.percentMul(Constants.MAX_CLOSE_FACTOR),
+            "repaid > borrowed * closeFactor"
+        );
 
         assertApproxEqAbs(
             morpho.borrowBalance(borrowedMarket.underlying, borrower) + test.repaid,
