@@ -13,7 +13,7 @@ contract TestIntegrationUpgrade is IntegrationTest {
     UserMock internal borrower1;
     UserMock internal borrower2;
 
-    // Excludes isManaging, userNonce
+    // Excludes isManagedBy, userNonce
     struct UserStorageToCheck {
         uint256 scaledPoolSupplyBalance;
         uint256 scaledPoolBorrowBalance;
