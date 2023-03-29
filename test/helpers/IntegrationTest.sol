@@ -175,11 +175,11 @@ contract IntegrationTest is ForkTest {
     }
 
     function _randomCollateral(uint256 seed) internal view returns (address) {
-        return collateralUnderlyings[uint256(keccak256(abi.encode(seed))) % collateralUnderlyings.length];
+        return collateralUnderlyings[seed % collateralUnderlyings.length];
     }
 
     function _randomBorrowable(uint256 seed) internal view returns (address) {
-        return borrowableUnderlyings[uint256(keccak256(abi.encode(seed))) % borrowableUnderlyings.length];
+        return borrowableUnderlyings[seed % borrowableUnderlyings.length];
     }
 
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
