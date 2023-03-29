@@ -198,7 +198,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         test.supplied = _boundSupply(market, amount);
         test.supplied = _promoteSupply(promoter1, market, test.supplied); // 100% peer-to-peer.
@@ -304,7 +304,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         test.supplied = _boundSupply(market, amount);
         test.supplied = _promoteSupply(promoter1, market, test.supplied); // 100% peer-to-peer.

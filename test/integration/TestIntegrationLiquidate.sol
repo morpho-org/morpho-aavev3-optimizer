@@ -31,7 +31,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentAdd(10), type(uint72).max);
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, 0, healthFactor);
 
@@ -63,7 +63,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         );
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
 
@@ -85,8 +85,8 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 toRepay,
         uint256 healthFactor
     ) public {
-        vm.assume(borrowableSeed > borrowableUnderlyings.length);
-        borrowableSeedShift = bound(borrowableSeedShift, 1, borrowableUnderlyings.length - 1);
+        vm.assume(borrowableSeed > borrowableInEModeUnderlyings.length);
+        borrowableSeedShift = bound(borrowableSeedShift, 1, borrowableInEModeUnderlyings.length - 1);
         borrower = _boundAddressNotZero(borrower);
         promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         toRepay = bound(toRepay, 1, type(uint256).max);
@@ -97,13 +97,13 @@ contract TestIntegrationLiquidate is IntegrationTest {
         );
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
 
         user.approve(borrowedMarket.underlying, toRepay);
 
-        address borrowedUnderlying = _randomBorrowable(borrowableSeed - borrowableSeedShift);
+        address borrowedUnderlying = _randomBorrowableInEMode(borrowableSeed - borrowableSeedShift);
 
         vm.expectRevert(Errors.DebtIsZero.selector);
         user.liquidate(borrowedUnderlying, collateralMarket.underlying, borrower, toRepay);
@@ -131,7 +131,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         LiquidateTest memory test;
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         toRepay = bound(toRepay, borrowedMarket.minAmount, type(uint256).max);
 
@@ -174,7 +174,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         LiquidateTest memory test;
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
             _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
@@ -201,7 +201,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         LiquidateTest memory test;
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
             _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
@@ -239,7 +239,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         LiquidateTest memory test;
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         toRepay = bound(toRepay, borrowedMarket.minAmount, type(uint256).max);
 
@@ -280,7 +280,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         LiquidateTest memory test;
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         toRepay = bound(toRepay, borrowedMarket.minAmount, type(uint256).max);
 
@@ -319,7 +319,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         LiquidateTest memory test;
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
             _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, promotionFactor, healthFactor);
@@ -350,7 +350,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         borrower = _boundAddressNotZero(borrower);
         _assumeNotUnderlying(underlying);
 
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(seed)];
 
         vm.expectRevert(); // Indexes calculation revert because indexes are updated before the market created check.
         user.liquidate(borrowedMarket.underlying, underlying, borrower, amount);
@@ -380,7 +380,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         borrower = _boundAddressNotZero(borrower);
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         morpho.setIsLiquidateBorrowPaused(borrowedMarket.underlying, true);
 
@@ -397,7 +397,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         borrower = _boundAddressNotZero(borrower);
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         morpho.setIsLiquidateCollateralPaused(collateralMarket.underlying, true);
 
@@ -407,7 +407,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
 
     function testShouldRevertWhenBorrowerZero(uint256 collateralSeed, uint256 borrowableSeed, uint256 amount) public {
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         vm.expectRevert(Errors.AddressIsZero.selector);
         user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, address(0), amount);

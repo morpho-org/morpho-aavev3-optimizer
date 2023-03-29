@@ -26,7 +26,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
         onBehalf = _boundReceiver(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         test.borrowed = _boundBorrow(market, amount);
         uint256 promoted = _promoteBorrow(promoter1, market, test.borrowed.percentMul(50_00)); // 50% peer-to-peer.
@@ -100,7 +100,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
         onBehalf = _boundReceiver(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         test.borrowed = _boundBorrow(market, amount);
         uint256 promoted = _promoteBorrow(promoter1, market, test.borrowed.percentMul(50_00)); // 50% peer-to-peer.
@@ -184,7 +184,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
         onBehalf = _boundReceiver(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         test.borrowed = _boundBorrow(market, amount);
         test.borrowed = _promoteBorrow(promoter1, market, test.borrowed); // 100% peer-to-peer.
@@ -270,7 +270,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
         onBehalf = _boundReceiver(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         test.borrowed = _boundBorrow(market, amount);
         test.borrowed = _promoteBorrow(promoter1, market, test.borrowed); // 100% peer-to-peer.
@@ -372,7 +372,7 @@ contract TestIntegrationRepay is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
 
@@ -434,7 +434,7 @@ contract TestIntegrationRepay is IntegrationTest {
         amount = _boundNotZero(amount);
         onBehalf = _boundReceiver(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         borrowed = _boundBorrow(market, borrowed);
 
