@@ -174,7 +174,7 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @param manager The address of the manager.
     /// @param isAllowed Whether `manager` is allowed to manage `delegator`'s position or not.
     function _approveManager(address delegator, address manager, bool isAllowed) internal {
-        _isManaging[delegator][manager] = isAllowed;
+        _isManagedBy[delegator][manager] = isAllowed;
         emit Events.ManagerApproval(delegator, manager, isAllowed);
     }
 

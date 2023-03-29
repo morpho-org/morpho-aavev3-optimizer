@@ -50,7 +50,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
     /// @dev Validates the manager's permission.
     function _validatePermission(address delegator, address manager) internal view {
-        if (!(delegator == manager || _isManaging[delegator][manager])) revert Errors.PermissionDenied();
+        if (!(delegator == manager || _isManagedBy[delegator][manager])) revert Errors.PermissionDenied();
     }
 
     /// @dev Validates the input.

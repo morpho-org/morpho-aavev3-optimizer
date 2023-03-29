@@ -35,7 +35,7 @@ contract TestInvariantApproveManager is InvariantTest {
                 for (uint256 k; k < senders.length; ++k) {
                     address delegator = senders[k];
 
-                    if (delegator == manager || morpho.isManaging(delegator, manager)) continue;
+                    if (delegator == manager || morpho.isManagedBy(delegator, manager)) continue;
 
                     vm.startPrank(manager);
                     vm.expectRevert(Errors.PermissionDenied.selector);
