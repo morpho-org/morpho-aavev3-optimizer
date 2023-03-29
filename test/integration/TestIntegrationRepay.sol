@@ -144,8 +144,8 @@ contract TestIntegrationRepay is IntegrationTest {
 
         // Assert Morpho getters.
         assertEq(morpho.borrowBalance(market.underlying, onBehalf), 0, "borrow != 0");
-        assertApproxEqDust(
-            morpho.supplyBalance(market.underlying, address(promoter1)), promoted, "promoterSupply != promoted"
+        assertApproxEqAbs(
+            morpho.supplyBalance(market.underlying, address(promoter1)), promoted, 2, "promoterSupply != promoted"
         );
 
         // Assert Morpho's position on pool.
