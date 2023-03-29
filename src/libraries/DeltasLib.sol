@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 
 import {Types} from "./Types.sol";
 import {Events} from "./Events.sol";
-import {MarketLib} from "./MarketLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";

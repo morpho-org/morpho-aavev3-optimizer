@@ -312,14 +312,13 @@ library MarketLib {
         if (amount == 0) return 0;
 
         Types.Deltas storage deltas = market.deltas;
-        uint256 scaledTotalBorrowP2P = deltas.borrow.scaledP2PTotal;
-        uint256 feeToRepay =
-            scaledTotalBorrowP2P.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(p2pSupply(market, indexes));
+        uint256 feeToRepay = p2pBorrow(market, indexes).zeroFloorSub(p2pSupply(market, indexes));
 
         if (feeToRepay == 0) return amount;
 
         feeToRepay = Math.min(feeToRepay, amount);
-        deltas.borrow.scaledP2PTotal = scaledTotalBorrowP2P.zeroFloorSub(feeToRepay.rayDivDown(indexes.borrow.p2pIndex)); // P2PTotalsUpdated emitted in `decreaseP2P`.
+        deltas.borrow.scaledP2PTotal =
+            deltas.borrow.scaledP2PTotal.zeroFloorSub(feeToRepay.rayDivDown(indexes.borrow.p2pIndex)); // P2PTotalsUpdated emitted in `decreaseP2P`.
 
         return amount - feeToRepay;
     }
