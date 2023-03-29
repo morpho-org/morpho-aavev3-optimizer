@@ -111,8 +111,8 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     }
 
     /// @notice Returns whether `manager` is a manager of `delegator`.
-    function isManaging(address delegator, address manager) external view returns (bool) {
-        return _isManaging[delegator][manager];
+    function isManagedBy(address delegator, address manager) external view returns (bool) {
+        return _isManagedBy[delegator][manager];
     }
 
     /// @notice Returns the nonce of `user` for the manager approval signature.

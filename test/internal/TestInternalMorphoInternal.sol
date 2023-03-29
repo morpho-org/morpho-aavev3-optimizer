@@ -631,7 +631,7 @@ contract TestInternalMorphoInternal is InternalTest {
 
     function testApproveManager(address owner, address manager, bool isAllowed) public {
         _approveManager(owner, manager, isAllowed);
-        assertEq(_isManaging[owner][manager], isAllowed);
+        assertEq(_isManagedBy[owner][manager], isAllowed);
     }
 
     function increaseP2PDeltasTest(address underlying, uint256 amount) external {
