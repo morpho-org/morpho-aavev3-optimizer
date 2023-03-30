@@ -140,7 +140,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         onBehalf = _boundOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
 
@@ -182,7 +182,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         onBehalf = _boundOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
 

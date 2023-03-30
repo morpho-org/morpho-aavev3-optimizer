@@ -161,7 +161,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
         onBehalf = _boundReceiver(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundSupply(market, amount);
         amount = _promoteSupply(promoter1, market, amount) - 1; // 100% peer-to-peer. Minus 1 so that the test passes for now.
@@ -193,7 +193,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
         onBehalf = _boundReceiver(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundSupply(market, amount);
         amount = _promoteSupply(promoter1, market, amount); // 100% peer-to-peer.
@@ -222,7 +222,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
         onBehalf = _boundReceiver(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _increaseBorrowDelta(promoter1, market, amount);
 
@@ -255,7 +255,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
         onBehalf = _boundReceiver(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
         borrowDelta = _increaseBorrowDelta(promoter1, market, borrowDelta);

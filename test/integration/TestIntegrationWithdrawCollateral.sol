@@ -100,7 +100,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         _prepareOnBehalf(onBehalf);
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         rawCollateral = _boundCollateral(collateralMarket, rawCollateral, borrowedMarket);
         borrowed = bound(

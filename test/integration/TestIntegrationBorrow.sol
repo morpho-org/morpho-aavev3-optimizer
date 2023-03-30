@@ -135,7 +135,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
 
@@ -160,7 +160,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
         amount = _promoteBorrow(promoter1, market, amount); // 100% peer-to-peer.
@@ -192,7 +192,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _increaseIdleSupply(promoter1, market, amount);
 
@@ -223,7 +223,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
         amount = _promoteBorrow(promoter1, market, amount); // 100% peer-to-peer.
@@ -253,7 +253,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _increaseSupplyDelta(promoter1, market, amount);
 
@@ -288,7 +288,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
         supplyDelta = _increaseSupplyDelta(promoter1, market, supplyDelta);
@@ -337,7 +337,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
         idleSupply = _increaseIdleSupply(promoter1, market, idleSupply);
@@ -377,7 +377,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
         promoted = _promoteBorrow(promoter1, market, bound(promoted, 1, amount)); // <= 100% peer-to-peer.
@@ -404,7 +404,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         _prepareOnBehalf(onBehalf);
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         collateral = _boundCollateral(collateralMarket, collateral, borrowedMarket);
         borrowed = bound(
@@ -435,7 +435,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         _forward(blocks);
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
 
@@ -490,7 +490,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         oracleSentinel.setBorrowAllowed(false);
 
         vm.expectRevert(Errors.SentinelBorrowNotEnabled.selector);
-        user.borrow(testMarkets[_randomBorrowable(seed)].underlying, amount, onBehalf, receiver);
+        user.borrow(testMarkets[_randomBorrowableInEMode(seed)].underlying, amount, onBehalf, receiver);
     }
 
     function testShouldRevertBorrowWhenMarketNotCreated(
@@ -571,7 +571,7 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         morpho.setIsPausedForAllMarkets(true);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
 
@@ -594,7 +594,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         _prepareOnBehalf(onBehalf);
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowable(borrowableSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
 
         collateral = _boundCollateral(collateralMarket, collateral, borrowedMarket);
         borrowed = bound(

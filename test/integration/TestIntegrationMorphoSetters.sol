@@ -172,8 +172,8 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         idleSupply = _boundAmount(idleSupply);
 
         address[] memory underlyings = new address[](1);
-        underlyings[0] = _randomUnderlying(seed);
-        vm.assume(testMarkets[underlyings[0]].isBorrowable);
+        underlyings[0] = _randomBorrowableInEMode(seed);
+
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = amount;
 

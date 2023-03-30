@@ -14,7 +14,7 @@ contract TestIntegrationFee is IntegrationTest {
     using PercentageMath for uint256;
 
     function testRepayFeeWithReserveFactorIsZero(uint256 seed, uint256 amount) public {
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
         morpho.setReserveFactor(market.underlying, 0);
 
         amount = _boundSupply(market, amount);
@@ -32,7 +32,7 @@ contract TestIntegrationFee is IntegrationTest {
     }
 
     function testRepayFeeShouldBeZeroWithDeltaOnly(uint256 seed, uint16 reserveFactor, uint256 amount) public {
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
         reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
         morpho.setReserveFactor(market.underlying, reserveFactor);
 
@@ -51,7 +51,7 @@ contract TestIntegrationFee is IntegrationTest {
     }
 
     function testRepayFeeWithP2PWithoutDelta(uint256 seed, uint16 reserveFactor, uint256 amount) public {
-        TestMarket storage testMarket = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage testMarket = testMarkets[_randomBorrowableInEMode(seed)];
         reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
         morpho.setReserveFactor(testMarket.underlying, reserveFactor);
 
@@ -97,7 +97,7 @@ contract TestIntegrationFee is IntegrationTest {
         uint256 borrowAmount,
         uint256 borrowDeltaAmount
     ) public {
-        TestMarket storage testMarket = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage testMarket = testMarkets[_randomBorrowableInEMode(seed)];
         reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
         morpho.setReserveFactor(testMarket.underlying, reserveFactor);
 
