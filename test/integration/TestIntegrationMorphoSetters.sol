@@ -172,8 +172,8 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         idleSupply = _boundAmount(idleSupply);
 
         address[] memory underlyings = new address[](1);
-        underlyings[0] = _randomUnderlying(seed);
-        vm.assume(testMarkets[underlyings[0]].isBorrowable);
+        underlyings[0] = _randomBorrowableInEMode(seed);
+
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = amount;
 
@@ -637,57 +637,41 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(morpho.market(underlying).pauseStatuses.isDeprecated, deprecated);
     }
 
-    function testShouldSetBorrowPaused() public {
-        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
-            _revert();
+    function testShouldSetBorrowPaused(uint256 seed) public {
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
-            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
+        morpho.setIsBorrowPaused(market.underlying, true);
 
-            morpho.setIsBorrowPaused(market.underlying, true);
-
-            assertEq(morpho.market(market.underlying).pauseStatuses.isBorrowPaused, true);
-        }
+        assertEq(morpho.market(market.underlying).pauseStatuses.isBorrowPaused, true);
     }
 
-    function testShouldNotSetBorrowNotPausedWhenDeprecated() public {
-        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
-            _revert();
+    function testShouldNotSetBorrowNotPausedWhenDeprecated(uint256 seed) public {
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
-            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
+        morpho.setIsBorrowPaused(market.underlying, true);
+        morpho.setIsDeprecated(market.underlying, true);
 
-            morpho.setIsBorrowPaused(market.underlying, true);
-            morpho.setIsDeprecated(market.underlying, true);
-
-            vm.expectRevert(Errors.MarketIsDeprecated.selector);
-            morpho.setIsBorrowPaused(market.underlying, false);
-        }
+        vm.expectRevert(Errors.MarketIsDeprecated.selector);
+        morpho.setIsBorrowPaused(market.underlying, false);
     }
 
-    function testShouldSetDeprecatedWhenBorrowPaused(bool isDeprecated) public {
-        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
-            _revert();
+    function testShouldSetDeprecatedWhenBorrowPaused(uint256 seed, bool isDeprecated) public {
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
-            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
+        morpho.setIsBorrowPaused(market.underlying, true);
 
-            morpho.setIsBorrowPaused(market.underlying, true);
+        morpho.setIsDeprecated(market.underlying, isDeprecated);
 
-            morpho.setIsDeprecated(market.underlying, isDeprecated);
-
-            assertEq(morpho.market(market.underlying).pauseStatuses.isDeprecated, isDeprecated);
-        }
+        assertEq(morpho.market(market.underlying).pauseStatuses.isDeprecated, isDeprecated);
     }
 
-    function testShouldNotSetDeprecatedWhenBorrowNotPaused(bool isDeprecated) public {
-        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
-            _revert();
+    function testShouldNotSetDeprecatedWhenBorrowNotPaused(uint256 seed, bool isDeprecated) public {
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
-            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
+        morpho.setIsBorrowPaused(market.underlying, false);
 
-            morpho.setIsBorrowPaused(market.underlying, false);
-
-            vm.expectRevert(Errors.BorrowNotPaused.selector);
-            morpho.setIsDeprecated(market.underlying, isDeprecated);
-        }
+        vm.expectRevert(Errors.BorrowNotPaused.selector);
+        morpho.setIsDeprecated(market.underlying, isDeprecated);
     }
 
     function _containsUnderlying(address underlying) internal view returns (bool) {

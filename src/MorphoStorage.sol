@@ -43,8 +43,8 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /// @dev The borrow markets entered by users.
     mapping(address => EnumerableSet.AddressSet) internal _userBorrows;
 
-    /// @dev Users allowances to manage other users' accounts. delegator => manager => isManaging
-    mapping(address => mapping(address => bool)) internal _isManaging;
+    /// @dev Users allowances to manage other users' accounts. delegator => manager => isManagedBy
+    mapping(address => mapping(address => bool)) internal _isManagedBy;
 
     /// @dev The nonce of users. Used to prevent replay attacks with EIP-712 signatures.
     mapping(address => uint256) internal _userNonce;

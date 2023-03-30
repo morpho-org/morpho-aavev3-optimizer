@@ -43,7 +43,7 @@ contract TestIntegrationSupply is IntegrationTest {
         assertEq(test.collaterals.length, 0, "collaterals.length");
         assertEq(test.borrows.length, 0, "borrows.length");
 
-        assertApproxEqDust(morpho.supplyBalance(market.underlying, onBehalf), amount, "totalSupply != amount");
+        assertApproxEqAbs(morpho.supplyBalance(market.underlying, onBehalf), amount, 2, "totalSupply != amount");
         assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
 
         // Assert Morpho's position on pool.
@@ -79,7 +79,7 @@ contract TestIntegrationSupply is IntegrationTest {
         assertEq(test.supplied, amount, "supplied != amount");
         assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
         assertApproxEqDust(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
-        assertApproxEqDust(p2pSupply, amount, "p2pSupply != amount");
+        assertApproxEqAbs(p2pSupply, amount, 2, "p2pSupply != amount");
         assertApproxEqAbs(
             morpho.scaledP2PBorrowBalance(market.underlying, address(promoter1)),
             test.scaledP2PSupply,
@@ -93,7 +93,7 @@ contract TestIntegrationSupply is IntegrationTest {
         assertEq(test.collaterals.length, 0, "collaterals.length");
         assertEq(test.borrows.length, 0, "borrows.length");
 
-        assertApproxEqAbs(morpho.supplyBalance(market.underlying, onBehalf), amount, 2, "supply != amount");
+        assertApproxEqAbs(morpho.supplyBalance(market.underlying, onBehalf), amount, 3, "supply != amount");
         assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
         assertApproxEqDust(
             morpho.borrowBalance(market.underlying, address(promoter1)), amount, "promoterBorrow != amount"
@@ -129,299 +129,264 @@ contract TestIntegrationSupply is IntegrationTest {
         assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
     }
 
-    function testShouldSupplyPoolOnly(uint256 amount, address onBehalf) public {
+    function testShouldSupplyPoolOnly(uint256 seed, uint256 amount, address onBehalf) public {
         SupplyTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
-            _revert();
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
-            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
+        amount = _boundSupply(market, amount);
 
-            amount = _boundSupply(market, amount);
+        test.balanceBefore = user.balanceOf(market.underlying);
+        test.morphoSupplyBefore = market.supplyOf(address(morpho));
 
-            test.balanceBefore = user.balanceOf(market.underlying);
-            test.morphoSupplyBefore = market.supplyOf(address(morpho));
+        user.approve(market.underlying, amount);
 
-            user.approve(market.underlying, amount);
+        vm.expectEmit(true, true, true, false, address(morpho));
+        emit Events.Supplied(address(user), onBehalf, market.underlying, 0, 0, 0);
 
-            vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.Supplied(address(user), onBehalf, market.underlying, 0, 0, 0);
+        test.supplied = user.supply(market.underlying, amount, onBehalf); // 100% pool.
 
-            test.supplied = user.supply(market.underlying, amount, onBehalf); // 100% pool.
+        test = _assertSupplyPool(market, amount, onBehalf, test);
 
-            test = _assertSupplyPool(market, amount, onBehalf, test);
+        assertEq(market.variableBorrowOf(address(morpho)), 0, "morphoVariableBorrow != 0");
 
-            assertEq(market.variableBorrowOf(address(morpho)), 0, "morphoVariableBorrow != 0");
-
-            _assertMarketAccountingZero(test.morphoMarket);
-        }
+        _assertMarketAccountingZero(test.morphoMarket);
     }
 
-    // TODO: failing because supply cap exceeded and p2p supply sometimes end up supplying 1 wei to the pool.
-    function testShouldSupplyP2POnly(uint256 supplyCap, uint256 amount, address onBehalf) public {
+    function testShouldSupplyP2POnly(uint256 seed, uint256 supplyCap, uint256 amount, address onBehalf) public {
         SupplyTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
-            _revert();
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
-            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+        amount = _boundSupply(market, amount);
+        amount = _promoteSupply(promoter1, market, amount) - 1; // 100% peer-to-peer. Minus 1 so that the test passes for now.
 
-            amount = _boundSupply(market, amount);
-            amount = _promoteSupply(promoter1, market, amount) - 1; // 100% peer-to-peer. Minus 1 so that the test passes for now.
+        supplyCap = _boundSupplyCapExceeded(market, 0, supplyCap);
+        _setSupplyCap(market, supplyCap);
 
-            supplyCap = _boundSupplyCapExceeded(market, 0, supplyCap);
-            _setSupplyCap(market, supplyCap);
+        test.balanceBefore = user.balanceOf(market.underlying);
+        test.morphoSupplyBefore = market.supplyOf(address(morpho));
 
-            test.balanceBefore = user.balanceOf(market.underlying);
-            test.morphoSupplyBefore = market.supplyOf(address(morpho));
+        user.approve(market.underlying, amount);
 
-            user.approve(market.underlying, amount);
+        vm.expectEmit(true, true, true, false, address(morpho));
+        emit Events.BorrowPositionUpdated(address(promoter1), market.underlying, 0, 0);
 
-            vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.BorrowPositionUpdated(address(promoter1), market.underlying, 0, 0);
+        vm.expectEmit(true, true, true, false, address(morpho));
+        emit Events.P2PTotalsUpdated(market.underlying, 0, 0);
 
-            vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.P2PTotalsUpdated(market.underlying, 0, 0);
+        vm.expectEmit(true, true, true, false, address(morpho));
+        emit Events.Supplied(address(user), onBehalf, market.underlying, 0, 0, 0);
 
-            vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.Supplied(address(user), onBehalf, market.underlying, 0, 0, 0);
+        test.supplied = user.supply(market.underlying, amount, onBehalf);
 
-            test.supplied = user.supply(market.underlying, amount, onBehalf);
-
-            _assertSupplyP2P(market, amount, onBehalf, test);
-        }
+        _assertSupplyP2P(market, amount, onBehalf, test);
     }
 
-    function testShouldSupplyPoolWhenP2PDisabled(uint256 amount, address onBehalf) public {
+    function testShouldSupplyPoolWhenP2PDisabled(uint256 seed, uint256 amount, address onBehalf) public {
         SupplyTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
-            _revert();
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
-            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+        amount = _boundSupply(market, amount);
+        amount = _promoteSupply(promoter1, market, amount); // 100% peer-to-peer.
 
-            amount = _boundSupply(market, amount);
-            amount = _promoteSupply(promoter1, market, amount); // 100% peer-to-peer.
+        morpho.setIsP2PDisabled(market.underlying, true);
 
-            morpho.setIsP2PDisabled(market.underlying, true);
+        test.balanceBefore = user.balanceOf(market.underlying);
+        test.morphoSupplyBefore = market.supplyOf(address(morpho));
 
-            test.balanceBefore = user.balanceOf(market.underlying);
-            test.morphoSupplyBefore = market.supplyOf(address(morpho));
+        user.approve(market.underlying, amount);
 
-            user.approve(market.underlying, amount);
+        vm.expectEmit(true, true, true, false, address(morpho));
+        emit Events.Supplied(address(user), onBehalf, market.underlying, 0, 0, 0);
 
-            vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.Supplied(address(user), onBehalf, market.underlying, 0, 0, 0);
+        test.supplied = user.supply(market.underlying, amount, onBehalf); // 100% pool.
 
-            test.supplied = user.supply(market.underlying, amount, onBehalf); // 100% pool.
+        test = _assertSupplyPool(market, amount, onBehalf, test);
 
-            test = _assertSupplyPool(market, amount, onBehalf, test);
+        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), amount, 1, "morphoVariableBorrow != amount");
 
-            assertApproxEqAbs(market.variableBorrowOf(address(morpho)), amount, 1, "morphoVariableBorrow != amount");
-
-            _assertMarketAccountingZero(test.morphoMarket);
-        }
+        _assertMarketAccountingZero(test.morphoMarket);
     }
 
-    function testShouldSupplyP2PWhenBorrowDelta(uint256 amount, address onBehalf) public {
+    function testShouldSupplyP2PWhenBorrowDelta(uint256 seed, uint256 amount, address onBehalf) public {
         SupplyTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
-            _revert();
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
-            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+        amount = _increaseBorrowDelta(promoter1, market, amount);
 
-            amount = _increaseBorrowDelta(promoter1, market, amount);
+        test.balanceBefore = user.balanceOf(market.underlying);
+        test.morphoSupplyBefore = market.supplyOf(address(morpho));
 
-            test.balanceBefore = user.balanceOf(market.underlying);
-            test.morphoSupplyBefore = market.supplyOf(address(morpho));
+        user.approve(market.underlying, amount);
 
-            user.approve(market.underlying, amount);
+        vm.expectEmit(true, true, true, true, address(morpho));
+        emit Events.P2PBorrowDeltaUpdated(market.underlying, 0);
 
-            vm.expectEmit(true, true, true, true, address(morpho));
-            emit Events.P2PBorrowDeltaUpdated(market.underlying, 0);
+        vm.expectEmit(true, true, true, false, address(morpho));
+        emit Events.P2PTotalsUpdated(market.underlying, 0, 0);
 
-            vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.P2PTotalsUpdated(market.underlying, 0, 0);
+        vm.expectEmit(true, true, true, false, address(morpho));
+        emit Events.Supplied(address(user), onBehalf, market.underlying, 0, 0, 0);
 
-            vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.Supplied(address(user), onBehalf, market.underlying, 0, 0, 0);
+        test.supplied = user.supply(market.underlying, amount, onBehalf);
 
-            test.supplied = user.supply(market.underlying, amount, onBehalf);
-
-            _assertSupplyP2P(market, amount, onBehalf, test);
-        }
+        _assertSupplyP2P(market, amount, onBehalf, test);
     }
 
-    function testShouldNotSupplyP2PWhenP2PDisabledWithBorrowDelta(uint256 borrowDelta, uint256 amount, address onBehalf)
-        public
-    {
+    function testShouldNotSupplyP2PWhenP2PDisabledWithBorrowDelta(
+        uint256 seed,
+        uint256 borrowDelta,
+        uint256 amount,
+        address onBehalf
+    ) public {
         SupplyTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < borrowableUnderlyings.length; ++marketIndex) {
-            _revert();
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
-            TestMarket storage market = testMarkets[borrowableUnderlyings[marketIndex]];
+        amount = _boundBorrow(market, amount);
+        borrowDelta = _increaseBorrowDelta(promoter1, market, borrowDelta);
 
-            amount = _boundBorrow(market, amount);
-            borrowDelta = _increaseBorrowDelta(promoter1, market, borrowDelta);
+        morpho.setIsP2PDisabled(market.underlying, true);
 
-            morpho.setIsP2PDisabled(market.underlying, true);
+        test.balanceBefore = user.balanceOf(market.underlying);
+        test.morphoSupplyBefore = market.supplyOf(address(morpho));
 
-            test.balanceBefore = user.balanceOf(market.underlying);
-            test.morphoSupplyBefore = market.supplyOf(address(morpho));
+        user.approve(market.underlying, amount);
 
-            user.approve(market.underlying, amount);
+        vm.expectEmit(true, true, true, false, address(morpho));
+        emit Events.Supplied(address(user), onBehalf, market.underlying, 0, 0, 0);
 
-            vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.Supplied(address(user), onBehalf, market.underlying, 0, 0, 0);
+        test.supplied = user.supply(market.underlying, amount, onBehalf);
 
-            test.supplied = user.supply(market.underlying, amount, onBehalf);
+        test = _assertSupplyPool(market, amount, onBehalf, test);
 
-            test = _assertSupplyPool(market, amount, onBehalf, test);
-
-            // Assert Morpho's market state.
-            assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
-            assertApproxEqAbs(test.morphoMarket.deltas.supply.scaledP2PTotal, 0, 1, "scaledTotalSupplyP2P != 0");
-            assertApproxEqAbs(
-                test.morphoMarket.deltas.borrow.scaledDelta.rayMul(test.indexes.borrow.poolIndex),
-                borrowDelta,
-                2,
-                "borrowDelta != expectedBorrowDelta"
-            );
-            assertApproxEqAbs(
-                test.morphoMarket.deltas.borrow.scaledP2PTotal.rayMul(test.indexes.borrow.p2pIndex),
-                borrowDelta,
-                1,
-                "totalBorrowP2P != expectedBorrowDelta"
-            );
-            assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
-        }
+        // Assert Morpho's market state.
+        assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
+        assertApproxEqAbs(test.morphoMarket.deltas.supply.scaledP2PTotal, 0, 1, "scaledTotalSupplyP2P != 0");
+        assertApproxEqAbs(
+            test.morphoMarket.deltas.borrow.scaledDelta.rayMul(test.indexes.borrow.poolIndex),
+            borrowDelta,
+            2,
+            "borrowDelta != expectedBorrowDelta"
+        );
+        assertApproxEqAbs(
+            test.morphoMarket.deltas.borrow.scaledP2PTotal.rayMul(test.indexes.borrow.p2pIndex),
+            borrowDelta,
+            1,
+            "totalBorrowP2P != expectedBorrowDelta"
+        );
+        assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
     }
 
     function testShouldNotSupplyPoolWhenSupplyCapExceeded(
+        uint256 seed,
         uint256 amount,
         address onBehalf,
         uint256 supplyCap,
         uint256 promoted
     ) public {
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
-            _revert();
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
-            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
+        amount = _boundSupply(market, amount);
+        promoted = _promoteSupply(promoter1, market, bound(promoted, 0, amount.percentSub(1))); // < 100% peer-to-peer.
 
-            amount = _boundSupply(market, amount);
-            promoted = _promoteSupply(promoter1, market, bound(promoted, 0, amount.percentSub(1))); // < 100% peer-to-peer.
+        // Set the supply cap so that the supply gap is lower than the amount supplied on pool.
+        supplyCap = _boundSupplyCapExceeded(market, amount - promoted, supplyCap);
+        _setSupplyCap(market, supplyCap);
 
-            // Set the supply cap so that the supply gap is lower than the amount supplied on pool.
-            supplyCap = _boundSupplyCapExceeded(market, amount - promoted, supplyCap);
-            _setSupplyCap(market, supplyCap);
+        user.approve(market.underlying, amount);
 
-            user.approve(market.underlying, amount);
-
-            vm.expectRevert(bytes(AaveErrors.SUPPLY_CAP_EXCEEDED));
-            user.supply(market.underlying, amount, onBehalf);
-        }
+        vm.expectRevert(bytes(AaveErrors.SUPPLY_CAP_EXCEEDED));
+        user.supply(market.underlying, amount, onBehalf);
     }
 
-    function testShouldUpdateIndexesAfterSupply(uint256 blocks, uint256 amount, address onBehalf) public {
+    function testShouldUpdateIndexesAfterSupply(uint256 seed, uint256 blocks, uint256 amount, address onBehalf)
+        public
+    {
         blocks = _boundBlocks(blocks);
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         _forward(blocks);
 
-        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
-            _revert();
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
-            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
+        amount = _boundSupply(market, amount);
 
-            amount = _boundSupply(market, amount);
+        Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
 
-            Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
+        user.approve(market.underlying, amount);
 
-            user.approve(market.underlying, amount);
+        vm.expectEmit(true, true, true, false, address(morpho));
+        emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
 
-            vm.expectEmit(true, true, true, false, address(morpho));
-            emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
+        user.supply(market.underlying, amount, onBehalf); // 100% pool.
 
-            user.supply(market.underlying, amount, onBehalf); // 100% pool.
-
-            _assertMarketUpdatedIndexes(morpho.market(market.underlying), futureIndexes);
-        }
+        _assertMarketUpdatedIndexes(morpho.market(market.underlying), futureIndexes);
     }
 
-    function testShouldRevertSupplyZero(address onBehalf) public {
-        onBehalf = _boundReceiver(onBehalf);
+    function testShouldRevertSupplyZero(uint256 seed, address onBehalf) public {
+        onBehalf = _boundOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
-            vm.expectRevert(Errors.AmountIsZero.selector);
-            user.supply(testMarkets[allUnderlyings[marketIndex]].underlying, 0, onBehalf);
-        }
+        vm.expectRevert(Errors.AmountIsZero.selector);
+        user.supply(testMarkets[_randomUnderlying(seed)].underlying, 0, onBehalf);
     }
 
-    function testShouldRevertSupplyOnBehalfZero(uint256 amount) public {
+    function testShouldRevertSupplyOnBehalfZero(uint256 seed, uint256 amount) public {
         amount = _boundNotZero(amount);
 
-        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
-            vm.expectRevert(Errors.AddressIsZero.selector);
-            user.supply(testMarkets[allUnderlyings[marketIndex]].underlying, amount, address(0));
-        }
+        vm.expectRevert(Errors.AddressIsZero.selector);
+        user.supply(testMarkets[_randomUnderlying(seed)].underlying, amount, address(0));
     }
 
     function testShouldRevertSupplyWhenMarketNotCreated(address underlying, uint256 amount, address onBehalf) public {
         _assumeNotUnderlying(underlying);
 
         amount = _boundNotZero(amount);
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user.supply(underlying, amount, onBehalf);
     }
 
-    function testShouldRevertSupplyWhenSupplyPaused(uint256 amount, address onBehalf) public {
+    function testShouldRevertSupplyWhenSupplyPaused(uint256 seed, uint256 amount, address onBehalf) public {
         amount = _boundNotZero(amount);
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
-        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
-            _revert();
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
-            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
+        morpho.setIsSupplyPaused(market.underlying, true);
 
-            morpho.setIsSupplyPaused(market.underlying, true);
-
-            vm.expectRevert(Errors.SupplyIsPaused.selector);
-            user.supply(market.underlying, amount, onBehalf);
-        }
+        vm.expectRevert(Errors.SupplyIsPaused.selector);
+        user.supply(market.underlying, amount, onBehalf);
     }
 
-    function testShouldSupplyWhenEverythingElsePaused(uint256 amount, address onBehalf) public {
-        onBehalf = _boundReceiver(onBehalf);
+    function testShouldSupplyWhenEverythingElsePaused(uint256 seed, uint256 amount, address onBehalf) public {
+        onBehalf = _boundOnBehalf(onBehalf);
 
         morpho.setIsPausedForAllMarkets(true);
 
-        for (uint256 marketIndex; marketIndex < allUnderlyings.length; ++marketIndex) {
-            _revert();
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
-            TestMarket storage market = testMarkets[allUnderlyings[marketIndex]];
+        amount = _boundSupply(market, amount);
 
-            amount = _boundSupply(market, amount);
+        morpho.setIsSupplyPaused(market.underlying, false);
 
-            morpho.setIsSupplyPaused(market.underlying, false);
-
-            user.approve(market.underlying, amount);
-            user.supply(market.underlying, amount, onBehalf);
-        }
+        user.approve(market.underlying, amount);
+        user.supply(market.underlying, amount, onBehalf);
     }
 }

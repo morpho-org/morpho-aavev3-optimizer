@@ -25,7 +25,7 @@ interface IMorphoGetters {
     function userCollaterals(address user) external view returns (address[] memory);
     function userBorrows(address user) external view returns (address[] memory);
 
-    function isManaging(address delegator, address manager) external view returns (bool);
+    function isManagedBy(address delegator, address manager) external view returns (bool);
     function userNonce(address user) external view returns (uint256);
 
     function defaultIterations() external view returns (Types.Iterations memory);

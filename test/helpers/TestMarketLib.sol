@@ -34,6 +34,7 @@ struct TestMarket {
     uint8 eModeCategoryId;
     DataTypes.EModeCategory eModeCategory;
     //
+    bool isInEMode;
     bool isCollateral;
     bool isBorrowable;
 }

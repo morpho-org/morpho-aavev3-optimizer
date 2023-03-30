@@ -74,7 +74,7 @@ contract TestInvariantMorpho is InvariantTest {
     function borrow(uint256 underlyingSeed, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
     {
-        TestMarket storage market = testMarkets[_randomBorrowable(underlyingSeed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(underlyingSeed)];
         amount = _boundBorrow(market, amount);
         onBehalf = _randomSender(onBehalf);
         receiver = _boundReceiver(receiver);
@@ -85,7 +85,7 @@ contract TestInvariantMorpho is InvariantTest {
     }
 
     function repay(uint256 underlyingSeed, uint256 amount, address onBehalf) external {
-        TestMarket storage market = testMarkets[_randomBorrowable(underlyingSeed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(underlyingSeed)];
         amount = _boundNotZero(amount);
         onBehalf = _randomSender(onBehalf);
 
@@ -155,6 +155,27 @@ contract TestInvariantMorpho is InvariantTest {
         assertGt(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF, "healthFactor");
     }
 
+    function invariantCollateralsAndBorrows() public {
+        address[] memory senders = targetSenders();
+
+        for (uint256 i; i < senders.length; i++) {
+            address[] memory userCollaterals = morpho.userCollaterals(senders[i]);
+            address[] memory userBorrows = morpho.userBorrows(senders[i]);
+            for (uint256 j; j < allUnderlyings.length; ++j) {
+                assertEq(
+                    morpho.collateralBalance(allUnderlyings[j], senders[i]) > 0,
+                    _contains(userCollaterals, allUnderlyings[j]),
+                    "collateral"
+                );
+                assertEq(
+                    morpho.borrowBalance(allUnderlyings[j], senders[i]) > 0,
+                    _contains(userBorrows, allUnderlyings[j]),
+                    "borrow"
+                );
+            }
+        }
+    }
+
     function invariantCannotBorrowOverLtv() public {
         address[] memory senders = targetSenders();
 
@@ -164,8 +185,8 @@ contract TestInvariantMorpho is InvariantTest {
 
             if (liquidityData.borrowable == 0) continue;
 
-            for (uint256 j; j < borrowableUnderlyings.length; ++j) {
-                TestMarket storage market = testMarkets[borrowableUnderlyings[j]];
+            for (uint256 j; j < borrowableInEModeUnderlyings.length; ++j) {
+                TestMarket storage market = testMarkets[borrowableInEModeUnderlyings[j]];
 
                 uint256 borrowable = (liquidityData.borrowable * 1 ether * 10 ** market.decimals).percentAdd(5) // Inflate borrowable because of WBTC decimals precision.
                     / (market.price * 1 ether);

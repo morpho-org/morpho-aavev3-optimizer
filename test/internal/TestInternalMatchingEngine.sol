@@ -86,7 +86,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         LogarithmicBuckets.Buckets storage poolSupplierBuckets = marketBalances.poolSuppliers;
-        uint256 bucketId = LogarithmicBuckets.computeBucket(USER_AMOUNT);
+        uint256 bucketId = LogarithmicBuckets.highestSetBit(USER_AMOUNT);
         address addrToMatch;
 
         for (uint256 i; i < numSuppliers; i++) {
@@ -129,7 +129,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         LogarithmicBuckets.Buckets storage poolBorrowerBuckets = marketBalances.poolBorrowers;
-        uint256 bucketId = LogarithmicBuckets.computeBucket(USER_AMOUNT);
+        uint256 bucketId = LogarithmicBuckets.highestSetBit(USER_AMOUNT);
         address addrToMatch;
 
         for (uint256 i; i < numBorrowers; i++) {
@@ -172,7 +172,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         LogarithmicBuckets.Buckets storage p2pSupplierBuckets = marketBalances.p2pSuppliers;
-        uint256 bucketId = LogarithmicBuckets.computeBucket(USER_AMOUNT);
+        uint256 bucketId = LogarithmicBuckets.highestSetBit(USER_AMOUNT);
         address addrToMatch;
 
         for (uint256 i; i < numSuppliers; i++) {
@@ -214,7 +214,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
 
         Types.MarketBalances storage marketBalances = _marketBalances[dai];
         LogarithmicBuckets.Buckets storage p2pBorrowerBuckets = marketBalances.p2pBorrowers;
-        uint256 bucketId = LogarithmicBuckets.computeBucket(USER_AMOUNT);
+        uint256 bucketId = LogarithmicBuckets.highestSetBit(USER_AMOUNT);
         address addrToMatch;
 
         for (uint256 i; i < numBorrowers; i++) {
