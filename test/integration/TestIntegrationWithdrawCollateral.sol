@@ -29,9 +29,10 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
-        _prepareOnBehalf(onBehalf);
-
         TestMarket storage market = testMarkets[_randomCollateral(seed)];
+        vm.assume(receiver != market.aToken);
+
+        _prepareOnBehalf(onBehalf);
 
         test.supplied = _boundSupply(market, amount);
         amount = bound(amount, test.supplied + 1, type(uint256).max);
@@ -75,7 +76,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert receiver's underlying balance.
-        assertApproxLeAbs(
+        assertApproxEqAbs(
             ERC20(market.underlying).balanceOf(receiver),
             test.balanceBefore + test.withdrawn,
             2,

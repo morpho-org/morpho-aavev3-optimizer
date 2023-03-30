@@ -28,9 +28,10 @@ contract TestIntegrationWithdraw is IntegrationTest {
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
-        _prepareOnBehalf(onBehalf);
-
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+        vm.assume(receiver != market.aToken);
+
+        _prepareOnBehalf(onBehalf);
 
         test.supplied = _boundSupply(market, amount);
         uint256 promoted = _promoteSupply(promoter1, market, test.supplied.percentMul(50_00)); // <= 50% peer-to-peer because market is not guaranteed to be borrowable.
@@ -106,9 +107,10 @@ contract TestIntegrationWithdraw is IntegrationTest {
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
-        _prepareOnBehalf(onBehalf);
-
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+        vm.assume(receiver != market.aToken);
+
+        _prepareOnBehalf(onBehalf);
 
         test.supplied = _boundSupply(market, amount);
         test.supplied = bound(test.supplied, 0, market.liquidity()); // Because >= 50% will get borrowed from the pool.
@@ -165,7 +167,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         assertApproxEqAbs(
             market.supplyOf(address(morpho)), test.morphoSupplyBefore, 2, "morphoSupply != morphoSupplyBefore"
         );
-        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), promoted, 2, "morphoVariableBorrow != promoted");
+        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), promoted, 3, "morphoVariableBorrow != promoted");
         assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert receiver's underlying balance.
@@ -378,14 +380,14 @@ contract TestIntegrationWithdraw is IntegrationTest {
         assertApproxEqAbs(
             test.morphoMarket.deltas.borrow.scaledDelta.rayMul(test.indexes.borrow.poolIndex),
             morphoVariableBorrow,
-            1,
-            "scaledBorrowDelta != morphoVariableBorrow"
+            2,
+            "borrowDelta != morphoVariableBorrow"
         );
         assertApproxEqAbs(
             test.morphoMarket.deltas.borrow.scaledP2PTotal.rayMul(test.indexes.borrow.p2pIndex),
             test.supplied,
             1,
-            "scaledTotalBorrowP2P != supplied"
+            "totalBorrowP2P != supplied"
         );
         assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
     }

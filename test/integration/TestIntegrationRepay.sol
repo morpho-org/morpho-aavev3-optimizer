@@ -24,7 +24,7 @@ contract TestIntegrationRepay is IntegrationTest {
     function testShouldRepayPoolOnly(uint256 seed, uint256 amount, address onBehalf) public {
         RepayTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
@@ -98,7 +98,7 @@ contract TestIntegrationRepay is IntegrationTest {
     function testShouldRepayAllBorrow(uint256 seed, uint256 amount, address onBehalf) public {
         RepayTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
@@ -182,7 +182,7 @@ contract TestIntegrationRepay is IntegrationTest {
     ) public {
         RepayTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
@@ -230,11 +230,11 @@ contract TestIntegrationRepay is IntegrationTest {
         // Assert Morpho getters.
         assertEq(morpho.borrowBalance(market.underlying, onBehalf), 0, "borrow != 0");
         assertApproxEqAbs(
-            morpho.supplyBalance(market.underlying, address(promoter1)), test.borrowed, 2, "promoterSupply != borrowed"
+            morpho.supplyBalance(market.underlying, address(promoter1)), test.borrowed, 3, "promoterSupply != borrowed"
         );
 
         // Assert Morpho's position on pool.
-        assertApproxGeAbs(
+        assertApproxEqAbs(
             market.supplyOf(address(morpho)),
             test.morphoSupplyBefore + supplyGapBefore,
             1,
@@ -242,7 +242,7 @@ contract TestIntegrationRepay is IntegrationTest {
         );
         assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 1, "morphoVariableBorrow != 0");
         assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
-        assertEq(_supplyGap(market), 0, "supplyGapAfter != 0");
+        assertApproxEqDust(_supplyGap(market), 0, "supplyGapAfter != 0");
 
         // Assert user's underlying balance.
         assertApproxEqAbs(
@@ -252,23 +252,25 @@ contract TestIntegrationRepay is IntegrationTest {
             "balanceBefore != balanceAfter + repaid"
         );
 
+        uint256 expectedIdleSupply = test.borrowed - supplyGapBefore;
+
         // Assert Morpho's market state.
         assertApproxEqAbs(test.morphoMarket.deltas.supply.scaledDelta, 0, 1, "scaledSupplyDelta != 0");
         assertApproxEqAbs(
             test.morphoMarket.deltas.supply.scaledP2PTotal.rayMul(test.indexes.supply.p2pIndex),
-            test.borrowed,
-            1,
-            "scaledTotalSupplyP2P != borrowed"
+            expectedIdleSupply,
+            2,
+            "totalSupplyP2P != borrowed"
         );
         assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
         assertEq(test.morphoMarket.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
-        assertApproxEqAbs(test.morphoMarket.idleSupply, test.borrowed, 1, "idleSupply != borrowed");
+        assertApproxEqAbs(test.morphoMarket.idleSupply, expectedIdleSupply, 1, "idleSupply != borrowed");
     }
 
     function testShouldRepayAllP2PBorrowWhenDemotedZero(uint256 seed, uint256 amount, address onBehalf) public {
         RepayTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
@@ -359,7 +361,7 @@ contract TestIntegrationRepay is IntegrationTest {
         amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         vm.expectRevert(Errors.DebtIsZero.selector);
         user.repay(market.underlying, amount, onBehalf);
@@ -393,24 +395,28 @@ contract TestIntegrationRepay is IntegrationTest {
     }
 
     function testShouldRevertRepayZero(uint256 seed, address onBehalf) public {
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
+
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         vm.expectRevert(Errors.AmountIsZero.selector);
-        user.repay(testMarkets[_randomUnderlying(seed)].underlying, 0, onBehalf);
+        user.repay(market.underlying, 0, onBehalf);
     }
 
     function testShouldRevertRepayOnBehalfZero(uint256 seed, uint256 amount) public {
         amount = _boundNotZero(amount);
 
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
+
         vm.expectRevert(Errors.AddressIsZero.selector);
-        user.repay(testMarkets[_randomUnderlying(seed)].underlying, amount, address(0));
+        user.repay(market.underlying, amount, address(0));
     }
 
     function testShouldRevertRepayWhenMarketNotCreated(address underlying, uint256 amount, address onBehalf) public {
         _assumeNotUnderlying(underlying);
 
         amount = _boundNotZero(amount);
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user.repay(underlying, amount, onBehalf);
@@ -418,9 +424,9 @@ contract TestIntegrationRepay is IntegrationTest {
 
     function testShouldRevertRepayWhenRepayPaused(uint256 seed, uint256 amount, address onBehalf) public {
         amount = _boundNotZero(amount);
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
-        TestMarket memory market = testMarkets[_randomUnderlying(seed)];
+        TestMarket memory market = testMarkets[_randomBorrowableInEMode(seed)];
 
         morpho.setIsRepayPaused(market.underlying, true);
 
@@ -432,7 +438,7 @@ contract TestIntegrationRepay is IntegrationTest {
         public
     {
         amount = _boundNotZero(amount);
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 

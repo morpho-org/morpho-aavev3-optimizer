@@ -453,16 +453,20 @@ contract TestIntegrationBorrow is IntegrationTest {
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
+
         vm.expectRevert(Errors.AmountIsZero.selector);
-        user.borrow(testMarkets[_randomUnderlying(seed)].underlying, 0, onBehalf, receiver);
+        user.borrow(market.underlying, 0, onBehalf, receiver);
     }
 
     function testShouldRevertBorrowOnBehalfZero(uint256 seed, uint256 amount, address receiver) public {
         amount = _boundNotZero(amount);
         receiver = _boundReceiver(receiver);
 
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
+
         vm.expectRevert(Errors.AddressIsZero.selector);
-        user.borrow(testMarkets[_randomUnderlying(seed)].underlying, amount, address(0), receiver);
+        user.borrow(market.underlying, amount, address(0), receiver);
     }
 
     function testShouldRevertBorrowToZero(uint256 seed, uint256 amount, address onBehalf) public {
@@ -471,8 +475,10 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
+
         vm.expectRevert(Errors.AddressIsZero.selector);
-        user.borrow(testMarkets[_randomUnderlying(seed)].underlying, amount, onBehalf, address(0));
+        user.borrow(market.underlying, amount, onBehalf, address(0));
     }
 
     function testShouldRevertIfBorrowingNotEnableWithSentinel(
@@ -487,10 +493,12 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
+
         oracleSentinel.setBorrowAllowed(false);
 
         vm.expectRevert(Errors.SentinelBorrowNotEnabled.selector);
-        user.borrow(testMarkets[_randomBorrowableInEMode(seed)].underlying, amount, onBehalf, receiver);
+        user.borrow(market.underlying, amount, onBehalf, receiver);
     }
 
     function testShouldRevertBorrowWhenMarketNotCreated(
@@ -557,8 +565,10 @@ contract TestIntegrationBorrow is IntegrationTest {
         vm.assume(onBehalf != address(user));
         receiver = _boundReceiver(receiver);
 
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
+
         vm.expectRevert(Errors.PermissionDenied.selector);
-        user.borrow(testMarkets[_randomUnderlying(seed)].underlying, amount, onBehalf, receiver);
+        user.borrow(market.underlying, amount, onBehalf, receiver);
     }
 
     function testShouldBorrowWhenEverythingElsePaused(uint256 seed, uint256 amount, address onBehalf, address receiver)
