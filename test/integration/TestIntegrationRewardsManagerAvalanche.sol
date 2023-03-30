@@ -84,7 +84,8 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
 
         (index, accrued) = rewardsManager.getUserData(aDai, wNative, address(user));
 
-        // The user's first index is expected to be zero because on the first reward update, the update is bypassed as the reward starting index is set to zero.
+        // The user's first index is expected to be zero because on the first reward update,
+        // the update is bypassed as the reward starting index is set to what the user's asset index would be.
         assertEq(index, 0, "index after supply");
         assertEq(accrued, 0, "accrued after supply");
 
