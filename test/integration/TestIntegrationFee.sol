@@ -47,7 +47,7 @@ contract TestIntegrationFee is IntegrationTest {
         user.approve(market.underlying, type(uint256).max);
         user.repay(market.underlying, type(uint256).max);
 
-        assertApproxEqAbs(ERC20(market.underlying).balanceOf(address(morpho)), balanceBefore, 1, "Fee collected != 0");
+        assertApproxEq(ERC20(market.underlying).balanceOf(address(morpho)), balanceBefore, "Fee collected != 0");
     }
 
     function testRepayFeeWithP2PWithoutDelta(uint256 seed, uint16 reserveFactor, uint256 amount) public {
@@ -83,10 +83,9 @@ contract TestIntegrationFee is IntegrationTest {
 
         user.repay(market.underlying, type(uint256).max);
 
-        assertApproxEqAbs(
+        assertApproxEqDust(
             ERC20(testMarket.underlying).balanceOf(address(morpho)),
             balanceBefore + expectedFeeCollected,
-            2,
             "Right amount of fees collected"
         );
     }
@@ -130,10 +129,9 @@ contract TestIntegrationFee is IntegrationTest {
         user.approve(testMarket.underlying, type(uint256).max);
         user.repay(testMarket.underlying, type(uint256).max);
 
-        assertApproxEqAbs(
+        assertApproxEqDust(
             ERC20(testMarket.underlying).balanceOf(address(morpho)),
             balanceBefore + expectedFeeCollected,
-            3,
             "Wrong amount of fees"
         );
     }

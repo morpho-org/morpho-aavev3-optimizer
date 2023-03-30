@@ -152,13 +152,12 @@ contract TestInternalMorphoInternal is InternalTest {
         emit Events.P2PDeltasIncreased(underlying, expectedAmount);
         this.increaseP2PDeltasTest(underlying, amount);
 
-        assertApproxEqAbs(
-            aTokenBalanceBefore + expectedAmount, ERC20(market.aToken).balanceOf(address(this)), 1, "aToken balance"
+        assertApproxEqDust(
+            aTokenBalanceBefore + expectedAmount, ERC20(market.aToken).balanceOf(address(this)), "aToken balance"
         );
-        assertApproxEqAbs(
+        assertApproxEqDust(
             variableDebtTokenBalanceBefore + expectedAmount,
             ERC20(market.variableDebtToken).balanceOf(address(this)),
-            1,
             "variable debt token balance"
         );
         assertEq(deltas.supply.scaledDelta, newExpectedSupplyDelta, "supply delta");
@@ -451,7 +450,7 @@ contract TestInternalMorphoInternal is InternalTest {
 
         uint256 expectedDebtValue =
             (_getUserBorrowBalanceFromIndexes(dai, address(1), indexes)) * underlyingPrice / underlyingUnit;
-        assertApproxEqAbs(debt, expectedDebtValue, 1, "debtValue not equal to expected");
+        assertApproxEqDust(debt, expectedDebtValue, "debtValue not equal to expected");
     }
 
     function testLiquidityDataAllCollaterals() public {
@@ -516,8 +515,8 @@ contract TestInternalMorphoInternal is InternalTest {
 
         uint256[3] memory debtSingles = [_debt(dai, vars), _debt(wbtc, vars), _debt(usdc, vars)];
 
-        assertApproxEqAbs(
-            debt, debtSingles[0] + debtSingles[1] + debtSingles[2], 1, "collateral not equal to sum of singles"
+        assertApproxEqDust(
+            debt, debtSingles[0] + debtSingles[1] + debtSingles[2], "collateral not equal to sum of singles"
         );
     }
 

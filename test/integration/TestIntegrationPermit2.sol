@@ -75,8 +75,8 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.prank(delegator);
         morpho.supplyWithPermit(market.underlying, amount, delegator, DEFAULT_MAX_ITERATIONS, deadline, sig);
         /// The maximum gap needs to be 4 because sometimes the timestamp is very big, otherwise the test reverts.
-        assertApproxEqAbs(
-            morpho.supplyBalance(market.underlying, delegator), balanceSupplyBefore + amount, 4, "Incorrect Supply"
+        assertApproxEqDust(
+            morpho.supplyBalance(market.underlying, delegator), balanceSupplyBefore + amount, "Incorrect Supply"
         );
         assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
     }
@@ -116,10 +116,9 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         vm.prank(delegator);
         morpho.supplyCollateralWithPermit(market.underlying, amount, onBehalf, deadline, sig);
-        assertApproxEqAbs(
+        assertApproxEqDust(
             morpho.collateralBalance(market.underlying, onBehalf),
             balanceSupplyBefore + amount,
-            3,
             "Incorrect Supply Collateral"
         );
 
@@ -164,7 +163,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.prank(delegator);
         morpho.repayWithPermit(market.underlying, amount, onBehalf, deadline, sig);
 
-        assertApproxEqAbs(morpho.borrowBalance(market.underlying, onBehalf), 0, 1, "Incorrect Borrow Balance");
+        assertApproxEqDust(morpho.borrowBalance(market.underlying, onBehalf), 0, "Incorrect Borrow Balance");
         assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
     }
 

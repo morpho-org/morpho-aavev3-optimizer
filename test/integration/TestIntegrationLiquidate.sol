@@ -426,16 +426,14 @@ contract TestIntegrationLiquidate is IntegrationTest {
             "repaid > borrowed * closeFactor"
         );
 
-        assertApproxEqAbs(
+        assertApproxEqDust(
             morpho.borrowBalance(borrowedMarket.underlying, borrower) + test.repaid,
             test.borrowedBalanceBefore,
-            2,
             "borrowBalanceAfter != borrowedBalanceBefore - repaid"
         );
-        assertApproxEqAbs(
+        assertApproxEqDust(
             morpho.collateralBalance(collateralMarket.underlying, borrower) + test.seized,
             test.collateralBalanceBefore,
-            1,
             "collateralBalanceAfter != collateralBalanceBefore - seized"
         );
     }
@@ -453,16 +451,14 @@ contract TestIntegrationLiquidate is IntegrationTest {
             "repaid > borrowed * closeFactor"
         );
 
-        assertApproxEqAbs(
+        assertApproxEqDust(
             morpho.borrowBalance(borrowedMarket.underlying, borrower) + test.repaid,
             test.borrowedBalanceBefore,
-            2,
             "borrowBalanceAfter != borrowedBalanceBefore - repaid"
         );
-        assertApproxEqAbs(
+        assertApproxEqDust(
             morpho.collateralBalance(collateralMarket.underlying, borrower) + test.seized,
             test.collateralBalanceBefore,
-            1,
             "collateralBalanceAfter != collateralBalanceBefore - seized"
         );
 

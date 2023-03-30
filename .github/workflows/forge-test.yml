@@ -20,7 +20,7 @@ on:
       integration-fuzz-runs:
         description: The number of fuzz rounds to perform for each fuzzing unit test.
         required: false
-        default: 32
+        default: 128
         type: number
       invariant-runs:
         description: The number of runs to perform for invariant tests.

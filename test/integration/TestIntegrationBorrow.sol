@@ -37,16 +37,16 @@ contract TestIntegrationBorrow is IntegrationTest {
         // Assert balances on Morpho.
         assertEq(test.borrowed, amount, "borrowed != amount");
         assertEq(test.scaledP2PBorrow, 0, "scaledP2PBorrow != 0");
-        assertApproxEqDust(poolBorrow, amount, "poolBorrow != amount");
+        assertApproxEq(poolBorrow, amount, "poolBorrow != amount");
 
         assertEq(test.collaterals.length, 0, "collaterals.length");
         assertEq(test.borrows.length, 1, "borrows.length");
         assertEq(test.borrows[0], market.underlying, "borrows[0]");
 
-        assertApproxEqDust(morpho.borrowBalance(market.underlying, onBehalf), amount, "borrow != amount");
+        assertApproxEq(morpho.borrowBalance(market.underlying, onBehalf), amount, "borrow != amount");
 
         // Assert Morpho's position on pool.
-        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), amount, 2, "morphoVariableBorrow != amount");
+        assertApproxEqDust(market.variableBorrowOf(address(morpho)), amount, "morphoVariableBorrow != amount");
         assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert receiver's underlying balance.
@@ -77,7 +77,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         // Assert balances on Morpho.
         assertEq(test.borrowed, amount, "borrowed != amount");
         assertEq(test.scaledPoolBorrow, 0, "scaledPoolBorrow != 0");
-        assertApproxEqDust(p2pBorrow, amount, "p2pBorrow != amount");
+        assertApproxEq(p2pBorrow, amount, "p2pBorrow != amount");
         assertApproxLeAbs(
             morpho.scaledP2PSupplyBalance(market.underlying, address(promoter1)),
             test.scaledP2PBorrow,
@@ -92,13 +92,13 @@ contract TestIntegrationBorrow is IntegrationTest {
         assertEq(test.borrows.length, 1, "borrows.length");
         assertEq(test.borrows[0], market.underlying, "borrows[0]");
 
-        assertApproxEqDust(morpho.borrowBalance(market.underlying, onBehalf), amount, "borrow != amount");
-        assertApproxEqAbs(
-            morpho.supplyBalance(market.underlying, address(promoter1)), amount, 2, "promoterSupply != amount"
+        assertApproxEq(morpho.borrowBalance(market.underlying, onBehalf), amount, "borrow != amount");
+        assertApproxEqDust(
+            morpho.supplyBalance(market.underlying, address(promoter1)), amount, "promoterSupply != amount"
         );
 
         // Assert Morpho's position on pool.
-        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 2, "morphoVariableBorrow != 0");
+        assertApproxEqDust(market.variableBorrowOf(address(morpho)), 0, "morphoVariableBorrow != 0");
         assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert receiver's underlying balance.
@@ -109,11 +109,10 @@ contract TestIntegrationBorrow is IntegrationTest {
         );
 
         // Assert Morpho's market state.
-        assertApproxEqAbs(test.morphoMarket.deltas.supply.scaledDelta, 0, 1, "scaledSupplyDelta != 0");
-        assertApproxEqAbs(
+        assertApproxEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
+        assertApproxEq(
             test.morphoMarket.deltas.supply.scaledP2PTotal,
             test.scaledP2PBorrow,
-            1,
             "scaledTotalSupplyP2P != scaledP2PBorrow"
         );
         assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
@@ -306,16 +305,14 @@ contract TestIntegrationBorrow is IntegrationTest {
         test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
         // Assert Morpho's market state.
-        assertApproxEqAbs(
+        assertApproxEqDust(
             test.morphoMarket.deltas.supply.scaledDelta.rayMul(test.indexes.supply.poolIndex),
             supplyDelta,
-            1,
             "supplyDelta != expectedSupplyDelta"
         );
-        assertApproxEqAbs(
+        assertApproxEqDust(
             test.morphoMarket.deltas.supply.scaledP2PTotal.rayMul(test.indexes.supply.p2pIndex),
             supplyDelta,
-            1,
             "totalSupplyP2P != expectedSupplyDelta"
         );
         assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
@@ -353,15 +350,14 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         // Assert Morpho's market state.
         assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
-        assertApproxEqAbs(
+        assertApproxEqDust(
             test.morphoMarket.deltas.supply.scaledP2PTotal.rayMul(test.indexes.supply.p2pIndex),
             idleSupply,
-            1,
             "totalSupplyP2P != expectedIdleSupply"
         );
         assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
         assertEq(test.morphoMarket.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
-        assertApproxEqDust(test.morphoMarket.idleSupply, idleSupply, "idleSupply != expectedIdleSupply");
+        assertApproxEq(test.morphoMarket.idleSupply, idleSupply, "idleSupply != expectedIdleSupply");
     }
 
     function testShouldNotBorrowWhenBorrowCapExceeded(

@@ -110,9 +110,9 @@ contract TestUnitMarketLibIdle is ForkTest {
         assertGt(idleSupplyIncrease, 0, "idleSupplyIncrease is zero");
 
         // Note: Max rounding error should be 1 from the difference in supply gap calculations from an extra rayMul.
-        assertApproxEqAbs(suppliable, supplyGap, 1, "suppliable");
-        assertApproxEqAbs(idleSupplyIncrease, expectedIdleIncrease, 1, "idleSupplyIncrease");
-        assertApproxEqAbs(market.idleSupply, _market.idleSupply + expectedIdleIncrease, 1, "market.idleSupply");
+        assertApproxEq(suppliable, supplyGap, "suppliable");
+        assertApproxEq(idleSupplyIncrease, expectedIdleIncrease, "idleSupplyIncrease");
+        assertApproxEq(market.idleSupply, _market.idleSupply + expectedIdleIncrease, "market.idleSupply");
     }
 
     function testDecreaseIdle(Types.Market memory _market, uint256 amount) public {

@@ -72,7 +72,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         if (onBehalf != address(this)) assertEq(onBehalf.balance, onBehalfBalanceBefore, "onBehalfBalance");
         assertEq(address(this).balance + amount, balanceBefore, "balanceAfter != balanceBefore - amount");
         assertEq(supplied, amount, "supplied != amount");
-        assertApproxEqAbs(morpho.supplyBalance(weth, onBehalf), amount, 1, "supplyBalance != amount");
+        assertApproxEqDust(morpho.supplyBalance(weth, onBehalf), amount, "supplyBalance != amount");
     }
 
     function testCannotSupplyCollateralETHWhenAmountIsZero(address onBehalf) public {
@@ -96,7 +96,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         if (onBehalf != address(this)) assertEq(onBehalf.balance, onBehalfBalanceBefore, "onBehalfBalance");
         assertEq(supplied, amount, "supplied != amount");
         assertEq(address(this).balance + amount, balanceBefore, "balanceAfter != balanceBefore - amount");
-        assertApproxEqAbs(morpho.collateralBalance(weth, onBehalf), amount, 2, "collateralBalance != amount");
+        assertApproxEqDust(morpho.collateralBalance(weth, onBehalf), amount, "collateralBalance != amount");
     }
 
     function testCannotWithdrawIfWETHGatewayNotManager(uint256 amount) public {
@@ -132,14 +132,13 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         uint256 withdrawn = wethGateway.withdrawETH(toWithdraw, receiver, DEFAULT_MAX_ITERATIONS);
 
         if (receiver != address(this)) assertEq(address(this).balance, balanceBefore, "balanceAfter != balanceBefore");
-        assertApproxEqAbs(withdrawn, Math.min(toWithdraw, supply), 1, "withdrawn != minimum");
-        assertApproxEqAbs(
-            morpho.supplyBalance(weth, address(this)), supply - withdrawn, 2, "supplyBalance != supply - toWithdraw"
+        assertApproxEqDust(withdrawn, Math.min(toWithdraw, supply), "withdrawn != minimum");
+        assertApproxEqDust(
+            morpho.supplyBalance(weth, address(this)), supply - withdrawn, "supplyBalance != supply - toWithdraw"
         );
-        assertApproxEqAbs(
+        assertApproxEqDust(
             receiver.balance,
             receiverBalanceBefore + withdrawn,
-            1,
             "receiverBalanceAfter != receiverBalanceBefore + withdrawn"
         );
     }
@@ -177,17 +176,15 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         uint256 withdrawn = wethGateway.withdrawCollateralETH(toWithdraw, receiver);
 
         if (receiver != address(this)) assertEq(address(this).balance, balanceBefore, "balanceAfter != balanceBefore");
-        assertApproxEqAbs(withdrawn, Math.min(toWithdraw, collateral), 1, "withdrawn != minimum");
-        assertApproxEqAbs(
+        assertApproxEqDust(withdrawn, Math.min(toWithdraw, collateral), "withdrawn != minimum");
+        assertApproxEqDust(
             morpho.collateralBalance(weth, address(this)),
             collateral - withdrawn,
-            2,
             "collateralBalance != collateral - toWithdraw"
         );
-        assertApproxEqAbs(
+        assertApproxEqDust(
             receiver.balance,
             receiverBalanceBefore + withdrawn,
-            1,
             "receiverBalanceAfter != receiverBalanceBefore + withdrawn"
         );
     }
@@ -225,7 +222,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
         assertEq(borrowed, toBorrow, "borrowed != toBorrow");
         assertGt(morpho.borrowBalance(weth, address(this)), 0);
-        assertApproxEqAbs(morpho.borrowBalance(weth, address(this)), toBorrow, 1);
+        assertApproxEqDust(morpho.borrowBalance(weth, address(this)), toBorrow, "toBorrow");
         assertEq(receiver.balance, balanceBefore + toBorrow, "balance != expectedBalance");
     }
 
@@ -253,9 +250,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
         assertEq(repaid, toRepay);
         assertEq(repayer.balance, 0);
-        assertApproxEqAbs(
-            morpho.borrowBalance(weth, address(this)), toBorrow - toRepay, 2, "borrow balance != expected"
-        );
+        assertApproxEqDust(morpho.borrowBalance(weth, address(this)), toBorrow - toRepay, "borrow balance != expected");
     }
 
     function testRepayETHWithExcess(uint256 amount, uint256 toRepay, address onBehalf, address repayer) public {
@@ -279,7 +274,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
 
         assertEq(repaid, borrowBalance);
         assertEq(repayer.balance, toRepay - borrowBalance);
-        assertApproxEqAbs(morpho.borrowBalance(weth, address(this)), 0, 2, "borrow balance != 0");
+        assertApproxEqDust(morpho.borrowBalance(weth, address(this)), 0, "borrow balance != 0");
     }
 
     function _supplyETH(address onBehalf, uint256 amount) internal returns (uint256) {

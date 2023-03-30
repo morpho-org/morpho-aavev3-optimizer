@@ -70,17 +70,16 @@ contract TestIntegrationWithdraw is IntegrationTest {
         assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
 
         // Assert Morpho's position on pool.
-        assertApproxEqAbs(
-            market.supplyOf(address(morpho)), test.morphoSupplyBefore, 1, "morphoSupply != morphoSupplyBefore"
+        assertApproxEqDust(
+            market.supplyOf(address(morpho)), test.morphoSupplyBefore, "morphoSupply != morphoSupplyBefore"
         );
-        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 2, "morphoVariableBorrow != 0");
+        assertApproxEqDust(market.variableBorrowOf(address(morpho)), 0, "morphoVariableBorrow != 0");
         assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert receiver's underlying balance.
-        assertApproxEqAbs(
+        assertApproxEqDust(
             ERC20(market.underlying).balanceOf(receiver),
             test.balanceBefore + amount,
-            1,
             "balanceAfter - balanceBefore != amount"
         );
 
@@ -146,9 +145,9 @@ contract TestIntegrationWithdraw is IntegrationTest {
         assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
         assertEq(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
         assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
-        assertApproxEqAbs(test.withdrawn, test.supplied, 3, "withdrawn != supplied");
-        assertApproxEqAbs(
-            morpho.scaledP2PBorrowBalance(market.underlying, address(promoter1)), 0, 2, "promoterScaledP2PBorrow != 0"
+        assertApproxEqDust(test.withdrawn, test.supplied, "withdrawn != supplied");
+        assertApproxEqDust(
+            morpho.scaledP2PBorrowBalance(market.underlying, address(promoter1)), 0, "promoterScaledP2PBorrow != 0"
         );
 
         assertEq(test.collaterals.length, 0, "collaterals.length");
@@ -157,15 +156,15 @@ contract TestIntegrationWithdraw is IntegrationTest {
         // Assert Morpho getters.
         assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supply != 0");
         assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
-        assertApproxEqAbs(
-            morpho.borrowBalance(market.underlying, address(promoter1)), promoted, 3, "promoterBorrow != promoted"
+        assertApproxEqDust(
+            morpho.borrowBalance(market.underlying, address(promoter1)), promoted, "promoterBorrow != promoted"
         );
 
         // Assert Morpho's position on pool.
-        assertApproxEqAbs(
-            market.supplyOf(address(morpho)), test.morphoSupplyBefore, 2, "morphoSupply != morphoSupplyBefore"
+        assertApproxEqDust(
+            market.supplyOf(address(morpho)), test.morphoSupplyBefore, "morphoSupply != morphoSupplyBefore"
         );
-        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), promoted, 2, "morphoVariableBorrow != promoted");
+        assertApproxEqDust(market.variableBorrowOf(address(morpho)), promoted, "morphoVariableBorrow != promoted");
         assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert receiver's underlying balance.
@@ -178,9 +177,9 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
         // Assert Morpho's market state.
         assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
-        assertApproxEqAbs(test.morphoMarket.deltas.supply.scaledP2PTotal, 0, 2, "scaledTotalSupplyP2P != 0");
+        assertApproxEqDust(test.morphoMarket.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != 0");
         assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
-        assertApproxEqAbs(test.morphoMarket.deltas.borrow.scaledP2PTotal, 0, 2, "scaledTotalBorrowP2P != 0");
+        assertApproxEqDust(test.morphoMarket.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
         assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
     }
 
@@ -251,44 +250,41 @@ contract TestIntegrationWithdraw is IntegrationTest {
         // Assert Morpho getters.
         assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supply != 0");
         assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
-        assertApproxEqAbs(
-            morpho.borrowBalance(market.underlying, address(promoter1)), test.supplied, 1, "promoter1Borrow != supplied"
+        assertApproxEqDust(
+            morpho.borrowBalance(market.underlying, address(promoter1)), test.supplied, "promoter1Borrow != supplied"
         );
-        assertApproxLeAbs(
-            morpho.supplyBalance(market.underlying, address(promoter2)), test.supplied, 2, "promoter2Supply != supplied"
+        assertApproxEqDust(
+            morpho.supplyBalance(market.underlying, address(promoter2)), test.supplied, "promoter2Supply != supplied"
         );
 
         // Assert Morpho's position on pool.
-        assertApproxEqAbs(
-            market.supplyOf(address(morpho)), test.morphoSupplyBefore, 1, "morphoSupply != morphoSupplyBefore"
+        assertApproxEqDust(
+            market.supplyOf(address(morpho)), test.morphoSupplyBefore, "morphoSupply != morphoSupplyBefore"
         );
-        assertApproxGeAbs(market.variableBorrowOf(address(morpho)), 0, 2, "morphoVariableBorrow != 0");
+        assertApproxEqDust(market.variableBorrowOf(address(morpho)), 0, "morphoVariableBorrow != 0");
         assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert user's underlying balance.
-        assertApproxLeAbs(
+        assertApproxEqDust(
             ERC20(market.underlying).balanceOf(receiver),
             test.balanceBefore + test.withdrawn,
-            2,
             "balanceAfter != balanceBefore + withdrawn"
         );
 
         // Assert Morpho's market state.
         assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
-        assertApproxEqAbs(
+        assertApproxEqDust(
             test.morphoMarket.deltas.supply.scaledP2PTotal.rayMul(test.indexes.supply.p2pIndex),
             test.supplied,
-            1,
             "totalSupplyP2P != supplied"
         );
         assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
-        assertApproxEqAbs(
+        assertApproxEqDust(
             test.morphoMarket.deltas.borrow.scaledP2PTotal.rayMul(test.indexes.borrow.p2pIndex),
             test.supplied,
-            2,
             "totalBorrowP2P != supplied"
         );
-        assertApproxEqAbs(test.morphoMarket.idleSupply, 0, 2, "idleSupply != 0");
+        assertApproxEqDust(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
     }
 
     function testShouldWithdrawAllP2PSupplyWhenDemotedZero(
@@ -352,16 +348,16 @@ contract TestIntegrationWithdraw is IntegrationTest {
         // Assert Morpho getters.
         assertEq(morpho.supplyBalance(market.underlying, onBehalf), 0, "supply != 0");
         assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
-        assertApproxEqAbs(
-            morpho.borrowBalance(market.underlying, address(promoter1)), test.supplied, 1, "promoter1Borrow != supplied"
+        assertApproxEqDust(
+            morpho.borrowBalance(market.underlying, address(promoter1)), test.supplied, "promoter1Borrow != supplied"
         );
 
         // Assert Morpho's position on pool.
         uint256 morphoVariableBorrow = market.variableBorrowOf(address(morpho));
-        assertApproxEqAbs(
-            market.supplyOf(address(morpho)), test.morphoSupplyBefore, 1, "morphoSupply != morphoSupplyBefore"
+        assertApproxEqDust(
+            market.supplyOf(address(morpho)), test.morphoSupplyBefore, "morphoSupply != morphoSupplyBefore"
         );
-        assertApproxEqAbs(morphoVariableBorrow, test.supplied, 2, "morphoVariableBorrow != supplied");
+        assertApproxEqDust(morphoVariableBorrow, test.supplied, "morphoVariableBorrow != supplied");
         assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert user's underlying balance.
@@ -374,17 +370,15 @@ contract TestIntegrationWithdraw is IntegrationTest {
 
         // Assert Morpho's market state.
         assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
-        assertApproxEqAbs(test.morphoMarket.deltas.supply.scaledP2PTotal, 0, 1, "scaledTotalSupplyP2P != supplied");
-        assertApproxEqAbs(
+        assertApproxEqDust(test.morphoMarket.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != supplied");
+        assertApproxEqDust(
             test.morphoMarket.deltas.borrow.scaledDelta.rayMul(test.indexes.borrow.poolIndex),
             morphoVariableBorrow,
-            1,
             "scaledBorrowDelta != morphoVariableBorrow"
         );
-        assertApproxEqAbs(
+        assertApproxEqDust(
             test.morphoMarket.deltas.borrow.scaledP2PTotal.rayMul(test.indexes.borrow.p2pIndex),
             test.supplied,
-            1,
             "scaledTotalBorrowP2P != supplied"
         );
         assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");

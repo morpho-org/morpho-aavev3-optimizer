@@ -419,8 +419,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         (actual.amountToLiquidate, actual.amountToSeize) =
             _calculateAmountToSeize(wbtc, dai, maxToLiquidate, address(1), indexes.supply.poolIndex);
 
-        assertApproxEqAbs(actual.amountToSeize, expected.amountToSeize, 1, "amount to seize not equal");
-        assertApproxEqAbs(actual.amountToLiquidate, expected.amountToLiquidate, 1, "amount to liquidate not equal");
+        assertApproxEqDust(actual.amountToSeize, expected.amountToSeize, "amount to seize not equal");
+        assertApproxEqDust(actual.amountToLiquidate, expected.amountToLiquidate, "amount to liquidate not equal");
     }
 
     function validatePermission(address owner, address manager) public view {

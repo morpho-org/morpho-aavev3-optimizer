@@ -26,8 +26,15 @@ contract BaseTest is Test {
     uint256 private constant MAX_AMOUNT = 1e20 ether;
 
     /// @dev Asserts a is approximately equal to b, with a maximum absolute difference of DUST_THRESHOLD.
-    function assertApproxEqDust(uint256 a, uint256 b, string memory err) internal {
+    ///      Should be commonly used to assert a ~= b, modulo roundings (e.g. scaled balances).
+    function assertApproxEq(uint256 a, uint256 b, string memory err) internal {
         assertApproxEqAbs(a, b, Constants.DUST_THRESHOLD, err);
+    }
+
+    /// @dev Asserts a is approximately equal to b, with a maximum absolute difference of 10 * DUST_THRESHOLD.
+    ///      Should be commonly used to assert a ~= b, modulo the maximum order of magnitude of roundings (10).
+    function assertApproxEqDust(uint256 a, uint256 b, string memory err) internal {
+        assertApproxEqAbs(a, b, Constants.DUST_THRESHOLD * 10, err);
     }
 
     /// @dev Asserts a is approximately less than or equal to b, with a maximum absolute difference of maxDelta.
