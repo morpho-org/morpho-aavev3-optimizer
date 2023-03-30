@@ -23,7 +23,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     function testShouldSupplyCollateral(uint256 seed, uint256 amount, address onBehalf) public {
         SupplyCollateralTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomCollateral(seed)];
 
@@ -84,7 +84,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         uint256 amount,
         address onBehalf
     ) public {
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomCollateral(seed)];
 
@@ -106,7 +106,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         address onBehalf
     ) public {
         blocks = _boundBlocks(blocks);
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         _forward(blocks);
 
@@ -127,7 +127,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     }
 
     function testShouldRevertSupplyCollateralZero(uint256 seed, address onBehalf) public {
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.AmountIsZero.selector);
         user.supplyCollateral(testMarkets[_randomCollateral(seed)].underlying, 0, onBehalf);
@@ -146,7 +146,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         _assumeNotUnderlying(underlying);
 
         amount = _boundNotZero(amount);
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user.supplyCollateral(underlying, amount, onBehalf);
@@ -156,7 +156,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         public
     {
         amount = _boundNotZero(amount);
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomCollateral(seed)];
 
@@ -169,7 +169,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
     function testShouldSupplyCollateralWhenEverythingElsePaused(uint256 seed, uint256 amount, address onBehalf)
         public
     {
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         morpho.setIsPausedForAllMarkets(true);
 

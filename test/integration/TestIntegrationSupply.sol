@@ -132,7 +132,7 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldSupplyPoolOnly(uint256 seed, uint256 amount, address onBehalf) public {
         SupplyTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
@@ -155,11 +155,10 @@ contract TestIntegrationSupply is IntegrationTest {
         _assertMarketAccountingZero(test.morphoMarket);
     }
 
-    // TODO: failing because supply cap exceeded and p2p supply sometimes end up supplying 1 wei to the pool.
     function testShouldSupplyP2POnly(uint256 seed, uint256 supplyCap, uint256 amount, address onBehalf) public {
         SupplyTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
@@ -191,7 +190,7 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldSupplyPoolWhenP2PDisabled(uint256 seed, uint256 amount, address onBehalf) public {
         SupplyTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
@@ -220,7 +219,7 @@ contract TestIntegrationSupply is IntegrationTest {
     function testShouldSupplyP2PWhenBorrowDelta(uint256 seed, uint256 amount, address onBehalf) public {
         SupplyTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
@@ -253,7 +252,7 @@ contract TestIntegrationSupply is IntegrationTest {
     ) public {
         SupplyTest memory test;
 
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
@@ -299,7 +298,7 @@ contract TestIntegrationSupply is IntegrationTest {
         uint256 supplyCap,
         uint256 promoted
     ) public {
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
@@ -320,7 +319,7 @@ contract TestIntegrationSupply is IntegrationTest {
         public
     {
         blocks = _boundBlocks(blocks);
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         _forward(blocks);
 
@@ -341,7 +340,7 @@ contract TestIntegrationSupply is IntegrationTest {
     }
 
     function testShouldRevertSupplyZero(uint256 seed, address onBehalf) public {
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.AmountIsZero.selector);
         user.supply(testMarkets[_randomUnderlying(seed)].underlying, 0, onBehalf);
@@ -358,7 +357,7 @@ contract TestIntegrationSupply is IntegrationTest {
         _assumeNotUnderlying(underlying);
 
         amount = _boundNotZero(amount);
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         vm.expectRevert(Errors.MarketNotCreated.selector);
         user.supply(underlying, amount, onBehalf);
@@ -366,7 +365,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
     function testShouldRevertSupplyWhenSupplyPaused(uint256 seed, uint256 amount, address onBehalf) public {
         amount = _boundNotZero(amount);
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
@@ -377,7 +376,7 @@ contract TestIntegrationSupply is IntegrationTest {
     }
 
     function testShouldSupplyWhenEverythingElsePaused(uint256 seed, uint256 amount, address onBehalf) public {
-        onBehalf = _boundReceiver(onBehalf);
+        onBehalf = _boundOnBehalf(onBehalf);
 
         morpho.setIsPausedForAllMarkets(true);
 
