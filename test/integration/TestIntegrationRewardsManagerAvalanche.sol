@@ -8,8 +8,6 @@ import "test/helpers/IntegrationTest.sol";
 contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
     using TestConfigLib for TestConfig;
 
-    uint256 internal constant MIN_AMOUNT = 1 ether;
-    uint256 internal constant MAX_AMOUNT = 1_000_000 ether; // Only ~$2m of borrow liquidity of DAI in avalanche
     uint256 internal constant MAX_BLOCKS = 100_000;
 
     // From the rewards manager
@@ -49,7 +47,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
     }
 
     function testGetRewardData(uint256 amount, uint256 blocks) public {
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
+        amount = _boundSupply(testMarkets[dai], amount);
         blocks = bound(blocks, 0, MAX_BLOCKS);
         (uint256 index, uint256 lastUpdateTimestamp) = rewardsManager.getRewardData(aDai, wNative);
 
@@ -74,7 +72,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
     }
 
     function testGetUserData(uint256 amount, uint256 blocks) public {
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
+        amount = _boundSupply(testMarkets[dai], amount);
         blocks = bound(blocks, 1, MAX_BLOCKS);
         (uint256 index, uint256 accrued) = rewardsManager.getUserData(aDai, wNative, address(user));
 
@@ -171,12 +169,12 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         expectedAccrued += _calculateRewardByAsset(address(user), scaledCollateralUsdc, aUsdc, wNative);
         expectedAccrued += _calculateRewardByAsset(address(user), scaledSupplyUsdc, aUsdc, wNative);
 
-        (accrued) = rewardsManager.getUserRewards(assets, address(user), wNative);
+        accrued = rewardsManager.getUserRewards(assets, address(user), wNative);
 
-        assertGe(accrued, expectedAccrued, "accrued 2");
+        assertApproxEqAbs(accrued, expectedAccrued, 5, "accrued 2");
     }
 
-    function _calculateRewardByAsset(address user, uint256 balance, address asset, address reward)
+    function _calculateRewardByAsset(address user, uint256 scaledBalance, address asset, address reward)
         internal
         view
         returns (uint256)
@@ -185,7 +183,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         uint256 userIndex = rewardsManager.getUserAssetIndex(user, asset, reward);
         uint256 assetIndex = rewardsManager.getAssetIndex(asset, reward);
 
-        return balance * (assetIndex - userIndex) / assetUnit;
+        return scaledBalance * (assetIndex - userIndex) / assetUnit;
     }
 
     function testGetUserAssetIndex(uint256 amount, uint256 blocks) public {
@@ -256,7 +254,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
     }
 
     function testClaimRewardsWhenSupplyingPool(uint256 amount, uint256 blocks) public {
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
+        amount = _boundSupply(testMarkets[dai], amount);
         blocks = bound(blocks, 1, MAX_BLOCKS);
         user.approve(dai, amount);
         user.supply(dai, amount);
@@ -297,7 +295,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
     }
 
     function testClaimRewardsWhenSupplyingCollateral(uint256 amount, uint256 blocks) public {
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
+        amount = _boundSupply(testMarkets[dai], amount);
         blocks = bound(blocks, 1, MAX_BLOCKS);
         user.approve(dai, amount);
         user.supplyCollateral(dai, amount);
@@ -336,7 +334,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
     }
 
     function testClaimRewardsWhenBorrowingPool(uint256 amount, uint256 blocks) public {
-        amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
+        amount = _boundBorrow(testMarkets[dai], amount);
         blocks = bound(blocks, 1, MAX_BLOCKS);
         _borrowWithCollateral(
             address(user), testMarkets[wbtc], testMarkets[dai], amount, address(user), address(user), 0
@@ -376,5 +374,48 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         assertEq(rewardTokens[0], wNative, "rewardTokens 2");
         assertEq(ERC20(wNative).balanceOf(address(user)), rewardBalanceBefore, "balance 2");
         assertEq(amounts[0], 0, "amount 2");
+    }
+
+    function testClaimRewardsWhenSupplyingAndBorrowing(uint256 supplyAmount, uint256 borrowAmount, uint256 blocks)
+        public
+    {
+        supplyAmount = _boundSupply(testMarkets[dai], supplyAmount);
+        borrowAmount = _boundBorrow(testMarkets[dai], borrowAmount);
+        blocks = bound(blocks, 1, MAX_BLOCKS);
+
+        user.approve(dai, supplyAmount);
+        user.supplyCollateral(dai, supplyAmount);
+
+        _borrowWithoutCollateral(address(user), testMarkets[dai], borrowAmount, address(user), address(user), 0);
+
+        _forward(blocks);
+
+        address[] memory aDaiArray = new address[](1);
+        aDaiArray[0] = aDai;
+        address[] memory vDaiArray = new address[](1);
+        vDaiArray[0] = vDai;
+
+        uint256 accruedRewardCollateral = rewardsManager.getUserRewards(aDaiArray, address(user), wNative);
+        uint256 accruedRewardBorrow = rewardsManager.getUserRewards(vDaiArray, address(user), wNative);
+        uint256 rewardBalanceBefore = ERC20(wNative).balanceOf(address(user));
+
+        vm.expectEmit(true, true, true, true);
+        emit Accrued(aDai, wNative, address(user), rewardsManager.getAssetIndex(aDai, wNative), accruedRewardCollateral);
+        vm.expectEmit(true, true, true, true);
+        emit Accrued(vDai, wNative, address(user), rewardsManager.getAssetIndex(vDai, wNative), accruedRewardBorrow);
+        vm.expectEmit(true, true, true, true);
+        emit Events.RewardsClaimed(address(this), address(user), wNative, accruedRewardCollateral + accruedRewardBorrow);
+        (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
+
+        assertEq(rewardTokens.length, 1, "rewardTokens length 1");
+        assertEq(amounts.length, 1, "amounts length 1");
+        assertEq(rewardTokens[0], wNative, "rewardTokens 1");
+        assertEq(
+            ERC20(wNative).balanceOf(address(user)),
+            rewardBalanceBefore + accruedRewardCollateral + accruedRewardBorrow,
+            "balance 1"
+        );
+        assertEq(amounts[0], accruedRewardCollateral + accruedRewardBorrow, "amount 1");
+        assertGt(amounts[0], 0, "amount min 1");
     }
 }

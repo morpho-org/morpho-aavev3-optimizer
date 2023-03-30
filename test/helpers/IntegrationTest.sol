@@ -133,10 +133,6 @@ contract IntegrationTest is ForkTest {
         market.price = oracle.getAssetPrice(underlying); // Price is constant, equal to price at fork block number.
 
         (market.ltv, market.lt, market.liquidationBonus, market.decimals,,) = reserve.configuration.getParams();
-        if (reserve.configuration.getDebtCeiling() > 0) {
-            market.ltv = 0;
-            market.lt = 0;
-        }
 
         market.minAmount = (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price;
         market.maxAmount = (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price;
