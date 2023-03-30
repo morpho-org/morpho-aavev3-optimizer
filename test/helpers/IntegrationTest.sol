@@ -276,6 +276,11 @@ contract IntegrationTest is ForkTest {
     /// @dev Bounds the input between the minimum USD amount expected in tests
     ///      and the maximum borrowable quantity, without exceeding the market's liquidity nor its borrow cap.
     function _boundBorrow(TestMarket storage market, uint256 amount) internal view returns (uint256) {
+        console2.log("market.minAmount", market.minAmount);
+        console2.log("market.maxAmount", market.maxAmount);
+        console2.log("market.liquidity()", market.liquidity());
+        console2.log("market.borrowGap()", market.borrowGap());
+        console2.log("min2", Math.min(market.maxAmount, Math.min(market.liquidity(), market.borrowGap())));
         return bound(
             amount, market.minAmount, Math.min(market.maxAmount, Math.min(market.liquidity(), market.borrowGap()))
         );
@@ -339,7 +344,7 @@ contract IntegrationTest is ForkTest {
 
         oracle.setAssetPrice(market.underlying, 0);
 
-        try promoter.borrow(market.underlying, amount) returns (uint256 borrowed) {
+        try promoter.borrow(market.underlying, amount.percentSub(90_00)) returns (uint256 borrowed) {
             amount = borrowed;
 
             _deposit(
@@ -353,7 +358,7 @@ contract IntegrationTest is ForkTest {
 
         oracle.setAssetPrice(market.underlying, market.price);
 
-        return amount;
+        return amount.percentSub(90_00);
     }
 
     /// @dev Promotes the incoming (or already provided) borrow.
@@ -372,11 +377,15 @@ contract IntegrationTest is ForkTest {
         internal
         returns (uint256)
     {
+        console2.log("before _boundBorrow");
         amount = _boundBorrow(market, amount);
+        console2.log("before _promoteBorrow");
         amount = _promoteBorrow(promoter, market, amount); // 100% peer-to-peer.
+        console2.log("after _promoteBorrow");
 
         address onBehalf = address(hacker);
         _borrowWithoutCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
+        console2.log("after _borrowWithoutCollateral");
 
         // Set the supply cap as exceeded.
         _setSupplyCap(market, market.totalSupply() / (10 ** market.decimals));
@@ -417,17 +426,21 @@ contract IntegrationTest is ForkTest {
         returns (uint256)
     {
         amount = _boundSupply(market, amount);
+        console2.log("liq0", market.liquidity());
+        console2.log("supply", amount);
         amount = _promoteSupply(promoter, market, amount); // 100% peer-to-peer.
 
         hacker.approve(market.underlying, amount);
         hacker.supply(market.underlying, amount);
 
+        console2.log("liq1", market.liquidity());
         Types.Iterations memory iterations = morpho.defaultIterations();
 
         // Set the max iterations to 0 upon withdraw to skip demotion and fallback to borrow delta.
         morpho.setDefaultIterations(Types.Iterations({repay: 10, withdraw: 0}));
 
         hacker.withdraw(market.underlying, amount, 0);
+        console2.log("liq2", market.liquidity());
 
         morpho.setDefaultIterations(iterations);
 

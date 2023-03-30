@@ -352,7 +352,7 @@ contract TestUnitMarketLib is BaseTest {
         uint256 idleSupply
     ) public {
         Types.Deltas storage deltas = market.deltas;
-        idleSupply = _boundAmount(idleSupply);
+        market.idleSupply = _boundAmount(idleSupply);
         totalP2PSupply = _boundAmount(totalP2PSupply);
         totalP2PBorrow = _boundAmount(totalP2PBorrow);
         uint256 amount = 0;

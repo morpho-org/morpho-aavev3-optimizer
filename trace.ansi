@@ -1,0 +1,7 @@
+Compiling 1 files with 0.8.17
+Solc 0.8.17 finished in 6.38s
+Compiler run successful
+
+Running 1 test for test/unit/TestUnitMarketLib.sol:TestUnitMarketLib
+[32m[PASS][0m testRepayFeeShouldReturnZeroIfAmountIsZero(uint256,uint256,uint256) (runs: 8, μ: 74368, ~: 78813)
+Test result: [32mok[0m. 1 passed; 0 failed; finished in 8.41ms
