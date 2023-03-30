@@ -303,13 +303,21 @@ contract TestUnitMarketLib is BaseTest {
         assertEq(market.isCollateral, isCollateral);
     }
 
-    function testRepayFee(uint256 amount, uint256 totalP2PSupply, uint256 totalP2PBorrow, uint256 supplyDelta) public {
+    function testRepayFee(
+        uint256 amount,
+        uint256 totalP2PSupply,
+        uint256 totalP2PBorrow,
+        uint256 supplyDelta,
+        uint256 idleSupply
+    ) public {
         market.setIndexes(
             Types.Indexes256(
                 Types.MarketSideIndexes256(WadRayMath.RAY, WadRayMath.RAY),
                 Types.MarketSideIndexes256(WadRayMath.RAY, WadRayMath.RAY)
             )
         );
+        idleSupply = _boundAmount(idleSupply);
+        market.idleSupply = idleSupply;
         Types.Indexes256 memory indexes = market.getIndexes();
         Types.Deltas storage deltas = market.deltas;
 
@@ -325,6 +333,7 @@ contract TestUnitMarketLib is BaseTest {
 
         uint256 expectedFee = totalP2PBorrow.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
             totalP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(supplyDelta.rayMul(indexes.supply.poolIndex))
+                .zeroFloorSub(idleSupply)
         );
         expectedFee = Math.min(amount, expectedFee);
         uint256 toProcess = market.repayFee(amount, indexes);
@@ -337,8 +346,13 @@ contract TestUnitMarketLib is BaseTest {
         );
     }
 
-    function testRepayFeeShouldReturnZeroIfAmountIsZero(uint256 totalP2PSupply, uint256 totalP2PBorrow) public {
+    function testRepayFeeShouldReturnZeroIfAmountIsZero(
+        uint256 totalP2PSupply,
+        uint256 totalP2PBorrow,
+        uint256 idleSupply
+    ) public {
         Types.Deltas storage deltas = market.deltas;
+        idleSupply = _boundAmount(idleSupply);
         totalP2PSupply = _boundAmount(totalP2PSupply);
         totalP2PBorrow = _boundAmount(totalP2PBorrow);
         uint256 amount = 0;
