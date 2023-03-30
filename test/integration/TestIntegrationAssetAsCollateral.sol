@@ -8,10 +8,9 @@ import {UserConfiguration} from "@aave-v3-core/protocol/libraries/configuration/
 
 import {Morpho} from "src/Morpho.sol";
 
-import {InvariantTest as ForgeInvariantTest} from "@forge-std/InvariantTest.sol";
 import "test/helpers/IntegrationTest.sol";
 
-contract TestIntegrationAssetAsCollateral is IntegrationTest, ForgeInvariantTest {
+contract TestIntegrationAssetAsCollateral is IntegrationTest {
     using UserConfiguration for DataTypes.UserConfigurationMap;
 
     function setUp() public override {

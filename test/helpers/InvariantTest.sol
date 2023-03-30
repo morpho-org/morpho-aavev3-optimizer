@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {InvariantTest as ForgeInvariantTest} from "@forge-std/InvariantTest.sol";
 import "test/helpers/IntegrationTest.sol";
 
-contract InvariantTest is IntegrationTest, ForgeInvariantTest {
+contract InvariantTest is IntegrationTest {
     bytes4[] internal selectors;
 
     function setUp() public virtual override {
