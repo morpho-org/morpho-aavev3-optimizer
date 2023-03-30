@@ -57,92 +57,88 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         _pool.supplyToPool(wNative, 1 ether, _pool.getReserveNormalizedIncome(wNative));
     }
 
-    function testLtvLiquidationThresholdPriceSourceEMode(AssetData memory assetData) public {
-        for (uint256 i; i < allUnderlyings.length; ++i) {
-            address underlying = allUnderlyings[i];
-            (uint256 ltvBound, uint256 ltBound, uint256 ltvConfig, uint256 ltConfig) =
-                _getLtvLt(underlying, _eModeCategoryId);
+    function testLtvLiquidationThresholdPriceSourceEMode(uint256 seed, AssetData memory assetData) public {
+        address underlying = _randomUnderlying(seed);
+        (uint256 ltvBound, uint256 ltBound, uint256 ltvConfig, uint256 ltConfig) =
+            _getLtvLt(underlying, _eModeCategoryId);
 
-            assetData.ltEMode = uint16(bound(assetData.ltEMode, ltBound + 1, type(uint16).max));
-            assetData.ltvEMode = uint16(bound(assetData.ltvEMode, ltvBound + 1, assetData.ltEMode));
-            uint16 liquidationBonus = uint16(PercentageMath.PERCENTAGE_FACTOR + 1);
-            assetData.underlyingPrice = bound(assetData.underlyingPrice, 0, type(uint96).max - 1);
-            assetData.underlyingPriceEMode = bound(assetData.underlyingPriceEMode, 0, type(uint96).max);
-            vm.assume(
-                uint256(assetData.ltEMode).percentMul(uint256(liquidationBonus)) <= PercentageMath.PERCENTAGE_FACTOR
-            );
-            vm.assume(assetData.underlyingPrice != assetData.underlyingPriceEMode);
+        assetData.ltEMode = uint16(bound(assetData.ltEMode, ltBound + 1, type(uint16).max));
+        assetData.ltvEMode = uint16(bound(assetData.ltvEMode, ltvBound + 1, assetData.ltEMode));
+        uint16 liquidationBonus = uint16(PercentageMath.PERCENTAGE_FACTOR + 1);
+        assetData.underlyingPrice = bound(assetData.underlyingPrice, 0, type(uint96).max - 1);
+        assetData.underlyingPriceEMode = bound(assetData.underlyingPriceEMode, 0, type(uint96).max);
+        vm.assume(uint256(assetData.ltEMode).percentMul(uint256(liquidationBonus)) <= PercentageMath.PERCENTAGE_FACTOR);
+        vm.assume(assetData.underlyingPrice != assetData.underlyingPriceEMode);
 
-            DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
-                ltv: assetData.ltvEMode,
-                liquidationThreshold: assetData.ltEMode,
-                liquidationBonus: liquidationBonus,
-                priceSource: address(1),
-                label: ""
-            });
-            if (_eModeCategoryId != 0) {
-                _setEModeCategoryAsset(eModeCategory, underlying, _eModeCategoryId);
-            }
-
-            oracle.setAssetPrice(address(1), assetData.underlyingPriceEMode);
-            oracle.setAssetPrice(underlying, assetData.underlyingPrice);
-
-            Types.LiquidityVars memory vars;
-            vars.oracle = oracle;
-            vars.user = address(this);
-            vars.eModeCategory = eModeCategory;
-            (uint256 assetPrice, uint256 ltv, uint256 lt,) = _assetLiquidityData(underlying, vars);
-
-            assertEq(
-                uint16(ltv),
-                _eModeCategoryId != 0 && ltvConfig != 0 ? assetData.ltvEMode : ltvConfig,
-                "Loan to value E-mode"
-            );
-            assertEq(
-                uint16(lt),
-                _eModeCategoryId != 0 && ltvConfig != 0 ? assetData.ltEMode : ltConfig,
-                "Liquidation Threshold E-Mode"
-            );
-            assertEq(
-                assetPrice,
-                _eModeCategoryId != 0 && assetData.underlyingPriceEMode != 0
-                    ? assetData.underlyingPriceEMode
-                    : assetData.underlyingPrice,
-                "Underlying Price E-Mode"
-            );
+        DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
+            ltv: assetData.ltvEMode,
+            liquidationThreshold: assetData.ltEMode,
+            liquidationBonus: liquidationBonus,
+            priceSource: address(1),
+            label: ""
+        });
+        if (_eModeCategoryId != 0) {
+            _setEModeCategoryAsset(eModeCategory, underlying, _eModeCategoryId);
         }
+
+        oracle.setAssetPrice(address(1), assetData.underlyingPriceEMode);
+        oracle.setAssetPrice(underlying, assetData.underlyingPrice);
+
+        Types.LiquidityVars memory vars;
+        vars.oracle = oracle;
+        vars.user = address(this);
+        vars.eModeCategory = eModeCategory;
+        (uint256 assetPrice, uint256 ltv, uint256 lt,) = _assetLiquidityData(underlying, vars);
+
+        assertEq(
+            uint16(ltv),
+            _eModeCategoryId != 0 && ltvConfig != 0 ? assetData.ltvEMode : ltvConfig,
+            "Loan to value E-mode"
+        );
+        assertEq(
+            uint16(lt),
+            _eModeCategoryId != 0 && ltvConfig != 0 ? assetData.ltEMode : ltConfig,
+            "Liquidation Threshold E-Mode"
+        );
+        assertEq(
+            assetPrice,
+            _eModeCategoryId != 0 && assetData.underlyingPriceEMode != 0
+                ? assetData.underlyingPriceEMode
+                : assetData.underlyingPrice,
+            "Underlying Price E-Mode"
+        );
     }
 
-    function testIsInEModeCategory(uint8 eModeCategoryId, uint16 lt, uint16 ltv, uint16 liquidationBonus) public {
-        for (uint256 i; i < allUnderlyings.length; ++i) {
-            address underlying = allUnderlyings[i];
+    function testIsInEModeCategory(uint256 seed, uint8 eModeCategoryId, uint16 lt, uint16 ltv, uint16 liquidationBonus)
+        public
+    {
+        address underlying = _randomUnderlying(seed);
 
-            eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
-            (uint256 ltvBound, uint256 ltBound,,) = _getLtvLt(underlying, eModeCategoryId);
+        eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
+        (uint256 ltvBound, uint256 ltBound,,) = _getLtvLt(underlying, eModeCategoryId);
 
-            address priceSourceEMode = address(1);
-            ltv = uint16(bound(ltv, ltvBound + 1, PercentageMath.PERCENTAGE_FACTOR - 1));
-            lt = uint16(bound(lt, Math.max(ltv + 1, ltBound + 1), PercentageMath.PERCENTAGE_FACTOR));
-            liquidationBonus = uint16(bound(liquidationBonus, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max));
-            vm.assume(uint256(lt).percentMul(liquidationBonus) <= PercentageMath.PERCENTAGE_FACTOR);
+        address priceSourceEMode = address(1);
+        ltv = uint16(bound(ltv, ltvBound + 1, PercentageMath.PERCENTAGE_FACTOR - 1));
+        lt = uint16(bound(lt, Math.max(ltv + 1, ltBound + 1), PercentageMath.PERCENTAGE_FACTOR));
+        liquidationBonus = uint16(bound(liquidationBonus, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max));
+        vm.assume(uint256(lt).percentMul(liquidationBonus) <= PercentageMath.PERCENTAGE_FACTOR);
 
-            DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
-                ltv: ltv,
-                liquidationThreshold: lt,
-                liquidationBonus: liquidationBonus,
-                priceSource: priceSourceEMode,
-                label: ""
-            });
+        DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
+            ltv: ltv,
+            liquidationThreshold: lt,
+            liquidationBonus: liquidationBonus,
+            priceSource: priceSourceEMode,
+            label: ""
+        });
 
-            _setEModeCategoryAsset(eModeCategory, underlying, eModeCategoryId);
+        _setEModeCategoryAsset(eModeCategory, underlying, eModeCategoryId);
 
-            DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
+        DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
 
-            bool expectedIsInEMode = _eModeCategoryId == eModeCategoryId && _eModeCategoryId != 0;
-            bool isInEMode = _isInEModeCategory(config);
+        bool expectedIsInEMode = _eModeCategoryId == eModeCategoryId && _eModeCategoryId != 0;
+        bool isInEMode = _isInEModeCategory(config);
 
-            assertEq(isInEMode, expectedIsInEMode, "Wrong E-Mode");
-        }
+        assertEq(isInEMode, expectedIsInEMode, "Wrong E-Mode");
     }
 
     function testAssetDataEMode(
