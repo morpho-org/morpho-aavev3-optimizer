@@ -310,14 +310,16 @@ contract TestUnitMarketLib is BaseTest {
         uint256 supplyDelta,
         uint256 idleSupply
     ) public {
+        idleSupply = _boundAmount(idleSupply);
+
+        market.idleSupply = idleSupply;
         market.setIndexes(
             Types.Indexes256(
                 Types.MarketSideIndexes256(WadRayMath.RAY, WadRayMath.RAY),
                 Types.MarketSideIndexes256(WadRayMath.RAY, WadRayMath.RAY)
             )
         );
-        idleSupply = _boundAmount(idleSupply);
-        market.idleSupply = idleSupply;
+
         Types.Indexes256 memory indexes = market.getIndexes();
         Types.Deltas storage deltas = market.deltas;
 
@@ -351,16 +353,17 @@ contract TestUnitMarketLib is BaseTest {
         uint256 totalP2PBorrow,
         uint256 idleSupply
     ) public {
-        Types.Deltas storage deltas = market.deltas;
         market.idleSupply = _boundAmount(idleSupply);
         totalP2PSupply = _boundAmount(totalP2PSupply);
         totalP2PBorrow = _boundAmount(totalP2PBorrow);
-        uint256 amount = 0;
-        deltas.supply.scaledP2PTotal = totalP2PSupply;
-        deltas.borrow.scaledP2PTotal = totalP2PBorrow;
-        uint256 fee = market.repayFee(amount, market.getIndexes());
+
+        market.deltas.supply.scaledP2PTotal = totalP2PSupply;
+        market.deltas.borrow.scaledP2PTotal = totalP2PBorrow;
+
+        uint256 fee = market.repayFee(0, market.getIndexes());
+
         assertEq(fee, 0);
-        assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply);
-        assertEq(deltas.borrow.scaledP2PTotal, totalP2PBorrow);
+        assertEq(market.deltas.supply.scaledP2PTotal, totalP2PSupply);
+        assertEq(market.deltas.borrow.scaledP2PTotal, totalP2PBorrow);
     }
 }

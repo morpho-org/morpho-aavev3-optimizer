@@ -27,7 +27,7 @@ test-unit:
 	@FOUNDRY_MATCH_CONTRACT=TestUnit make test
 
 test:
-	forge test -vvv > trace.ansi
+	forge test -vvv
 
 
 test-invariant-%:
