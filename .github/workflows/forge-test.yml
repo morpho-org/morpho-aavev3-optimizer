@@ -15,22 +15,22 @@ on:
       internal-fuzz-runs:
         description: The number of fuzz rounds to perform for each fuzzing unit test.
         required: false
-        default: 32
+        default: 128
         type: number
       integration-fuzz-runs:
         description: The number of fuzz rounds to perform for each fuzzing unit test.
         required: false
-        default: 32
+        default: 256
         type: number
       invariant-runs:
         description: The number of runs to perform for invariant tests.
         required: false
-        default: 4
+        default: 8
         type: number
       invariant-depth:
         description: The depth of invariant tests.
         required: false
-        default: 128
+        default: 256
         type: number
       coverageThreshold:
         description: The coverage threshold below which to fail the action.

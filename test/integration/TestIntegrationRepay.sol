@@ -252,17 +252,19 @@ contract TestIntegrationRepay is IntegrationTest {
             "balanceBefore != balanceAfter + repaid"
         );
 
+        uint256 expectedIdleSupply = test.borrowed - supplyGapBefore;
+
         // Assert Morpho's market state.
         assertApproxEqAbs(test.morphoMarket.deltas.supply.scaledDelta, 0, 1, "scaledSupplyDelta != 0");
         assertApproxEqAbs(
             test.morphoMarket.deltas.supply.scaledP2PTotal.rayMul(test.indexes.supply.p2pIndex),
-            test.borrowed,
+            expectedIdleSupply,
             1,
-            "scaledTotalSupplyP2P != borrowed"
+            "totalSupplyP2P != borrowed"
         );
         assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
         assertEq(test.morphoMarket.deltas.borrow.scaledP2PTotal, 0, "scaledTotalBorrowP2P != 0");
-        assertApproxEqAbs(test.morphoMarket.idleSupply, test.borrowed, 1, "idleSupply != borrowed");
+        assertApproxEqAbs(test.morphoMarket.idleSupply, expectedIdleSupply, 1, "idleSupply != borrowed");
     }
 
     function testShouldRepayAllP2PBorrowWhenDemotedZero(uint256 seed, uint256 amount, address onBehalf) public {
