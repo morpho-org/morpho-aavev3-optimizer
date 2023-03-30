@@ -28,7 +28,7 @@ contract TestIntegrationFee is IntegrationTest {
         user.approve(market.underlying, type(uint256).max);
         user.repay(market.underlying, type(uint256).max);
 
-        assertEq(balanceBefore, ERC20(market.underlying).balanceOf(address(morpho)), "Fee collected != 0");
+        assertEq(balanceBefore, ERC20(market.underlying).balanceOf(address(morpho)), "fee != 0");
     }
 
     function testRepayFeeShouldBeZeroWithDeltaOnly(uint256 seed, uint16 reserveFactor, uint256 amount) public {
@@ -47,7 +47,7 @@ contract TestIntegrationFee is IntegrationTest {
         user.approve(market.underlying, type(uint256).max);
         user.repay(market.underlying, type(uint256).max);
 
-        assertApproxEqAbs(ERC20(market.underlying).balanceOf(address(morpho)), balanceBefore, 1, "Fee collected != 0");
+        assertApproxEqAbs(ERC20(market.underlying).balanceOf(address(morpho)), balanceBefore, 1e2, "fee != 0");
     }
 
     function testRepayFeeWithP2PWithoutDelta(uint256 seed, uint16 reserveFactor, uint256 amount) public {
@@ -74,20 +74,16 @@ contract TestIntegrationFee is IntegrationTest {
         uint256 poolBorrowGrowth = indexes.borrow.poolIndex.rayDiv(lastIndexes.borrow.poolIndex);
         uint256 poolSupplyGrowth = indexes.supply.poolIndex.rayDiv(lastIndexes.supply.poolIndex);
 
-        uint256 expectedFeeCollected =
+        uint256 expectedFee =
             lastBorrowP2PBalance.rayMul(poolBorrowGrowth.zeroFloorSub(poolSupplyGrowth)).percentMul(reserveFactor);
 
         uint256 balanceBefore = ERC20(testMarket.underlying).balanceOf(address(morpho));
 
         user.approve(market.underlying, type(uint256).max);
-
         user.repay(market.underlying, type(uint256).max);
 
         assertApproxEqAbs(
-            ERC20(testMarket.underlying).balanceOf(address(morpho)),
-            balanceBefore + expectedFeeCollected,
-            2,
-            "Right amount of fees collected"
+            ERC20(testMarket.underlying).balanceOf(address(morpho)), balanceBefore + expectedFee, 2, "fee != expected"
         );
     }
 
@@ -122,7 +118,7 @@ contract TestIntegrationFee is IntegrationTest {
         uint256 poolBorrowGrowth = indexes.borrow.poolIndex.rayDiv(lastIndexes.borrow.poolIndex);
         uint256 poolSupplyGrowth = indexes.supply.poolIndex.rayDiv(lastIndexes.supply.poolIndex);
 
-        uint256 expectedFeeCollected =
+        uint256 expectedFee =
             lastBorrowP2PBalance.rayMul(poolBorrowGrowth.zeroFloorSub(poolSupplyGrowth)).percentMul(reserveFactor);
 
         uint256 balanceBefore = ERC20(testMarket.underlying).balanceOf(address(morpho));
@@ -131,10 +127,7 @@ contract TestIntegrationFee is IntegrationTest {
         user.repay(testMarket.underlying, type(uint256).max);
 
         assertApproxEqAbs(
-            ERC20(testMarket.underlying).balanceOf(address(morpho)),
-            balanceBefore + expectedFeeCollected,
-            3,
-            "Wrong amount of fees"
+            ERC20(testMarket.underlying).balanceOf(address(morpho)), balanceBefore + expectedFee, 1e2, "fee != expected"
         );
     }
 }
