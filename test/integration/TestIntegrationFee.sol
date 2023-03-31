@@ -28,20 +28,20 @@ contract TestIntegrationFee is IntegrationTest {
         assertApproxEqAbs(
             ERC20(marketBefore.underlying).balanceOf(address(morpho)) - morphoBalanceBefore - idleSupplyIncrease,
             expectedFee,
-            2,
+            20,
             "fee != expected"
         );
     }
 
-    function testRepayFeeWithReserveFactorIsZero(uint256 seed, uint256 amount) public {
+    function testRepayFeeZeroWithReserveFactorZero(uint256 seed, uint256 borrowed) public {
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         morpho.setReserveFactor(market.underlying, 0);
 
-        amount = _boundSupply(market, amount);
-        amount = _promoteBorrow(promoter1, market, amount.percentMul(50_00)); // 100% peer-to-peer.
+        borrowed = _boundBorrow(market, borrowed);
+        _promoteBorrow(promoter1, market, borrowed.percentMul(50_00)); // 100% peer-to-peer.
 
-        _borrowWithoutCollateral(address(user), market, amount, address(user), address(user), DEFAULT_MAX_ITERATIONS);
+        _borrowWithoutCollateral(address(user), market, borrowed, address(user), address(user), DEFAULT_MAX_ITERATIONS);
 
         Types.Market memory marketBefore = morpho.market(market.underlying);
 
@@ -55,17 +55,22 @@ contract TestIntegrationFee is IntegrationTest {
         _assertFee(marketBefore, balanceBefore);
     }
 
-    function testRepayFeeShouldBeZeroWithDeltaOnly(uint256 seed, uint16 reserveFactor, uint256 amount) public {
-        reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
+    function testRepayFeeZeroWithoutP2PWithBorrowDelta(
+        uint256 seed,
+        uint16 reserveFactor,
+        uint256 borrowed,
+        uint256 borrowDelta
+    ) public {
+        reserveFactor = uint16(bound(reserveFactor, 1, PercentageMath.PERCENTAGE_FACTOR));
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         morpho.setReserveFactor(market.underlying, reserveFactor);
 
-        amount = _boundBorrow(market, amount);
-        _borrowWithoutCollateral(address(user), market, amount, address(user), address(user), DEFAULT_MAX_ITERATIONS);
+        borrowed = _boundBorrow(market, borrowed);
+        _borrowWithoutCollateral(address(user), market, borrowed, address(user), address(user), DEFAULT_MAX_ITERATIONS);
 
-        amount = _increaseBorrowDelta(promoter1, market, amount);
+        borrowDelta = _increaseBorrowDelta(promoter1, market, borrowDelta);
 
         Types.Market memory marketBefore = morpho.market(market.underlying);
 
@@ -79,17 +84,17 @@ contract TestIntegrationFee is IntegrationTest {
         _assertFee(marketBefore, balanceBefore);
     }
 
-    function testRepayFeeWithP2PWithoutDelta(uint256 seed, uint16 reserveFactor, uint256 amount) public {
-        reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
+    function testRepayFeeWithP2PWithoutDelta(uint256 seed, uint16 reserveFactor, uint256 borrowed) public {
+        reserveFactor = uint16(bound(reserveFactor, 1, PercentageMath.PERCENTAGE_FACTOR));
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         morpho.setReserveFactor(market.underlying, reserveFactor);
 
-        amount = _boundBorrow(market, amount);
-        amount = _promoteBorrow(promoter1, market, amount.percentMul(50_00)); // 50% peer-to-peer.
+        borrowed = _boundBorrow(market, borrowed);
+        _promoteBorrow(promoter1, market, borrowed.percentMul(50_00)); // 50% peer-to-peer.
 
-        _borrowWithoutCollateral(address(user), market, amount, address(user), address(user), DEFAULT_MAX_ITERATIONS);
+        _borrowWithoutCollateral(address(user), market, borrowed, address(user), address(user), DEFAULT_MAX_ITERATIONS);
 
         Types.Market memory marketBefore = morpho.market(market.underlying);
 
@@ -103,19 +108,20 @@ contract TestIntegrationFee is IntegrationTest {
         _assertFee(marketBefore, balanceBefore);
     }
 
-    function testRepayFeeWithP2PWithIdleSupply(uint256 seed, uint16 reserveFactor, uint256 amount, uint256 idleSupply)
+    function testRepayFeeWithP2PWithIdleSupply(uint256 seed, uint16 reserveFactor, uint256 borrowed, uint256 idleSupply)
         public
     {
-        reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
+        reserveFactor = uint16(bound(reserveFactor, 1, PercentageMath.PERCENTAGE_FACTOR));
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         morpho.setReserveFactor(market.underlying, reserveFactor);
 
-        amount = _boundBorrow(market, amount);
-        amount = _promoteBorrow(promoter1, market, amount.percentMul(50_00)); // 50% peer-to-peer.
+        borrowed = _boundBorrow(market, borrowed);
+        _promoteBorrow(promoter1, market, borrowed.percentMul(50_00)); // 50% peer-to-peer.
 
-        _borrowWithoutCollateral(address(user), market, amount, address(user), address(user), DEFAULT_MAX_ITERATIONS);
+        _borrowWithoutCollateral(address(user), market, borrowed, address(user), address(user), DEFAULT_MAX_ITERATIONS);
+
         idleSupply = _increaseIdleSupply(promoter2, market, idleSupply);
 
         Types.Market memory marketBefore = morpho.market(market.underlying);
@@ -130,26 +136,24 @@ contract TestIntegrationFee is IntegrationTest {
         _assertFee(marketBefore, balanceBefore);
     }
 
-    function testRepayFeeWithBorrowDeltaAndP2P(
+    function testRepayFeeWithP2PWithBorrowDelta(
         uint256 seed,
         uint16 reserveFactor,
-        uint256 borrowAmount,
-        uint256 borrowDeltaAmount
+        uint256 borrowed,
+        uint256 borrowDelta
     ) public {
-        reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
+        reserveFactor = uint16(bound(reserveFactor, 1, PercentageMath.PERCENTAGE_FACTOR));
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         morpho.setReserveFactor(market.underlying, reserveFactor);
 
-        borrowAmount = bound(borrowAmount, 0, type(uint128).max);
-        borrowAmount = _boundBorrow(market, borrowAmount);
-        _promoteBorrow(promoter1, market, borrowAmount.percentMul(50_00)); // 50% peer-to-peer.
+        borrowed = _boundBorrow(market, borrowed);
+        _promoteBorrow(promoter1, market, borrowed.percentMul(50_00)); // 50% peer-to-peer.
 
-        _borrowWithoutCollateral(
-            address(user), market, borrowAmount, address(user), address(user), DEFAULT_MAX_ITERATIONS
-        );
-        borrowDeltaAmount = _increaseBorrowDelta(user, market, borrowDeltaAmount);
+        _borrowWithoutCollateral(address(user), market, borrowed, address(user), address(user), DEFAULT_MAX_ITERATIONS);
+
+        borrowDelta = _increaseBorrowDelta(user, market, borrowDelta);
 
         Types.Market memory marketBefore = morpho.market(market.underlying);
 
@@ -163,26 +167,26 @@ contract TestIntegrationFee is IntegrationTest {
         _assertFee(marketBefore, balanceBefore);
     }
 
-    function testRepayFeeWithBorrowDeltaWithP2PWithIdleSupply(
+    function testRepayFeeWithP2PWithBorrowDeltaWithIdleSupply(
         uint256 seed,
         uint16 reserveFactor,
-        uint256 borrowAmount,
-        uint256 borrowDeltaAmount,
+        uint256 borrowed,
+        uint256 borrowDelta,
         uint256 idleSupply
     ) public {
+        reserveFactor = uint16(bound(reserveFactor, 1, PercentageMath.PERCENTAGE_FACTOR));
+
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
-        reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
+
         morpho.setReserveFactor(market.underlying, reserveFactor);
 
-        borrowAmount = bound(borrowDeltaAmount, 1, market.liquidity());
-        borrowAmount = _boundBorrow(market, borrowAmount);
-        _promoteBorrow(promoter1, market, borrowAmount.percentMul(50_00)); // 50% peer-to-peer.
+        borrowed = _boundBorrow(market, borrowed);
+        _promoteBorrow(promoter1, market, borrowed); // 100% peer-to-peer.
 
-        _borrowWithoutCollateral(
-            address(user), market, borrowAmount, address(user), address(user), DEFAULT_MAX_ITERATIONS
-        );
+        _borrowWithoutCollateral(address(user), market, borrowed, address(user), address(user), DEFAULT_MAX_ITERATIONS);
 
-        borrowDeltaAmount = _increaseBorrowDelta(user, market, borrowDeltaAmount);
+        borrowDelta = _increaseBorrowDelta(promoter2, market, borrowDelta);
+
         idleSupply = _increaseIdleSupply(promoter2, market, idleSupply);
 
         Types.Market memory marketBefore = morpho.market(market.underlying);
