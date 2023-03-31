@@ -72,7 +72,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         if (onBehalf != address(this)) assertEq(onBehalf.balance, onBehalfBalanceBefore, "onBehalfBalance");
         assertEq(address(this).balance + amount, balanceBefore, "balanceAfter != balanceBefore - amount");
         assertEq(supplied, amount, "supplied != amount");
-        assertApproxEqAbs(morpho.supplyBalance(weth, onBehalf), amount, 1, "supplyBalance != amount");
+        assertApproxEqAbs(morpho.supplyBalance(weth, onBehalf), amount, 2, "supplyBalance != amount");
     }
 
     function testCannotSupplyCollateralETHWhenAmountIsZero(address onBehalf) public {

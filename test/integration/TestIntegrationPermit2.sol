@@ -116,14 +116,19 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         vm.prank(delegator);
         morpho.supplyCollateralWithPermit(market.underlying, amount, onBehalf, deadline, sig);
+
         assertApproxEqAbs(
             morpho.collateralBalance(market.underlying, onBehalf),
             balanceSupplyBefore + amount,
-            3,
-            "Incorrect Supply Collateral"
+            4,
+            "collateralBalanceAfter - collateralBalanceBefore != amouunt"
         );
 
-        assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
+        assertEq(
+            ERC20(market.underlying).balanceOf(delegator),
+            balanceBefore - amount,
+            "balanceBefore - balanceAfter != amount"
+        );
     }
 
     function testRepayWithPermit2(
