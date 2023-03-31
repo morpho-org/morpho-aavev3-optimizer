@@ -279,6 +279,6 @@ contract ForkTest is BaseTest {
     }
 
     function _randomUnderlying(uint256 seed) internal view returns (address) {
-        return allUnderlyings[uint256(keccak256(abi.encode(seed))) % allUnderlyings.length];
+        return allUnderlyings[seed % allUnderlyings.length];
     }
 }

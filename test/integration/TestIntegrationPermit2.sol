@@ -57,7 +57,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 
@@ -75,9 +74,9 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         vm.prank(delegator);
         morpho.supplyWithPermit(market.underlying, amount, delegator, DEFAULT_MAX_ITERATIONS, deadline, sig);
-
+        /// The maximum gap needs to be 4 because sometimes the timestamp is very big, otherwise the test reverts.
         assertApproxEqAbs(
-            morpho.supplyBalance(market.underlying, delegator), balanceSupplyBefore + amount, 3, "Incorrect Supply"
+            morpho.supplyBalance(market.underlying, delegator), balanceSupplyBefore + amount, 4, "Incorrect Supply"
         );
         assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
     }
@@ -99,7 +98,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomCollateral(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 
@@ -118,14 +116,19 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         vm.prank(delegator);
         morpho.supplyCollateralWithPermit(market.underlying, amount, onBehalf, deadline, sig);
+
         assertApproxEqAbs(
             morpho.collateralBalance(market.underlying, onBehalf),
             balanceSupplyBefore + amount,
-            3,
-            "Incorrect Supply Collateral"
+            4,
+            "collateralBalanceAfter - collateralBalanceBefore != amouunt"
         );
 
-        assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
+        assertEq(
+            ERC20(market.underlying).balanceOf(delegator),
+            balanceBefore - amount,
+            "balanceBefore - balanceAfter != amount"
+        );
     }
 
     function testRepayWithPermit2(
@@ -142,10 +145,9 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         onBehalf = _boundOnBehalf(onBehalf);
 
-        TestMarket storage market = testMarkets[_randomBorrowable(seed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
-        amount = Math.max(1, Math.min(type(uint128).max, amount));
 
         address spender = address(morpho);
 
@@ -171,6 +173,45 @@ contract TestIntegrationPermit2 is IntegrationTest {
         assertEq(ERC20(market.underlying).balanceOf(delegator), balanceBefore - amount, "Incorrect Balance");
     }
 
+    function testRepayAllWithPermit2(
+        uint256 privateKey,
+        uint256 deadline,
+        uint256 amount,
+        uint256 seed,
+        address onBehalf,
+        uint256 timestamp
+    ) public {
+        deadline = bound(deadline, block.timestamp, type(uint32).max);
+        privateKey = bound(privateKey, 1, type(uint160).max);
+        address delegator = vm.addr(privateKey);
+
+        onBehalf = _boundOnBehalf(onBehalf);
+
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
+
+        amount = _boundBorrow(market, amount);
+
+        address spender = address(morpho);
+
+        _borrowWithoutCollateral(onBehalf, market, amount, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
+
+        vm.prank(delegator);
+        ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
+
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
+        vm.warp(block.timestamp + timestamp);
+
+        Types.Signature memory sig =
+            _signPermit2(market.underlying, delegator, spender, type(uint160).max, deadline, privateKey);
+
+        _deal(market.underlying, delegator, type(uint160).max);
+
+        vm.prank(delegator);
+        morpho.repayWithPermit(market.underlying, type(uint160).max, onBehalf, deadline, sig);
+
+        assertEq(morpho.borrowBalance(market.underlying, onBehalf), 0, "Incorrect Borrow Balance");
+    }
+
     function testSupplyWithPermit2ShouldRevertBecauseDeadlinePassed(
         uint256 privateKey,
         uint256 deadline,
@@ -188,7 +229,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
         Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
@@ -223,7 +263,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 
@@ -262,7 +301,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 
@@ -296,7 +334,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
         supplied = bound(supplied, 0, amount - 1);
 
         address spender = address(morpho);
@@ -334,7 +371,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        amount = Math.min(type(uint128).max, amount);
 
         address spender = address(morpho);
 

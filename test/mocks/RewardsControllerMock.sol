@@ -39,6 +39,8 @@ contract RewardsControllerMock is IRewardsController {
 
     function getAssetDecimals(address asset) external view returns (uint8) {}
 
+    function EMISSION_MANAGER() external view returns (address) {}
+
     function getEmissionManager() external view returns (address) {}
 
     function setEmissionManager(address emissionManager) external {}

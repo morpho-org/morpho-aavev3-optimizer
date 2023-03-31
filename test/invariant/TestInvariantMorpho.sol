@@ -74,7 +74,7 @@ contract TestInvariantMorpho is InvariantTest {
     function borrow(uint256 underlyingSeed, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
     {
-        TestMarket storage market = testMarkets[_randomBorrowable(underlyingSeed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(underlyingSeed)];
         amount = _boundBorrow(market, amount);
         onBehalf = _randomSender(onBehalf);
         receiver = _boundReceiver(receiver);
@@ -85,7 +85,7 @@ contract TestInvariantMorpho is InvariantTest {
     }
 
     function repay(uint256 underlyingSeed, uint256 amount, address onBehalf) external {
-        TestMarket storage market = testMarkets[_randomBorrowable(underlyingSeed)];
+        TestMarket storage market = testMarkets[_randomBorrowableInEMode(underlyingSeed)];
         amount = _boundNotZero(amount);
         onBehalf = _randomSender(onBehalf);
 
@@ -185,8 +185,8 @@ contract TestInvariantMorpho is InvariantTest {
 
             if (liquidityData.borrowable == 0) continue;
 
-            for (uint256 j; j < borrowableUnderlyings.length; ++j) {
-                TestMarket storage market = testMarkets[borrowableUnderlyings[j]];
+            for (uint256 j; j < borrowableInEModeUnderlyings.length; ++j) {
+                TestMarket storage market = testMarkets[borrowableInEModeUnderlyings[j]];
 
                 uint256 borrowable = (liquidityData.borrowable * 1 ether * 10 ** market.decimals).percentAdd(5) // Inflate borrowable because of WBTC decimals precision.
                     / (market.price * 1 ether);

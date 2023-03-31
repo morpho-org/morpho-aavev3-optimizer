@@ -33,7 +33,7 @@ contract TestIntegrationApproval is IntegrationTest {
 
         vm.prank(delegator);
         morpho.approveManager(manager, isAllowed);
-        assertEq(morpho.isManaging(delegator, manager), isAllowed);
+        assertEq(morpho.isManagedBy(delegator, manager), isAllowed);
     }
 
     function testApproveManagerWithSig(uint128 deadline) public {
@@ -64,7 +64,7 @@ contract TestIntegrationApproval is IntegrationTest {
             sig
         );
 
-        assertEq(morpho.isManaging(DELEGATOR, MANAGER), true);
+        assertEq(morpho.isManagedBy(DELEGATOR, MANAGER), true);
         assertEq(morpho.userNonce(DELEGATOR), 1);
     }
 

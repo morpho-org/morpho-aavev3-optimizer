@@ -51,7 +51,8 @@ contract IntegrationTest is ForkTest {
 
     uint8 internal eModeCategoryId = uint8(vm.envOr("E_MODE_CATEGORY_ID", uint256(0)));
     address[] internal collateralUnderlyings;
-    address[] internal borrowableUnderlyings;
+    address[] internal borrowableInEModeUnderlyings;
+    address[] internal borrowableNotInEModeUnderlyings;
 
     function setUp() public virtual override {
         _deploy();
@@ -146,9 +147,9 @@ contract IntegrationTest is ForkTest {
         market.eModeCategoryId = uint8(reserve.configuration.getEModeCategory());
         market.eModeCategory = pool.getEModeCategoryData(market.eModeCategoryId);
 
+        market.isInEMode = eModeCategoryId == 0 || eModeCategoryId == market.eModeCategoryId;
         market.isCollateral = market.getLt(eModeCategoryId) > 0 && reserve.configuration.getDebtCeiling() == 0;
-        market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing()
-            && (eModeCategoryId == 0 || eModeCategoryId == market.eModeCategoryId);
+        market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing();
 
         vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
         vm.label(reserve.variableDebtTokenAddress, string.concat("vd", market.symbol));
@@ -171,15 +172,22 @@ contract IntegrationTest is ForkTest {
             morpho.setAssetIsCollateral(market.underlying, true);
         }
 
-        if (market.isBorrowable) borrowableUnderlyings.push(underlying);
+        if (market.isBorrowable) {
+            if (market.isInEMode) borrowableInEModeUnderlyings.push(underlying);
+            else borrowableNotInEModeUnderlyings.push(underlying);
+        }
     }
 
     function _randomCollateral(uint256 seed) internal view returns (address) {
-        return collateralUnderlyings[uint256(keccak256(abi.encode(seed))) % collateralUnderlyings.length];
+        return collateralUnderlyings[seed % collateralUnderlyings.length];
     }
 
-    function _randomBorrowable(uint256 seed) internal view returns (address) {
-        return borrowableUnderlyings[uint256(keccak256(abi.encode(seed))) % borrowableUnderlyings.length];
+    function _randomBorrowableInEMode(uint256 seed) internal view returns (address) {
+        return borrowableInEModeUnderlyings[seed % borrowableInEModeUnderlyings.length];
+    }
+
+    function _randomBorrowableNotInEMode(uint256 seed) internal view returns (address) {
+        return borrowableNotInEModeUnderlyings[seed % borrowableNotInEModeUnderlyings.length];
     }
 
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
