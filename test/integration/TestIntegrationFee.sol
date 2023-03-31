@@ -14,7 +14,7 @@ contract TestIntegrationFee is IntegrationTest {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
-    function _assertFee(Types.Market memory marketBefore, uint256 morphoBalanceBefore) internal {
+    function _assertFee(Types.Market memory marketBefore) internal {
         Types.Market memory marketAfter = morpho.market(marketBefore.underlying);
 
         uint256 p2pBorrow = marketBefore.deltas.borrow.scaledP2PTotal.rayMul(marketBefore.indexes.borrow.p2pIndex)
@@ -23,10 +23,9 @@ contract TestIntegrationFee is IntegrationTest {
             - uint256(marketAfter.indexes.supply.poolIndex).rayDiv(marketBefore.indexes.supply.poolIndex);
 
         uint256 expectedFee = p2pBorrow.rayMul(spread).percentMul(marketBefore.reserveFactor);
-        uint256 idleSupplyIncrease = marketAfter.idleSupply - marketBefore.idleSupply;
 
         assertApproxEqAbs(
-            ERC20(marketBefore.underlying).balanceOf(address(morpho)) - morphoBalanceBefore - idleSupplyIncrease,
+            ERC20(marketBefore.underlying).balanceOf(address(morpho)) - marketAfter.idleSupply,
             expectedFee,
             20,
             "fee != expected"
@@ -47,12 +46,10 @@ contract TestIntegrationFee is IntegrationTest {
 
         vm.warp(block.timestamp + (365 days));
 
-        uint256 balanceBefore = ERC20(market.underlying).balanceOf(address(morpho));
-
         user.approve(market.underlying, type(uint256).max);
         user.repay(market.underlying, type(uint256).max);
 
-        _assertFee(marketBefore, balanceBefore);
+        _assertFee(marketBefore);
     }
 
     function testRepayFeeZeroWithoutP2PWithBorrowDelta(
@@ -76,12 +73,10 @@ contract TestIntegrationFee is IntegrationTest {
 
         vm.warp(block.timestamp + (365 days));
 
-        uint256 balanceBefore = ERC20(market.underlying).balanceOf(address(morpho));
-
         user.approve(market.underlying, type(uint256).max);
         user.repay(market.underlying, type(uint256).max);
 
-        _assertFee(marketBefore, balanceBefore);
+        _assertFee(marketBefore);
     }
 
     function testRepayFeeWithP2PWithoutDelta(uint256 seed, uint16 reserveFactor, uint256 borrowed) public {
@@ -100,12 +95,10 @@ contract TestIntegrationFee is IntegrationTest {
 
         vm.warp(block.timestamp + (365 days));
 
-        uint256 balanceBefore = ERC20(market.underlying).balanceOf(address(morpho));
-
         user.approve(market.underlying, type(uint256).max);
         user.repay(market.underlying, type(uint256).max);
 
-        _assertFee(marketBefore, balanceBefore);
+        _assertFee(marketBefore);
     }
 
     function testRepayFeeWithP2PWithIdleSupply(uint256 seed, uint16 reserveFactor, uint256 borrowed, uint256 idleSupply)
@@ -128,12 +121,10 @@ contract TestIntegrationFee is IntegrationTest {
 
         vm.warp(block.timestamp + (365 days));
 
-        uint256 balanceBefore = ERC20(market.underlying).balanceOf(address(morpho));
-
         user.approve(market.underlying, type(uint256).max);
         user.repay(market.underlying, type(uint256).max);
 
-        _assertFee(marketBefore, balanceBefore);
+        _assertFee(marketBefore);
     }
 
     function testRepayFeeWithP2PWithBorrowDelta(
@@ -159,12 +150,10 @@ contract TestIntegrationFee is IntegrationTest {
 
         vm.warp(block.timestamp + (365 days));
 
-        uint256 balanceBefore = ERC20(market.underlying).balanceOf(address(morpho));
-
         user.approve(market.underlying, type(uint256).max);
         user.repay(market.underlying, type(uint256).max);
 
-        _assertFee(marketBefore, balanceBefore);
+        _assertFee(marketBefore);
     }
 
     function testRepayFeeWithP2PWithBorrowDeltaWithIdleSupply(
@@ -193,11 +182,9 @@ contract TestIntegrationFee is IntegrationTest {
 
         vm.warp(block.timestamp + (365 days));
 
-        uint256 balanceBefore = ERC20(market.underlying).balanceOf(address(morpho));
-
         user.approve(market.underlying, type(uint256).max);
         user.repay(market.underlying, type(uint256).max);
 
-        _assertFee(marketBefore, balanceBefore);
+        _assertFee(marketBefore);
     }
 }
