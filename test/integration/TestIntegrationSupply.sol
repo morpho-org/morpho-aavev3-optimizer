@@ -303,7 +303,7 @@ contract TestIntegrationSupply is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         amount = _boundSupply(market, amount);
-        promoted = _promoteSupply(promoter1, market, bound(promoted, 0, amount.percentSub(1))); // < 100% peer-to-peer.
+        promoted = _promoteSupply(promoter1, market, bound(promoted, 0, amount.percentSub(5))); // < 100% peer-to-peer.
 
         // Set the supply cap so that the supply gap is lower than the amount supplied on pool.
         supplyCap = _boundSupplyCapExceeded(market, amount - promoted, supplyCap);
