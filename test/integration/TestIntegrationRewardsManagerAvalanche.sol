@@ -116,7 +116,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
     // TODO: Figure out how to have multiple reward tokens for testing this.
     // function testGetAllUserRewards() public {}
 
-    struct TestRewardStruct {
+    struct RewardTest {
         uint256 collateralDai;
         uint256 collateralUsdc;
         uint256 supplyDai;
@@ -125,7 +125,7 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         uint256 blocks;
     }
 
-    function testGetUserRewards(TestRewardStruct memory params) public {
+    function testGetUserRewards(RewardTest memory params) public {
         params.collateralDai = _boundSupply(testMarkets[dai], params.collateralDai);
         params.collateralUsdc = _boundSupply(testMarkets[usdc], params.collateralUsdc);
         params.supplyDai = _boundSupply(testMarkets[dai], params.supplyDai);
@@ -198,8 +198,8 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         assertEq(index, 0, "index 1");
 
         // The case where the rewards manager has been updated and the user's asset index has not.
-        user.approve(dai, 1000);
-        user.supplyCollateral(dai, 1000);
+        user.approve(dai, amount);
+        user.supplyCollateral(dai, amount);
         index = rewardsManager.getUserAssetIndex(address(user), aDai, wNative);
         assertEq(index, startingAssetIndex, "index 2");
 
@@ -210,8 +210,8 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         assertEq(index, startingAssetIndex, "index 3");
 
         // After an update call, the user's asset index should be updated to the current asset index.
-        user.approve(dai, 1000);
-        user.supplyCollateral(dai, 1000);
+        user.approve(dai, amount);
+        user.supplyCollateral(dai, amount);
 
         index = rewardsManager.getUserAssetIndex(address(user), aDai, wNative);
         assertEq(index, rewardsManager.getAssetIndex(aDai, wNative), "index 4");
