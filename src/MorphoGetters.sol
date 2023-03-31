@@ -111,8 +111,8 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     }
 
     /// @notice Returns whether `manager` is a manager of `delegator`.
-    function isManaging(address delegator, address manager) external view returns (bool) {
-        return _isManaging[delegator][manager];
+    function isManagedBy(address delegator, address manager) external view returns (bool) {
+        return _isManagedBy[delegator][manager];
     }
 
     /// @notice Returns the nonce of `user` for the manager approval signature.
@@ -165,7 +165,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     function getNext(address underlying, Types.Position position, address user) external view returns (address) {
         LogarithmicBuckets.Buckets storage buckets = _getBuckets(underlying, position);
         uint256 userBalance = buckets.valueOf[user];
-        uint256 userBucket = LogarithmicBuckets.computeBucket(userBalance);
+        uint256 userBucket = LogarithmicBuckets.highestSetBit(userBalance);
 
         return buckets.buckets[userBucket].getNext(user);
     }
