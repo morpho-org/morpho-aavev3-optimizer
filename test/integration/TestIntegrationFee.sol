@@ -1,15 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
-import {PoolLib} from "src/libraries/PoolLib.sol";
-
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationFee is IntegrationTest {
-    using TestConfigLib for TestConfig;
     using TestMarketLib for TestMarket;
-    using PoolLib for IPool;
     using Math for uint256;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
@@ -38,7 +33,7 @@ contract TestIntegrationFee is IntegrationTest {
         morpho.setReserveFactor(market.underlying, 0);
 
         borrowed = _boundBorrow(market, borrowed);
-        _promoteBorrow(promoter1, market, borrowed.percentMul(50_00)); // 100% peer-to-peer.
+        _promoteBorrow(promoter1, market, borrowed.percentMul(50_00)); // 50% peer-to-peer.
 
         _borrowWithoutCollateral(address(user), market, borrowed, address(user), address(user), DEFAULT_MAX_ITERATIONS);
 
@@ -65,6 +60,7 @@ contract TestIntegrationFee is IntegrationTest {
         morpho.setReserveFactor(market.underlying, reserveFactor);
 
         borrowed = _boundBorrow(market, borrowed);
+
         _borrowWithoutCollateral(address(user), market, borrowed, address(user), address(user), DEFAULT_MAX_ITERATIONS);
 
         borrowDelta = _increaseBorrowDelta(promoter1, market, borrowDelta);
@@ -156,7 +152,7 @@ contract TestIntegrationFee is IntegrationTest {
         _assertFee(marketBefore);
     }
 
-    function testRepayFeeWithP2PWithBorrowDeltaWithIdleSupply(
+    function testRepayFeeWithP2PWithIdleSupplyWithDeltas(
         uint256 seed,
         uint16 reserveFactor,
         uint256 borrowed,
@@ -170,13 +166,17 @@ contract TestIntegrationFee is IntegrationTest {
         morpho.setReserveFactor(market.underlying, reserveFactor);
 
         borrowed = _boundBorrow(market, borrowed);
-        _promoteBorrow(promoter1, market, borrowed); // 100% peer-to-peer.
+        uint256 promoted = borrowed.percentMul(50_00); // 50% peer-to-peer.
+        _promoteBorrow(promoter1, market, promoted);
 
         _borrowWithoutCollateral(address(user), market, borrowed, address(user), address(user), DEFAULT_MAX_ITERATIONS);
 
-        borrowDelta = _increaseBorrowDelta(promoter2, market, borrowDelta);
-
         idleSupply = _increaseIdleSupply(promoter2, market, idleSupply);
+
+        _setSupplyCap(market, 0);
+
+        borrowDelta = bound(borrowDelta, 1, promoted);
+        morpho.increaseP2PDeltas(market.underlying, borrowDelta);
 
         Types.Market memory marketBefore = morpho.market(market.underlying);
 

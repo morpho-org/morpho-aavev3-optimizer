@@ -375,6 +375,7 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Adds a given amount of idle supply on the given market.
+    ///      Must not be called if some borrow is ready to be promoted peer-to-peer (otherwise `hacker` would only borrow-repay from the pool).
     function _increaseIdleSupply(UserMock promoter, TestMarket storage market, uint256 amount)
         internal
         returns (uint256)
@@ -395,6 +396,7 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Adds a given amount of supply delta on the given market.
+    ///      Must not be called if some borrow is ready to be promoted peer-to-peer (otherwise `hacker` would only borrow-repay from the pool).
     function _increaseSupplyDelta(UserMock promoter, TestMarket storage market, uint256 amount)
         internal
         returns (uint256)
@@ -419,6 +421,7 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Adds a given amount of borrow delta on the given market.
+    ///      Must not be called if some supply is ready to be promoted peer-to-peer (otherwise `hacker` would only supply-withdraw from the pool).
     function _increaseBorrowDelta(UserMock promoter, TestMarket storage market, uint256 amount)
         internal
         returns (uint256)
