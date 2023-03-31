@@ -151,6 +151,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     }
 
     /// @notice Repays `amount` of `underlying` on behalf of `onBehalf` using permit2 in a single tx.
+    /// @dev When repaying all, one should pass `type(uint160).max` as `amount` because Permit2 does not support approvals larger than 160 bits.
     /// @param underlying The address of the underlying asset to borrow.
     /// @param amount The amount of `underlying` to repay.
     /// @param onBehalf The address whose position will be repaid.
