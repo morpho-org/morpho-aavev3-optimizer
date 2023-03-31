@@ -120,13 +120,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             revert Errors.InconsistentEMode();
         }
 
-        Types.Market storage market = _market[underlying];
-        Types.MarketSideDelta memory delta = market.deltas.borrow;
-        uint256 totalP2P = delta.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-            delta.scaledDelta.rayMul(indexes.borrow.poolIndex)
-        );
-
         if (config.getBorrowCap() != 0) {
+            Types.Market storage market = _market[underlying];
+
+            uint256 totalP2P = market.p2pBorrow(indexes);
             uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
             uint256 poolDebt =
                 ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
