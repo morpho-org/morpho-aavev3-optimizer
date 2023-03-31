@@ -227,4 +227,15 @@ contract TestInvariantMorpho is InvariantTest {
             }
         }
     }
+
+    function invariantDeltasIdleSupply() public {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            address underlying = allUnderlyings[i];
+            Types.Market memory market = morpho.market(underlying);
+
+            assertTrue(
+                market.idleSupply == 0 || market.deltas.supply.scaledDelta == 0 || market.deltas.borrow.scaledDelta == 0
+            );
+        }
+    }
 }
