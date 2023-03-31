@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import "test/helpers/InvariantTest.sol";
 
 contract TestInvariantMorpho is InvariantTest {
+    using Math for uint256;
+    using WadRayMath for uint256;
     using PercentageMath for uint256;
     using SafeTransferLib for ERC20;
     using TestMarketLib for TestMarket;
@@ -17,6 +19,7 @@ contract TestInvariantMorpho is InvariantTest {
 
         _weightSelector(this.initialize.selector, 5);
         _weightSelector(this.approveManager.selector, 10);
+        _weightSelector(this.increaseP2PDeltas.selector, 10);
         _weightSelector(this.supply.selector, 10);
         _weightSelector(this.supplyCollateral.selector, 15);
         _weightSelector(this.borrow.selector, 15);
@@ -27,6 +30,8 @@ contract TestInvariantMorpho is InvariantTest {
 
         targetSelector(FuzzSelector({addr: address(this), selectors: selectors}));
     }
+
+    /// FUNCTIONS ///
 
     function initialize(
         address addressesProvider,
@@ -40,6 +45,35 @@ contract TestInvariantMorpho is InvariantTest {
         } catch (bytes memory reason) {
             revert(string(reason)); // Bubble up the revert reason.
         }
+    }
+
+    function approveManager(address manager, bool isAllowed) external {
+        manager = _randomSender(manager);
+
+        vm.prank(msg.sender);
+        morpho.approveManager(manager, isAllowed);
+    }
+
+    function increaseP2PDeltas(uint256 underlyingSeed, uint256 amount) external {
+        address underlying = _randomUnderlying(underlyingSeed);
+
+        Types.Market memory market = morpho.market(underlying);
+        Types.Indexes256 memory indexes = morpho.updatedIndexes(underlying);
+
+        amount = bound(
+            amount,
+            1,
+            Math.min(
+                market.deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                    market.deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
+                ),
+                market.deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+                    market.deltas.borrow.scaledDelta.rayMul(indexes.borrow.poolIndex)
+                )
+            )
+        );
+
+        morpho.increaseP2PDeltas(underlying, amount); // ALways call it as the DAO.
     }
 
     function supply(uint256 underlyingSeed, uint256 amount, address onBehalf, uint256 maxIterations) external {
@@ -130,12 +164,7 @@ contract TestInvariantMorpho is InvariantTest {
         morpho.liquidate(borrowedMarket.underlying, collateralMarket.underlying, liquidatee, amount);
     }
 
-    function approveManager(address manager, bool isAllowed) external {
-        manager = _randomSender(manager);
-
-        vm.prank(msg.sender);
-        morpho.approveManager(manager, isAllowed);
-    }
+    /// INVARIANTS ///
 
     function invariantInitialized() public {
         assertEq(initialized, 0, "initialized");
