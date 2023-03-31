@@ -49,8 +49,10 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
     function testGetRewardData(uint256 amount, uint256 blocks) public {
         amount = _boundSupply(testMarkets[dai], amount);
         blocks = bound(blocks, 0, MAX_BLOCKS);
-        (uint256 index, uint256 lastUpdateTimestamp) = rewardsManager.getRewardData(aDai, wNative);
+        (uint256 startingIndex, uint256 index, uint256 lastUpdateTimestamp) =
+            rewardsManager.getRewardData(aDai, wNative);
 
+        assertEq(startingIndex, 0, "starting index before");
         assertEq(index, 0, "index before");
         assertEq(lastUpdateTimestamp, 0, "lastUpdateTimestamp before");
 
@@ -60,13 +62,15 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
         uint256 expectedIndex = rewardsManager.getAssetIndex(aDai, wNative);
         uint256 expectedTimestamp = block.timestamp;
 
-        (index, lastUpdateTimestamp) = rewardsManager.getRewardData(aDai, wNative);
+        (startingIndex, index, lastUpdateTimestamp) = rewardsManager.getRewardData(aDai, wNative);
+        assertEq(startingIndex, expectedIndex, "starting index after supply");
         assertEq(index, expectedIndex, "index after supply");
         assertEq(lastUpdateTimestamp, expectedTimestamp, "lastUpdateTimestamp after supply");
 
         _forward(blocks);
 
-        (index, lastUpdateTimestamp) = rewardsManager.getRewardData(aDai, wNative);
+        (startingIndex, index, lastUpdateTimestamp) = rewardsManager.getRewardData(aDai, wNative);
+        assertEq(startingIndex, expectedIndex, "starting index after forward");
         assertEq(index, expectedIndex, "index after forward");
         assertEq(lastUpdateTimestamp, expectedTimestamp, "lastUpdateTimestamp after forward");
     }
