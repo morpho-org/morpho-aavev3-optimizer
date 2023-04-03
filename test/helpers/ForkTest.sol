@@ -10,6 +10,7 @@ import {IPoolDataProvider} from "@aave-v3-core/interfaces/IPoolDataProvider.sol"
 import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 import {IStableDebtToken} from "@aave-v3-core/interfaces/IStableDebtToken.sol";
 import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
+import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewardsController.sol";
 
 import {ReserveDataLib} from "src/libraries/ReserveDataLib.sol";
 import {ReserveDataTestLib} from "test/helpers/ReserveDataTestLib.sol";
@@ -73,7 +74,7 @@ contract ForkTest is BaseTest {
     AaveOracleMock internal oracle;
     PoolAdminMock internal poolAdmin;
     PriceOracleSentinelMock internal oracleSentinel;
-    RewardsControllerMock internal rewardsController;
+    IRewardsController internal rewardsController;
 
     uint256 internal snapshotId = type(uint256).max;
 
@@ -94,7 +95,7 @@ contract ForkTest is BaseTest {
         _label();
     }
 
-    function _network() internal view returns (string memory) {
+    function _network() internal view virtual returns (string memory) {
         try vm.envString("NETWORK") returns (string memory configNetwork) {
             return configNetwork;
         } catch {
@@ -185,7 +186,7 @@ contract ForkTest is BaseTest {
     }
 
     function _mockRewardsController() internal {
-        rewardsController = new RewardsControllerMock();
+        rewardsController = IRewardsController(new RewardsControllerMock());
     }
 
     function _setBalances(address user, uint256 balance) internal {
