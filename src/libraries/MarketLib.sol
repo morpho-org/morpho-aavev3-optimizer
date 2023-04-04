@@ -288,7 +288,7 @@ library MarketLib {
 
     /// @notice Calculates the total quantity of underlyings truly supplied peer-to-peer on the given market.
     /// @param indexes The current indexes.
-    /// @return The total peer-to-peer supply (peer-to-peer total - supply delta - idle supply).
+    /// @return The total peer-to-peer supply (total peer-to-peer supply - supply delta - idle supply).
     function trueP2PSupply(Types.Market storage market, Types.Indexes256 memory indexes)
         internal
         view
@@ -302,7 +302,7 @@ library MarketLib {
 
     /// @notice Calculates the total quantity of underlyings truly borrowed peer-to-peer on the given market.
     /// @param indexes The current indexes.
-    /// @return The total peer-to-peer borrow (peer-to-peer total - borrow delta).
+    /// @return The total peer-to-peer borrow (total peer-to-peer borrow - borrow delta).
     function trueP2PBorrow(Types.Market storage market, Types.Indexes256 memory indexes)
         internal
         view
