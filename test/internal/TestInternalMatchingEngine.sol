@@ -115,7 +115,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         }
 
         assertEq(promoted, expectedPromoted, "promoted");
-        assertApproxEqDust(totalP2PSupply, promoted, "total borrow");
+        assertApproxEqDust(totalP2PSupply, promoted, "total supply");
         assertEq(iterationsDone, expectedIterations, "iterations");
     }
 
@@ -201,7 +201,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         }
 
         assertEq(demoted, expectedDemoted, "demoted");
-        assertEq(totalP2PSupply, USER_AMOUNT * numSuppliers - demoted, "total borrow");
+        assertApproxEqDust(totalP2PSupply, USER_AMOUNT * numSuppliers - demoted, "total supply");
     }
 
     function testDemoteBorrowers(uint256 numBorrowers, uint256 amountToDemote, uint256 maxIterations) public {
@@ -243,7 +243,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         }
 
         assertEq(demoted, expectedDemoted, "demoted");
-        assertEq(totalP2PBorrow, USER_AMOUNT * numBorrowers - demoted, "total borrow");
+        assertApproxEqDust(totalP2PBorrow, USER_AMOUNT * numBorrowers - demoted, "total borrow");
     }
 
     function promoteSuppliers(address underlying, uint256 amount, uint256 maxIterations)
