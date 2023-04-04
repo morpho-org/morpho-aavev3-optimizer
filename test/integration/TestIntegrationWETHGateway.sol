@@ -144,6 +144,14 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         );
     }
 
+    function testOneWithdrawETH() public {
+        testWithdrawETH(
+            2932683941035195306694807398008137734187941864788056113257418794648911325,
+            77863743335037145613549727063858,
+            0x3E4FD5729cf2DD0b22076868127e41f93e9Db71A
+        );
+    }
+
     function testCannotWithdrawCollateralIfWETHGatewayNotManager(uint256 amount) public {
         amount = bound(amount, 1, type(uint96).max);
 
