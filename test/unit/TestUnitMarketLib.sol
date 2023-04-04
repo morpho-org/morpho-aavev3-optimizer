@@ -412,16 +412,28 @@ contract TestUnitMarketLib is BaseTest {
         );
     }
 
-    function testRepayFeeShouldReturnZeroIfAmountIsZero(uint256 totalP2PSupply, uint256 totalP2PBorrow) public {
-        Types.Deltas storage deltas = market.deltas;
+    function testRepayFeeShouldReturnZeroIfAmountIsZero(
+        Types.Indexes256 memory indexes,
+        uint256 totalP2PSupply,
+        uint256 totalP2PBorrow
+    ) public {
         totalP2PSupply = _boundAmount(totalP2PSupply);
         totalP2PBorrow = _boundAmount(totalP2PBorrow);
-        uint256 amount = 0;
-        deltas.supply.scaledP2PTotal = totalP2PSupply;
-        deltas.borrow.scaledP2PTotal = totalP2PBorrow;
-        uint256 fee = market.repayFee(amount, market.getIndexes());
-        assertEq(fee, 0);
-        assertEq(deltas.supply.scaledP2PTotal, totalP2PSupply);
-        assertEq(deltas.borrow.scaledP2PTotal, totalP2PBorrow);
+
+        indexes.supply.p2pIndex = bound(indexes.supply.p2pIndex, MIN_INDEX, MAX_INDEX);
+        indexes.supply.poolIndex = bound(indexes.supply.poolIndex, MIN_INDEX, MAX_INDEX);
+        indexes.borrow.p2pIndex = bound(indexes.borrow.p2pIndex, MIN_INDEX, MAX_INDEX);
+        indexes.borrow.poolIndex = bound(indexes.borrow.poolIndex, MIN_INDEX, MAX_INDEX);
+
+        market.setIndexes(indexes);
+
+        market.deltas.supply.scaledP2PTotal = totalP2PSupply;
+        market.deltas.borrow.scaledP2PTotal = totalP2PBorrow;
+
+        uint256 toProcess = market.repayFee(0, indexes);
+
+        assertEq(toProcess, 0);
+        assertEq(market.deltas.supply.scaledP2PTotal, totalP2PSupply);
+        assertEq(market.deltas.borrow.scaledP2PTotal, totalP2PBorrow);
     }
 }
