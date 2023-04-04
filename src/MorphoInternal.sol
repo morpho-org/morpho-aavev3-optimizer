@@ -140,7 +140,7 @@ abstract contract MorphoInternal is MorphoStorage {
         uint256 poolSupplyIndex = indexes.supply.poolIndex;
         uint256 poolBorrowIndex = indexes.borrow.poolIndex;
 
-        amount = Math.min(amount, Math.min(market.p2pSupply(indexes), market.p2pBorrow(indexes)));
+        amount = Math.min(amount, Math.min(market.trueP2PSupply(indexes), market.trueP2PBorrow(indexes)));
         if (amount == 0) revert Errors.AmountIsZero();
 
         uint256 newSupplyDelta = deltas.supply.scaledDelta + amount.rayDiv(poolSupplyIndex);
