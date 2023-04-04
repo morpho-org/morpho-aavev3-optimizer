@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "test/helpers/InvariantTest.sol";
 
-contract TestInvariantMorpho is InvariantTest {
+contract TestInvariantAccessControl is InvariantTest {
     using Math for uint256;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
@@ -157,8 +157,8 @@ contract TestInvariantMorpho is InvariantTest {
 
                 uint256 withdrawable = rawCollateralValue(
                     (
-                        ((liquidityData.maxDebt - liquidityData.debt) * 1 ether * 10 ** market.decimals).percentAdd(5)
-                            / (market.price * 1 ether)
+                        ((liquidityData.maxDebt.zeroFloorSub(liquidityData.debt)) * 1 ether * 10 ** market.decimals)
+                            .percentAdd(5) / (market.price * 1 ether)
                     ) // Inflate withdrawable because of WBTC decimals precision.
                         .percentDiv(market.getLt(eModeCategoryId))
                 );
