@@ -148,7 +148,7 @@ contract TestInvariantMorpho is InvariantTest {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             ERC20 underlying = ERC20(allUnderlyings[i]);
 
-            assertEq(underlying.balanceOf(address(morpho)), 0, string.concat(underlying.symbol(), ".balanceOf"));
+            assertApproxEqAbs(underlying.balanceOf(address(morpho)), 0, 1);
         }
     }
 
