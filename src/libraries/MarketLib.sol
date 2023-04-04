@@ -25,7 +25,7 @@ library MarketLib {
     using Math for uint256;
     using SafeCast for uint256;
     using WadRayMath for uint256;
-
+    using MarketLib for Types.Market;
     using ReserveDataLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
@@ -317,7 +317,7 @@ library MarketLib {
         if (amount == 0) return 0;
 
         Types.Deltas storage deltas = market.deltas;
-        uint256 feeToRepay = p2pBorrow(market, indexes).zeroFloorSub(p2pSupply(market, indexes));
+        uint256 feeToRepay = market.p2pBorrow(indexes).zeroFloorSub(market.p2pSupply(indexes));
 
         if (feeToRepay == 0) return amount;
 
