@@ -452,6 +452,8 @@ contract IntegrationTest is ForkTest {
     function _boundReceiver(address input) internal view returns (address output) {
         output = _boundAddressNotZero(input);
 
+        vm.assume(output != address(this));
+
         for (uint256 i; i < allUnderlyings.length; ++i) {
             TestMarket storage market = testMarkets[allUnderlyings[i]];
 

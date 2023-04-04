@@ -26,7 +26,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 toRepay,
         uint256 healthFactor
     ) public {
-        borrower = _boundAddressNotZero(borrower);
+        borrower = _boundReceiver(borrower);
         toRepay = bound(toRepay, 1, type(uint256).max);
         healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentAdd(10), type(uint72).max);
 
@@ -53,7 +53,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     ) public {
         vm.assume(collateralSeed > collateralUnderlyings.length);
         collateralSeedShift = bound(collateralSeedShift, 1, collateralUnderlyings.length - 1);
-        borrower = _boundAddressNotZero(borrower);
+        borrower = _boundReceiver(borrower);
         promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         toRepay = bound(toRepay, 1, type(uint256).max);
         healthFactor = bound(
@@ -87,7 +87,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     ) public {
         vm.assume(borrowableSeed > borrowableInEModeUnderlyings.length);
         borrowableSeedShift = bound(borrowableSeedShift, 1, borrowableInEModeUnderlyings.length - 1);
-        borrower = _boundAddressNotZero(borrower);
+        borrower = _boundReceiver(borrower);
         promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         toRepay = bound(toRepay, 1, type(uint256).max);
         healthFactor = bound(
@@ -118,7 +118,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 toRepay,
         uint256 healthFactor
     ) public {
-        borrower = _boundAddressNotZero(borrower);
+        borrower = _boundReceiver(borrower);
         promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         healthFactor = bound(
             healthFactor,
@@ -160,7 +160,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 toRepay,
         uint256 healthFactor
     ) public {
-        borrower = _boundAddressNotZero(borrower);
+        borrower = _boundReceiver(borrower);
         promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         toRepay = bound(toRepay, 1, type(uint256).max);
         healthFactor = bound(
@@ -192,7 +192,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 toRepay,
         uint256 healthFactor
     ) public {
-        borrower = _boundAddressNotZero(borrower);
+        borrower = _boundReceiver(borrower);
         promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         healthFactor = bound(healthFactor, MIN_HF, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(1));
 
@@ -229,7 +229,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 supplyCap,
         uint256 healthFactor
     ) public {
-        borrower = _boundAddressNotZero(borrower);
+        borrower = _boundReceiver(borrower);
         healthFactor = bound(
             healthFactor,
             Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(10),
@@ -270,7 +270,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 toRepay,
         uint256 healthFactor
     ) public {
-        borrower = _boundAddressNotZero(borrower);
+        borrower = _boundReceiver(borrower);
         healthFactor = bound(
             healthFactor,
             Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(10),
@@ -312,7 +312,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 toRepay,
         uint256 healthFactor
     ) public {
-        borrower = _boundAddressNotZero(borrower);
+        borrower = _boundReceiver(borrower);
         promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
         healthFactor = bound(healthFactor, MIN_HF, type(uint72).max);
 
@@ -347,7 +347,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         address borrower,
         uint256 amount
     ) public {
-        borrower = _boundAddressNotZero(borrower);
+        borrower = _boundReceiver(borrower);
         _assumeNotUnderlying(underlying);
 
         TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(seed)];
@@ -362,7 +362,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         address borrower,
         uint256 amount
     ) public {
-        borrower = _boundAddressNotZero(borrower);
+        borrower = _boundReceiver(borrower);
         _assumeNotUnderlying(underlying);
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(seed)];
@@ -377,7 +377,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         address borrower,
         uint256 amount
     ) public {
-        borrower = _boundAddressNotZero(borrower);
+        borrower = _boundReceiver(borrower);
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
         TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
@@ -394,7 +394,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         address borrower,
         uint256 amount
     ) public {
-        borrower = _boundAddressNotZero(borrower);
+        borrower = _boundReceiver(borrower);
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
         TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
