@@ -155,14 +155,16 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @notice Returns the last updated index and timestamp for a specific asset and reward token.
     /// @param asset The address of the asset.
     /// @param reward The address of the reward token.
+    /// @return startingIndex The index from which the rewards manager begins tracking the rewards controller.
     /// @return index The last updated index.
     /// @return lastUpdateTimestamp The last updated timestamp.
     function getRewardData(address asset, address reward)
         external
         view
-        returns (uint256 index, uint256 lastUpdateTimestamp)
+        returns (uint256 startingIndex, uint256 index, uint256 lastUpdateTimestamp)
     {
         RewardData storage localAssetData = _localAssetData[asset][reward];
+        startingIndex = uint256(localAssetData.startingIndex);
         index = uint256(localAssetData.index);
         lastUpdateTimestamp = uint256(localAssetData.lastUpdateTimestamp);
     }

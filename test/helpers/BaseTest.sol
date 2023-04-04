@@ -79,7 +79,7 @@ contract BaseTest is Test {
     }
 
     /// @dev Assumes the receiver is able to receive ETH without reverting.
-    function _assumeETHReceiver(address receiver) internal {
+    function _assumeETHReceiver(address receiver) internal virtual {
         (bool success,) = receiver.call("");
         vm.assume(success);
     }
