@@ -22,7 +22,7 @@ contract RewardsManagerMock is IRewardsManager {
     function getRewardData(address asset, address reward)
         external
         view
-        returns (uint256 index, uint256 lastUpdateTimestamp)
+        returns (uint256 startingIndex, uint256 index, uint256 lastUpdateTimestamp)
     {}
 
     function getUserData(address asset, address reward, address user)
