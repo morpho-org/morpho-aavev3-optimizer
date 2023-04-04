@@ -268,8 +268,8 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         if (address(_rewardsManager) == address(0)) revert Errors.AddressIsZero();
         if (_isClaimRewardsPaused) revert Errors.ClaimRewardsPaused();
 
-        (rewardTokens, claimedAmounts) = _rewardsManager.claimRewards(assets, onBehalf);
         IRewardsController(_rewardsManager.REWARDS_CONTROLLER()).claimAllRewardsToSelf(assets);
+        (rewardTokens, claimedAmounts) = _rewardsManager.claimRewards(assets, onBehalf);
 
         for (uint256 i; i < rewardTokens.length; ++i) {
             uint256 claimedAmount = claimedAmounts[i];
