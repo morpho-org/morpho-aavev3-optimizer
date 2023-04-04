@@ -458,8 +458,15 @@ contract IntegrationTest is ForkTest {
 
     function _boundReceiver(address input) internal view returns (address output) {
         output = _boundAddressNotZero(input);
-        // The Link contract cannot receive LINK tokens.
-        vm.assume(output != link);
+
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            TestMarket storage market = testMarkets[allUnderlyings[i]];
+
+            vm.assume(output != market.underlying);
+            vm.assume(output != market.aToken);
+            vm.assume(output != market.variableDebtToken);
+            vm.assume(output != market.stableDebtToken);
+        }
     }
 
     function _prepareOnBehalf(address onBehalf) internal {

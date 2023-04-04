@@ -71,7 +71,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _marketBalances[underlying].scaledPoolBorrowBalance(user);
     }
 
-    //// @notice Returns the scaled balance of `user` on the `underlying` market, borrowed peer-to-peer (with `underlying` decimals).
+    /// @notice Returns the scaled balance of `user` on the `underlying` market, borrowed peer-to-peer (with `underlying` decimals).
     function scaledP2PBorrowBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledP2PBorrowBalance(user);
     }

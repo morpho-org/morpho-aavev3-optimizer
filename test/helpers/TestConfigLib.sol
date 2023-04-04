@@ -17,6 +17,7 @@ library TestConfigLib {
     string internal constant STAKED_NATIVE_PATH = "$.stakedNative";
     string internal constant MARKETS_PATH = "$.markets";
     string internal constant MORPHO_DAO_PATH = "$.morphoDao";
+    string internal constant REWARDS_CONTROLLER_PATH = "$.rewardsController";
 
     function getAddress(TestConfig storage config, string memory key) internal returns (address) {
         return config.json.readAddress(string.concat("$.", key));
@@ -36,6 +37,10 @@ library TestConfigLib {
 
     function getMorphoDao(TestConfig storage config) internal returns (address) {
         return config.json.readAddress(MORPHO_DAO_PATH);
+    }
+
+    function getRewardsController(TestConfig storage config) internal returns (address) {
+        return config.json.readAddress(REWARDS_CONTROLLER_PATH);
     }
 
     function getWrappedNative(TestConfig storage config) internal returns (address) {
