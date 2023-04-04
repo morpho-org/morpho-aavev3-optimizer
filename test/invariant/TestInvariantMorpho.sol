@@ -12,12 +12,22 @@ contract TestInvariantMorpho is InvariantTest {
 
     uint256 internal initialized;
 
+    mapping(address => bool) internal checkInvariantSupplyOrBorrowDeltaZero;
+    mapping(address => bool) internal checkInvariantIdleOrSupplyDeltaZero;
+
     function setUp() public virtual override {
         super.setUp();
 
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            address underlying = allUnderlyings[i];
+
+            checkInvariantSupplyOrBorrowDeltaZero[underlying] = true;
+            checkInvariantIdleOrSupplyDeltaZero[underlying] = true;
+        }
+
         _targetDefaultSenders();
 
-        _weightSelector(this.increaseP2PDeltas.selector, 5);
+        _weightSelector(this.increaseP2PDeltas.selector, 3);
         _weightSelector(this.setDefaultIterations.selector, 5);
         _weightSelector(this.supply.selector, 20);
         _weightSelector(this.borrow.selector, 20);
@@ -49,6 +59,9 @@ contract TestInvariantMorpho is InvariantTest {
         amount = bound(amount, 1, minP2P);
 
         morpho.increaseP2PDeltas(underlying, amount); // ALways call it as the DAO.
+
+        checkInvariantSupplyOrBorrowDeltaZero[underlying] = false;
+        checkInvariantIdleOrSupplyDeltaZero[underlying] = false;
     }
 
     function setDefaultIterations(Types.Iterations memory defaultIterations) external {
@@ -167,18 +180,39 @@ contract TestInvariantMorpho is InvariantTest {
         }
     }
 
-    function invariantDeltasIdleSupply() public {
+    function invariantSupplyOrBorrowDeltaZero() public {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             address underlying = allUnderlyings[i];
             Types.Market memory market = morpho.market(underlying);
 
-            assertTrue(
-                market.idleSupply == 0 || market.deltas.borrow.scaledDelta == 0, "idle supply & supply delta > 0"
-            );
-            assertTrue(
-                market.deltas.supply.scaledDelta == 0 || market.deltas.borrow.scaledDelta == 0,
-                "supply & borrow delta > 0"
-            );
+            bool invariant = market.idleSupply == 0 || market.deltas.borrow.scaledDelta == 0;
+
+            // If invariant holds again, it should hold at least until next time `increaseP2PDeltas` is called.
+            if (!checkInvariantSupplyOrBorrowDeltaZero[underlying]) {
+                checkInvariantSupplyOrBorrowDeltaZero[underlying] = invariant;
+
+                continue;
+            }
+
+            assertTrue(invariant, "idle supply & supply delta > 0");
+        }
+    }
+
+    function invariantIdleOrSupplyDeltaZero() public {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            address underlying = allUnderlyings[i];
+            Types.Market memory market = morpho.market(underlying);
+
+            bool invariant = market.deltas.supply.scaledDelta == 0 || market.deltas.borrow.scaledDelta == 0;
+
+            // If invariant holds again, it should hold at least until next time `increaseP2PDeltas` is called.
+            if (!checkInvariantIdleOrSupplyDeltaZero[underlying]) {
+                checkInvariantIdleOrSupplyDeltaZero[underlying] = invariant;
+
+                continue;
+            }
+
+            assertTrue(invariant, "supply & borrow delta > 0");
         }
     }
 }

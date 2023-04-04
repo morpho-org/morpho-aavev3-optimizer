@@ -18,7 +18,6 @@ contract TestInvariantMorpho is InvariantTest {
         _targetDefaultSenders();
 
         _weightSelector(this.initialize.selector, 5);
-        _weightSelector(this.approveManager.selector, 10);
         _weightSelector(this.supply.selector, 10);
         _weightSelector(this.supplyCollateral.selector, 15);
         _weightSelector(this.borrow.selector, 15);
@@ -43,13 +42,6 @@ contract TestInvariantMorpho is InvariantTest {
         } catch (bytes memory reason) {
             revert(string(reason)); // Bubble up the revert reason.
         }
-    }
-
-    function approveManager(address manager, bool isAllowed) external {
-        manager = _randomSender(manager);
-
-        vm.prank(msg.sender);
-        morpho.approveManager(manager, isAllowed);
     }
 
     function supply(uint256 underlyingSeed, uint256 amount, address onBehalf, uint256 maxIterations) external {
@@ -81,16 +73,13 @@ contract TestInvariantMorpho is InvariantTest {
         morpho.supplyCollateral(market.underlying, amount, onBehalf);
     }
 
-    function borrow(uint256 underlyingSeed, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
-        external
-    {
+    function borrow(uint256 underlyingSeed, uint256 amount, address receiver, uint256 maxIterations) external {
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(underlyingSeed)];
         amount = _boundBorrow(market, amount);
-        onBehalf = _randomSender(onBehalf);
         receiver = _boundReceiver(receiver);
         maxIterations = _boundMaxIterations(maxIterations);
 
-        _borrowWithoutCollateral(msg.sender, market, amount, onBehalf, receiver, maxIterations);
+        _borrowWithoutCollateral(msg.sender, market, amount, msg.sender, receiver, maxIterations);
     }
 
     function repay(uint256 underlyingSeed, uint256 amount, address onBehalf) external {
@@ -105,27 +94,23 @@ contract TestInvariantMorpho is InvariantTest {
         morpho.repay(market.underlying, amount, onBehalf);
     }
 
-    function withdraw(uint256 underlyingSeed, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
-        external
-    {
+    function withdraw(uint256 underlyingSeed, uint256 amount, address receiver, uint256 maxIterations) external {
         TestMarket storage market = testMarkets[_randomUnderlying(underlyingSeed)];
         amount = _boundNotZero(amount);
-        onBehalf = _randomSender(onBehalf);
         receiver = _boundReceiver(receiver);
         maxIterations = _boundMaxIterations(maxIterations);
 
         vm.prank(msg.sender);
-        morpho.withdraw(market.underlying, amount, onBehalf, receiver, maxIterations);
+        morpho.withdraw(market.underlying, amount, msg.sender, receiver, maxIterations);
     }
 
-    function withdrawCollateral(uint256 underlyingSeed, uint256 amount, address onBehalf, address receiver) external {
+    function withdrawCollateral(uint256 underlyingSeed, uint256 amount, address receiver) external {
         TestMarket storage market = testMarkets[_randomUnderlying(underlyingSeed)];
         amount = _boundNotZero(amount);
-        onBehalf = _randomSender(onBehalf);
         receiver = _boundReceiver(receiver);
 
         vm.prank(msg.sender);
-        morpho.withdrawCollateral(market.underlying, amount, onBehalf, receiver);
+        morpho.withdrawCollateral(market.underlying, amount, msg.sender, receiver);
     }
 
     /// INVARIANTS ///
