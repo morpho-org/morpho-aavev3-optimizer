@@ -1840,5 +1840,44 @@
  </transf>
  </goal>
 </theory>
+<theory name="IncreaseP2PDeltas" proved="true">
+ <goal name="increase_p2p_deltas&#39;vc" expl="VC for increase_p2p_deltas" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="increase_p2p_deltas&#39;vc.0" expl="postcondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.04" steps="6270"/></proof>
+  </goal>
+  <goal name="increase_p2p_deltas&#39;vc.1" expl="postcondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.02" steps="6279"/></proof>
+  </goal>
+  <goal name="increase_p2p_deltas&#39;vc.2" expl="postcondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.02" steps="6290"/></proof>
+  </goal>
+  <goal name="increase_p2p_deltas&#39;vc.3" expl="precondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.10" steps="404556"/></proof>
+  </goal>
+  <goal name="increase_p2p_deltas&#39;vc.4" expl="precondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.22" steps="399694"/></proof>
+  </goal>
+  <goal name="increase_p2p_deltas&#39;vc.5" expl="type invariant" proved="true">
+  <proof prover="0"><result status="valid" time="0.11" steps="23185"/></proof>
+  </goal>
+  <goal name="increase_p2p_deltas&#39;vc.6" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.09" steps="21297"/></proof>
+  </goal>
+  <goal name="increase_p2p_deltas&#39;vc.7" expl="postcondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.02" steps="44439"/></proof>
+  </goal>
+  <goal name="increase_p2p_deltas&#39;vc.8" expl="postcondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.03" steps="44523"/></proof>
+  </goal>
+  <goal name="increase_p2p_deltas&#39;vc.9" expl="type invariant" proved="true">
+  <proof prover="0"><result status="valid" time="0.10" steps="23092"/></proof>
+  </goal>
+  <goal name="increase_p2p_deltas&#39;vc.10" expl="exceptional postcondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.14" steps="399737"/></proof>
+  </goal>
+ </transf>
+ </goal>
+</theory>
 </file>
 </why3session>

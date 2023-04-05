@@ -634,3 +634,30 @@ let repay (p: pool_storage) (m: morpho_storage) (user: address) (amount: int)
     repay_to_pool p to_repay;
     supply_to_pool p to_supply
 end
+
+module IncreaseP2PDeltas
+use MorphoInternal
+let increase_p2p_deltas (p: pool_storage) (m: morpho_storage) (amount: int) : (increased: int)
+    requires { amount >= 0 }
+    requires { well_formed p m }
+    ensures { well_formed p m }
+    ensures { m.p2p_supply_delta = (old m).p2p_supply_delta + increased }
+    ensures { m.p2p_borrow_delta = (old m).p2p_borrow_delta + increased }
+    raises { SupplyCapReached -> amount > (old p).suppliable }
+=
+    let true_supply = m.p2p_supply_amount - m.p2p_supply_delta - m.idle_supply in
+    let true_borrow = m.p2p_borrow_amount - m.p2p_borrow_amount in
+    let increased = min amount (min true_supply true_borrow) in
+
+    if increased = 0 then return 0;
+
+    (* Increase deltas *)
+    m.p2p_supply_delta <- m.p2p_supply_delta + increased;
+    m.p2p_borrow_delta <- m.p2p_borrow_delta + increased;
+
+    (* Interact with the pool accordingly *)
+    borrow_from_pool p increased;
+    supply_to_pool p increased;
+
+    return increased
+end
