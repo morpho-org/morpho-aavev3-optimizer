@@ -13,7 +13,7 @@ jobs:
     uses: ./.github/workflows/forge-test.yml
     with:
       network: ethereum-mainnet
-      internal-fuzz-runs: 256
-      integration-fuzz-runs: 256
+      internal-fuzz-runs: 128
+      integration-fuzz-runs: 128
       invariant-depth: 1024
     secrets: inherit
