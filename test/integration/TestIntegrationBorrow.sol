@@ -579,13 +579,12 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         _prepareOnBehalf(onBehalf);
 
-        morpho.setIsPausedForAllMarkets(true);
-
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
-        amount = _boundBorrow(market, amount);
-
+        morpho.setIsPausedForAllMarkets(true);
         morpho.setIsBorrowPaused(market.underlying, false);
+
+        amount = _boundBorrow(market, amount);
 
         _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
     }
