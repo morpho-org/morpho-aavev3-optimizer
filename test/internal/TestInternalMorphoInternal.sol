@@ -130,7 +130,7 @@ contract TestInternalMorphoInternal is InternalTest {
             Math.min(
                 deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
                     deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
-                ),
+                ).zeroFloorSub(market.idleSupply),
                 deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
                     deltas.borrow.scaledDelta.rayMul(indexes.borrow.poolIndex)
                 )

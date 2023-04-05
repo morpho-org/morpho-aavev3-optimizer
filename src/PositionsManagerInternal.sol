@@ -120,18 +120,15 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             revert Errors.InconsistentEMode();
         }
 
-        Types.Market storage market = _market[underlying];
-        Types.MarketSideDelta memory delta = market.deltas.borrow;
-        uint256 totalP2P = delta.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-            delta.scaledDelta.rayMul(indexes.borrow.poolIndex)
-        );
-
         if (config.getBorrowCap() != 0) {
+            Types.Market storage market = _market[underlying];
+
+            uint256 trueP2PBorrow = market.trueP2PBorrow(indexes);
             uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
             uint256 poolDebt =
                 ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
 
-            if (amount + totalP2P + poolDebt > borrowCap) revert Errors.ExceedsBorrowCap();
+            if (amount + trueP2PBorrow + poolDebt > borrowCap) revert Errors.ExceedsBorrowCap();
         }
     }
 
@@ -321,7 +318,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             market.deltas.borrow.scaledP2PTotal.zeroFloorSub(matchedBorrowDelta.rayDiv(indexes.borrow.p2pIndex));
 
         // Repay the fee.
-        amount = market.deltas.repayFee(amount, indexes);
+        amount = market.repayFee(amount, indexes);
 
         /* Transfer repay */
 

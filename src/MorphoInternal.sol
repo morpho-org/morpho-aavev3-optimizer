@@ -10,6 +10,7 @@ import {Events} from "./libraries/Events.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {PoolLib} from "./libraries/PoolLib.sol";
 import {MarketLib} from "./libraries/MarketLib.sol";
+import {DeltasLib} from "./libraries/DeltasLib.sol";
 import {Constants} from "./libraries/Constants.sol";
 import {MarketBalanceLib} from "./libraries/MarketBalanceLib.sol";
 import {InterestRatesLib} from "./libraries/InterestRatesLib.sol";
@@ -36,6 +37,7 @@ import {MorphoStorage} from "./MorphoStorage.sol";
 abstract contract MorphoInternal is MorphoStorage {
     using PoolLib for IPool;
     using MarketLib for Types.Market;
+    using DeltasLib for Types.Deltas;
     using MarketBalanceLib for Types.MarketBalances;
 
     using Math for uint256;
@@ -134,28 +136,18 @@ abstract contract MorphoInternal is MorphoStorage {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
 
         Types.Market storage market = _market[underlying];
-        Types.Deltas memory deltas = market.deltas;
+        Types.Deltas storage deltas = market.deltas;
         uint256 poolSupplyIndex = indexes.supply.poolIndex;
         uint256 poolBorrowIndex = indexes.borrow.poolIndex;
 
-        amount = Math.min(
-            amount,
-            Math.min(
-                deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                    deltas.supply.scaledDelta.rayMul(poolSupplyIndex)
-                ),
-                deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                    deltas.borrow.scaledDelta.rayMul(poolBorrowIndex)
-                )
-            )
-        );
+        amount = Math.min(amount, Math.min(market.trueP2PSupply(indexes), market.trueP2PBorrow(indexes)));
         if (amount == 0) revert Errors.AmountIsZero();
 
         uint256 newSupplyDelta = deltas.supply.scaledDelta + amount.rayDiv(poolSupplyIndex);
         uint256 newBorrowDelta = deltas.borrow.scaledDelta + amount.rayDiv(poolBorrowIndex);
 
-        market.deltas.supply.scaledDelta = newSupplyDelta;
-        market.deltas.borrow.scaledDelta = newBorrowDelta;
+        deltas.supply.scaledDelta = newSupplyDelta;
+        deltas.borrow.scaledDelta = newBorrowDelta;
         emit Events.P2PSupplyDeltaUpdated(underlying, newSupplyDelta);
         emit Events.P2PBorrowDeltaUpdated(underlying, newBorrowDelta);
 
