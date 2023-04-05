@@ -291,6 +291,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         amount = _boundBorrow(market, amount);
+
         supplyDelta = _increaseSupplyDelta(promoter1, market, supplyDelta);
 
         morpho.setIsP2PDisabled(market.underlying, true);
