@@ -415,8 +415,10 @@ contract TestUnitMarketLib is BaseTest {
     function testRepayFeeShouldReturnZeroIfAmountIsZero(
         Types.Indexes256 memory indexes,
         uint256 scaledP2PSupply,
-        uint256 scaledP2PBorrow
+        uint256 scaledP2PBorrow,
+        uint256 idleSupply
     ) public {
+        market.idleSupply = _boundAmount(idleSupply);
         scaledP2PSupply = _boundAmount(scaledP2PSupply);
         scaledP2PBorrow = _boundAmount(scaledP2PBorrow);
 
