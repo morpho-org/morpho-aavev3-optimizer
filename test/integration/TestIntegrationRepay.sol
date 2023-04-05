@@ -434,17 +434,24 @@ contract TestIntegrationRepay is IntegrationTest {
         user.repay(market.underlying, amount, onBehalf);
     }
 
-    function testShouldRepayWhenEverythingElsePaused(uint256 seed, uint256 borrowed, uint256 amount, address onBehalf)
-        public
-    {
+    function testShouldRepayWhenEverythingElsePaused(
+        uint256 seed,
+        uint256 borrowed,
+        uint256 amount,
+        address onBehalf,
+        address receiver
+    ) public {
         amount = _boundNotZero(amount);
         onBehalf = _boundOnBehalf(onBehalf);
+        receiver = _boundReceiver(receiver);
+
+        _prepareOnBehalf(onBehalf);
 
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(seed)];
 
         borrowed = _boundBorrow(market, borrowed);
 
-        _borrowWithoutCollateral(onBehalf, market, borrowed, onBehalf, onBehalf, DEFAULT_MAX_ITERATIONS);
+        _borrowWithoutCollateral(address(user), market, borrowed, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
         morpho.setIsPausedForAllMarkets(true);
         morpho.setIsRepayPaused(market.underlying, false);
