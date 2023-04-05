@@ -123,12 +123,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         if (config.getBorrowCap() != 0) {
             Types.Market storage market = _market[underlying];
 
-            uint256 totalP2P = market.trueP2PBorrow(indexes);
+            uint256 trueP2PBorrow = market.trueP2PBorrow(indexes);
             uint256 borrowCap = config.getBorrowCap() * (10 ** config.getDecimals());
             uint256 poolDebt =
                 ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
 
-            if (amount + totalP2P + poolDebt > borrowCap) revert Errors.ExceedsBorrowCap();
+            if (amount + trueP2PBorrow + poolDebt > borrowCap) revert Errors.ExceedsBorrowCap();
         }
     }
 
