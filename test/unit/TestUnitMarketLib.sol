@@ -308,7 +308,7 @@ contract TestUnitMarketLib is BaseTest {
 
     function testTrueP2PSupply(
         Types.Indexes256 memory indexes,
-        uint256 totalP2PSupply,
+        uint256 scaledP2PSupply,
         uint256 supplyDelta,
         uint256 idleSupply
     ) public {
@@ -319,20 +319,20 @@ contract TestUnitMarketLib is BaseTest {
 
         market.setIndexes(indexes);
 
-        totalP2PSupply = _boundAmount(totalP2PSupply).rayDiv(indexes.supply.p2pIndex);
+        scaledP2PSupply = _boundAmount(scaledP2PSupply).rayDiv(indexes.supply.p2pIndex);
         supplyDelta =
-            bound(supplyDelta, 0, totalP2PSupply).rayMul(indexes.supply.p2pIndex).rayDiv(indexes.supply.poolIndex);
+            bound(supplyDelta, 0, scaledP2PSupply).rayMul(indexes.supply.p2pIndex).rayDiv(indexes.supply.poolIndex);
         idleSupply = bound(
             idleSupply,
             0,
-            totalP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(supplyDelta.rayMul(indexes.supply.poolIndex))
+            scaledP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(supplyDelta.rayMul(indexes.supply.poolIndex))
         );
 
-        market.deltas.supply.scaledP2PTotal = totalP2PSupply;
+        market.deltas.supply.scaledP2PTotal = scaledP2PSupply;
         market.deltas.supply.scaledDelta = supplyDelta;
         market.idleSupply = idleSupply;
 
-        uint256 expectedP2PSupply = totalP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+        uint256 expectedP2PSupply = scaledP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
             supplyDelta.rayMul(indexes.supply.poolIndex)
         ).zeroFloorSub(idleSupply);
         uint256 trueP2PSupply = market.trueP2PSupply(indexes);
@@ -340,7 +340,7 @@ contract TestUnitMarketLib is BaseTest {
         assertEq(trueP2PSupply, expectedP2PSupply, "true p2p supply");
     }
 
-    function testTrueP2PBorrow(Types.Indexes256 memory indexes, uint256 totalP2PBorrow, uint256 borrowDelta) public {
+    function testTrueP2PBorrow(Types.Indexes256 memory indexes, uint256 scaledP2PBorrow, uint256 borrowDelta) public {
         indexes.supply.p2pIndex = bound(indexes.supply.p2pIndex, MIN_INDEX, MAX_INDEX);
         indexes.supply.poolIndex = bound(indexes.supply.poolIndex, MIN_INDEX, MAX_INDEX);
         indexes.borrow.p2pIndex = bound(indexes.borrow.p2pIndex, MIN_INDEX, MAX_INDEX);
@@ -348,15 +348,15 @@ contract TestUnitMarketLib is BaseTest {
 
         market.setIndexes(indexes);
 
-        totalP2PBorrow = _boundAmount(totalP2PBorrow).rayDiv(indexes.borrow.p2pIndex);
+        scaledP2PBorrow = _boundAmount(scaledP2PBorrow).rayDiv(indexes.borrow.p2pIndex);
         borrowDelta =
-            bound(borrowDelta, 0, totalP2PBorrow).rayMul(indexes.borrow.p2pIndex).rayDiv(indexes.borrow.poolIndex);
+            bound(borrowDelta, 0, scaledP2PBorrow).rayMul(indexes.borrow.p2pIndex).rayDiv(indexes.borrow.poolIndex);
 
-        market.deltas.borrow.scaledP2PTotal = totalP2PBorrow;
+        market.deltas.borrow.scaledP2PTotal = scaledP2PBorrow;
         market.deltas.borrow.scaledDelta = borrowDelta;
 
         uint256 expectedP2PBorrow =
-            totalP2PBorrow.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(borrowDelta.rayMul(indexes.borrow.poolIndex));
+            scaledP2PBorrow.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(borrowDelta.rayMul(indexes.borrow.poolIndex));
         uint256 trueP2PBorrow = market.trueP2PBorrow(indexes);
 
         assertEq(trueP2PBorrow, expectedP2PBorrow, "true p2p borrow");
@@ -365,8 +365,8 @@ contract TestUnitMarketLib is BaseTest {
     function testRepayFee(
         Types.Indexes256 memory indexes,
         uint256 amount,
-        uint256 totalP2PSupply,
-        uint256 totalP2PBorrow,
+        uint256 scaledP2PSupply,
+        uint256 scaledP2PBorrow,
         uint256 supplyDelta,
         uint256 idleSupply
     ) public {
@@ -378,25 +378,25 @@ contract TestUnitMarketLib is BaseTest {
         market.setIndexes(indexes);
 
         amount = _boundAmountNotZero(amount);
-        totalP2PSupply = _boundAmount(totalP2PSupply).rayDiv(indexes.supply.p2pIndex);
-        totalP2PBorrow = _boundAmount(totalP2PBorrow).rayDiv(indexes.borrow.p2pIndex);
+        scaledP2PSupply = _boundAmount(scaledP2PSupply).rayDiv(indexes.supply.p2pIndex);
+        scaledP2PBorrow = _boundAmount(scaledP2PBorrow).rayDiv(indexes.borrow.p2pIndex);
         supplyDelta =
-            bound(supplyDelta, 0, totalP2PSupply).rayMul(indexes.supply.p2pIndex).rayDiv(indexes.supply.poolIndex);
+            bound(supplyDelta, 0, scaledP2PSupply).rayMul(indexes.supply.p2pIndex).rayDiv(indexes.supply.poolIndex);
         idleSupply = bound(
             idleSupply,
             0,
-            totalP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(supplyDelta.rayMul(indexes.supply.poolIndex))
+            scaledP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(supplyDelta.rayMul(indexes.supply.poolIndex))
         );
 
-        market.deltas.supply.scaledP2PTotal = totalP2PSupply;
-        market.deltas.borrow.scaledP2PTotal = totalP2PBorrow;
+        market.deltas.supply.scaledP2PTotal = scaledP2PSupply;
+        market.deltas.borrow.scaledP2PTotal = scaledP2PBorrow;
         market.deltas.supply.scaledDelta = supplyDelta;
         market.idleSupply = idleSupply;
 
         uint256 expectedFee = Math.min(
             amount,
-            totalP2PBorrow.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                totalP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+            scaledP2PBorrow.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+                scaledP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
                     supplyDelta.rayMul(indexes.supply.poolIndex)
                 ).zeroFloorSub(idleSupply)
             )
@@ -404,21 +404,21 @@ contract TestUnitMarketLib is BaseTest {
         uint256 toProcess = market.repayFee(amount, indexes);
 
         assertEq(toProcess, amount - expectedFee, "expected fee");
-        assertEq(market.deltas.supply.scaledP2PTotal, totalP2PSupply, "supply total");
+        assertEq(market.deltas.supply.scaledP2PTotal, scaledP2PSupply, "supply total");
         assertEq(
             market.deltas.borrow.scaledP2PTotal,
-            totalP2PBorrow.zeroFloorSub(expectedFee.rayDivDown(indexes.borrow.p2pIndex)),
+            scaledP2PBorrow.zeroFloorSub(expectedFee.rayDivDown(indexes.borrow.p2pIndex)),
             "borrow total"
         );
     }
 
     function testRepayFeeShouldReturnZeroIfAmountIsZero(
         Types.Indexes256 memory indexes,
-        uint256 totalP2PSupply,
-        uint256 totalP2PBorrow
+        uint256 scaledP2PSupply,
+        uint256 scaledP2PBorrow
     ) public {
-        totalP2PSupply = _boundAmount(totalP2PSupply);
-        totalP2PBorrow = _boundAmount(totalP2PBorrow);
+        scaledP2PSupply = _boundAmount(scaledP2PSupply);
+        scaledP2PBorrow = _boundAmount(scaledP2PBorrow);
 
         indexes.supply.p2pIndex = bound(indexes.supply.p2pIndex, MIN_INDEX, MAX_INDEX);
         indexes.supply.poolIndex = bound(indexes.supply.poolIndex, MIN_INDEX, MAX_INDEX);
@@ -427,13 +427,13 @@ contract TestUnitMarketLib is BaseTest {
 
         market.setIndexes(indexes);
 
-        market.deltas.supply.scaledP2PTotal = totalP2PSupply;
-        market.deltas.borrow.scaledP2PTotal = totalP2PBorrow;
+        market.deltas.supply.scaledP2PTotal = scaledP2PSupply;
+        market.deltas.borrow.scaledP2PTotal = scaledP2PBorrow;
 
         uint256 toProcess = market.repayFee(0, indexes);
 
         assertEq(toProcess, 0);
-        assertEq(market.deltas.supply.scaledP2PTotal, totalP2PSupply);
-        assertEq(market.deltas.borrow.scaledP2PTotal, totalP2PBorrow);
+        assertEq(market.deltas.supply.scaledP2PTotal, scaledP2PSupply);
+        assertEq(market.deltas.borrow.scaledP2PTotal, scaledP2PBorrow);
     }
 }
