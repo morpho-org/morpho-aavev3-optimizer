@@ -224,8 +224,6 @@ let rec lemma mul_sum (m: morpho_storage) (s: Fset.fset address)
            get e m.collateral_supply_balance +
            FsetSum.sum (Fset.remove e s) (fun a -> get a m.collateral_supply_balance) };
   assert MulAdd { mul (get e m.collateral_supply_balance) lt + mul (FsetSum.sum (Fset.remove e s) (fun a -> get a m.collateral_supply_balance)) lt <= mul (get e m.collateral_supply_balance + FsetSum.sum (Fset.remove e s) (fun a -> get a m.collateral_supply_balance)) lt }
-  (* let remaining_sum = FsetSum.sum (Fset.remove e s) (fun a -> get a m.collateral_supply_balance) in
-  mul_add (get e m.collateral_supply_balance) remaining_sum lt *)
   end
 
 let rec lemma sum_greater (p: pool_storage) (m: morpho_storage) (s: Fset.fset address)

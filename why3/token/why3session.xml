@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
+"http://why3.lri.fr/why3session.dtd">
+<why3session shape_version="6">
+<prover id="1" name="Z3" version="4.11.0" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="2" name="Alt-Ergo" version="2.4.2" timelimit="1" steplimit="0" memlimit="1000"/>
+<file format="whyml" proved="true">
+<path name=".."/><path name="token.mlw"/>
+<theory name="TokenSetup" proved="true">
+ <goal name="token_storage&#39;vc" expl="VC for token_storage" proved="true">
+ <proof prover="1"><result status="valid" time="0.04" steps="34471"/></proof>
+ </goal>
+</theory>
+<theory name="TokenRealize" proved="true">
+ <goal name="transfer_from&#39;vc" expl="VC for transfer_from" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="transfer_from&#39;vc.0" expl="assertion" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="transfer_from&#39;vc.0.0" expl="assertion" proved="true">
+   <proof prover="1"><result status="valid" time="0.02" steps="45151"/></proof>
+   </goal>
+   <goal name="transfer_from&#39;vc.0.1" expl="assertion" proved="true">
+   <proof prover="2"><result status="valid" time="0.04" steps="157"/></proof>
+   </goal>
+   <goal name="transfer_from&#39;vc.0.2" expl="VC for transfer_from" proved="true">
+   <proof prover="1"><result status="valid" time="0.02" steps="42186"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="transfer_from&#39;vc.1" expl="assertion" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="transfer_from&#39;vc.1.0" expl="assertion" proved="true">
+   <proof prover="2"><result status="valid" time="0.05" steps="173"/></proof>
+   </goal>
+   <goal name="transfer_from&#39;vc.1.1" expl="assertion" proved="true">
+   <proof prover="2"><result status="valid" time="0.03" steps="268"/></proof>
+   </goal>
+   <goal name="transfer_from&#39;vc.1.2" expl="VC for transfer_from" proved="true">
+   <proof prover="1"><result status="valid" time="0.04" steps="67382"/></proof>
+   </goal>
+  </transf>
+  </goal>
+  <goal name="transfer_from&#39;vc.2" expl="type invariant" proved="true">
+  <proof prover="1"><result status="valid" time="0.02" steps="40427"/></proof>
+  </goal>
+  <goal name="transfer_from&#39;vc.3" expl="postcondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.05" steps="576"/></proof>
+  </goal>
+  <goal name="transfer_from&#39;vc.4" expl="postcondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.02" steps="205"/></proof>
+  </goal>
+  <goal name="transfer_from&#39;vc.5" expl="postcondition" proved="true">
+  <proof prover="2"><result status="valid" time="0.10" steps="924"/></proof>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="Token.transfer_from&#39;refn&#39;vc" expl="VC for transfer_from&#39;refn" proved="true">
+ <proof prover="1"><result status="valid" time="0.04" steps="34723"/></proof>
+ </goal>
+</theory>
+</file>
+</why3session>
