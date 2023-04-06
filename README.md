@@ -1,4 +1,30 @@
-# Morpho AAVE V3
+# Morpho-AaveV3
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://i.imgur.com/uLq5V14.png">
+  <img alt="" src="https://i.imgur.com/ZiL1Lr2.png">
+</picture>
+
+---
+
+## What is Morpho?
+
+Morpho is a lending pool optimizer: it improves the capital efficiency of positions on existing lending pools by seamlessly matching users peer-to-peer.
+
+- Morpho's rates stay between the supply rate and the borrow rate of the pool, reducing the interests paid by the borrowers while increasing the interests earned by the suppliers. It means that you are getting boosted peer-to-peer rates or, in the worst case scenario, the APY of the pool.
+- Morpho also preserves the same experience, the same liquidity and the same parameters (collateral factors, oracles, …) as the underlying pool.
+
+TL;DR: Instead of borrowing or lending on your favorite AaveV3 pool, you would be better off using Morpho-AaveV3.
+
+---
+
+## Contracts overview
+
+The Morpho protocol is designed at its core with the main Morpho contract delegating calls to the PositionsManager implementation contract (to overcome the contract size limit).
+
+The main user's entry points are exposed in the [`Morpho`](./src/Morpho.sol) contract. It inherits from [`MorphoGetters`](./src/MorphoGetters.sol) which contains all the functions used to query Morpho-AaveV3, [`MorphoSetters`](./src/MorphoSetters.sol) which contains all the functions used by the governance to manage the protocol, [`MorphoInternal`](./src/MorphoInternal.sol), and [`MorphoStorage`](./src/MorphoStorage.sol), where the protocol's internal logic & storage is located. This contract delegates call to the [`PositionsManager`](./src/PositionsManager.sol), that has the exact same storage layout: this contracts inherits from [`PositionsManagerInternal](./src/PositionsManagerInternal.sol) which contains all the internal accounting logic and in turn inherits from [`MatchingEngine`](./src/MatchingEngine.sol), which contains the matching engine internal functions.
+
+It also interacts with [`RewardsManager`](./src/RewardsManager.sol), which manages AaveV3's rewards if any.
 
 ---
 
