@@ -4,42 +4,71 @@ pragma solidity ^0.8.0;
 import "test/helpers/InvariantTest.sol";
 
 contract TestInvariantMorpho is InvariantTest {
+    using Math for uint256;
+    using WadRayMath for uint256;
     using PercentageMath for uint256;
     using SafeTransferLib for ERC20;
     using TestMarketLib for TestMarket;
 
     uint256 internal initialized;
 
+    mapping(address => bool) internal checkInvariantSupplyOrBorrowDeltaZero;
+    mapping(address => bool) internal checkInvariantIdleOrSupplyDeltaZero;
+
     function setUp() public virtual override {
         super.setUp();
 
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            address underlying = allUnderlyings[i];
+
+            checkInvariantSupplyOrBorrowDeltaZero[underlying] = true;
+            checkInvariantIdleOrSupplyDeltaZero[underlying] = true;
+        }
+
         _targetDefaultSenders();
 
-        _weightSelector(this.initialize.selector, 5);
-        _weightSelector(this.approveManager.selector, 10);
-        _weightSelector(this.supply.selector, 10);
-        _weightSelector(this.supplyCollateral.selector, 15);
-        _weightSelector(this.borrow.selector, 15);
-        _weightSelector(this.repay.selector, 10);
-        _weightSelector(this.withdraw.selector, 10);
-        _weightSelector(this.withdrawCollateral.selector, 15);
-        _weightSelector(this.liquidate.selector, 10);
+        _weightSelector(this.increaseP2PDeltas.selector, 3);
+        _weightSelector(this.setDefaultIterations.selector, 5);
+        _weightSelector(this.supply.selector, 20);
+        _weightSelector(this.borrow.selector, 20);
+        _weightSelector(this.repay.selector, 20);
+        _weightSelector(this.withdraw.selector, 20);
+        _weightSelector(this.liquidate.selector, 5);
 
         targetSelector(FuzzSelector({addr: address(this), selectors: selectors}));
     }
 
-    function initialize(
-        address addressesProvider,
-        uint8 eModeCategoryId,
-        address newPositionsManager,
-        Types.Iterations memory newDefaultIterations
-    ) external {
-        vm.prank(msg.sender);
-        try morpho.initialize(addressesProvider, eModeCategoryId, newPositionsManager, newDefaultIterations) {
-            ++initialized;
-        } catch (bytes memory reason) {
-            revert(string(reason)); // Bubble up the revert reason.
-        }
+    /* FUNCTIONS */
+
+    function increaseP2PDeltas(uint256 underlyingSeed, uint256 amount) external {
+        address underlying = _randomUnderlying(underlyingSeed);
+
+        Types.Market memory market = morpho.market(underlying);
+        Types.Indexes256 memory indexes = morpho.updatedIndexes(underlying);
+
+        uint256 minP2P = Math.min(
+            market.deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+                market.deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
+            ),
+            market.deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+                market.deltas.borrow.scaledDelta.rayMul(indexes.borrow.poolIndex)
+            )
+        );
+        if (minP2P == 0) return;
+
+        amount = bound(amount, 1, minP2P);
+
+        morpho.increaseP2PDeltas(underlying, amount); // Always call it as the DAO.
+
+        checkInvariantSupplyOrBorrowDeltaZero[underlying] = false;
+        checkInvariantIdleOrSupplyDeltaZero[underlying] = false;
+    }
+
+    function setDefaultIterations(Types.Iterations memory defaultIterations) external {
+        defaultIterations.repay = uint128(_boundMaxIterations(defaultIterations.repay) / 3);
+        defaultIterations.withdraw = uint128(_boundMaxIterations(defaultIterations.withdraw) / 3);
+
+        morpho.setDefaultIterations(defaultIterations); // Always call it as the DAO.
     }
 
     function supply(uint256 underlyingSeed, uint256 amount, address onBehalf, uint256 maxIterations) external {
@@ -57,37 +86,27 @@ contract TestInvariantMorpho is InvariantTest {
         morpho.supply(market.underlying, amount, onBehalf, maxIterations);
     }
 
-    function supplyCollateral(uint256 underlyingSeed, uint256 amount, address onBehalf) external {
-        TestMarket storage market = testMarkets[_randomUnderlying(underlyingSeed)];
-        amount = _boundSupply(market, amount);
-        onBehalf = _randomSender(onBehalf);
-
-        _deal(market.underlying, msg.sender, amount);
-
-        vm.prank(msg.sender); // Cannot startPrank because `morpho.supplyCollateral` may revert and not call stopPrank.
-        ERC20(market.underlying).safeApprove(address(morpho), amount);
-
-        vm.prank(msg.sender);
-        morpho.supplyCollateral(market.underlying, amount, onBehalf);
-    }
-
-    function borrow(uint256 underlyingSeed, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
-        external
-    {
+    function borrow(uint256 underlyingSeed, uint256 amount, address receiver, uint256 maxIterations) external {
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(underlyingSeed)];
         amount = _boundBorrow(market, amount);
-        onBehalf = _randomSender(onBehalf);
         receiver = _boundReceiver(receiver);
         maxIterations = _boundMaxIterations(maxIterations);
 
-        vm.prank(msg.sender);
-        morpho.borrow(market.underlying, amount, onBehalf, receiver, maxIterations);
+        _borrowWithoutCollateral(msg.sender, market, amount, msg.sender, receiver, maxIterations);
     }
 
-    function repay(uint256 underlyingSeed, uint256 amount, address onBehalf) external {
+    function repay(uint256 underlyingSeed, uint256 amount, address onBehalf, uint256 maxIterations) external {
         TestMarket storage market = testMarkets[_randomBorrowableInEMode(underlyingSeed)];
+
+        if (morpho.borrowBalance(market.underlying, msg.sender) == 0) {
+            vm.prank(msg.sender);
+            return this.borrow(underlyingSeed, amount, onBehalf, maxIterations);
+        }
+
         amount = _boundNotZero(amount);
         onBehalf = _randomSender(onBehalf);
+
+        _deal(market.underlying, msg.sender, amount);
 
         vm.prank(msg.sender); // Cannot startPrank because `morpho.repay` may revert and not call stopPrank.
         ERC20(market.underlying).safeApprove(address(morpho), amount);
@@ -96,27 +115,20 @@ contract TestInvariantMorpho is InvariantTest {
         morpho.repay(market.underlying, amount, onBehalf);
     }
 
-    function withdraw(uint256 underlyingSeed, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
-        external
-    {
+    function withdraw(uint256 underlyingSeed, uint256 amount, address receiver, uint256 maxIterations) external {
         TestMarket storage market = testMarkets[_randomUnderlying(underlyingSeed)];
+
+        if (morpho.supplyBalance(market.underlying, msg.sender) == 0) {
+            vm.prank(msg.sender);
+            return this.supply(underlyingSeed, amount, receiver, maxIterations);
+        }
+
         amount = _boundNotZero(amount);
-        onBehalf = _randomSender(onBehalf);
         receiver = _boundReceiver(receiver);
         maxIterations = _boundMaxIterations(maxIterations);
 
         vm.prank(msg.sender);
-        morpho.withdraw(market.underlying, amount, onBehalf, receiver, maxIterations);
-    }
-
-    function withdrawCollateral(uint256 underlyingSeed, uint256 amount, address onBehalf, address receiver) external {
-        TestMarket storage market = testMarkets[_randomUnderlying(underlyingSeed)];
-        amount = _boundNotZero(amount);
-        onBehalf = _randomSender(onBehalf);
-        receiver = _boundReceiver(receiver);
-
-        vm.prank(msg.sender);
-        morpho.withdrawCollateral(market.underlying, amount, onBehalf, receiver);
+        morpho.withdraw(market.underlying, amount, msg.sender, receiver, maxIterations);
     }
 
     function liquidate(uint256 underlyingBorrowed, uint256 underlyingCollateral, address liquidatee, uint256 amount)
@@ -130,22 +142,14 @@ contract TestInvariantMorpho is InvariantTest {
         morpho.liquidate(borrowedMarket.underlying, collateralMarket.underlying, liquidatee, amount);
     }
 
-    function approveManager(address manager, bool isAllowed) external {
-        manager = _randomSender(manager);
-
-        vm.prank(msg.sender);
-        morpho.approveManager(manager, isAllowed);
-    }
-
-    function invariantInitialized() public {
-        assertEq(initialized, 0, "initialized");
-    }
+    /* INVARIANTS */
 
     function invariantBalanceOf() public {
         for (uint256 i; i < allUnderlyings.length; ++i) {
-            ERC20 underlying = ERC20(allUnderlyings[i]);
+            address underlying = allUnderlyings[i];
+            Types.Market memory market = morpho.market(underlying);
 
-            assertEq(underlying.balanceOf(address(morpho)), 0, string.concat(underlying.symbol(), ".balanceOf"));
+            assertApproxEqAbs(ERC20(underlying).balanceOf(address(morpho)), market.idleSupply, 10);
         }
     }
 
@@ -161,6 +165,7 @@ contract TestInvariantMorpho is InvariantTest {
         for (uint256 i; i < senders.length; i++) {
             address[] memory userCollaterals = morpho.userCollaterals(senders[i]);
             address[] memory userBorrows = morpho.userBorrows(senders[i]);
+
             for (uint256 j; j < allUnderlyings.length; ++j) {
                 assertEq(
                     morpho.collateralBalance(allUnderlyings[j], senders[i]) > 0,
@@ -176,55 +181,39 @@ contract TestInvariantMorpho is InvariantTest {
         }
     }
 
-    function invariantCannotBorrowOverLtv() public {
-        address[] memory senders = targetSenders();
+    function invariantSupplyOrBorrowDeltaZero() public {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            address underlying = allUnderlyings[i];
+            Types.Market memory market = morpho.market(underlying);
 
-        for (uint256 i; i < senders.length; ++i) {
-            address sender = senders[i];
-            Types.LiquidityData memory liquidityData = morpho.liquidityData(sender);
+            bool invariant = market.deltas.supply.scaledDelta == 0 || market.deltas.borrow.scaledDelta == 0;
 
-            if (liquidityData.borrowable == 0) continue;
+            // If invariant holds again, it should hold at least until next time `increaseP2PDeltas` is called.
+            if (!checkInvariantSupplyOrBorrowDeltaZero[underlying]) {
+                checkInvariantSupplyOrBorrowDeltaZero[underlying] = invariant;
 
-            for (uint256 j; j < borrowableInEModeUnderlyings.length; ++j) {
-                TestMarket storage market = testMarkets[borrowableInEModeUnderlyings[j]];
-
-                uint256 borrowable = (liquidityData.borrowable * 1 ether * 10 ** market.decimals).percentAdd(5) // Inflate borrowable because of WBTC decimals precision.
-                    / (market.price * 1 ether);
-                if (borrowable == 0 || borrowable > market.liquidity()) continue;
-
-                vm.prank(sender);
-                vm.expectRevert(Errors.UnauthorizedBorrow.selector);
-                morpho.borrow(market.underlying, borrowable, sender, sender, 0);
+                continue;
             }
+
+            assertTrue(invariant, "supply & borrow delta > 0");
         }
     }
 
-    function invariantCannotWithdrawOverLt() public {
-        address[] memory senders = targetSenders();
+    function invariantIdleOrSupplyDeltaZero() public {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            address underlying = allUnderlyings[i];
+            Types.Market memory market = morpho.market(underlying);
 
-        for (uint256 i; i < senders.length; ++i) {
-            address sender = senders[i];
-            address[] memory collaterals = morpho.userCollaterals(sender);
-            Types.LiquidityData memory liquidityData = morpho.liquidityData(sender);
+            bool invariant = market.idleSupply == 0 || market.deltas.supply.scaledDelta == 0;
 
-            if (liquidityData.debt == 0) continue;
+            // If invariant holds again, it should hold at least until next time `increaseP2PDeltas` is called.
+            if (!checkInvariantIdleOrSupplyDeltaZero[underlying]) {
+                checkInvariantIdleOrSupplyDeltaZero[underlying] = invariant;
 
-            for (uint256 j; j < collaterals.length; ++j) {
-                TestMarket storage market = testMarkets[collaterals[j]];
-
-                uint256 withdrawable = rawCollateralValue(
-                    (
-                        ((liquidityData.maxDebt - liquidityData.debt) * 1 ether * 10 ** market.decimals).percentAdd(5)
-                            / (market.price * 1 ether)
-                    ) // Inflate withdrawable because of WBTC decimals precision.
-                        .percentDiv(market.getLt(eModeCategoryId))
-                );
-                if (withdrawable == 0 || withdrawable > morpho.collateralBalance(market.underlying, sender)) continue;
-
-                vm.prank(sender);
-                vm.expectRevert(Errors.UnauthorizedWithdraw.selector);
-                morpho.withdrawCollateral(market.underlying, withdrawable, sender, sender);
+                continue;
             }
+
+            assertTrue(invariant, "idle supply & supply delta > 0");
         }
     }
 }
