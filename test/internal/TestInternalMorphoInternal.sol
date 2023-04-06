@@ -105,12 +105,14 @@ contract TestInternalMorphoInternal is InternalTest {
         uint256 p2pBorrowTotal,
         uint256 supplyDelta,
         uint256 borrowDelta,
+        uint256 idleSupply,
         uint256 amount
     ) public {
         p2pSupplyTotal = _boundAmount(p2pSupplyTotal);
         p2pBorrowTotal = _boundAmount(p2pBorrowTotal);
         supplyDelta = bound(supplyDelta, 0, p2pSupplyTotal);
         borrowDelta = bound(borrowDelta, 0, p2pBorrowTotal);
+        idleSupply = _boundAmount(idleSupply);
         amount = bound(amount, 0, 10_000_000 ether); // $10m dollars worth
 
         _pool.supplyToPool(dai, amount * 2, _pool.getReserveNormalizedIncome(dai));
@@ -124,13 +126,14 @@ contract TestInternalMorphoInternal is InternalTest {
         deltas.borrow.scaledDelta = borrowDelta.rayDivUp(indexes.borrow.p2pIndex);
         deltas.supply.scaledP2PTotal = p2pSupplyTotal.rayDivDown(indexes.supply.p2pIndex);
         deltas.borrow.scaledP2PTotal = p2pBorrowTotal.rayDivDown(indexes.borrow.p2pIndex);
+        market.idleSupply = idleSupply;
 
         uint256 expectedAmount = Math.min(
             amount,
             Math.min(
                 deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
                     deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
-                ),
+                ).zeroFloorSub(market.idleSupply),
                 deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
                     deltas.borrow.scaledDelta.rayMul(indexes.borrow.poolIndex)
                 )

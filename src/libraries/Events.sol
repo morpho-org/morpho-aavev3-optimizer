@@ -143,13 +143,13 @@ library Events {
 
     /// @notice Emitted when a peer-to-peer supply delta is updated.
     /// @param underlying The address of the underlying asset.
-    /// @param supplyDelta The supply delta of `underlying` asset.
-    event P2PSupplyDeltaUpdated(address indexed underlying, uint256 supplyDelta);
+    /// @param scaledDelta The scaled supply delta of `underlying` asset.
+    event P2PSupplyDeltaUpdated(address indexed underlying, uint256 scaledDelta);
 
     /// @notice Emitted when a peer-to-peer borrow delta is updated.
     /// @param underlying The address of the underlying asset.
-    /// @param borrowDelta The borrow delta of `underlying` asset.
-    event P2PBorrowDeltaUpdated(address indexed underlying, uint256 borrowDelta);
+    /// @param scaledDelta The scaled borrow delta of `underlying` asset.
+    event P2PBorrowDeltaUpdated(address indexed underlying, uint256 scaledDelta);
 
     /// @notice Emitted when the peer-to-peer total amounts are updated.
     /// @param underlying The address of the underlying asset.

@@ -25,7 +25,7 @@ library MarketLib {
     using Math for uint256;
     using SafeCast for uint256;
     using WadRayMath for uint256;
-
+    using MarketLib for Types.Market;
     using ReserveDataLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
@@ -284,5 +284,54 @@ library MarketLib {
         emit Events.IdleSupplyUpdated(underlying, newIdleSupply);
 
         return (amount - matchedIdle, matchedIdle);
+    }
+
+    /// @notice Calculates the total quantity of underlyings truly supplied peer-to-peer on the given market.
+    /// @param indexes The current indexes.
+    /// @return The total peer-to-peer supply (total peer-to-peer supply - supply delta - idle supply).
+    function trueP2PSupply(Types.Market storage market, Types.Indexes256 memory indexes)
+        internal
+        view
+        returns (uint256)
+    {
+        Types.MarketSideDelta storage supplyDelta = market.deltas.supply;
+        return supplyDelta.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
+            supplyDelta.scaledDelta.rayMul(indexes.supply.poolIndex)
+        ).zeroFloorSub(market.idleSupply);
+    }
+
+    /// @notice Calculates the total quantity of underlyings truly borrowed peer-to-peer on the given market.
+    /// @param indexes The current indexes.
+    /// @return The total peer-to-peer borrow (total peer-to-peer borrow - borrow delta).
+    function trueP2PBorrow(Types.Market storage market, Types.Indexes256 memory indexes)
+        internal
+        view
+        returns (uint256)
+    {
+        Types.MarketSideDelta storage borrowDelta = market.deltas.borrow;
+        return borrowDelta.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
+            borrowDelta.scaledDelta.rayMul(indexes.borrow.poolIndex)
+        );
+    }
+
+    /// @notice Calculates & deducts the reserve fee to repay from the given amount, updating the total peer-to-peer amount.
+    /// @param amount The amount to repay (in underlying).
+    /// @param indexes The current indexes.
+    /// @return The new amount left to process (in underlying).
+    function repayFee(Types.Market storage market, uint256 amount, Types.Indexes256 memory indexes)
+        internal
+        returns (uint256)
+    {
+        if (amount == 0) return 0;
+
+        Types.Deltas storage deltas = market.deltas;
+        uint256 feeToRepay = Math.min(amount, market.trueP2PBorrow(indexes).zeroFloorSub(market.trueP2PSupply(indexes)));
+
+        if (feeToRepay == 0) return amount;
+
+        deltas.borrow.scaledP2PTotal =
+            deltas.borrow.scaledP2PTotal.zeroFloorSub(feeToRepay.rayDivDown(indexes.borrow.p2pIndex)); // P2PTotalsUpdated emitted in `decreaseP2P`.
+
+        return amount - feeToRepay;
     }
 }
