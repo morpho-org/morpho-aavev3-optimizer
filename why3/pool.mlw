@@ -1,5 +1,5 @@
 module PoolSetup
-use export solidity.Solidity
+use export token.Token
 exception SupplyCapReached (* Thown when the supply cap is reached on the pool *)
 end
 
@@ -20,28 +20,40 @@ type pool_storage = private {
     borrow_on_pool = 0;
 }
 
-val supply_to_pool (p: pool_storage) (amount: int) : unit
+val supply_to_pool (t: token_storage) (p: pool_storage) (amount: int) : unit
     requires { 0 <= amount }
-    writes { p.supply_on_pool, p.suppliable }
+    requires { get morpho t.balance >= amount }
+    writes { p.supply_on_pool, p.suppliable, t.balance }
+    ensures { get morpho t.balance = get morpho (old t).balance - amount }
+    ensures { get pool t.balance = get pool (old t).balance + amount }
     ensures { p.supply_on_pool = (old p).supply_on_pool + amount }
     ensures { p.suppliable = (old p).suppliable - amount }
     raises { SupplyCapReached -> amount > (old p).suppliable }
 
-val borrow_from_pool (p: pool_storage) (amount: int) : unit
+val borrow_from_pool (t: token_storage) (p: pool_storage) (amount: int) : unit
     requires { 0 <= amount }
-    writes { p.borrow_on_pool }
+    requires { get pool t.balance >= amount }
+    writes { p.borrow_on_pool, t.balance }
+    ensures { get morpho t.balance = get morpho (old t).balance + amount }
+    ensures { get pool t.balance = get pool (old t).balance - amount }
     ensures { p.borrow_on_pool = (old p).borrow_on_pool + amount }
 
-val withdraw_from_pool (p: pool_storage) (amount: int) : unit
+val withdraw_from_pool (t: token_storage) (p: pool_storage) (amount: int) : unit
     requires { 0 <= amount }
-    writes { p.supply_on_pool, p.suppliable }
+    requires { get pool t.balance >= amount }
+    writes { p.supply_on_pool, p.suppliable, t.balance }
+    ensures { get morpho t.balance = get morpho (old t).balance + amount }
+    ensures { get pool t.balance = get pool (old t).balance - amount }
     ensures { p.supply_on_pool = (old p).supply_on_pool - amount }
     ensures { p.suppliable = (old p).suppliable + amount }
     raises { Underflow -> amount > (old p).supply_on_pool }
 
-val repay_to_pool (p: pool_storage) (amount: int) : unit
+val repay_to_pool (t: token_storage) (p: pool_storage) (amount: int) : unit
     requires { 0 <= amount <= p.borrow_on_pool }
-    writes { p.borrow_on_pool }
+    requires { get morpho t.balance >= amount }
+    writes { p.borrow_on_pool, t.balance }
+    ensures { get morpho t.balance = get morpho (old t).balance - amount }
+    ensures { get pool t.balance = get pool (old t).balance + amount }
     ensures { p.borrow_on_pool = (old p).borrow_on_pool - amount }
     raises { Underflow -> amount > (old p).borrow_on_pool }
 end
@@ -63,43 +75,59 @@ type pool_storage = {
     borrow_on_pool = 0;
 }
 
-let supply_to_pool (p: pool_storage) (amount: int) : unit
+let supply_to_pool (t: token_storage) (p: pool_storage) (amount: int) : unit
     requires { 0 <= amount }
-    writes { p.supply_on_pool, p.suppliable }
+    requires { get morpho t.balance >= amount }
+    writes { p.supply_on_pool, p.suppliable, t.balance }
+    ensures { get morpho t.balance = get morpho (old t).balance - amount }
+    ensures { get pool t.balance = get pool (old t).balance + amount }
     ensures { p.supply_on_pool = (old p).supply_on_pool + amount }
     ensures { p.suppliable = (old p).suppliable - amount }
     raises { SupplyCapReached -> amount > (old p).suppliable }
 =
     if amount > p.suppliable then raise SupplyCapReached;
     p.supply_on_pool <- p.supply_on_pool + amount;
-    p.suppliable <- p.suppliable - amount
+    p.suppliable <- p.suppliable - amount;
+    transfer_from t morpho pool amount
 
-let borrow_from_pool (p: pool_storage) (amount: int) : unit
+let borrow_from_pool (t: token_storage) (p: pool_storage) (amount: int) : unit
     requires { 0 <= amount }
-    writes { p.borrow_on_pool }
+    requires { get pool t.balance >= amount }
+    writes { p.borrow_on_pool, t.balance }
+    ensures { get morpho t.balance = get morpho (old t).balance + amount }
+    ensures { get pool t.balance = get pool (old t).balance - amount }
     ensures { p.borrow_on_pool = (old p).borrow_on_pool + amount }
 =
-    p.borrow_on_pool <- p.borrow_on_pool + amount
+    p.borrow_on_pool <- p.borrow_on_pool + amount;
+    transfer_from t pool morpho amount
 
-let withdraw_from_pool (p: pool_storage) (amount: int) : unit
+let withdraw_from_pool (t: token_storage) (p: pool_storage) (amount: int) : unit
     requires { 0 <= amount }
-    writes { p.supply_on_pool, p.suppliable }
+    requires { get pool t.balance >= amount }
+    writes { p.supply_on_pool, p.suppliable, t.balance }
+    ensures { get morpho t.balance = get morpho (old t).balance + amount }
+    ensures { get pool t.balance = get pool (old t).balance - amount }
     ensures { p.supply_on_pool = (old p).supply_on_pool - amount }
     ensures { p.suppliable = (old p).suppliable + amount }
     raises { Underflow -> amount > (old p).supply_on_pool }
 =
     if amount > p.supply_on_pool then raise Underflow;
     p.supply_on_pool <- p.supply_on_pool - amount;
-    p.suppliable <- p.suppliable + amount
+    p.suppliable <- p.suppliable + amount;
+    transfer_from t pool morpho amount
 
-let repay_to_pool (p: pool_storage) (amount: int) : unit
+let repay_to_pool (t: token_storage) (p: pool_storage) (amount: int) : unit
     requires { 0 <= amount <= p.borrow_on_pool }
-    writes { p.borrow_on_pool }
+    requires { get morpho t.balance >= amount }
+    writes { p.borrow_on_pool, t.balance }
+    ensures { get morpho t.balance = get morpho (old t).balance - amount }
+    ensures { get pool t.balance = get pool (old t).balance + amount }
     ensures { p.borrow_on_pool = (old p).borrow_on_pool - amount }
     raises { Underflow -> amount > (old p).borrow_on_pool }
 =
     if amount > p.borrow_on_pool then raise Underflow;
-    p.borrow_on_pool <- p.borrow_on_pool - amount
+    p.borrow_on_pool <- p.borrow_on_pool - amount;
+    transfer_from t morpho pool amount
 
 clone Pool with type pool_storage, val supply_to_pool, val borrow_from_pool, val withdraw_from_pool, val repay_to_pool
 end

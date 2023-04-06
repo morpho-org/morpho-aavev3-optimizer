@@ -3,6 +3,10 @@ use export int.Int
 
 type address
 
+val function pool : address
+val function morpho : address
+    ensures { result <> pool }
+
 clone fmap.MapImp as Map with type key = address
 let function get (user: address) (mapping: Map.t int) =
     if Map.mem user mapping then Map.find user mapping
