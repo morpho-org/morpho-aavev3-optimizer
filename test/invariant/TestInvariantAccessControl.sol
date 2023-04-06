@@ -28,7 +28,7 @@ contract TestInvariantAccessControl is InvariantTest {
         targetSelector(FuzzSelector({addr: address(this), selectors: selectors}));
     }
 
-    /// FUNCTIONS ///
+    /* FUNCTIONS */
 
     function initialize(
         address addressesProvider,
@@ -113,7 +113,7 @@ contract TestInvariantAccessControl is InvariantTest {
         morpho.withdrawCollateral(market.underlying, amount, msg.sender, receiver);
     }
 
-    /// INVARIANTS ///
+    /* INVARIANTS */
 
     function invariantInitialized() public {
         assertEq(initialized, 0, "initialized");
