@@ -146,9 +146,10 @@ contract TestInvariantMorpho is InvariantTest {
 
     function invariantBalanceOf() public {
         for (uint256 i; i < allUnderlyings.length; ++i) {
-            ERC20 underlying = ERC20(allUnderlyings[i]);
+            address underlying = allUnderlyings[i];
+            Types.Market memory market = morpho.market(underlying);
 
-            assertApproxEqAbs(underlying.balanceOf(address(morpho)), 0, 1);
+            assertApproxEqAbs(ERC20(underlying).balanceOf(address(morpho)), market.idleSupply, 1);
         }
     }
 
