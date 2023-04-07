@@ -80,7 +80,7 @@ forge install morpho-dao/morpho-aave-v3
 
 - Install [Foundry](https://github.com/foundry-rs/foundry).
 - Run `make install` to initialize the repository.
-- Create a `.env` according to the example file.
+- Create a `.env` file according to the [`.env.example`](./.env.example) file.
 
 ### Testing with [Foundry](https://github.com/foundry-rs/foundry) 🔨
 
