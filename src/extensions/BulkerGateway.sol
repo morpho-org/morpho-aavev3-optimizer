@@ -60,9 +60,9 @@ contract BulkerGateway is IBulkerGateway {
 
         _MORPHO = IMorpho(morpho);
 
-        ERC20(_WETH).safeApprove(morpho, type(uint256).max); // TODO: do we still need this?
+        ERC20(_WETH).safeApprove(morpho, type(uint256).max);
         ERC20(_ST_ETH).safeApprove(_WST_ETH, type(uint256).max);
-        ERC20(_WST_ETH).safeApprove(morpho, type(uint256).max); // TODO: do we still need this?
+        ERC20(_WST_ETH).safeApprove(morpho, type(uint256).max);
     }
 
     /* EXTERNAL */
@@ -83,7 +83,7 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Returns the address of the Uniswap V3 router.
-    function ROUTER() external view returns (address) {
+    function ROUTER() external pure returns (address) {
         return _ROUTER;
     }
 
@@ -212,6 +212,8 @@ contract BulkerGateway is IBulkerGateway {
 
             return _unwrapStEth(_computeAmount(amount, lastOutputAmount, opType), receiver);
         }
+
+        return type(uint256).max;
     }
 
     /// @notice Approves the given `amount` of `asset` from sender to be spent by this contract via Permit2 with the given `deadline` & EIP712 `signature`.
@@ -267,7 +269,9 @@ contract BulkerGateway is IBulkerGateway {
         internal
         returns (uint256)
     {
-        ERC20(asset).safeApprove(address(_MORPHO), amount); // TODO(perf): could infinite approve only if not previously approved
+        if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
+            ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
+        }
 
         return _MORPHO.supply(asset, amount, onBehalf, maxIterations);
     }
@@ -278,7 +282,9 @@ contract BulkerGateway is IBulkerGateway {
     /// @param onBehalf The address that will receive the supply position.
     /// @return The collateral amount supplied (in asset).
     function _supplyCollateral(address asset, uint256 amount, address onBehalf) internal returns (uint256) {
-        ERC20(asset).safeApprove(address(_MORPHO), amount); // TODO(perf): could infinite approve only if not previously approved
+        if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
+            ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
+        }
 
         return _MORPHO.supplyCollateral(asset, amount, onBehalf);
     }
@@ -302,7 +308,9 @@ contract BulkerGateway is IBulkerGateway {
     /// @param onBehalf The address whose position will be repaid.
     /// @return The amount repaid (in asset).
     function _repay(address asset, uint256 amount, address onBehalf) internal returns (uint256) {
-        ERC20(asset).safeApprove(address(_MORPHO), amount); // TODO(perf): could infinite approve only if not previously approved
+        if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
+            ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
+        }
 
         return _MORPHO.repay(asset, amount, onBehalf);
     }
