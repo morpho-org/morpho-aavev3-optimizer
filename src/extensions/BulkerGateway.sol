@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import {IWETH} from "src/interfaces/IWETH.sol";
 import {IWSTETH} from "src/interfaces/IWSTETH.sol";
 import {IMorpho} from "src/interfaces/IMorpho.sol";
-import {IMorphoBulker} from "src/interfaces/IMorphoBulker.sol";
+import {IBulkerGateway} from "src/interfaces/IBulkerGateway.sol";
 import {ISwapRouter} from "src/interfaces/ISwapRouter.sol";
 
 import {Types} from "src/libraries/Types.sol";
@@ -13,10 +13,10 @@ import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20 as ERC20Permit2, Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
 
-/// @title MorphoBulker.
+/// @title BulkerGateway.
 /// @author Morpho Labs.
 /// @custom:contact security@morpho.xyz
-contract MorphoBulker is IMorphoBulker {
+contract BulkerGateway is IBulkerGateway {
     using WadRayMath for uint256;
     using SafeTransferLib for ERC20;
     using Permit2Lib for ERC20Permit2;
