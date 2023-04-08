@@ -17,39 +17,58 @@ import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2
 /// @custom:contact security@morpho.xyz
 /// @notice The storage shared by Morpho's contracts.
 abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
-    /* IMMUTABLES */
-
-    IPool internal immutable _POOL; // The address of the pool.
-    IPoolAddressesProvider internal immutable _ADDRESSES_PROVIDER; // The address of the pool addresses provider.
-    uint8 internal immutable _E_MODE_CATEGORY_ID; // The e-mode category of the deployed Morpho.
-
     /* STORAGE */
 
-    address[] internal _marketsCreated; // Keeps track of the created markets.
-    mapping(address => Types.Market) internal _market; // The market data.
-    mapping(address => Types.MarketBalances) internal _marketBalances; // The market balances data.
-    mapping(address => EnumerableSet.AddressSet) internal _userCollaterals; // The collateral markets entered by a user.
-    mapping(address => EnumerableSet.AddressSet) internal _userBorrows; // The borrow markets entered by a user.
-    mapping(address => mapping(address => bool)) internal _isManaging; // Whether a user is allowed to borrow or withdraw on behalf of another user. delegator => manager => bool
-    mapping(address => uint256) internal _userNonce; // The nonce of a user. Used to prevent replay attacks.
+    /// @dev The address of Aave's pool.
+    IPool internal _pool;
 
-    Types.Iterations internal _defaultIterations; // The default iterations values to use in the matching process.
+    /// @dev The address of the pool addresses provider.
+    IPoolAddressesProvider internal _addressesProvider;
 
-    address internal _positionsManager; // The address of the positions manager on which calls are delegated to.
-    IRewardsManager internal _rewardsManager; // The address of the rewards manager to track pool rewards for users.
+    /// @dev The e-mode category of the deployed Morpho.
+    uint8 internal _eModeCategoryId;
 
-    address internal _treasuryVault; // The address of the treasury vault, recipient of the reserve fee.
-    bool internal _isClaimRewardsPaused; // Whether claiming rewards is paused or not.
+    /// @dev The list of created markets.
+    address[] internal _marketsCreated;
 
-    /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
-    /// @param addressesProvider The address of the pool addresses provider.
-    /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
-    constructor(address addressesProvider, uint8 eModeCategoryId) {
+    /// @dev The markets data.
+    mapping(address => Types.Market) internal _market;
+
+    /// @dev The markets balances data.
+    mapping(address => Types.MarketBalances) internal _marketBalances;
+
+    /// @dev The collateral markets entered by users.
+    mapping(address => EnumerableSet.AddressSet) internal _userCollaterals;
+
+    /// @dev The borrow markets entered by users.
+    mapping(address => EnumerableSet.AddressSet) internal _userBorrows;
+
+    /// @dev Users allowances to manage other users' accounts. delegator => manager => isManagedBy
+    mapping(address => mapping(address => bool)) internal _isManagedBy;
+
+    /// @dev The nonce of users. Used to prevent replay attacks with EIP-712 signatures.
+    mapping(address => uint256) internal _userNonce;
+
+    /// @dev The default number of iterations to use in the matching process.
+    Types.Iterations internal _defaultIterations;
+
+    /// @dev The address of the positions manager on which calls are delegated to.
+    address internal _positionsManager;
+
+    /// @dev The address of the rewards manager to track pool rewards for users.
+    IRewardsManager internal _rewardsManager;
+
+    /// @dev The address of the treasury vault, recipient of the reserve fee.
+    address internal _treasuryVault;
+
+    /// @dev Whether claiming rewards is paused or not.
+    bool internal _isClaimRewardsPaused;
+
+    /* CONSTRUCTOR */
+
+    /// @notice Contract constructor.
+    /// @dev The implementation contract disables initialization upon deployment to avoid being hijacked.
+    constructor() {
         _disableInitializers();
-
-        _ADDRESSES_PROVIDER = IPoolAddressesProvider(addressesProvider);
-        _POOL = IPool(_ADDRESSES_PROVIDER.getPool());
-
-        _E_MODE_CATEGORY_ID = eModeCategoryId;
     }
 }

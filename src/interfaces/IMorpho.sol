@@ -4,10 +4,10 @@ pragma solidity >=0.5.0;
 import {Types} from "../libraries/Types.sol";
 
 interface IMorphoGetters {
-    function POOL() external view returns (address);
-    function ADDRESSES_PROVIDER() external view returns (address);
     function DOMAIN_SEPARATOR() external view returns (bytes32);
-    function E_MODE_CATEGORY_ID() external view returns (uint256);
+    function pool() external view returns (address);
+    function addressesProvider() external view returns (address);
+    function eModeCategoryId() external view returns (uint256);
 
     function market(address underlying) external view returns (Types.Market memory);
     function marketsCreated() external view returns (address[] memory);
@@ -25,7 +25,7 @@ interface IMorphoGetters {
     function userCollaterals(address user) external view returns (address[] memory);
     function userBorrows(address user) external view returns (address[] memory);
 
-    function isManaging(address delegator, address manager) external view returns (bool);
+    function isManagedBy(address delegator, address manager) external view returns (bool);
     function userNonce(address user) external view returns (uint256);
 
     function defaultIterations() external view returns (Types.Iterations memory);
@@ -53,7 +53,9 @@ interface IMorphoSetters {
     function setP2PIndexCursor(address underlying, uint16 p2pIndexCursor) external;
     function setReserveFactor(address underlying, uint16 newReserveFactor) external;
 
-    function setIsP2PDisabled(address underlying, bool isP2PDisabled) external;
+    function setAssetIsCollateralOnPool(address underlying, bool isCollateral) external;
+    function setAssetIsCollateral(address underlying, bool isCollateral) external;
+    function setIsClaimRewardsPaused(bool isPaused) external;
     function setIsPaused(address underlying, bool isPaused) external;
     function setIsPausedForAllMarkets(bool isPaused) external;
     function setIsSupplyPaused(address underlying, bool isPaused) external;
@@ -64,11 +66,17 @@ interface IMorphoSetters {
     function setIsWithdrawCollateralPaused(address underlying, bool isPaused) external;
     function setIsLiquidateBorrowPaused(address underlying, bool isPaused) external;
     function setIsLiquidateCollateralPaused(address underlying, bool isPaused) external;
+    function setIsP2PDisabled(address underlying, bool isP2PDisabled) external;
     function setIsDeprecated(address underlying, bool isDeprecated) external;
 }
 
 interface IMorpho is IMorphoGetters, IMorphoSetters {
-    function initialize(address newPositionsManager, Types.Iterations memory newDefaultIterations) external;
+    function initialize(
+        address addressesProvider,
+        uint8 eModeCategoryId,
+        address newPositionsManager,
+        Types.Iterations memory newDefaultIterations
+    ) external;
 
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
         external
@@ -125,4 +133,8 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
     function liquidate(address underlyingBorrowed, address underlyingCollateral, address user, uint256 amount)
         external
         returns (uint256 repaid, uint256 seized);
+
+    function claimRewards(address[] calldata assets, address onBehalf)
+        external
+        returns (address[] memory rewardTokens, uint256[] memory claimedAmounts);
 }

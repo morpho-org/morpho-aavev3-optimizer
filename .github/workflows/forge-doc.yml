@@ -1,0 +1,65 @@
+name: Forge docs
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  forge-doc:
+    name: Generation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
+
+      - name: Install Foundry
+        uses: onbjerg/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Generate docs
+        run: forge doc --build
+
+      - name: Upload docs
+        uses: actions/upload-artifact@v3
+        with:
+          name: docs-foundry
+          path: docs/book/
+
+  deploy:
+    needs: forge-doc
+
+    name: Deployment
+    runs-on: ubuntu-latest
+
+    environment:
+      name: docs
+      url: https://developers-aavev3.morpho.xyz
+
+    steps:
+      - name: Download docs
+        uses: actions/download-artifact@v3
+        with:
+          name: docs-foundry
+          path: docs/
+
+      - name: Setup AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload docs to S3
+        run: aws s3 sync ./docs s3://$BUCKET --delete --acl public-read
+        env:
+          BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+
+      - name: Invalidate CloudFront cache
+        run: aws cloudfront create-invalidation --distribution-id $DISTRIBUTION --paths "/*"
+        env:
+          DISTRIBUTION: ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }}

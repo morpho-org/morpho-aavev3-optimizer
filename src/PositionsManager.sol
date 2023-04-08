@@ -38,10 +38,6 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    /* CONSTRUCTOR */
-
-    constructor(address addressesProvider, uint8 eModeCategoryId) MorphoStorage(addressesProvider, eModeCategoryId) {}
-
     /* EXTERNAL */
 
     /// @notice Implements the supply logic.
@@ -50,7 +46,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param from The address to transfer the underlying from.
     /// @param onBehalf The address that will receive the supply position.
     /// @param maxIterations The maximum number of iterations allowed during the matching process.
-    /// @return The amount supplied.
+    /// @return The amount supplied (in underlying).
     function supplyLogic(address underlying, uint256 amount, address from, address onBehalf, uint256 maxIterations)
         external
         returns (uint256)
@@ -63,8 +59,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.SupplyRepayVars memory vars = _executeSupply(underlying, amount, from, onBehalf, maxIterations, indexes);
 
-        _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
-        _POOL.supplyToPool(underlying, vars.toSupply);
+        _pool.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
+        _pool.supplyToPool(underlying, vars.toSupply, indexes.supply.poolIndex);
 
         return amount;
     }
@@ -75,7 +71,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param amount The amount of `underlying` to supply.
     /// @param from The address to transfer the underlying from.
     /// @param onBehalf The address that will receive the collateral position.
-    /// @return The collateral amount supplied.
+    /// @return The collateral amount supplied (in underlying).
     function supplyCollateralLogic(address underlying, uint256 amount, address from, address onBehalf)
         external
         returns (uint256)
@@ -88,7 +84,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         _executeSupplyCollateral(underlying, amount, from, onBehalf, indexes.supply.poolIndex);
 
-        _POOL.supplyToPool(underlying, amount);
+        _pool.supplyToPool(underlying, amount, indexes.supply.poolIndex);
 
         return amount;
     }
@@ -99,7 +95,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param borrower The address that will receive the debt position.
     /// @param receiver The address that will receive the borrowed funds.
     /// @param maxIterations The maximum number of iterations allowed during the matching process.
-    /// @return The amount borrowed.
+    /// @return The amount borrowed (in underlying).
     function borrowLogic(address underlying, uint256 amount, address borrower, address receiver, uint256 maxIterations)
         external
         returns (uint256)
@@ -117,8 +113,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.LiquidityData memory values = _liquidityData(borrower);
         if (values.debt > values.borrowable) revert Errors.UnauthorizedBorrow();
 
-        _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
-        _POOL.borrowFromPool(underlying, vars.toBorrow);
+        _pool.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
+        _pool.borrowFromPool(underlying, vars.toBorrow);
 
         ERC20(underlying).safeTransfer(receiver, amount);
 
@@ -128,8 +124,9 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @notice Implements the repay logic.
     /// @param underlying The address of the underlying asset to borrow.
     /// @param amount The amount of `underlying` to repay.
+    /// @param repayer The address that repays the underlying debt.
     /// @param onBehalf The address whose position will be repaid.
-    /// @return The amount repaid.
+    /// @return The amount repaid (in underlying).
     function repayLogic(address underlying, uint256 amount, address repayer, address onBehalf)
         external
         returns (uint256)
@@ -139,15 +136,15 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserBorrowBalanceFromIndexes(underlying, onBehalf, indexes), amount);
 
-        if (amount == 0) return 0;
+        if (amount == 0) revert Errors.DebtIsZero();
 
         ERC20Permit2(underlying).transferFrom2(repayer, address(this), amount);
 
         Types.SupplyRepayVars memory vars =
             _executeRepay(underlying, amount, repayer, onBehalf, _defaultIterations.repay, indexes);
 
-        _POOL.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
-        _POOL.supplyToPool(underlying, vars.toSupply);
+        _pool.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
+        _pool.supplyToPool(underlying, vars.toSupply, indexes.supply.poolIndex);
 
         return amount;
     }
@@ -158,7 +155,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param supplier The address whose position will be withdrawn.
     /// @param receiver The address that will receive the withdrawn funds.
     /// @param maxIterations The maximum number of iterations allowed during the matching process.
-    /// @return The amount withdrawn.
+    /// @return The amount withdrawn (in underlying).
     function withdrawLogic(
         address underlying,
         uint256 amount,
@@ -171,14 +168,14 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.Indexes256 memory indexes = _updateIndexes(underlying);
         amount = Math.min(_getUserSupplyBalanceFromIndexes(underlying, supplier, indexes), amount);
 
-        if (amount == 0) return 0;
+        if (amount == 0) revert Errors.SupplyIsZero();
 
         Types.BorrowWithdrawVars memory vars = _executeWithdraw(
             underlying, amount, supplier, receiver, Math.max(_defaultIterations.withdraw, maxIterations), indexes
         );
 
-        _POOL.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
-        _POOL.borrowFromPool(underlying, vars.toBorrow);
+        _pool.withdrawFromPool(underlying, market.aToken, vars.toWithdraw);
+        _pool.borrowFromPool(underlying, vars.toBorrow);
 
         ERC20(underlying).safeTransfer(receiver, amount);
 
@@ -190,7 +187,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param amount The amount of `underlying` to withdraw.
     /// @param supplier The address whose position will be withdrawn.
     /// @param receiver The address that will receive the withdrawn funds.
-    /// @return The collateral amount withdrawn.
+    /// @return The collateral amount withdrawn (in underlying).
     function withdrawCollateralLogic(address underlying, uint256 amount, address supplier, address receiver)
         external
         returns (uint256)
@@ -201,16 +198,16 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         uint256 poolSupplyIndex = indexes.supply.poolIndex;
         amount = Math.min(_getUserCollateralBalanceFromIndex(underlying, supplier, poolSupplyIndex), amount);
 
-        if (amount == 0) return 0;
+        if (amount == 0) revert Errors.CollateralIsZero();
 
         _executeWithdrawCollateral(underlying, amount, supplier, receiver, poolSupplyIndex);
 
         // The following check requires accounting to have been performed.
-        if (_getUserHealthFactor(supplier) < Constants.DEFAULT_LIQUIDATION_THRESHOLD) {
+        if (_getUserHealthFactor(supplier) < Constants.DEFAULT_LIQUIDATION_MAX_HF) {
             revert Errors.UnauthorizedWithdraw();
         }
 
-        _POOL.withdrawFromPool(underlying, market.aToken, amount);
+        _pool.withdrawFromPool(underlying, market.aToken, amount);
 
         ERC20(underlying).safeTransfer(receiver, amount);
 
@@ -223,7 +220,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
     /// @param amount The amount of `underlyingBorrowed` to repay.
     /// @param borrower The address of the borrower to liquidate.
     /// @param liquidator The address that will liquidate the borrower.
-    /// @return The `underlyingBorrowed` amount repaid and the `underlyingCollateral` amount seized.
+    /// @return The `underlyingBorrowed` amount repaid (in underlying) and the `underlyingCollateral` amount seized (in underlying).
     function liquidateLogic(
         address underlyingBorrowed,
         address underlyingCollateral,
@@ -231,22 +228,28 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         address borrower,
         address liquidator
     ) external returns (uint256, uint256) {
+        _validateLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
+
         Types.Indexes256 memory borrowIndexes = _updateIndexes(underlyingBorrowed);
         Types.Indexes256 memory collateralIndexes = _updateIndexes(underlyingCollateral);
 
         Types.LiquidateVars memory vars;
-        vars.closeFactor = _authorizeLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
+        vars.closeFactor = _authorizeLiquidate(underlyingBorrowed, borrower);
 
         amount = Math.min(
             _getUserBorrowBalanceFromIndexes(underlyingBorrowed, borrower, borrowIndexes).percentMul(vars.closeFactor), // Max liquidatable debt.
             amount
         );
 
+        // If the check is done later, it is ambiguous whether debt is truly zero or whether there's not enough collateral to cover for 1 dust of debt.
+        if (amount == 0) revert Errors.DebtIsZero();
+
         (amount, vars.seized) = _calculateAmountToSeize(
             underlyingBorrowed, underlyingCollateral, amount, borrower, collateralIndexes.supply.poolIndex
         );
 
-        if (amount == 0) return (0, 0);
+        if (vars.seized == 0) revert Errors.CollateralIsZero();
+        if (amount == 0) revert Errors.DebtIsZero(); // `amount` could still be zero because there's not enough collateral to cover for 1 dust of debt.
 
         ERC20Permit2(underlyingBorrowed).transferFrom2(liquidator, address(this), amount);
 
@@ -256,9 +259,9 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
             underlyingCollateral, vars.seized, borrower, liquidator, collateralIndexes.supply.poolIndex
         );
 
-        _POOL.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, repayVars.toRepay);
-        _POOL.supplyToPool(underlyingBorrowed, repayVars.toSupply);
-        _POOL.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.seized);
+        _pool.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, repayVars.toRepay);
+        _pool.supplyToPool(underlyingBorrowed, repayVars.toSupply, borrowIndexes.supply.poolIndex);
+        _pool.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.seized);
 
         ERC20(underlyingCollateral).safeTransfer(liquidator, vars.seized);
 

@@ -2,9 +2,17 @@
 pragma solidity >=0.5.0;
 
 interface IRewardsManager {
-    function POOL() external view returns (address);
     function MORPHO() external view returns (address);
     function REWARDS_CONTROLLER() external view returns (address);
+
+    function getRewardData(address asset, address reward)
+        external
+        view
+        returns (uint256 startingIndex, uint256 index, uint256 lastUpdateTimestamp);
+    function getUserData(address asset, address reward, address user)
+        external
+        view
+        returns (uint256 index, uint256 accrued);
 
     function getAllUserRewards(address[] calldata assets, address user)
         external
@@ -16,6 +24,7 @@ interface IRewardsManager {
         view
         returns (uint256 totalAccrued);
     function getUserAssetIndex(address user, address asset, address reward) external view returns (uint256);
+    function getAssetIndex(address asset, address reward) external view returns (uint256 assetIndex);
 
     function claimRewards(address[] calldata assets, address user)
         external

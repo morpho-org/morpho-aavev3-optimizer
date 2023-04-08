@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import {IMorpho} from "./interfaces/IMorpho.sol";
 import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
+import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewardsController.sol";
 
 import {Types} from "./libraries/Types.sol";
@@ -27,31 +28,31 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     using SafeTransferLib for ERC20;
     using Permit2Lib for ERC20Permit2;
 
-    /* CONSTRUCTOR */
-
-    /// @dev The contract is automatically marked as initialized when deployed to prevent hijacking the implementation contract.
-    /// @param addressesProvider The address of the pool addresses provider.
-    /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
-    constructor(address addressesProvider, uint8 eModeCategoryId) MorphoStorage(addressesProvider, eModeCategoryId) {}
-
     /* INITIALIZER */
 
     /// @notice Initializes the contract.
-    /// @param newPositionsManager The address of the `_positionsManager` to set.
-    /// @param newDefaultIterations The `_defaultIterations` to set.
-    function initialize(address newPositionsManager, Types.Iterations memory newDefaultIterations)
-        external
-        initializer
-    {
+    /// @param addressesProvider The address of the pool addresses provider.
+    /// @param eModeCategoryId The e-mode category of the deployed Morpho. 0 for the general mode.
+    /// @param positionsManager The address of the `_positionsManager` to set.
+    /// @param defaultIterations The `_defaultIterations` to set.
+    function initialize(
+        address addressesProvider,
+        uint8 eModeCategoryId,
+        address positionsManager,
+        Types.Iterations memory defaultIterations
+    ) external initializer {
         __Ownable_init_unchained();
 
-        _positionsManager = newPositionsManager;
-        _defaultIterations = newDefaultIterations;
-        emit Events.DefaultIterationsSet(newDefaultIterations.repay, newDefaultIterations.withdraw);
-        emit Events.PositionsManagerSet(newPositionsManager);
+        _addressesProvider = IPoolAddressesProvider(addressesProvider);
+        _pool = IPool(_addressesProvider.getPool());
 
-        _POOL.setUserEMode(_E_MODE_CATEGORY_ID);
-        emit Events.EModeSet(_E_MODE_CATEGORY_ID);
+        _positionsManager = positionsManager;
+        _defaultIterations = defaultIterations;
+        emit Events.DefaultIterationsSet(defaultIterations.repay, defaultIterations.withdraw);
+        emit Events.PositionsManagerSet(positionsManager);
+
+        _eModeCategoryId = eModeCategoryId;
+        _pool.setUserEMode(_eModeCategoryId);
     }
 
     /* EXTERNAL */
@@ -61,8 +62,8 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param underlying The address of the underlying asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the supply position.
-    /// @param maxIterations The maximum number of iterations allowed during the matching process.
-    /// @return The amount supplied.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process. Using 4 was shown to be efficient in Morpho Labs' simulations.
+    /// @return The amount supplied (in underlying).
     function supply(address underlying, uint256 amount, address onBehalf, uint256 maxIterations)
         external
         returns (uint256)
@@ -78,7 +79,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param maxIterations The maximum number of iterations allowed during the matching process.
     /// @param deadline The deadline for the permit2 signature.
     /// @param signature The permit2 signature.
-    /// @return The amount supplied.
+    /// @return The amount supplied (in underlying).
     function supplyWithPermit(
         address underlying,
         uint256 amount,
@@ -98,7 +99,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param underlying The address of the underlying asset to supply.
     /// @param amount The amount of `underlying` to supply.
     /// @param onBehalf The address that will receive the collateral position.
-    /// @return The collateral amount supplied.
+    /// @return The collateral amount supplied (in underlying).
     function supplyCollateral(address underlying, uint256 amount, address onBehalf) external returns (uint256) {
         return _supplyCollateral(underlying, amount, msg.sender, onBehalf);
     }
@@ -110,7 +111,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param onBehalf The address that will receive the collateral position.
     /// @param deadline The deadline for the permit2 signature.
     /// @param signature The permit2 signature.
-    /// @return The collateral amount supplied.
+    /// @return The collateral amount supplied (in underlying).
     function supplyCollateralWithPermit(
         address underlying,
         uint256 amount,
@@ -130,8 +131,8 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to borrow.
     /// @param onBehalf The address that will receive the debt position.
     /// @param receiver The address that will receive the borrowed funds.
-    /// @param maxIterations The maximum number of iterations allowed during the matching process.
-    /// @return The amount borrowed.
+    /// @param maxIterations The maximum number of iterations allowed during the matching process. Using 4 was shown to be efficient in Morpho Labs' simulations.
+    /// @return The amount borrowed (in underlying).
     function borrow(address underlying, uint256 amount, address onBehalf, address receiver, uint256 maxIterations)
         external
         returns (uint256)
@@ -144,18 +145,19 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param underlying The address of the underlying asset to borrow.
     /// @param amount The amount of `underlying` to repay.
     /// @param onBehalf The address whose position will be repaid.
-    /// @return The amount repaid.
+    /// @return The amount repaid (in underlying).
     function repay(address underlying, uint256 amount, address onBehalf) external returns (uint256) {
         return _repay(underlying, amount, msg.sender, onBehalf);
     }
 
     /// @notice Repays `amount` of `underlying` on behalf of `onBehalf` using permit2 in a single tx.
+    /// @dev When repaying all, one should pass `type(uint160).max` as `amount` because Permit2 does not support approvals larger than 160 bits.
     /// @param underlying The address of the underlying asset to borrow.
     /// @param amount The amount of `underlying` to repay.
     /// @param onBehalf The address whose position will be repaid.
     /// @param deadline The deadline for the permit2 signature.
     /// @param signature The permit2 signature.
-    /// @return The amount repaid.
+    /// @return The amount repaid (in underlying).
     function repayWithPermit(
         address underlying,
         uint256 amount,
@@ -190,7 +192,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param amount The amount of `underlying` to withdraw.
     /// @param onBehalf The address whose position will be withdrawn.
     /// @param receiver The address that will receive the withdrawn funds.
-    /// @return The collateral amount withdrawn.
+    /// @return The collateral amount withdrawn (in underlying).
     function withdrawCollateral(address underlying, uint256 amount, address onBehalf, address receiver)
         external
         returns (uint256)
@@ -203,7 +205,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param underlyingCollateral The address of the underlying collateral to seize.
     /// @param user The address of the user to liquidate.
     /// @param amount The amount of `underlyingBorrowed` to repay.
-    /// @return The `underlyingBorrowed` amount repaid and the `underlyingCollateral` amount seized.
+    /// @return The `underlyingBorrowed` amount repaid (in underlying) and the `underlyingCollateral` amount seized (in underlying).
     function liquidate(address underlyingBorrowed, address underlyingCollateral, address user, uint256 amount)
         external
         returns (uint256, uint256)
@@ -249,7 +251,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 usedNonce = _userNonce[signatory]++;
         if (nonce != usedNonce) revert Errors.InvalidNonce();
 
-        emit Events.UserNonceIncremented(manager, signatory, usedNonce);
+        emit Events.UserNonceIncremented(msg.sender, signatory, usedNonce);
 
         _approveManager(signatory, manager, isAllowed);
     }
@@ -263,6 +265,7 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         external
         returns (address[] memory rewardTokens, uint256[] memory claimedAmounts)
     {
+        if (address(_rewardsManager) == address(0)) revert Errors.AddressIsZero();
         if (_isClaimRewardsPaused) revert Errors.ClaimRewardsPaused();
 
         (rewardTokens, claimedAmounts) = _rewardsManager.claimRewards(assets, onBehalf);

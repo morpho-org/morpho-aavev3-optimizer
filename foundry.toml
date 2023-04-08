@@ -5,7 +5,11 @@ libs = ["node_modules", "lib"]
 fs_permissions = [{ access = "read", path = "./config/"}]
 
 [fuzz]
-runs = 8
+runs = 32
+
+[invariant]
+runs = 4
+depth = 64
 
 [rpc_endpoints]
 mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"

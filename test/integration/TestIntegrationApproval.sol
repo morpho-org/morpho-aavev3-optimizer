@@ -28,9 +28,12 @@ contract TestIntegrationApproval is IntegrationTest {
     function testApproveManager(address delegator, address manager, bool isAllowed) public {
         vm.assume(delegator != address(proxyAdmin)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target
 
+        vm.expectEmit(true, true, true, true);
+        emit Events.ManagerApproval(delegator, manager, isAllowed);
+
         vm.prank(delegator);
         morpho.approveManager(manager, isAllowed);
-        assertEq(morpho.isManaging(delegator, manager), isAllowed);
+        assertEq(morpho.isManagedBy(delegator, manager), isAllowed);
     }
 
     function testApproveManagerWithSig(uint128 deadline) public {
@@ -49,6 +52,9 @@ contract TestIntegrationApproval is IntegrationTest {
         Types.Signature memory sig;
         (sig.v, sig.r, sig.s) = vm.sign(OWNER_PK, digest);
 
+        vm.expectEmit(true, true, true, true);
+        emit Events.ManagerApproval(authorization.delegator, authorization.manager, authorization.isAllowed);
+
         morpho.approveManagerWithSig(
             authorization.delegator,
             authorization.manager,
@@ -58,7 +64,7 @@ contract TestIntegrationApproval is IntegrationTest {
             sig
         );
 
-        assertEq(morpho.isManaging(DELEGATOR, MANAGER), true);
+        assertEq(morpho.isManagedBy(DELEGATOR, MANAGER), true);
         assertEq(morpho.userNonce(DELEGATOR), 1);
     }
 

@@ -13,6 +13,7 @@ import "test/helpers/InternalTest.sol";
 
 contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsManagerInternal {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using ReserveDataLib for DataTypes.ReserveData;
     using EnumerableSet for EnumerableSet.AddressSet;
     using WadRayMath for uint256;
     using PoolLib for IPool;
@@ -24,6 +25,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
     uint256 daiTokenUnit;
 
     function setUp() public virtual override {
+        super.setUp();
+
         _defaultIterations = Types.Iterations(10, 10);
 
         _createMarket(dai, 0, 3_333);
@@ -33,12 +36,12 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         _setBalances(address(this), type(uint256).max);
 
-        _POOL.supplyToPool(dai, 100 ether);
-        _POOL.supplyToPool(wbtc, 1e8);
-        _POOL.supplyToPool(usdc, 1e8);
-        _POOL.supplyToPool(wNative, 1 ether);
+        _pool.supplyToPool(dai, 100 ether, _pool.getReserveNormalizedIncome(dai));
+        _pool.supplyToPool(wbtc, 1e8, _pool.getReserveNormalizedIncome(wbtc));
+        _pool.supplyToPool(usdc, 1e8, _pool.getReserveNormalizedIncome(usdc));
+        _pool.supplyToPool(wNative, 1 ether, _pool.getReserveNormalizedIncome(wNative));
 
-        daiTokenUnit = 10 ** _POOL.getConfiguration(dai).getDecimals();
+        daiTokenUnit = 10 ** _pool.getConfiguration(dai).getDecimals();
     }
 
     function testAuthorizeBorrowWithNoBorrowCap(uint256 amount, uint256 totalP2P, uint256 delta) public {
@@ -111,7 +114,10 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
     function testAccountRepayShouldIncreaseIdleSupplyIfSupplyCapReached(uint256 amount, uint256 supplyCap) public {
         Types.Market storage market = _market[dai];
 
-        uint256 totalPoolSupply = ERC20(market.aToken).totalSupply();
+        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+        DataTypes.ReserveData memory reserve = pool.getReserveData(market.underlying);
+        uint256 totalPoolSupply = (IAToken(market.aToken).scaledTotalSupply() + reserve.getAccruedToTreasury(indexes))
+            .rayMul(indexes.supply.poolIndex);
         supplyCap = bound(
             supplyCap,
             // Should be at least 1, but also cover some cases where supply cap is less than the current supplied.
@@ -119,12 +125,8 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
             Math.min(ReserveConfiguration.MAX_VALID_SUPPLY_CAP, MAX_AMOUNT / daiTokenUnit)
         );
         // We are testing the case the supply cap is reached, so the min should be greater than the amount needed to reach the supply cap.
-        amount = bound(
-            amount,
-            (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply + _accruedToTreasury(market.underlying))
-                + MIN_AMOUNT,
-            MAX_AMOUNT
-        );
+        amount =
+            bound(amount, Math.max((supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply), MIN_AMOUNT), MAX_AMOUNT);
 
         _updateSupplierInDS(dai, address(1), 0, MAX_AMOUNT, false);
         _updateBorrowerInDS(dai, address(this), 0, MAX_AMOUNT, false);
@@ -133,11 +135,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         Types.SupplyRepayVars memory vars = this.accountRepay(dai, amount, address(this), 10);
 
-        assertApproxEqAbs(
-            market.idleSupply,
-            amount - (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply + _accruedToTreasury(market.underlying)),
-            1
-        );
+        assertEq(market.idleSupply, amount - (supplyCap * daiTokenUnit).zeroFloorSub(totalPoolSupply));
         assertEq(vars.toRepay, 0);
         assertEq(vars.toSupply, amount - market.idleSupply);
     }

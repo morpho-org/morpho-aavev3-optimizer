@@ -26,24 +26,24 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
 
     /* STORAGE */
 
-    /// @notice Returns the pool address.
-    function POOL() external view returns (address) {
-        return address(_POOL);
-    }
-
-    /// @notice Returns the addresses provider address.
-    function ADDRESSES_PROVIDER() external view returns (address) {
-        return address(_ADDRESSES_PROVIDER);
-    }
-
     /// @notice Returns the domain separator of the EIP712.
     function DOMAIN_SEPARATOR() external view returns (bytes32) {
         return _domainSeparator();
     }
 
+    /// @notice Returns the pool address.
+    function pool() external view returns (address) {
+        return address(_pool);
+    }
+
+    /// @notice Returns the addresses provider address.
+    function addressesProvider() external view returns (address) {
+        return address(_addressesProvider);
+    }
+
     /// @notice Returns the e-mode category ID of Morpho on the Aave protocol.
-    function E_MODE_CATEGORY_ID() external view returns (uint256) {
-        return _E_MODE_CATEGORY_ID;
+    function eModeCategoryId() external view returns (uint256) {
+        return _eModeCategoryId;
     }
 
     /// @notice Returns the market data.
@@ -71,7 +71,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
         return _marketBalances[underlying].scaledPoolBorrowBalance(user);
     }
 
-    //// @notice Returns the scaled balance of `user` on the `underlying` market, borrowed peer-to-peer (with `underlying` decimals).
+    /// @notice Returns the scaled balance of `user` on the `underlying` market, borrowed peer-to-peer (with `underlying` decimals).
     function scaledP2PBorrowBalance(address underlying, address user) external view returns (uint256) {
         return _marketBalances[underlying].scaledP2PBorrowBalance(user);
     }
@@ -97,7 +97,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
 
     /// @notice Returns the supply collateral balance of `user` on the `underlying` market (in underlying).
     function collateralBalance(address underlying, address user) external view returns (uint256) {
-        return _getUserCollateralBalanceFromIndex(underlying, user, _POOL.getReserveNormalizedIncome(underlying));
+        return _getUserCollateralBalanceFromIndex(underlying, user, _pool.getReserveNormalizedIncome(underlying));
     }
 
     /// @notice Returns the list of collateral underlyings of `user`.
@@ -111,8 +111,8 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     }
 
     /// @notice Returns whether `manager` is a manager of `delegator`.
-    function isManaging(address delegator, address manager) external view returns (bool) {
-        return _isManaging[delegator][manager];
+    function isManagedBy(address delegator, address manager) external view returns (bool) {
+        return _isManagedBy[delegator][manager];
     }
 
     /// @notice Returns the nonce of `user` for the manager approval signature.
@@ -161,10 +161,11 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     /// @dev Input address zero to get the head of the bucket.
     /// @param underlying The address of the underlying asset.
     /// @param position The position type, either pool or peer-to-peer and either supply or borrow.
+    /// @return The address of the next account in the data structure.
     function getNext(address underlying, Types.Position position, address user) external view returns (address) {
         LogarithmicBuckets.Buckets storage buckets = _getBuckets(underlying, position);
         uint256 userBalance = buckets.valueOf[user];
-        uint256 userBucket = LogarithmicBuckets.computeBucket(userBalance);
+        uint256 userBucket = LogarithmicBuckets.highestSetBit(userBalance);
 
         return buckets.buckets[userBucket].getNext(user);
     }
@@ -172,6 +173,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     /// @notice Returns the buckets mask of the corresponding market side.
     /// @param underlying The address of the underlying asset.
     /// @param position The position type, either pool or peer-to-peer and either supply or borrow.
+    /// @return The buckets mask of the corresponding market side.
     function getBucketsMask(address underlying, Types.Position position) external view returns (uint256) {
         return _getBuckets(underlying, position).bucketsMask;
     }
