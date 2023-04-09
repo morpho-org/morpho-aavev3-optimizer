@@ -21,17 +21,6 @@ contract BulkerGateway is IBulkerGateway {
     using SafeTransferLib for ERC20;
     using Permit2Lib for ERC20Permit2;
 
-    /* ERRORS */
-
-    /// @notice Thrown when another address than WETH sends ETH to the contract.
-    error OnlyWETH();
-
-    /// @notice Thrown when the `morpho` address passed in the constructor is zero.
-    error AddressIsZero();
-
-    /// @notice Thrown when the amount used is zero.
-    error AmountIsZero();
-
     /* CONSTANTS */
 
     /// @dev The address of the WETH contract.

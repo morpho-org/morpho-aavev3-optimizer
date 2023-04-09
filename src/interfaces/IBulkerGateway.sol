@@ -13,6 +13,15 @@ interface IBulkerGateway {
     /// @param nbData The number of data inputs.
     error InconsistentParameters(uint256 nbActions, uint256 nbData);
 
+    /// @notice Thrown when another address than WETH sends ETH to the contract.
+    error OnlyWETH();
+
+    /// @notice Thrown when the `morpho` address passed in the constructor is zero.
+    error AddressIsZero();
+
+    /// @notice Thrown when the amount used is zero.
+    error AmountIsZero();
+
     /* ENUMS */
 
     enum ActionType {
