@@ -5,7 +5,6 @@ import {IWETH} from "src/interfaces/IWETH.sol";
 import {IWSTETH} from "src/interfaces/IWSTETH.sol";
 import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {IBulkerGateway} from "src/interfaces/IBulkerGateway.sol";
-import {ISwapRouter} from "src/interfaces/ISwapRouter.sol";
 
 import {Types} from "src/libraries/Types.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
