@@ -187,7 +187,6 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     }
 
     /// @notice Withdraws `amount` of `underlying` collateral on behalf of `onBehalf`.
-    ///         If sender is not `onBehalf`, sender must have previously been approved by `onBehalf` using `approveManager`.
     /// @param underlying The address of the underlying asset to withdraw.
     /// @param amount The amount of `underlying` to withdraw.
     /// @param onBehalf The address whose position will be withdrawn.
