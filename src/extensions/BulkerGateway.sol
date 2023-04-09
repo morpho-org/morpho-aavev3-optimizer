@@ -158,6 +158,8 @@ contract BulkerGateway is IBulkerGateway {
         }
     }
 
+    /* INTERNAL ACTIONS */
+
     /// @notice Approves the given `amount` of `asset` from sender to be spent by this contract via Permit2 with the given `deadline` & EIP712 `signature`.
     /// @return The amount approved (in asset).
     function _approve2(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
@@ -205,9 +207,7 @@ contract BulkerGateway is IBulkerGateway {
         amount = _computeAmount(amount, lastOutputAmount, opType);
         if (amount == 0) revert AmountIsZero();
 
-        if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
-            ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
-        }
+        _approveMaxToMorpho(asset);
 
         return _MORPHO.supply(asset, amount, onBehalf, maxIterations);
     }
@@ -220,9 +220,7 @@ contract BulkerGateway is IBulkerGateway {
         amount = _computeAmount(amount, lastOutputAmount, opType);
         if (amount == 0) revert AmountIsZero();
 
-        if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
-            ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
-        }
+        _approveMaxToMorpho(asset);
 
         return _MORPHO.supplyCollateral(asset, amount, onBehalf);
     }
@@ -246,9 +244,7 @@ contract BulkerGateway is IBulkerGateway {
         amount = _computeAmount(amount, lastOutputAmount, opType);
         if (amount == 0) revert AmountIsZero();
 
-        if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
-            ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
-        }
+        _approveMaxToMorpho(asset);
 
         return _MORPHO.repay(asset, amount, onBehalf);
     }
@@ -332,6 +328,8 @@ contract BulkerGateway is IBulkerGateway {
         ERC20(_ST_ETH).safeTransfer(receiver, unwrapped);
     }
 
+    /* INTERNAL HELPERS */
+
     /// @notice Returns the amount computed from the output amount of the last executed action, given a math operation and an operand.
     /// @param operand The operand to apply to the last output amount, via the given operation (should be the current action's input amount).
     /// @param lastOutputAmount The output amount of the last executed action.
@@ -352,6 +350,13 @@ contract BulkerGateway is IBulkerGateway {
             return lastOutputAmount.wadMul(operand);
         } else if (opType == OpType.DIV) {
             return lastOutputAmount.wadDiv(operand);
+        }
+    }
+
+    /// @notice Give the max approval to the Morpho contract to spend the given `asset` if not already approved.
+    function _approveMaxToMorpho(address asset) internal {
+        if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
+            ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
         }
     }
 }
