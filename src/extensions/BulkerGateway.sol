@@ -164,6 +164,8 @@ contract BulkerGateway is IBulkerGateway {
         (address asset, uint256 amount, uint256 deadline, Types.Signature memory signature, OpType opType) =
             abi.decode(data, (address, uint256, uint256, Types.Signature, OpType));
         amount = _computeAmount(amount, lastOutputAmount, opType);
+        if (amount == 0) revert AmountIsZero();
+
         ERC20Permit2(asset).simplePermit2(
             msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
         );
@@ -176,6 +178,7 @@ contract BulkerGateway is IBulkerGateway {
     function _transferFrom2(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (address asset, uint256 amount, OpType opType) = abi.decode(data, (address, uint256, OpType));
         amount = _computeAmount(amount, lastOutputAmount, opType);
+        if (amount == 0) revert AmountIsZero();
 
         ERC20Permit2(asset).transferFrom2(msg.sender, address(this), amount);
 
@@ -200,6 +203,8 @@ contract BulkerGateway is IBulkerGateway {
         (address asset, uint256 amount, address onBehalf, uint256 maxIterations, OpType opType) =
             abi.decode(data, (address, uint256, address, uint256, OpType));
         amount = _computeAmount(amount, lastOutputAmount, opType);
+        if (amount == 0) revert AmountIsZero();
+
         if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
             ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
         }
@@ -213,6 +218,8 @@ contract BulkerGateway is IBulkerGateway {
         (address asset, uint256 amount, address onBehalf, OpType opType) =
             abi.decode(data, (address, uint256, address, OpType));
         amount = _computeAmount(amount, lastOutputAmount, opType);
+        if (amount == 0) revert AmountIsZero();
+
         if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
             ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
         }
@@ -226,6 +233,8 @@ contract BulkerGateway is IBulkerGateway {
         (address asset, uint256 amount, address receiver, uint256 maxIterations, OpType opType) =
             abi.decode(data, (address, uint256, address, uint256, OpType));
         amount = _computeAmount(amount, lastOutputAmount, opType);
+        if (amount == 0) revert AmountIsZero();
+
         return _MORPHO.borrow(asset, amount, msg.sender, receiver, maxIterations);
     }
 
@@ -234,8 +243,9 @@ contract BulkerGateway is IBulkerGateway {
     function _repay(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (address asset, uint256 amount, address onBehalf, OpType opType) =
             abi.decode(data, (address, uint256, address, OpType));
-
         amount = _computeAmount(amount, lastOutputAmount, opType);
+        if (amount == 0) revert AmountIsZero();
+
         if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
             ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
         }
@@ -249,6 +259,8 @@ contract BulkerGateway is IBulkerGateway {
         (address asset, uint256 amount, address receiver, uint256 maxIterations, OpType opType) =
             abi.decode(data, (address, uint256, address, uint256, OpType));
         amount = _computeAmount(amount, lastOutputAmount, opType);
+        if (amount == 0) revert AmountIsZero();
+
         return _MORPHO.withdraw(asset, amount, msg.sender, receiver, maxIterations);
     }
 
@@ -258,6 +270,8 @@ contract BulkerGateway is IBulkerGateway {
         (address asset, uint256 amount, address receiver, OpType opType) =
             abi.decode(data, (address, uint256, address, OpType));
         amount = _computeAmount(amount, lastOutputAmount, opType);
+        if (amount == 0) revert AmountIsZero();
+
         return _MORPHO.withdrawCollateral(asset, amount, msg.sender, receiver);
     }
 
