@@ -138,94 +138,50 @@ contract BulkerGateway is IBulkerGateway {
         returns (uint256)
     {
         if (action == ActionType.APPROVE2) {
-            (address asset, uint256 amount, uint256 deadline, Types.Signature memory signature, OpType opType) =
-                abi.decode(data, (address, uint256, uint256, Types.Signature, OpType));
-
-            return _approve2(asset, _computeAmount(amount, lastOutputAmount, opType), deadline, signature);
+            return _approve2(data, lastOutputAmount);
         } else if (action == ActionType.TRANSFER_FROM2) {
-            (address asset, uint256 amount, OpType opType) = abi.decode(data, (address, uint256, OpType));
-
-            return _transferFrom2(asset, _computeAmount(amount, lastOutputAmount, opType));
+            return _transferFrom2(data, lastOutputAmount);
         } else if (action == ActionType.APPROVE_MANAGER) {
-            (bool isAllowed, uint256 nonce, uint256 deadline, Types.Signature memory signature) =
-                abi.decode(data, (bool, uint256, uint256, Types.Signature));
-
-            return _approveManager(isAllowed, nonce, deadline, signature);
+            return _approveManager(data);
         } else if (action == ActionType.SUPPLY) {
-            (address asset, uint256 amount, address onBehalf, uint256 maxIterations, OpType opType) =
-                abi.decode(data, (address, uint256, address, uint256, OpType));
-
-            return _supply(asset, _computeAmount(amount, lastOutputAmount, opType), onBehalf, maxIterations);
+            return _supply(data, lastOutputAmount);
         } else if (action == ActionType.SUPPLY_COLLATERAL) {
-            (address asset, uint256 amount, address onBehalf, OpType opType) =
-                abi.decode(data, (address, uint256, address, OpType));
-
-            return _supplyCollateral(asset, _computeAmount(amount, lastOutputAmount, opType), onBehalf);
+            return _supplyCollateral(data, lastOutputAmount);
         } else if (action == ActionType.BORROW) {
-            (address asset, uint256 amount, address receiver, uint256 maxIterations, OpType opType) =
-                abi.decode(data, (address, uint256, address, uint256, OpType));
-
-            return _borrow(asset, _computeAmount(amount, lastOutputAmount, opType), receiver, maxIterations);
+            return _borrow(data, lastOutputAmount);
         } else if (action == ActionType.REPAY) {
-            (address asset, uint256 amount, address onBehalf, OpType opType) =
-                abi.decode(data, (address, uint256, address, OpType));
-
-            return _repay(asset, _computeAmount(amount, lastOutputAmount, opType), onBehalf);
+            return _repay(data, lastOutputAmount);
         } else if (action == ActionType.WITHDRAW) {
-            (address asset, uint256 amount, address receiver, uint256 maxIterations, OpType opType) =
-                abi.decode(data, (address, uint256, address, uint256, OpType));
-
-            return _withdraw(asset, _computeAmount(amount, lastOutputAmount, opType), receiver, maxIterations);
+            return _withdraw(data, lastOutputAmount);
         } else if (action == ActionType.WITHDRAW_COLLATERAL) {
-            (address asset, uint256 amount, address receiver, OpType opType) =
-                abi.decode(data, (address, uint256, address, OpType));
-
-            return _withdrawCollateral(asset, _computeAmount(amount, lastOutputAmount, opType), receiver);
+            return _withdrawCollateral(data, lastOutputAmount);
         } else if (action == ActionType.CLAIM_REWARDS) {
-            (address[] memory assets, address onBehalf) = abi.decode(data, (address[], address));
-
-            return _claimRewards(assets, onBehalf);
+            return _claimRewards(data);
         } else if (action == ActionType.SWAP_EXACT_IN) {
-            (uint256 amountIn, uint256 maxPrice, bytes memory path, OpType opType) =
-                abi.decode(data, (uint256, uint256, bytes, OpType));
-
-            return _swapExactIn(_computeAmount(amountIn, lastOutputAmount, opType), maxPrice, path);
+            return _swapExactIn(data, lastOutputAmount);
         } else if (action == ActionType.SWAP_EXACT_OUT) {
-            (uint256 amountOut, uint256 maxPrice, bytes memory path, OpType opType) =
-                abi.decode(data, (uint256, uint256, bytes, OpType));
-
-            return _swapExactOut(_computeAmount(amountOut, lastOutputAmount, opType), maxPrice, path);
+            return _swapExactOut(data, lastOutputAmount);
         } else if (action == ActionType.WRAP_ETH) {
-            (uint256 amount, OpType opType) = abi.decode(data, (uint256, OpType));
-
-            return _wrapEth(_computeAmount(amount, lastOutputAmount, opType));
+            return _wrapEth(data, lastOutputAmount);
         } else if (action == ActionType.UNWRAP_ETH) {
-            (uint256 amount, address receiver, OpType opType) = abi.decode(data, (uint256, address, OpType));
-
-            return _unwrapEth(_computeAmount(amount, lastOutputAmount, opType), receiver);
+            return _unwrapEth(data, lastOutputAmount);
         } else if (action == ActionType.WRAP_ST_ETH) {
-            (uint256 amount, OpType opType) = abi.decode(data, (uint256, OpType));
-
-            return _wrapStEth(_computeAmount(amount, lastOutputAmount, opType));
+            return _wrapStEth(data, lastOutputAmount);
         } else if (action == ActionType.UNWRAP_ST_ETH) {
-            (uint256 amount, address receiver, OpType opType) = abi.decode(data, (uint256, address, OpType));
-
-            return _unwrapStEth(_computeAmount(amount, lastOutputAmount, opType), receiver);
+            return _unwrapStEth(data, lastOutputAmount);
         }
 
         return type(uint256).max;
     }
 
     /// @notice Approves the given `amount` of `asset` from sender to be spent by this contract via Permit2 with the given `deadline` & EIP712 `signature`.
-    /// @param asset The address of the asset to approve.
-    /// @param amount The amount of `asset` to approve.
-    /// @param deadline The maximum timestamp at which the given signature is valid.
-    /// @param signature The Permit2 allowance message signature.
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount approved (in asset).
-    function _approve2(address asset, uint256 amount, uint256 deadline, Types.Signature memory signature)
-        internal
-        returns (uint256)
-    {
+    function _approve2(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
+        (address asset, uint256 amount, uint256 deadline, Types.Signature memory signature, OpType opType) =
+            abi.decode(data, (address, uint256, uint256, Types.Signature, OpType));
+        amount = _computeAmount(amount, lastOutputAmount, opType);
         ERC20Permit2(asset).simplePermit2(
             msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
         );
@@ -234,25 +190,25 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Transfers the given `amount` of `asset` from sender to this contract via ERC20 transfer with Permit2 fallback.
-    /// @param asset The address of the asset to transfer.
-    /// @param amount The amount of `asset` to transfer.
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount transfered (in asset).
-    function _transferFrom2(address asset, uint256 amount) internal returns (uint256) {
+    function _transferFrom2(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
+        (address asset, uint256 amount, OpType opType) = abi.decode(data, (address, uint256, OpType));
+        amount = _computeAmount(amount, lastOutputAmount, opType);
+
         ERC20Permit2(asset).transferFrom2(msg.sender, address(this), amount);
 
         return amount;
     }
 
     /// @notice Approves this contract to manage the position of `msg.sender` via EIP712 `signature`.
-    /// @param isAllowed Whether this contract is allowed to manage `msg.sender`'s position or not.
-    /// @param nonce The nonce of the signed message.
-    /// @param deadline The maximum timestamp at which the given signature is valid.
-    /// @param signature The Permit2 allowance message signature.
+    /// @param data The data to decode, associated with the action.
     /// @return Always `type(uint256).max`. Is not taken into account as an action's output amount.
-    function _approveManager(bool isAllowed, uint256 nonce, uint256 deadline, Types.Signature memory signature)
-        internal
-        returns (uint256)
-    {
+    function _approveManager(bytes memory data) internal returns (uint256) {
+        (bool isAllowed, uint256 nonce, uint256 deadline, Types.Signature memory signature) =
+            abi.decode(data, (bool, uint256, uint256, Types.Signature));
+
         _MORPHO.approveManagerWithSig(msg.sender, address(this), isAllowed, nonce, deadline, signature);
 
         return type(uint256).max;
@@ -260,15 +216,13 @@ contract BulkerGateway is IBulkerGateway {
 
     /// @notice Supplies `amount` of `asset` of `onBehalf` using permit2 in a single tx.
     ///         The supplied amount cannot be used as collateral but is eligible for the peer-to-peer matching.
-    /// @param asset The address of the `asset` asset to supply.
-    /// @param amount The amount of `asset` to supply.
-    /// @param onBehalf The address that will receive the supply position.
-    /// @param maxIterations The maximum number of iterations allowed during the matching process.
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount supplied (in asset).
-    function _supply(address asset, uint256 amount, address onBehalf, uint256 maxIterations)
-        internal
-        returns (uint256)
-    {
+    function _supply(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
+        (address asset, uint256 amount, address onBehalf, uint256 maxIterations, OpType opType) =
+            abi.decode(data, (address, uint256, address, uint256, OpType));
+        amount = _computeAmount(amount, lastOutputAmount, opType);
         if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
             ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
         }
@@ -277,11 +231,13 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Supplies `amount` of `asset` collateral to the pool on behalf of `onBehalf`.
-    /// @param asset The address of the `asset` asset to supply.
-    /// @param amount The amount of `asset` to supply.
-    /// @param onBehalf The address that will receive the supply position.
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The collateral amount supplied (in asset).
-    function _supplyCollateral(address asset, uint256 amount, address onBehalf) internal returns (uint256) {
+    function _supplyCollateral(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
+        (address asset, uint256 amount, address onBehalf, OpType opType) =
+            abi.decode(data, (address, uint256, address, OpType));
+        amount = _computeAmount(amount, lastOutputAmount, opType);
         if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
             ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
         }
@@ -290,24 +246,25 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Borrows `amount` of `asset` on behalf of the sender. Sender must have previously approved the bulker as their manager on Morpho.
-    /// @param asset The address of the asset asset to borrow.
-    /// @param amount The amount of `asset` to borrow.
-    /// @param receiver The address that will receive the borrowed funds.
-    /// @param maxIterations The maximum number of iterations allowed during the matching process. Using 4 was shown to be efficient in Morpho Labs' simulations.
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount borrowed (in asset).
-    function _borrow(address asset, uint256 amount, address receiver, uint256 maxIterations)
-        internal
-        returns (uint256)
-    {
+    function _borrow(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
+        (address asset, uint256 amount, address receiver, uint256 maxIterations, OpType opType) =
+            abi.decode(data, (address, uint256, address, uint256, OpType));
+        amount = _computeAmount(amount, lastOutputAmount, opType);
         return _MORPHO.borrow(asset, amount, msg.sender, receiver, maxIterations);
     }
 
     /// @notice Repays `amount` of `asset` on behalf of `onBehalf`.
-    /// @param asset The address of the asset asset to borrow.
-    /// @param amount The amount of `asset` to repay.
-    /// @param onBehalf The address whose position will be repaid.
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount repaid (in asset).
-    function _repay(address asset, uint256 amount, address onBehalf) internal returns (uint256) {
+    function _repay(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
+        (address asset, uint256 amount, address onBehalf, OpType opType) =
+            abi.decode(data, (address, uint256, address, OpType));
+
+        amount = _computeAmount(amount, lastOutputAmount, opType);
         if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
             ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
         }
@@ -316,45 +273,45 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Withdraws `amount` of `asset` on behalf of `onBehalf`. Sender must have previously approved the bulker as their manager on Morpho.
-    /// @param asset The address of the asset asset to withdraw.
-    /// @param amount The amount of `asset` to withdraw.
-    /// @param receiver The address that will receive the withdrawn funds.
-    /// @param maxIterations The maximum number of iterations allowed during the matching process.
-    ///                      If it is less than `Morpho.defaultIterations.withdraw`, the latter will be used.
-    ///                      Pass 0 to fallback to the `Morpho.defaultIterations.withdraw`.
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount withdrawn.
-    function _withdraw(address asset, uint256 amount, address receiver, uint256 maxIterations)
-        internal
-        returns (uint256)
-    {
+    function _withdraw(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
+        (address asset, uint256 amount, address receiver, uint256 maxIterations, OpType opType) =
+            abi.decode(data, (address, uint256, address, uint256, OpType));
+        amount = _computeAmount(amount, lastOutputAmount, opType);
         return _MORPHO.withdraw(asset, amount, msg.sender, receiver, maxIterations);
     }
 
     /// @notice Withdraws `amount` of `asset` on behalf of sender. Sender must have previously approved the bulker as their manager on Morpho.
-    /// @param asset The address of the asset asset to withdraw.
-    /// @param amount The amount of `asset` to withdraw.
-    /// @param receiver The address that will receive the withdrawn funds.
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The collateral amount withdrawn (in asset).
-    function _withdrawCollateral(address asset, uint256 amount, address receiver) internal returns (uint256) {
+    function _withdrawCollateral(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
+        (address asset, uint256 amount, address receiver, OpType opType) =
+            abi.decode(data, (address, uint256, address, OpType));
+        amount = _computeAmount(amount, lastOutputAmount, opType);
         return _MORPHO.withdrawCollateral(asset, amount, msg.sender, receiver);
     }
 
     /// @notice Claims rewards for the given assets, on behalf of an address, sending the funds to the given address.
-    /// @param assets The addresses of the markets.
-    /// @param onBehalf The address of which to claim the rewards.
+    /// @param data The data to decode, associated with the action.
     /// @return Always `type(uint256).max`. Is not taken into account as an action's output amount.
-    function _claimRewards(address[] memory assets, address onBehalf) internal returns (uint256) {
+    function _claimRewards(bytes memory data) internal returns (uint256) {
+        (address[] memory assets, address onBehalf) = abi.decode(data, (address[], address));
         _MORPHO.claimRewards(assets, onBehalf);
 
         return type(uint256).max;
     }
 
     /// @notice Swaps the exact input amount along the Uniswap V3 path, expecting a minimum output amount based on the given price and a maximum slippage.
-    /// @param amountIn The exact input amount to swap (will be capped to the caller's balance).
-    /// @param maxPrice The maximum amount of input tokens to get a unit of output token (with `18 + tokenInDecimals - tokenOutDecimals` decimals).
-    /// @param path The Uniswap V3 swap path.
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount of output token swapped.
-    function _swapExactIn(uint256 amountIn, uint256 maxPrice, bytes memory path) internal returns (uint256) {
+    function _swapExactIn(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
+        (uint256 amountIn, uint256 maxPrice, bytes memory path, OpType opType) =
+            abi.decode(data, (uint256, uint256, bytes, OpType));
+        amountIn = _computeAmount(amountIn, lastOutputAmount, opType);
         return ISwapRouter(_ROUTER).exactInput(
             ISwapRouter.ExactInputParams({
                 path: path,
@@ -367,11 +324,13 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Swaps the exact output amount along the Uniswap V3 path, expecting a maximum input amount based on the given price and a maximum slippage.
-    /// @param amountOut The exact output amount to swap.
-    /// @param maxPrice The maximum amount of input tokens to get a unit of output token (with `18 + tokenInDecimals - tokenOutDecimals` decimals).
-    /// @param path The Uniswap V3 swap path (reversed compared to _swapExactIn).
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount of input token swapped.
-    function _swapExactOut(uint256 amountOut, uint256 maxPrice, bytes memory path) internal returns (uint256) {
+    function _swapExactOut(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
+        (uint256 amountOut, uint256 maxPrice, bytes memory path, OpType opType) =
+            abi.decode(data, (uint256, uint256, bytes, OpType));
+        amountOut = _computeAmount(amountOut, lastOutputAmount, opType);
         return ISwapRouter(_ROUTER).exactOutput(
             ISwapRouter.ExactOutputParams({
                 path: path,
@@ -384,9 +343,12 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Wraps the given input of ETH to WETH.
-    /// @param amount The amount of ETH to wrap.
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount WETH corresponding to the input amount.
-    function _wrapEth(uint256 amount) internal returns (uint256) {
+    function _wrapEth(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
+        (uint256 amount, OpType opType) = abi.decode(data, (uint256, OpType));
+        amount = _computeAmount(amount, lastOutputAmount, opType);
         if (amount == 0) revert AmountIsZero();
 
         IWETH(_WETH).deposit{value: amount}();
@@ -395,10 +357,12 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Unwraps the given input of WETH to ETH.
-    /// @param amount The amount of WETH to unwrap.
-    /// @param receiver The address to which to send the unwrapped ETH.
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount ETH corresponding to the input amount.
-    function _unwrapEth(uint256 amount, address receiver) internal returns (uint256) {
+    function _unwrapEth(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
+        (uint256 amount, address receiver, OpType opType) = abi.decode(data, (uint256, address, OpType));
+        amount = _computeAmount(amount, lastOutputAmount, opType);
         if (amount == 0) revert AmountIsZero();
 
         IWETH(_WETH).withdraw(amount);
@@ -409,19 +373,24 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Wraps the given input of stETH to wstETH.
-    /// @param amount The amount of stETH to wrap.
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount stETH wrapped.
-    function _wrapStEth(uint256 amount) internal returns (uint256) {
+    function _wrapStEth(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
+        (uint256 amount, OpType opType) = abi.decode(data, (uint256, OpType));
+        amount = _computeAmount(amount, lastOutputAmount, opType);
         if (amount == 0) revert AmountIsZero();
 
         return IWSTETH(_WST_ETH).wrap(amount);
     }
 
     /// @notice Unwraps the given input of wstETH to stETH.
-    /// @param amount The amount of wstETH to unwrap.
-    /// @param receiver The address to which to send the unwrapped stETH.
+    /// @param data The data to decode, associated with the action.
+    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return unwrapped The amount of stETH unwrapped.
-    function _unwrapStEth(uint256 amount, address receiver) internal returns (uint256 unwrapped) {
+    function _unwrapStEth(bytes memory data, uint256 lastOutputAmount) internal returns (uint256 unwrapped) {
+        (uint256 amount, address receiver, OpType opType) = abi.decode(data, (uint256, address, OpType));
+        amount = _computeAmount(amount, lastOutputAmount, opType);
         if (amount == 0) revert AmountIsZero();
 
         unwrapped = IWSTETH(_WST_ETH).unwrap(amount);
