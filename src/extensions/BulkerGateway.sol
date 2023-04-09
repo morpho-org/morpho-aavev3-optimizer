@@ -175,8 +175,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Approves the given `amount` of `asset` from sender to be spent by this contract via Permit2 with the given `deadline` & EIP712 `signature`.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount approved (in asset).
     function _approve2(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (address asset, uint256 amount, uint256 deadline, Types.Signature memory signature, OpType opType) =
@@ -190,8 +188,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Transfers the given `amount` of `asset` from sender to this contract via ERC20 transfer with Permit2 fallback.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount transfered (in asset).
     function _transferFrom2(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (address asset, uint256 amount, OpType opType) = abi.decode(data, (address, uint256, OpType));
@@ -203,7 +199,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Approves this contract to manage the position of `msg.sender` via EIP712 `signature`.
-    /// @param data The data to decode, associated with the action.
     /// @return Always `type(uint256).max`. Is not taken into account as an action's output amount.
     function _approveManager(bytes memory data) internal returns (uint256) {
         (bool isAllowed, uint256 nonce, uint256 deadline, Types.Signature memory signature) =
@@ -216,8 +211,6 @@ contract BulkerGateway is IBulkerGateway {
 
     /// @notice Supplies `amount` of `asset` of `onBehalf` using permit2 in a single tx.
     ///         The supplied amount cannot be used as collateral but is eligible for the peer-to-peer matching.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount supplied (in asset).
     function _supply(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (address asset, uint256 amount, address onBehalf, uint256 maxIterations, OpType opType) =
@@ -231,8 +224,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Supplies `amount` of `asset` collateral to the pool on behalf of `onBehalf`.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The collateral amount supplied (in asset).
     function _supplyCollateral(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (address asset, uint256 amount, address onBehalf, OpType opType) =
@@ -246,8 +237,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Borrows `amount` of `asset` on behalf of the sender. Sender must have previously approved the bulker as their manager on Morpho.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount borrowed (in asset).
     function _borrow(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (address asset, uint256 amount, address receiver, uint256 maxIterations, OpType opType) =
@@ -257,8 +246,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Repays `amount` of `asset` on behalf of `onBehalf`.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount repaid (in asset).
     function _repay(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (address asset, uint256 amount, address onBehalf, OpType opType) =
@@ -273,8 +260,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Withdraws `amount` of `asset` on behalf of `onBehalf`. Sender must have previously approved the bulker as their manager on Morpho.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount withdrawn.
     function _withdraw(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (address asset, uint256 amount, address receiver, uint256 maxIterations, OpType opType) =
@@ -284,8 +269,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Withdraws `amount` of `asset` on behalf of sender. Sender must have previously approved the bulker as their manager on Morpho.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The collateral amount withdrawn (in asset).
     function _withdrawCollateral(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (address asset, uint256 amount, address receiver, OpType opType) =
@@ -295,7 +278,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Claims rewards for the given assets, on behalf of an address, sending the funds to the given address.
-    /// @param data The data to decode, associated with the action.
     /// @return Always `type(uint256).max`. Is not taken into account as an action's output amount.
     function _claimRewards(bytes memory data) internal returns (uint256) {
         (address[] memory assets, address onBehalf) = abi.decode(data, (address[], address));
@@ -305,8 +287,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Swaps the exact input amount along the Uniswap V3 path, expecting a minimum output amount based on the given price and a maximum slippage.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount of output token swapped.
     function _swapExactIn(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (uint256 amountIn, uint256 maxPrice, bytes memory path, OpType opType) =
@@ -324,8 +304,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Swaps the exact output amount along the Uniswap V3 path, expecting a maximum input amount based on the given price and a maximum slippage.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount of input token swapped.
     function _swapExactOut(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (uint256 amountOut, uint256 maxPrice, bytes memory path, OpType opType) =
@@ -343,8 +321,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Wraps the given input of ETH to WETH.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount WETH corresponding to the input amount.
     function _wrapEth(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (uint256 amount, OpType opType) = abi.decode(data, (uint256, OpType));
@@ -357,8 +333,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Unwraps the given input of WETH to ETH.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount ETH corresponding to the input amount.
     function _unwrapEth(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (uint256 amount, address receiver, OpType opType) = abi.decode(data, (uint256, address, OpType));
@@ -373,8 +347,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Wraps the given input of stETH to wstETH.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return The amount stETH wrapped.
     function _wrapStEth(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
         (uint256 amount, OpType opType) = abi.decode(data, (uint256, OpType));
@@ -385,8 +357,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Unwraps the given input of wstETH to stETH.
-    /// @param data The data to decode, associated with the action.
-    /// @param lastOutputAmount The output amount of the last executed action.
     /// @return unwrapped The amount of stETH unwrapped.
     function _unwrapStEth(bytes memory data, uint256 lastOutputAmount) internal returns (uint256 unwrapped) {
         (uint256 amount, address receiver, OpType opType) = abi.decode(data, (uint256, address, OpType));
