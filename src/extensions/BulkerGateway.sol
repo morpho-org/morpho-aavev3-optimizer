@@ -92,7 +92,6 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Executes the given batch of actions, with the given input data.
-    /// @dev This function is expected to be delegate-called by the user contract, in order to act on their behalf.
     /// @param actions The batch of action to execute, one after the other.
     /// @param data The array of data corresponding to each input action.
     function execute(ActionType[] calldata actions, bytes[] calldata data) external payable {
@@ -110,7 +109,7 @@ contract BulkerGateway is IBulkerGateway {
         }
     }
 
-    /// @dev Only the WETH contract is allowed to transfer ETH to this contracts.
+    /// @dev Only the WETH contract is allowed to transfer ETH to this contract.
     receive() external payable {
         if (msg.sender != _WETH) revert OnlyWETH();
     }
@@ -146,10 +145,6 @@ contract BulkerGateway is IBulkerGateway {
             return _withdrawCollateral(data, lastOutputAmount);
         } else if (action == ActionType.CLAIM_REWARDS) {
             return _claimRewards(data);
-        } else if (action == ActionType.SWAP_EXACT_IN) {
-            return _swapExactIn(data, lastOutputAmount);
-        } else if (action == ActionType.SWAP_EXACT_OUT) {
-            return _swapExactOut(data, lastOutputAmount);
         } else if (action == ActionType.WRAP_ETH) {
             return _wrapEth(data, lastOutputAmount);
         } else if (action == ActionType.UNWRAP_ETH) {
@@ -158,9 +153,9 @@ contract BulkerGateway is IBulkerGateway {
             return _wrapStEth(data, lastOutputAmount);
         } else if (action == ActionType.UNWRAP_ST_ETH) {
             return _unwrapStEth(data, lastOutputAmount);
+        } else {
+            revert UnsupportedAction(action);
         }
-
-        return type(uint256).max;
     }
 
     /// @notice Approves the given `amount` of `asset` from sender to be spent by this contract via Permit2 with the given `deadline` & EIP712 `signature`.
@@ -273,40 +268,6 @@ contract BulkerGateway is IBulkerGateway {
         _MORPHO.claimRewards(assets, onBehalf);
 
         return type(uint256).max;
-    }
-
-    /// @notice Swaps the exact input amount along the Uniswap V3 path, expecting a minimum output amount based on the given price and a maximum slippage.
-    /// @return The amount of output token swapped.
-    function _swapExactIn(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
-        (uint256 amountIn, uint256 maxPrice, bytes memory path, OpType opType) =
-            abi.decode(data, (uint256, uint256, bytes, OpType));
-        amountIn = _computeAmount(amountIn, lastOutputAmount, opType);
-        return ISwapRouter(_ROUTER).exactInput(
-            ISwapRouter.ExactInputParams({
-                path: path,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: amountIn,
-                amountOutMinimum: amountIn.wadDiv(maxPrice)
-            })
-        );
-    }
-
-    /// @notice Swaps the exact output amount along the Uniswap V3 path, expecting a maximum input amount based on the given price and a maximum slippage.
-    /// @return The amount of input token swapped.
-    function _swapExactOut(bytes memory data, uint256 lastOutputAmount) internal returns (uint256) {
-        (uint256 amountOut, uint256 maxPrice, bytes memory path, OpType opType) =
-            abi.decode(data, (uint256, uint256, bytes, OpType));
-        amountOut = _computeAmount(amountOut, lastOutputAmount, opType);
-        return ISwapRouter(_ROUTER).exactOutput(
-            ISwapRouter.ExactOutputParams({
-                path: path,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountOut: amountOut,
-                amountInMaximum: amountOut.wadMul(maxPrice)
-            })
-        );
     }
 
     /// @notice Wraps the given input of ETH to WETH.

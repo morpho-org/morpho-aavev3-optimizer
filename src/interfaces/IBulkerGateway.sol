@@ -22,6 +22,9 @@ interface IBulkerGateway {
     /// @notice Thrown when the amount used is zero.
     error AmountIsZero();
 
+    /// @notice Thrown when the action is unsupported.
+    error UnsupportedAction(ActionType action);
+
     /* ENUMS */
 
     enum ActionType {
@@ -35,8 +38,6 @@ interface IBulkerGateway {
         WITHDRAW,
         WITHDRAW_COLLATERAL,
         CLAIM_REWARDS,
-        SWAP_EXACT_IN,
-        SWAP_EXACT_OUT,
         WRAP_ETH,
         UNWRAP_ETH,
         WRAP_ST_ETH,
