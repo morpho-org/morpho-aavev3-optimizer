@@ -75,11 +75,11 @@ clone set.FsetInduction with type t=address, predicate p=sum_of_positive
 lemma sum_of_positive_holds:
     forall set. sum_of_positive set
 
-let lemma aggregate_p2p_supply_balance (m: morpho_storage) (e: address)
+let lemma aggregate_p2p_supply_balance (m: morpho_storage) (a: address)
     ensures { let b = m.p2p_supply_balance in
-    get e b <= FsetSum.sum b.Map.domain (fun x -> get x b)
-    by if Map.mem e b
-       then b.Map.domain = Fset.add e (Fset.remove e b.Map.domain)
+    get a b <= FsetSum.sum b.Map.domain (fun x -> get x b)
+    by if Map.mem a b
+       then b.Map.domain = Fset.add a (Fset.remove a b.Map.domain)
        else sum_of_positive b.Map.domain
     }
 = ()
@@ -90,10 +90,11 @@ let lemma aggregate_pool_supply_balance (m: morpho_storage)
     by sum_of_positive b.Map.domain }
 = ()
 
-lemma aggregate_collateral_supply_balance:
-    forall m. let b = m.collateral_supply_balance in
+let lemma aggregate_collateral_supply_balance (m: morpho_storage)
+    ensures { let b = m.collateral_supply_balance in
     0 <= FsetSum.sum b.Map.domain (fun x -> get x b)
-    by sum_of_positive b.Map.domain
+    by sum_of_positive b.Map.domain }
+= ()
 
 let lemma aggregate_p2p_borrow_balance (m: morpho_storage) (e: address)
     ensures { let b = m.p2p_borrow_balance in
@@ -104,6 +105,12 @@ let lemma aggregate_p2p_borrow_balance (m: morpho_storage) (e: address)
     }
 = ()
 
+let lemma aggregate_pool_borrow_balance (m: morpho_storage)
+    ensures { let b = m.pool_borrow_balance in
+    0 <= FsetSum.sum b.Map.domain (fun x -> get x b)
+    by sum_of_positive b.Map.domain }
+= ()
+
 let map_add (user: address) (amount: int) (map: Map.t int)
     ensures { get user map = amount }
     ensures { forall a. a <> user -> get a map = get a (old map) }
@@ -111,11 +118,6 @@ let map_add (user: address) (amount: int) (map: Map.t int)
 =
     Map.add user amount map;
     assert { map.Map.domain = Fset.add user (Fset.remove user (old map.Map.domain)) }
-
-lemma aggregate_pool_borrow_balance:
-    forall m. let b = m.pool_borrow_balance in
-    0 <= FsetSum.sum b.Map.domain (fun x -> get x b)
-    by sum_of_positive b.Map.domain
 
 let function supply_balance (m: morpho_storage) (user: address) : int
 = get user m.p2p_supply_balance + get user m.pool_supply_balance

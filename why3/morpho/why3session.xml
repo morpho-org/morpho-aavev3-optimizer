@@ -45,13 +45,17 @@
   </goal>
  </transf>
  </goal>
- <goal name="aggregate_collateral_supply_balance" proved="true">
+ <goal name="aggregate_collateral_supply_balance&#39;vc" expl="VC for aggregate_collateral_supply_balance" proved="true">
  <transf name="split_vc" proved="true" >
-  <goal name="aggregate_collateral_supply_balance.0" proved="true">
-  <proof prover="3" timelimit="5"><result status="valid" time="0.03" steps="10"/></proof>
-  </goal>
-  <goal name="aggregate_collateral_supply_balance.1" proved="true">
-  <proof prover="3"><result status="valid" time="0.30" steps="3194"/></proof>
+  <goal name="aggregate_collateral_supply_balance&#39;vc.0" expl="postcondition" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="aggregate_collateral_supply_balance&#39;vc.0.0" expl="postcondition" proved="true">
+   <proof prover="3"><result status="valid" time="0.03" steps="10"/></proof>
+   </goal>
+   <goal name="aggregate_collateral_supply_balance&#39;vc.0.1" expl="VC for aggregate_collateral_supply_balance" proved="true">
+   <proof prover="3"><result status="valid" time="0.40" steps="3194"/></proof>
+   </goal>
+  </transf>
   </goal>
  </transf>
  </goal>
@@ -72,29 +76,33 @@
   </goal>
  </transf>
  </goal>
- <goal name="map_add&#39;vc" expl="VC for map_add" proved="true">
+ <goal name="aggregate_pool_borrow_balance&#39;vc" expl="VC for aggregate_pool_borrow_balance" proved="true">
  <transf name="split_vc" proved="true" >
-  <goal name="map_add&#39;vc.0" expl="assertion" proved="true">
-  <proof prover="2" timelimit="5" memlimit="2000"><result status="valid" time="0.05" steps="88334"/></proof>
-  </goal>
-  <goal name="map_add&#39;vc.1" expl="postcondition" proved="true">
-  <proof prover="2" timelimit="5" memlimit="2000"><result status="valid" time="0.04" steps="85528"/></proof>
-  </goal>
-  <goal name="map_add&#39;vc.2" expl="postcondition" proved="true">
-  <proof prover="2" timelimit="5" memlimit="2000"><result status="valid" time="3.81" steps="2793475"/></proof>
-  </goal>
-  <goal name="map_add&#39;vc.3" expl="postcondition" proved="true">
-  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.57" steps="77982"/></proof>
+  <goal name="aggregate_pool_borrow_balance&#39;vc.0" expl="postcondition" proved="true">
+  <transf name="split_vc" proved="true" >
+   <goal name="aggregate_pool_borrow_balance&#39;vc.0.0" expl="postcondition" proved="true">
+   <proof prover="3"><result status="valid" time="0.02" steps="10"/></proof>
+   </goal>
+   <goal name="aggregate_pool_borrow_balance&#39;vc.0.1" expl="VC for aggregate_pool_borrow_balance" proved="true">
+   <proof prover="3"><result status="valid" time="0.49" steps="4464"/></proof>
+   </goal>
+  </transf>
   </goal>
  </transf>
  </goal>
- <goal name="aggregate_pool_borrow_balance" proved="true">
+ <goal name="map_add&#39;vc" expl="VC for map_add" proved="true">
  <transf name="split_vc" proved="true" >
-  <goal name="aggregate_pool_borrow_balance.0" proved="true">
-  <proof prover="0"><result status="valid" time="0.10" steps="16445"/></proof>
+  <goal name="map_add&#39;vc.0" expl="assertion" proved="true">
+  <proof prover="2" timelimit="5" memlimit="2000"><result status="valid" time="0.05" steps="89121"/></proof>
   </goal>
-  <goal name="aggregate_pool_borrow_balance.1" proved="true">
-  <proof prover="3"><result status="valid" time="0.70" steps="4464"/></proof>
+  <goal name="map_add&#39;vc.1" expl="postcondition" proved="true">
+  <proof prover="2" timelimit="5" memlimit="2000"><result status="valid" time="0.04" steps="86395"/></proof>
+  </goal>
+  <goal name="map_add&#39;vc.2" expl="postcondition" proved="true">
+  <proof prover="2" timelimit="5" memlimit="2000"><result status="valid" time="0.37" steps="870005"/></proof>
+  </goal>
+  <goal name="map_add&#39;vc.3" expl="postcondition" proved="true">
+  <proof prover="0" timelimit="5" memlimit="2000"><result status="valid" time="0.57" steps="78279"/></proof>
   </goal>
  </transf>
  </goal>
