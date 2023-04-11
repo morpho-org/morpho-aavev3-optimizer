@@ -81,12 +81,12 @@ abstract contract MorphoSetters is IMorphoSetters, MorphoInternal {
 
     /// @notice Sets the `underlying` asset as `isCollateral` on the pool.
     /// @dev The following invariant must hold: is collateral on Morpho => is collateral on pool.
-    function setAssetIsCollateralOnPool(address underlying, bool isCollateral)
-        external
-        onlyOwner
-        isMarketCreated(underlying)
-    {
-        if (_market[underlying].isCollateral) revert Errors.AssetIsCollateralOnMorpho();
+    /// @dev Note that it is possible to set an asset as non-collateral even if the market is not created yet on Morpho.
+    ///      This is needed because an aToken with LTV = 0 can be sent to Morpho and would be set as collateral by default, thus blocking withdrawals from the pool.
+    function setAssetIsCollateralOnPool(address underlying, bool isCollateral) external onlyOwner {
+        Types.Market storage market = _market[underlying];
+        if (isCollateral && !market.isCreated()) revert Errors.MarketNotCreated();
+        if (market.isCollateral) revert Errors.AssetIsCollateralOnMorpho();
 
         _pool.setUserUseReserveAsCollateral(underlying, isCollateral);
     }
