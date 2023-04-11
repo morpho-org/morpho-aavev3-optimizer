@@ -58,7 +58,6 @@ interface IBulkerGateway {
     function stETH() external pure returns (address);
     function wstETH() external pure returns (address);
 
-    function ROUTER() external view returns (address);
     function MORPHO() external view returns (address);
     function MORPHO_DAO() external pure returns (address);
 
