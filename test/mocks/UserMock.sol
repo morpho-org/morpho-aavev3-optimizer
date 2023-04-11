@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
-import {IBulkerGateway} from "src/interfaces/IBulkerGateway.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
@@ -12,7 +11,6 @@ contract UserMock {
 
     IMorpho internal morpho;
     IPool internal pool;
-    IBulkerGateway internal bulker;
 
     uint256 internal constant DEFAULT_MAX_ITERATIONS = 10;
 
@@ -150,13 +148,5 @@ contract UserMock {
 
     function approveManager(address manager, bool isApproved) external {
         morpho.approveManager(manager, isApproved);
-    }
-
-    function setBulker(address newBulker) external {
-        bulker = IBulkerGateway(newBulker);
-    }
-
-    function execute(IBulkerGateway.ActionType[] memory actions, bytes[] memory data) external {
-        bulker.execute(actions, data);
     }
 }

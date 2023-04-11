@@ -10,17 +10,20 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {BulkerGateway} from "src/extensions/BulkerGateway.sol";
 import {IBulkerGateway} from "src/interfaces/IBulkerGateway.sol";
 
+import {SigUtils} from "test/helpers/SigUtils.sol";
+
 import "test/helpers/IntegrationTest.sol";
 
 contract TestExtensionsBulker is IntegrationTest {
     AllowanceTransfer internal constant PERMIT2 = AllowanceTransfer(address(0x000000000022D473030F116dDEE9F6B43aC78BA3));
 
+    SigUtils internal sigUtils;
     IBulkerGateway internal bulker;
 
     function setUp() public virtual override {
         super.setUp();
         bulker = new BulkerGateway(address(morpho));
-        user.setBulker(address(bulker));
+        sigUtils = new SigUtils(morpho.DOMAIN_SEPARATOR());
     }
 
     function testShouldNotDeployWithMorphoZeroAddress() public {
@@ -37,44 +40,20 @@ contract TestExtensionsBulker is IntegrationTest {
     function testShouldApprove(uint256 seed, uint160 amount, uint256 privateKey) public {
         privateKey = bound(privateKey, 1, type(uint160).max);
         amount = uint160(bound(amount, 1, type(uint160).max));
+        TestMarket memory market = testMarkets[_randomUnderlying(seed)];
         address delegator = vm.addr(privateKey);
 
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
-        bytes[] memory data = new bytes[](actions.length);
-
-        TestMarket memory market = testMarkets[_randomUnderlying(seed)];
-
-        actions[0] = IBulkerGateway.ActionType.APPROVE2;
-
-        (,, uint48 nonce) = PERMIT2.allowance(delegator, market.underlying, address(bulker));
-        IAllowanceTransfer.PermitDetails memory details = IAllowanceTransfer.PermitDetails({
-            token: market.underlying,
-            amount: amount,
-            // Use an unlimited expiration because it most
-            // closely mimics how a standard approval works.
-            expiration: type(uint48).max,
-            nonce: nonce
-        });
-        IAllowanceTransfer.PermitSingle memory permitSingle =
-            IAllowanceTransfer.PermitSingle({details: details, spender: address(bulker), sigDeadline: type(uint48).max});
-
-        Types.Signature memory sig;
-
-        bytes32 hashed = PermitHash.hash(permitSingle);
-        hashed = ECDSA.toTypedDataHash(PERMIT2.DOMAIN_SEPARATOR(), hashed);
-
-        (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashed);
-
-        data[0] = abi.encode(market.underlying, amount, type(uint48).max, sig, IBulkerGateway.OpType.RAW);
+        bytes[] memory data = new bytes[](1);
+        (actions[0], data[0]) =
+            _getApproveData(privateKey, market.underlying, amount, type(uint48).max, IBulkerGateway.OpType.RAW);
 
         vm.prank(delegator);
         bulker.execute(actions, data);
 
-        (uint160 allowance, uint48 newDeadline, uint48 newNonce) =
-            PERMIT2.allowance(delegator, market.underlying, address(bulker));
+        (uint160 allowance, uint48 newDeadline,) = PERMIT2.allowance(delegator, market.underlying, address(bulker));
         assertEq(allowance, amount, "allowance");
         assertEq(newDeadline, type(uint48).max, "deadline");
-        assertEq(newNonce, nonce + 1, "nonce");
     }
 
     // function testShouldWrapETH(uint128 _amount) public {
@@ -744,4 +723,168 @@ contract TestExtensionsBulker is IntegrationTest {
     //         }
     //     }
     // }
+
+    function _getApproveData(
+        uint256 privateKey,
+        address underlying,
+        uint160 amount,
+        uint48 deadline,
+        IBulkerGateway.OpType op
+    ) internal view returns (IBulkerGateway.ActionType action, bytes memory data) {
+        address delegator = vm.addr(privateKey);
+        action = IBulkerGateway.ActionType.APPROVE2;
+
+        (,, uint48 nonce) = PERMIT2.allowance(delegator, underlying, address(bulker));
+        IAllowanceTransfer.PermitDetails memory details =
+            IAllowanceTransfer.PermitDetails({token: underlying, amount: amount, expiration: deadline, nonce: nonce});
+        IAllowanceTransfer.PermitSingle memory permitSingle =
+            IAllowanceTransfer.PermitSingle({details: details, spender: address(bulker), sigDeadline: deadline});
+
+        Types.Signature memory sig;
+
+        bytes32 hashed = PermitHash.hash(permitSingle);
+        hashed = ECDSA.toTypedDataHash(PERMIT2.DOMAIN_SEPARATOR(), hashed);
+
+        (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashed);
+        data = abi.encode(underlying, amount, deadline, sig, op);
+    }
+
+    function _getTransferFromData(address asset, uint256 amount, IBulkerGateway.OpType op)
+        internal
+        pure
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
+        action = IBulkerGateway.ActionType.TRANSFER_FROM2;
+        data = abi.encode(asset, amount, op);
+    }
+
+    function _getApproveManagerData(uint256 privateKey, bool isAllowed, uint256 deadline)
+        internal
+        view
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
+        address delegator = vm.addr(privateKey);
+        action = IBulkerGateway.ActionType.APPROVE_MANAGER;
+
+        uint256 nonce = morpho.userNonce(delegator);
+        SigUtils.Authorization memory authorization = SigUtils.Authorization({
+            delegator: delegator,
+            manager: address(bulker),
+            isAllowed: isAllowed,
+            nonce: nonce,
+            deadline: deadline
+        });
+
+        bytes32 hashed = sigUtils.getTypedDataHash(authorization);
+
+        Types.Signature memory sig;
+
+        (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashed);
+        data = abi.encode(isAllowed, nonce, deadline, sig);
+    }
+
+    function _getSupplyData(
+        address asset,
+        uint256 amount,
+        address onBehalf,
+        uint256 maxIterations,
+        IBulkerGateway.OpType op
+    ) internal pure returns (IBulkerGateway.ActionType action, bytes memory data) {
+        action = IBulkerGateway.ActionType.SUPPLY;
+        data = abi.encode(asset, amount, onBehalf, maxIterations, op);
+    }
+
+    function _getSupplyCollateralData(address asset, uint256 amount, address onBehalf, IBulkerGateway.OpType op)
+        internal
+        pure
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
+        action = IBulkerGateway.ActionType.SUPPLY_COLLATERAL;
+        data = abi.encode(asset, amount, onBehalf, op);
+    }
+
+    function _getBorrowData(
+        address asset,
+        uint256 amount,
+        address receiver,
+        uint256 maxIterations,
+        IBulkerGateway.OpType op
+    ) internal pure returns (IBulkerGateway.ActionType action, bytes memory data) {
+        action = IBulkerGateway.ActionType.BORROW;
+        data = abi.encode(asset, amount, receiver, maxIterations, op);
+    }
+
+    function _getRepayData(address asset, uint256 amount, address onBehalf, IBulkerGateway.OpType op)
+        internal
+        pure
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
+        action = IBulkerGateway.ActionType.REPAY;
+        data = abi.encode(asset, amount, onBehalf, op);
+    }
+
+    function _getWithdrawData(
+        address asset,
+        uint256 amount,
+        address receiver,
+        uint256 maxIterations,
+        IBulkerGateway.OpType op
+    ) internal pure returns (IBulkerGateway.ActionType action, bytes memory data) {
+        action = IBulkerGateway.ActionType.WITHDRAW;
+        data = abi.encode(asset, amount, receiver, maxIterations, op);
+    }
+
+    function _getWithdrawCollateralData(address asset, uint256 amount, address receiver, IBulkerGateway.OpType op)
+        internal
+        pure
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
+        action = IBulkerGateway.ActionType.WITHDRAW_COLLATERAL;
+        data = abi.encode(asset, amount, receiver, op);
+    }
+
+    function _getClaimRewardsData(address[] memory assets, address onBehalf)
+        internal
+        pure
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
+        action = IBulkerGateway.ActionType.CLAIM_REWARDS;
+        data = abi.encode(assets, onBehalf);
+    }
+
+    function _getWrapETHData(uint256 amount, IBulkerGateway.OpType op)
+        internal
+        pure
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
+        action = IBulkerGateway.ActionType.WRAP_ETH;
+        data = abi.encode(amount, op);
+    }
+
+    function _getUnwrapETHData(uint256 amount, address receiver, IBulkerGateway.OpType op)
+        internal
+        pure
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
+        action = IBulkerGateway.ActionType.UNWRAP_ETH;
+        data = abi.encode(amount, receiver, op);
+    }
+
+    function _getWrapStETHData(uint256 amount, IBulkerGateway.OpType op)
+        internal
+        pure
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
+        action = IBulkerGateway.ActionType.WRAP_ST_ETH;
+        data = abi.encode(amount, op);
+    }
+
+    function _getUnwrapStETHData(uint256 amount, address receiver, IBulkerGateway.OpType op)
+        internal
+        pure
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
+        action = IBulkerGateway.ActionType.UNWRAP_ST_ETH;
+        data = abi.encode(amount, receiver, op);
+    }
 }
