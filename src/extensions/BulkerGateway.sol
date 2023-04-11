@@ -31,9 +31,6 @@ contract BulkerGateway is IBulkerGateway {
     /// @dev The address of the wstETH contract.
     address internal constant _WST_ETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
 
-    /// @dev The address of the Uniswap V3 router.
-    address internal constant _ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
-
     /// @dev The address of the Morpho DAO.
     address internal constant _MORPHO_DAO = 0xcBa28b38103307Ec8dA98377ffF9816C164f9AFa;
 
@@ -68,11 +65,6 @@ contract BulkerGateway is IBulkerGateway {
     /// @notice Returns the address of the wstETH contract.
     function wstETH() external pure returns (address) {
         return _WST_ETH;
-    }
-
-    /// @notice Returns the address of the Uniswap V3 router.
-    function ROUTER() external pure returns (address) {
-        return _ROUTER;
     }
 
     /// @notice Returns the address of the Morpho protocol.
