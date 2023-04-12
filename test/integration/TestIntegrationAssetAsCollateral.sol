@@ -87,7 +87,7 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
         assertEq(morpho.market(link).isCollateral, false);
         assertEq(_isUsingAsCollateral(link), false);
 
-        vm.expectRevert(Errors.MarketNotCreated.selector);
+        vm.expectRevert(Errors.SetAsCollateralOnPoolButMarketNotCreated.selector);
         morpho.setAssetIsCollateralOnPool(link, true);
     }
 
@@ -157,6 +157,9 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
 
         assertEq(morpho.market(link).isCollateral, false);
         assertEq(_isUsingAsCollateral(link), false);
+
+        vm.expectRevert(Errors.SetAsCollateralOnPoolButMarketNotCreated.selector);
+        morpho.setAssetIsCollateralOnPool(link, true);
     }
 
     function testSetAssetIsNotCollateralOnPoolWhenMarketIsCreatedAndIsNotCollateralOnMorphoOnly() public {
