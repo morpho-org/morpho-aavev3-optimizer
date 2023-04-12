@@ -8,7 +8,7 @@
 <path name=".."/><path name="token.mlw"/>
 <theory name="TokenSetup" proved="true">
  <goal name="token_storage&#39;vc" expl="VC for token_storage" proved="true">
- <proof prover="1"><result status="valid" time="0.04" steps="39429"/></proof>
+ <proof prover="1"><result status="valid" time="0.04" steps="37290"/></proof>
  </goal>
 </theory>
 <theory name="TokenRealize" proved="true">
@@ -17,45 +17,45 @@
   <goal name="transfer_from&#39;vc.0" expl="assertion" proved="true">
   <transf name="split_vc" proved="true" >
    <goal name="transfer_from&#39;vc.0.0" expl="assertion" proved="true">
-   <proof prover="1"><result status="valid" time="0.02" steps="47810"/></proof>
+   <proof prover="1"><result status="valid" time="0.02" steps="45281"/></proof>
    </goal>
    <goal name="transfer_from&#39;vc.0.1" expl="assertion" proved="true">
-   <proof prover="2"><result status="valid" time="0.04" steps="173"/></proof>
+   <proof prover="2"><result status="valid" time="0.04" steps="157"/></proof>
    </goal>
    <goal name="transfer_from&#39;vc.0.2" expl="VC for transfer_from" proved="true">
-   <proof prover="1"><result status="valid" time="0.02" steps="44633"/></proof>
+   <proof prover="1"><result status="valid" time="0.02" steps="42303"/></proof>
    </goal>
   </transf>
   </goal>
   <goal name="transfer_from&#39;vc.1" expl="assertion" proved="true">
   <transf name="split_vc" proved="true" >
    <goal name="transfer_from&#39;vc.1.0" expl="assertion" proved="true">
-   <proof prover="2"><result status="valid" time="0.05" steps="175"/></proof>
+   <proof prover="2"><result status="valid" time="0.05" steps="173"/></proof>
    </goal>
    <goal name="transfer_from&#39;vc.1.1" expl="assertion" proved="true">
-   <proof prover="2"><result status="valid" time="0.03" steps="292"/></proof>
+   <proof prover="2"><result status="valid" time="0.03" steps="269"/></proof>
    </goal>
    <goal name="transfer_from&#39;vc.1.2" expl="VC for transfer_from" proved="true">
-   <proof prover="1"><result status="valid" time="0.04" steps="73144"/></proof>
+   <proof prover="1"><result status="valid" time="0.04" steps="67680"/></proof>
    </goal>
   </transf>
   </goal>
   <goal name="transfer_from&#39;vc.2" expl="type invariant" proved="true">
-  <proof prover="1"><result status="valid" time="0.02" steps="42756"/></proof>
+  <proof prover="1"><result status="valid" time="0.02" steps="40540"/></proof>
   </goal>
   <goal name="transfer_from&#39;vc.3" expl="postcondition" proved="true">
-  <proof prover="2"><result status="valid" time="0.05" steps="630"/></proof>
+  <proof prover="2"><result status="valid" time="0.05" steps="577"/></proof>
   </goal>
   <goal name="transfer_from&#39;vc.4" expl="postcondition" proved="true">
-  <proof prover="2"><result status="valid" time="0.02" steps="229"/></proof>
+  <proof prover="2"><result status="valid" time="0.02" steps="206"/></proof>
   </goal>
   <goal name="transfer_from&#39;vc.5" expl="postcondition" proved="true">
-  <proof prover="2"><result status="valid" time="0.10" steps="1648"/></proof>
+  <proof prover="2"><result status="valid" time="0.10" steps="925"/></proof>
   </goal>
  </transf>
  </goal>
  <goal name="Token.transfer_from&#39;refn&#39;vc" expl="VC for transfer_from&#39;refn" proved="true">
- <proof prover="1"><result status="valid" time="0.04" steps="39735"/></proof>
+ <proof prover="1"><result status="valid" time="0.04" steps="37638"/></proof>
  </goal>
 </theory>
 </file>

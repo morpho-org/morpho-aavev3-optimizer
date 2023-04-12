@@ -1,6 +1,6 @@
 module PoolSetup
 use export token.Token
-exception SupplyCapReached (* Thown when the supply cap is reached on the pool *)
+exception SupplyCapReached (* Thrown when the supply cap is reached on the pool *)
 end
 
 module Pool
