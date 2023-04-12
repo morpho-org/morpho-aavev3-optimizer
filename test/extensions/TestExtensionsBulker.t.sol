@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {PermitHash} from "@permit2/libraries/PermitHash.sol";
 import {IAllowanceTransfer, AllowanceTransfer} from "@permit2/AllowanceTransfer.sol";
 import {SafeCast160} from "@permit2/libraries/SafeCast160.sol";
+import {Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
@@ -15,6 +16,8 @@ import {SigUtils} from "test/helpers/SigUtils.sol";
 import "test/helpers/IntegrationTest.sol";
 
 contract TestExtensionsBulker is IntegrationTest {
+    using SafeTransferLib for ERC20;
+
     AllowanceTransfer internal constant PERMIT2 = AllowanceTransfer(address(0x000000000022D473030F116dDEE9F6B43aC78BA3));
 
     SigUtils internal sigUtils;
@@ -56,41 +59,60 @@ contract TestExtensionsBulker is IntegrationTest {
         assertEq(newDeadline, type(uint48).max, "deadline");
     }
 
-    // function testShouldWrapETH(uint128 _amount) public {
-    //     uint256 wethBalanceBefore = ERC20(WETH).balanceOf(address(user));
+    function testShouldTransferFrom(uint256 seed, uint256 amount, uint256 privateKey) public {
+        privateKey = bound(privateKey, 1, type(uint160).max);
+        amount = bound(amount, 1, type(uint160).max);
+        TestMarket memory market = testMarkets[_randomUnderlying(seed)];
+        address delegator = vm.addr(privateKey);
+        deal(market.underlying, delegator, amount);
 
-    //     deal(address(user), _amount);
+        vm.startPrank(delegator);
+        ERC20(market.underlying).safeApprove(address(Permit2Lib.PERMIT2), 0);
+        ERC20(market.underlying).safeApprove(address(Permit2Lib.PERMIT2), type(uint256).max);
 
-    //     IMainnetMorphoTxBuilder.ActionType[]
-    //         memory actions = new IMainnetMorphoTxBuilder.ActionType[](1);
-    //     bytes[] memory data = new bytes[](actions.length);
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](2);
+        bytes[] memory data = new bytes[](2);
+        (actions[0], data[0]) =
+            _getApproveData(privateKey, market.underlying, uint160(amount), type(uint48).max, IBulkerGateway.OpType.RAW);
+        (actions[1], data[1]) = _getTransferFromData(market.underlying, amount, IBulkerGateway.OpType.RAW);
 
-    //     (actions[0], data[0]) = user.encodeWrapEth(_amount);
+        bulker.execute(actions, data);
 
-    //     user.execute(actions, data);
+        assertEq(ERC20(market.underlying).balanceOf(address(bulker)), amount, "bulker balance");
+    }
 
-    //     assertEq(
-    //         ERC20(WETH).balanceOf(address(user)),
-    //         wethBalanceBefore + _amount
-    //     );
-    // }
+    function testShouldWrapETH(address delegator, uint256 amount) public {
+        amount = bound(amount, 1, type(uint160).max);
+        deal(delegator, type(uint256).max);
 
-    // function testShouldUnwrapETH(uint128 _amount) public {
-    //     uint256 ethBalanceBefore = address(user).balance;
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
 
-    //     deal(WETH, _amount);
-    //     deal(WETH, address(user), _amount);
+        (actions[0], data[0]) = _getWrapETHData(amount, IBulkerGateway.OpType.RAW);
 
-    //     IMainnetMorphoTxBuilder.ActionType[]
-    //         memory actions = new IMainnetMorphoTxBuilder.ActionType[](1);
-    //     bytes[] memory data = new bytes[](actions.length);
+        vm.prank(delegator);
+        bulker.execute{value: amount}(actions, data);
+        assertEq(ERC20(bulker.WETH()).balanceOf(address(bulker)), amount, "bulker balance");
+    }
 
-    //     (actions[0], data[0]) = user.encodeUnwrapEth(_amount);
+    function testShouldUnwrapETH(address delegator, uint256 amount, address receiver) public {
+        amount = bound(amount, 1, type(uint160).max);
+        deal(wNative, amount);
+        deal(wNative, address(bulker), amount);
 
-    //     user.execute(actions, data);
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
 
-    //     assertEq(address(user).balance, ethBalanceBefore + _amount);
-    // }
+        (actions[0], data[0]) = _getUnwrapETHData(amount, receiver, IBulkerGateway.OpType.RAW);
+
+        uint256 balanceBefore = receiver.balance;
+
+        vm.prank(delegator);
+        bulker.execute(actions, data);
+
+        assertEq(ERC20(bulker.WETH()).balanceOf(address(bulker)), 0, "bulker balance");
+        assertEq(receiver.balance, balanceBefore + amount, "receiver balance");
+    }
 
     // function testShouldWithdrawFromPool() public {
     //     for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
