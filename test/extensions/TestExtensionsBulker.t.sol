@@ -20,6 +20,7 @@ import "test/helpers/IntegrationTest.sol";
 
 contract TestExtensionsBulker is IntegrationTest {
     using SafeTransferLib for ERC20;
+    using TestMarketLib for TestMarket;
 
     AllowanceTransfer internal constant PERMIT2 = AllowanceTransfer(address(0x000000000022D473030F116dDEE9F6B43aC78BA3));
 
@@ -45,7 +46,7 @@ contract TestExtensionsBulker is IntegrationTest {
         assertEq(ERC20(bulker.wstETH()).allowance(address(bulker), address(morpho)), type(uint256).max);
     }
 
-    function testShouldApprove(uint256 seed, uint160 amount, uint256 privateKey) public {
+    function testBulkerShouldApprove(uint256 seed, uint160 amount, uint256 privateKey) public {
         privateKey = bound(privateKey, 1, type(uint160).max);
         amount = uint160(bound(amount, 1, type(uint160).max));
         TestMarket memory market = testMarkets[_randomUnderlying(seed)];
@@ -64,7 +65,7 @@ contract TestExtensionsBulker is IntegrationTest {
         assertEq(newDeadline, type(uint48).max, "deadline");
     }
 
-    function testShouldTransferFrom(uint256 seed, uint256 amount, uint256 privateKey) public {
+    function testBulkerShouldTransferFrom(uint256 seed, uint256 amount, uint256 privateKey) public {
         privateKey = bound(privateKey, 1, type(uint160).max);
         amount = bound(amount, 1, type(uint160).max);
         TestMarket memory market = testMarkets[_randomUnderlying(seed)];
@@ -86,7 +87,7 @@ contract TestExtensionsBulker is IntegrationTest {
         assertEq(ERC20(market.underlying).balanceOf(address(bulker)), amount, "bulker balance");
     }
 
-    function testShouldWrapETH(address delegator, uint256 amount) public {
+    function testBulkerShouldWrapETH(address delegator, uint256 amount) public {
         amount = bound(amount, 1, type(uint160).max);
         deal(delegator, type(uint256).max);
 
@@ -100,7 +101,7 @@ contract TestExtensionsBulker is IntegrationTest {
         assertEq(ERC20(bulker.WETH()).balanceOf(address(bulker)), amount, "bulker balance");
     }
 
-    function testShouldUnwrapETH(address delegator, uint256 amount, address receiver) public {
+    function testBulkerShouldUnwrapETH(address delegator, uint256 amount, address receiver) public {
         vm.assume(!Address.isContract(receiver));
         amount = bound(amount, 1, type(uint160).max);
         deal(wNative, amount);
@@ -120,7 +121,7 @@ contract TestExtensionsBulker is IntegrationTest {
         assertEq(receiver.balance, balanceBefore + amount, "receiver balance");
     }
 
-    function testShouldWrapStETH(address delegator, uint256 amount) public {
+    function testBulkerShouldWrapStETH(address delegator, uint256 amount) public {
         vm.assume(delegator != address(0));
         amount = bound(amount, 1, ILido(stETH).getCurrentStakeLimit());
         deal(delegator, type(uint256).max);
@@ -138,7 +139,7 @@ contract TestExtensionsBulker is IntegrationTest {
         assertEq(ERC20(sNative).balanceOf(address(bulker)), IWSTETH(sNative).getWstETHByStETH(amount), "bulker balance");
     }
 
-    function testShouldUnwrapStETH(address delegator, uint256 amount, address receiver) public {
+    function testBulkerShouldUnwrapStETH(address delegator, uint256 amount, address receiver) public {
         vm.assume(delegator != address(0) && receiver != address(0));
         amount = bound(amount, 1, IWSTETH(sNative).totalSupply());
         deal(sNative, address(bulker), amount);
@@ -157,9 +158,13 @@ contract TestExtensionsBulker is IntegrationTest {
         assertApproxEqAbs(ERC20(stETH).balanceOf(receiver), expectedBalance, 2, "bulker balance");
     }
 
-    function testShouldSupply(uint256 seed, address delegator, uint256 amount, address onBehalf, uint256 maxIterations)
-        public
-    {
+    function testBulkerShouldSupply(
+        uint256 seed,
+        address delegator,
+        uint256 amount,
+        address onBehalf,
+        uint256 maxIterations
+    ) public {
         vm.assume(onBehalf != address(0));
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
         maxIterations = bound(maxIterations, 1, 10);
@@ -178,6 +183,152 @@ contract TestExtensionsBulker is IntegrationTest {
 
         assertEq(ERC20(market.underlying).balanceOf(address(bulker)), 0, "bulker balance");
         assertApproxEqAbs(morpho.supplyBalance(market.underlying, onBehalf), amount, 2, "onBehalf balance");
+    }
+
+    function testBulkerShouldSupplyCollateral(
+        uint256 seed,
+        address delegator,
+        uint256 amount,
+        address onBehalf,
+        uint256 maxIterations
+    ) public {
+        vm.assume(onBehalf != address(0));
+        TestMarket storage market = testMarkets[_randomCollateral(seed)];
+        maxIterations = bound(maxIterations, 1, 10);
+        amount = _boundSupply(market, amount);
+
+        deal(market.underlying, address(bulker), amount);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getSupplyCollateralData(market.underlying, amount, onBehalf, IBulkerGateway.OpType.RAW);
+
+        vm.startPrank(delegator);
+        bulker.execute(actions, data);
+
+        assertEq(ERC20(market.underlying).balanceOf(address(bulker)), 0, "bulker balance");
+        assertApproxEqAbs(morpho.collateralBalance(market.underlying, onBehalf), amount, 2, "onBehalf balance");
+    }
+
+    function testBulkerShouldBorrow(
+        uint256 seed,
+        address delegator,
+        uint256 amount,
+        address receiver,
+        uint256 maxIterations
+    ) public {
+        vm.assume(delegator != address(0) && receiver != address(0));
+        TestMarket storage collateralMarket = testMarkets[_randomCollateral(seed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(seed)];
+        maxIterations = bound(maxIterations, 1, 10);
+        amount = _boundBorrow(borrowedMarket, amount);
+
+        uint256 collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount, eModeCategoryId);
+        deal(collateralMarket.underlying, delegator, collateral);
+
+        vm.startPrank(delegator);
+        ERC20(collateralMarket.underlying).safeApprove(address(morpho), collateral);
+        collateral = morpho.supplyCollateral(collateralMarket.underlying, collateral, delegator);
+        morpho.approveManager(address(bulker), true);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) =
+            _getBorrowData(borrowedMarket.underlying, amount, receiver, maxIterations, IBulkerGateway.OpType.RAW);
+
+        bulker.execute(actions, data);
+
+        assertEq(ERC20(borrowedMarket.underlying).balanceOf(address(receiver)), amount, "bulker balance");
+        assertApproxEqAbs(
+            morpho.borrowBalance(borrowedMarket.underlying, delegator), amount, 2, "receiver borrow balance"
+        );
+    }
+
+    function testBulkerShouldRepay(
+        uint256 seed,
+        address delegator,
+        uint256 amount,
+        address onBehalf,
+        uint256 maxIterations
+    ) public {
+        vm.assume(delegator != address(0) && onBehalf != address(0));
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(seed)];
+        maxIterations = bound(maxIterations, 1, 10);
+        amount = _boundBorrow(borrowedMarket, amount);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        _borrowWithoutCollateral(onBehalf, borrowedMarket, amount, onBehalf, address(bulker), maxIterations);
+
+        (actions[0], data[0]) = _getRepayData(borrowedMarket.underlying, amount, onBehalf, IBulkerGateway.OpType.RAW);
+
+        vm.prank(delegator);
+        bulker.execute(actions, data);
+
+        assertApproxEqAbs(morpho.borrowBalance(borrowedMarket.underlying, delegator), 0, 2, "onBehalf borrow balance");
+    }
+
+    // asset amount receiver maxiterations
+    function testBulkerShouldWithdraw(
+        uint256 seed,
+        address delegator,
+        uint256 amount,
+        address receiver,
+        uint256 maxIterations
+    ) public {
+        vm.assume(delegator != address(0) && receiver != address(0));
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+        maxIterations = bound(maxIterations, 1, 10);
+        amount = _boundSupply(market, amount);
+
+        vm.startPrank(delegator);
+        deal(market.underlying, delegator, amount);
+
+        ERC20(market.underlying).safeApprove(address(morpho), 0);
+        ERC20(market.underlying).safeApprove(address(morpho), amount);
+
+        morpho.supply(market.underlying, amount, delegator, maxIterations);
+        morpho.approveManager(address(bulker), true);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) =
+            _getWithdrawData(market.underlying, amount, receiver, maxIterations, IBulkerGateway.OpType.RAW);
+
+        bulker.execute(actions, data);
+
+        assertApproxEqAbs(ERC20(market.underlying).balanceOf(address(receiver)), amount, 2, "receiver balance");
+    }
+
+    function testBulkerShouldWithdrawCollateral(uint256 seed, address delegator, uint256 amount, address receiver)
+        public
+    {
+        vm.assume(delegator != address(0) && receiver != address(0));
+        TestMarket storage market = testMarkets[_randomCollateral(seed)];
+        amount = _boundSupply(market, amount);
+
+        vm.startPrank(delegator);
+        deal(market.underlying, delegator, amount);
+
+        ERC20(market.underlying).safeApprove(address(morpho), 0);
+        ERC20(market.underlying).safeApprove(address(morpho), amount);
+
+        morpho.supplyCollateral(market.underlying, amount, delegator);
+        morpho.approveManager(address(bulker), true);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) =
+            _getWithdrawCollateralData(market.underlying, amount, receiver, IBulkerGateway.OpType.RAW);
+
+        bulker.execute(actions, data);
+
+        assertApproxEqAbs(ERC20(market.underlying).balanceOf(address(receiver)), amount, 2, "receiver balance");
     }
 
     function _getApproveData(
