@@ -346,7 +346,7 @@ contract BulkerGateway is IBulkerGateway {
 
     /// @notice Give the max approval to the Morpho contract to spend the given `asset` if not already approved.
     function _approveMaxToMorpho(address asset) internal {
-        if (ERC20(asset).allowance(address(this), address(_MORPHO)) != 0) {
+        if (ERC20(asset).allowance(address(this), address(_MORPHO)) == 0) {
             ERC20(asset).safeApprove(address(_MORPHO), type(uint256).max);
         }
     }
