@@ -54,8 +54,7 @@ contract TestExtensionsBulker is IntegrationTest {
 
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
         bytes[] memory data = new bytes[](1);
-        (actions[0], data[0]) =
-            _getApproveData(privateKey, market.underlying, amount, type(uint48).max, IBulkerGateway.OpType.RAW);
+        (actions[0], data[0]) = _getApproveData(privateKey, market.underlying, amount, type(uint48).max);
 
         vm.prank(delegator);
         bulker.execute(actions, data);
@@ -78,9 +77,8 @@ contract TestExtensionsBulker is IntegrationTest {
 
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](2);
         bytes[] memory data = new bytes[](2);
-        (actions[0], data[0]) =
-            _getApproveData(privateKey, market.underlying, uint160(amount), type(uint48).max, IBulkerGateway.OpType.RAW);
-        (actions[1], data[1]) = _getTransferFromData(market.underlying, amount, IBulkerGateway.OpType.RAW);
+        (actions[0], data[0]) = _getApproveData(privateKey, market.underlying, uint160(amount), type(uint48).max);
+        (actions[1], data[1]) = _getTransferFromData(market.underlying, amount);
 
         bulker.execute(actions, data);
 
@@ -94,7 +92,7 @@ contract TestExtensionsBulker is IntegrationTest {
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
         bytes[] memory data = new bytes[](1);
 
-        (actions[0], data[0]) = _getWrapETHData(amount, IBulkerGateway.OpType.RAW);
+        (actions[0], data[0]) = _getWrapETHData(amount);
 
         vm.prank(delegator);
         bulker.execute{value: amount}(actions, data);
@@ -110,7 +108,7 @@ contract TestExtensionsBulker is IntegrationTest {
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
         bytes[] memory data = new bytes[](1);
 
-        (actions[0], data[0]) = _getUnwrapETHData(amount, receiver, IBulkerGateway.OpType.RAW);
+        (actions[0], data[0]) = _getUnwrapETHData(amount, receiver);
 
         uint256 balanceBefore = receiver.balance;
 
@@ -133,7 +131,7 @@ contract TestExtensionsBulker is IntegrationTest {
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
         bytes[] memory data = new bytes[](1);
 
-        (actions[0], data[0]) = _getWrapStETHData(amount, IBulkerGateway.OpType.RAW);
+        (actions[0], data[0]) = _getWrapStETHData(amount);
 
         bulker.execute(actions, data);
         assertEq(ERC20(sNative).balanceOf(address(bulker)), IWSTETH(sNative).getWstETHByStETH(amount), "bulker balance");
@@ -147,7 +145,7 @@ contract TestExtensionsBulker is IntegrationTest {
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
         bytes[] memory data = new bytes[](1);
 
-        (actions[0], data[0]) = _getUnwrapStETHData(amount, receiver, IBulkerGateway.OpType.RAW);
+        (actions[0], data[0]) = _getUnwrapStETHData(amount, receiver);
 
         uint256 expectedBalance = ERC20(stETH).balanceOf(receiver) + IWSTETH(sNative).getStETHByWstETH(amount);
 
@@ -175,8 +173,7 @@ contract TestExtensionsBulker is IntegrationTest {
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
         bytes[] memory data = new bytes[](1);
 
-        (actions[0], data[0]) =
-            _getSupplyData(market.underlying, amount, onBehalf, maxIterations, IBulkerGateway.OpType.RAW);
+        (actions[0], data[0]) = _getSupplyData(market.underlying, amount, onBehalf, maxIterations);
 
         vm.startPrank(delegator);
         bulker.execute(actions, data);
@@ -202,7 +199,7 @@ contract TestExtensionsBulker is IntegrationTest {
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
         bytes[] memory data = new bytes[](1);
 
-        (actions[0], data[0]) = _getSupplyCollateralData(market.underlying, amount, onBehalf, IBulkerGateway.OpType.RAW);
+        (actions[0], data[0]) = _getSupplyCollateralData(market.underlying, amount, onBehalf);
 
         vm.startPrank(delegator);
         bulker.execute(actions, data);
@@ -235,8 +232,7 @@ contract TestExtensionsBulker is IntegrationTest {
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
         bytes[] memory data = new bytes[](1);
 
-        (actions[0], data[0]) =
-            _getBorrowData(borrowedMarket.underlying, amount, receiver, maxIterations, IBulkerGateway.OpType.RAW);
+        (actions[0], data[0]) = _getBorrowData(borrowedMarket.underlying, amount, receiver, maxIterations);
 
         bulker.execute(actions, data);
 
@@ -263,7 +259,7 @@ contract TestExtensionsBulker is IntegrationTest {
 
         _borrowWithoutCollateral(onBehalf, borrowedMarket, amount, onBehalf, address(bulker), maxIterations);
 
-        (actions[0], data[0]) = _getRepayData(borrowedMarket.underlying, amount, onBehalf, IBulkerGateway.OpType.RAW);
+        (actions[0], data[0]) = _getRepayData(borrowedMarket.underlying, amount, onBehalf);
 
         vm.prank(delegator);
         bulker.execute(actions, data);
@@ -296,8 +292,7 @@ contract TestExtensionsBulker is IntegrationTest {
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
         bytes[] memory data = new bytes[](1);
 
-        (actions[0], data[0]) =
-            _getWithdrawData(market.underlying, amount, receiver, maxIterations, IBulkerGateway.OpType.RAW);
+        (actions[0], data[0]) = _getWithdrawData(market.underlying, amount, receiver, maxIterations);
 
         bulker.execute(actions, data);
 
@@ -323,21 +318,18 @@ contract TestExtensionsBulker is IntegrationTest {
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
         bytes[] memory data = new bytes[](1);
 
-        (actions[0], data[0]) =
-            _getWithdrawCollateralData(market.underlying, amount, receiver, IBulkerGateway.OpType.RAW);
+        (actions[0], data[0]) = _getWithdrawCollateralData(market.underlying, amount, receiver);
 
         bulker.execute(actions, data);
 
         assertApproxEqAbs(ERC20(market.underlying).balanceOf(address(receiver)), amount, 2, "receiver balance");
     }
 
-    function _getApproveData(
-        uint256 privateKey,
-        address underlying,
-        uint160 amount,
-        uint48 deadline,
-        IBulkerGateway.OpType op
-    ) internal view returns (IBulkerGateway.ActionType action, bytes memory data) {
+    function _getApproveData(uint256 privateKey, address underlying, uint160 amount, uint48 deadline)
+        internal
+        view
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
         address delegator = vm.addr(privateKey);
         action = IBulkerGateway.ActionType.APPROVE2;
 
@@ -353,16 +345,16 @@ contract TestExtensionsBulker is IntegrationTest {
         hashed = ECDSA.toTypedDataHash(PERMIT2.DOMAIN_SEPARATOR(), hashed);
 
         (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashed);
-        data = abi.encode(underlying, amount, deadline, sig, op);
+        data = abi.encode(underlying, amount, deadline, sig);
     }
 
-    function _getTransferFromData(address asset, uint256 amount, IBulkerGateway.OpType op)
+    function _getTransferFromData(address asset, uint256 amount)
         internal
         pure
         returns (IBulkerGateway.ActionType action, bytes memory data)
     {
         action = IBulkerGateway.ActionType.TRANSFER_FROM2;
-        data = abi.encode(asset, amount, op);
+        data = abi.encode(asset, amount);
     }
 
     function _getApproveManagerData(uint256 privateKey, bool isAllowed, uint256 deadline)
@@ -390,64 +382,58 @@ contract TestExtensionsBulker is IntegrationTest {
         data = abi.encode(isAllowed, nonce, deadline, sig);
     }
 
-    function _getSupplyData(
-        address asset,
-        uint256 amount,
-        address onBehalf,
-        uint256 maxIterations,
-        IBulkerGateway.OpType op
-    ) internal pure returns (IBulkerGateway.ActionType action, bytes memory data) {
+    function _getSupplyData(address asset, uint256 amount, address onBehalf, uint256 maxIterations)
+        internal
+        pure
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
         action = IBulkerGateway.ActionType.SUPPLY;
-        data = abi.encode(asset, amount, onBehalf, maxIterations, op);
+        data = abi.encode(asset, amount, onBehalf, maxIterations);
     }
 
-    function _getSupplyCollateralData(address asset, uint256 amount, address onBehalf, IBulkerGateway.OpType op)
+    function _getSupplyCollateralData(address asset, uint256 amount, address onBehalf)
         internal
         pure
         returns (IBulkerGateway.ActionType action, bytes memory data)
     {
         action = IBulkerGateway.ActionType.SUPPLY_COLLATERAL;
-        data = abi.encode(asset, amount, onBehalf, op);
+        data = abi.encode(asset, amount, onBehalf);
     }
 
-    function _getBorrowData(
-        address asset,
-        uint256 amount,
-        address receiver,
-        uint256 maxIterations,
-        IBulkerGateway.OpType op
-    ) internal pure returns (IBulkerGateway.ActionType action, bytes memory data) {
+    function _getBorrowData(address asset, uint256 amount, address receiver, uint256 maxIterations)
+        internal
+        pure
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
         action = IBulkerGateway.ActionType.BORROW;
-        data = abi.encode(asset, amount, receiver, maxIterations, op);
+        data = abi.encode(asset, amount, receiver, maxIterations);
     }
 
-    function _getRepayData(address asset, uint256 amount, address onBehalf, IBulkerGateway.OpType op)
+    function _getRepayData(address asset, uint256 amount, address onBehalf)
         internal
         pure
         returns (IBulkerGateway.ActionType action, bytes memory data)
     {
         action = IBulkerGateway.ActionType.REPAY;
-        data = abi.encode(asset, amount, onBehalf, op);
+        data = abi.encode(asset, amount, onBehalf);
     }
 
-    function _getWithdrawData(
-        address asset,
-        uint256 amount,
-        address receiver,
-        uint256 maxIterations,
-        IBulkerGateway.OpType op
-    ) internal pure returns (IBulkerGateway.ActionType action, bytes memory data) {
+    function _getWithdrawData(address asset, uint256 amount, address receiver, uint256 maxIterations)
+        internal
+        pure
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
         action = IBulkerGateway.ActionType.WITHDRAW;
-        data = abi.encode(asset, amount, receiver, maxIterations, op);
+        data = abi.encode(asset, amount, receiver, maxIterations);
     }
 
-    function _getWithdrawCollateralData(address asset, uint256 amount, address receiver, IBulkerGateway.OpType op)
+    function _getWithdrawCollateralData(address asset, uint256 amount, address receiver)
         internal
         pure
         returns (IBulkerGateway.ActionType action, bytes memory data)
     {
         action = IBulkerGateway.ActionType.WITHDRAW_COLLATERAL;
-        data = abi.encode(asset, amount, receiver, op);
+        data = abi.encode(asset, amount, receiver);
     }
 
     function _getClaimRewardsData(address[] memory assets, address onBehalf)
@@ -459,39 +445,39 @@ contract TestExtensionsBulker is IntegrationTest {
         data = abi.encode(assets, onBehalf);
     }
 
-    function _getWrapETHData(uint256 amount, IBulkerGateway.OpType op)
+    function _getWrapETHData(uint256 amount)
         internal
         pure
         returns (IBulkerGateway.ActionType action, bytes memory data)
     {
         action = IBulkerGateway.ActionType.WRAP_ETH;
-        data = abi.encode(amount, op);
+        data = abi.encode(amount);
     }
 
-    function _getUnwrapETHData(uint256 amount, address receiver, IBulkerGateway.OpType op)
+    function _getUnwrapETHData(uint256 amount, address receiver)
         internal
         pure
         returns (IBulkerGateway.ActionType action, bytes memory data)
     {
         action = IBulkerGateway.ActionType.UNWRAP_ETH;
-        data = abi.encode(amount, receiver, op);
+        data = abi.encode(amount, receiver);
     }
 
-    function _getWrapStETHData(uint256 amount, IBulkerGateway.OpType op)
+    function _getWrapStETHData(uint256 amount)
         internal
         pure
         returns (IBulkerGateway.ActionType action, bytes memory data)
     {
         action = IBulkerGateway.ActionType.WRAP_ST_ETH;
-        data = abi.encode(amount, op);
+        data = abi.encode(amount);
     }
 
-    function _getUnwrapStETHData(uint256 amount, address receiver, IBulkerGateway.OpType op)
+    function _getUnwrapStETHData(uint256 amount, address receiver)
         internal
         pure
         returns (IBulkerGateway.ActionType action, bytes memory data)
     {
         action = IBulkerGateway.ActionType.UNWRAP_ST_ETH;
-        data = abi.encode(amount, receiver, op);
+        data = abi.encode(amount, receiver);
     }
 }
