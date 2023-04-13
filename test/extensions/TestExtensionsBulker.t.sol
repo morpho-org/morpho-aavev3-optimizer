@@ -325,6 +325,25 @@ contract TestExtensionsBulker is IntegrationTest {
         assertApproxEqAbs(ERC20(market.underlying).balanceOf(address(receiver)), amount, 2, "receiver balance");
     }
 
+    function testBulkerShouldSkim(uint256 seed, address delegator, uint256 amount, address receiver) public {
+        vm.assume(delegator != address(0) && receiver != address(0));
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+
+        deal(market.underlying, address(bulker), amount);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getSkimData(market.underlying, receiver);
+
+        uint256 balanceBefore = ERC20(market.underlying).balanceOf(address(receiver));
+
+        vm.prank(delegator);
+        bulker.execute(actions, data);
+
+        assertEq(ERC20(market.underlying).balanceOf(address(receiver)), amount + balanceBefore, "receiver balance");
+    }
+
     function _getApproveData(uint256 privateKey, address underlying, uint160 amount, uint48 deadline)
         internal
         view
@@ -479,5 +498,14 @@ contract TestExtensionsBulker is IntegrationTest {
     {
         action = IBulkerGateway.ActionType.UNWRAP_ST_ETH;
         data = abi.encode(amount, receiver);
+    }
+
+    function _getSkimData(address asset, address receiver)
+        internal
+        pure
+        returns (IBulkerGateway.ActionType action, bytes memory data)
+    {
+        action = IBulkerGateway.ActionType.SKIM;
+        data = abi.encode(asset, receiver);
     }
 }
