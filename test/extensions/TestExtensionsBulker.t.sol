@@ -7,9 +7,12 @@ import {SafeCast160} from "@permit2/libraries/SafeCast160.sol";
 import {Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 import {BulkerGateway} from "src/extensions/BulkerGateway.sol";
 import {IBulkerGateway} from "src/interfaces/IBulkerGateway.sol";
+import {ILido} from "src/interfaces/ILido.sol";
+import {IWSTETH} from "src/interfaces/IWSTETH.sol";
 
 import {SigUtils} from "test/helpers/SigUtils.sol";
 
@@ -22,11 +25,13 @@ contract TestExtensionsBulker is IntegrationTest {
 
     SigUtils internal sigUtils;
     IBulkerGateway internal bulker;
+    address stETH;
 
     function setUp() public virtual override {
         super.setUp();
         bulker = new BulkerGateway(address(morpho));
         sigUtils = new SigUtils(morpho.DOMAIN_SEPARATOR());
+        stETH = bulker.stETH();
     }
 
     function testShouldNotDeployWithMorphoZeroAddress() public {
@@ -96,6 +101,7 @@ contract TestExtensionsBulker is IntegrationTest {
     }
 
     function testShouldUnwrapETH(address delegator, uint256 amount, address receiver) public {
+        vm.assume(!Address.isContract(receiver));
         amount = bound(amount, 1, type(uint160).max);
         deal(wNative, amount);
         deal(wNative, address(bulker), amount);
@@ -114,637 +120,64 @@ contract TestExtensionsBulker is IntegrationTest {
         assertEq(receiver.balance, balanceBefore + amount, "receiver balance");
     }
 
-    // function testShouldWithdrawFromPool() public {
-    //     for (uint256 marketIndex; marketIndex < markets.length; ++marketIndex) {
-    //         if (snapshotId > 0) vm.revertTo(snapshotId);
-    //         snapshotId = vm.snapshot();
+    function testShouldWrapStETH(address delegator, uint256 amount) public {
+        vm.assume(delegator != address(0));
+        amount = bound(amount, 1, ILido(stETH).getCurrentStakeLimit());
+        deal(delegator, type(uint256).max);
 
-    //         TestMarket memory market = markets[marketIndex];
+        vm.startPrank(delegator);
+        ILido(stETH).submit{value: amount}(address(0));
+        ERC20(stETH).transfer(address(bulker), amount);
 
-    //         uint256 amount = ERC20(market.underlying).balanceOf(address(user));
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
 
-    //         user.aaveSupply(market.underlying, amount);
+        (actions[0], data[0]) = _getWrapStETHData(amount, IBulkerGateway.OpType.RAW);
 
-    //         assertApproxEqAbs(
-    //             ERC20(market.underlying).balanceOf(address(user)),
-    //             0,
-    //             1
-    //         );
+        bulker.execute(actions, data);
+        assertEq(ERC20(sNative).balanceOf(address(bulker)), IWSTETH(sNative).getWstETHByStETH(amount), "bulker balance");
+    }
 
-    //         IMainnetMorphoTxBuilder.ActionType[]
-    //             memory actions = new IMainnetMorphoTxBuilder.ActionType[](1);
-    //         bytes[] memory data = new bytes[](actions.length);
+    function testShouldUnwrapStETH(address delegator, uint256 amount, address receiver) public {
+        vm.assume(delegator != address(0) && receiver != address(0));
+        amount = bound(amount, 1, IWSTETH(sNative).totalSupply());
+        deal(sNative, address(bulker), amount);
 
-    //         (actions[0], data[0]) = user.encodeAaveWithdraw(
-    //             market.underlying,
-    //             amount - 1 // because of stEth rounding errors
-    //         );
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
 
-    //         user.execute(actions, data);
+        (actions[0], data[0]) = _getUnwrapStETHData(amount, receiver, IBulkerGateway.OpType.RAW);
 
-    //         assertApproxEqAbs(
-    //             ERC20(market.underlying).balanceOf(address(user)),
-    //             amount,
-    //             1
-    //         );
-    //     }
-    // }
+        uint256 expectedBalance = ERC20(stETH).balanceOf(receiver) + IWSTETH(sNative).getStETHByWstETH(amount);
 
-    // function testShouldRepayToPool() public {
-    //     uint256 wethBalanceBefore = ERC20(WETH).balanceOf(address(user));
-    //     user.aaveSupply(WETH, wethBalanceBefore);
-    //     (uint256 ltv, , , , ) = POOL.getConfiguration(WETH).getParamsMemory();
+        vm.prank(delegator);
+        bulker.execute(actions, data);
 
-    //     for (
-    //         uint256 marketIndex;
-    //         marketIndex < borrowableMarkets.length;
-    //         ++marketIndex
-    //     ) {
-    //         if (snapshotId > 0) vm.revertTo(snapshotId);
-    //         snapshotId = vm.snapshot();
+        // Rounding because stETH is rebasing and therefore can have rounding errors on transfer.
+        assertApproxEqAbs(ERC20(stETH).balanceOf(receiver), expectedBalance, 2, "bulker balance");
+    }
 
-    //         TestMarket memory market = borrowableMarkets[marketIndex];
+    function testShouldSupply(uint256 seed, address delegator, uint256 amount, address onBehalf, uint256 maxIterations)
+        public
+    {
+        amount = bound(amount, 1, type(uint160).max);
+        maxIterations = bound(maxIterations, 1, 10);
 
-    //         uint256 borrowedBalanceBefore = ERC20(market.underlying).balanceOf(
-    //             address(user)
-    //         );
-    //         uint256 borrowed = (
-    //             market.underlying == WETH
-    //                 ? wethBalanceBefore
-    //                 : borrowedBalanceBefore
-    //         ).percentMul(ltv);
+        TestMarket memory market = testMarkets[_randomUnderlying(seed)];
+        deal(market.underlying, address(bulker), amount);
 
-    //         user.aaveBorrow(market.underlying, borrowed);
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
 
-    //         assertEq(
-    //             ERC20(market.underlying).balanceOf(address(user)),
-    //             borrowedBalanceBefore + borrowed,
-    //             "unexpected balance after borrow"
-    //         );
+        (actions[0], data[0]) =
+            _getSupplyData(market.underlying, amount, onBehalf, maxIterations, IBulkerGateway.OpType.RAW);
 
-    //         IMainnetMorphoTxBuilder.ActionType[]
-    //             memory actions = new IMainnetMorphoTxBuilder.ActionType[](2);
-    //         bytes[] memory data = new bytes[](actions.length);
+        vm.startPrank(delegator);
+        bulker.execute(actions, data);
 
-    //         (actions[0], data[0]) = user.encodeApprove(
-    //             market.underlying,
-    //             address(POOL),
-    //             borrowed
-    //         );
-
-    //         (actions[1], data[1]) = user.encodeAaveRepay(
-    //             market.underlying,
-    //             borrowed
-    //         );
-
-    //         user.execute(actions, data);
-
-    //         assertApproxEqAbs(
-    //             ERC20(market.underlying).balanceOf(address(user)),
-    //             borrowedBalanceBefore,
-    //             1,
-    //             "unexpected balance after repay"
-    //         );
-    //     }
-    // }
-
-    //     function fold(TestMarket memory market)
-    //     public
-    //     returns (
-    //         uint256 initialAmount,
-    //         uint256 expectedSupply,
-    //         uint256 expectedBorrow
-    //     )
-    // {
-    //     initialAmount = ERC20(market.underlying).balanceOf(address(user));
-
-    //     IMainnetMorphoTxBuilder.ActionType[]
-    //         memory actions = new IMainnetMorphoTxBuilder.ActionType[](
-    //             FOLDING_STEPS * 2 + 1
-    //         );
-    //     bytes[] memory data = new bytes[](actions.length);
-
-    //     uint256 amount = initialAmount;
-    //     for (uint256 i; i < FOLDING_STEPS; i++) {
-    //         (actions[2 * i + 1], data[2 * i + 1]) = user.encodeSupply(
-    //             market.poolToken,
-    //             amount
-    //         );
-    //         expectedSupply += amount;
-
-    //         amount = amount.percentMul(market.ltv).percentSub(1);
-    //         (actions[2 * i + 2], data[2 * i + 2]) = user.encodeBorrow(
-    //             market.poolToken,
-    //             amount
-    //         );
-    //         expectedBorrow += amount;
-    //     }
-
-    //     (actions[0], data[0]) = user.encodeApprove(
-    //         market.underlying,
-    //         address(MORPHO),
-    //         expectedSupply
-    //     );
-
-    //     user.execute(actions, data);
-    // }
-
-    // function testShouldFoldBorrowableCollateralMarket() public {
-    //     for (
-    //         uint256 marketIndex;
-    //         marketIndex < borrowableCollateralMarkets.length;
-    //         ++marketIndex
-    //     ) {
-    //         if (snapshotId > 0) vm.revertTo(snapshotId);
-    //         snapshotId = vm.snapshot();
-
-    //         TestMarket memory market = borrowableCollateralMarkets[marketIndex];
-
-    //         (, uint256 expectedSupply, uint256 expectedBorrow) = fold(market);
-
-    //         (, , uint256 totalSupply) = LENS.getCurrentSupplyBalanceInOf(
-    //             market.poolToken,
-    //             address(user)
-    //         );
-    //         (, , uint256 totalBorrow) = LENS.getCurrentBorrowBalanceInOf(
-    //             market.poolToken,
-    //             address(user)
-    //         );
-    //         uint256 healthFactor = LENS.getUserHealthFactor(address(user));
-
-    //         assertApproxEqAbs(
-    //             totalSupply,
-    //             expectedSupply,
-    //             expectedSupply / 1e6 + 10,
-    //             "unexpected total supply"
-    //         );
-    //         assertApproxEqAbs(
-    //             totalBorrow,
-    //             expectedBorrow,
-    //             expectedBorrow / 1e6 + 10,
-    //             "unexpected total borrow"
-    //         );
-
-    //         assertApproxEqAbs(
-    //             healthFactor,
-    //             market.liquidationThreshold.wadDiv(market.ltv).percentAdd(1),
-    //             1e17, // TODO: high margin to explain
-    //             "unexpected health factor"
-    //         );
-    //     }
-    // }
-
-    // function testShouldNotFoldBorrowableCollateralMarketAboveCollateralFactor()
-    //     public
-    // {
-    //     for (
-    //         uint256 marketIndex;
-    //         marketIndex < borrowableCollateralMarkets.length;
-    //         ++marketIndex
-    //     ) {
-    //         TestMarket memory market = borrowableCollateralMarkets[marketIndex];
-    //         uint256 amount = ERC20(market.underlying).balanceOf(address(user));
-
-    //         IMainnetMorphoTxBuilder.ActionType[]
-    //             memory actions = new IMainnetMorphoTxBuilder.ActionType[](3);
-    //         bytes[] memory data = new bytes[](actions.length);
-
-    //         (actions[0], data[0]) = user.encodeApprove(
-    //             market.underlying,
-    //             address(MORPHO),
-    //             amount
-    //         );
-    //         (actions[1], data[1]) = user.encodeSupply(market.poolToken, amount);
-    //         (actions[2], data[2]) = user.encodeBorrow(
-    //             market.poolToken,
-    //             amount.percentMul(market.ltv).percentAdd(1)
-    //         );
-
-    //         vm.expectRevert(0xdf9db463); // UnauthorisedBorrow.selector
-    //         user.execute(actions, data);
-    //     }
-    // }
-
-    // function testShouldUnfoldBorrowableCollateralMarketToReceiver() public {
-    //     for (
-    //         uint256 marketIndex;
-    //         marketIndex < borrowableCollateralMarkets.length;
-    //         ++marketIndex
-    //     ) {
-    //         if (snapshotId > 0) vm.revertTo(snapshotId);
-    //         snapshotId = vm.snapshot();
-
-    //         TestMarket memory market = borrowableCollateralMarkets[marketIndex];
-
-    //         (uint256 initialAmount, , ) = fold(market);
-
-    //         vm.roll(block.number + 10_000);
-
-    //         /// UNFOLDING
-
-    //         (, , uint256 totalBorrowBefore) = LENS.getCurrentBorrowBalanceInOf(
-    //             market.poolToken,
-    //             address(user)
-    //         );
-
-    //         uint256 amount = ERC20(market.underlying).balanceOf(address(user));
-
-    //         IMainnetMorphoTxBuilder.ActionType[]
-    //             memory actions = new IMainnetMorphoTxBuilder.ActionType[](
-    //                 FOLDING_STEPS * 2 + 3
-    //             );
-    //         bytes[] memory data = new bytes[](actions.length);
-
-    //         (actions[0], data[0]) = user.encodeApprove(
-    //             market.underlying,
-    //             address(MORPHO),
-    //             totalBorrowBefore.percentAdd(5)
-    //         );
-
-    //         for (uint256 i; i < FOLDING_STEPS; i++) {
-    //             (actions[2 * i + 1], data[2 * i + 1]) = user.encodeRepay(
-    //                 market.poolToken,
-    //                 amount
-    //             );
-
-    //             amount = amount.percentDiv(market.ltv).percentSub(1);
-    //             (actions[2 * i + 2], data[2 * i + 2]) = user.encodeWithdraw(
-    //                 market.poolToken,
-    //                 amount
-    //             );
-    //         }
-
-    //         // Last step to repay & withdraw interests
-    //         (actions[2 * FOLDING_STEPS + 1], data[2 * FOLDING_STEPS + 1]) = user
-    //             .encodeRepay(market.poolToken, type(uint256).max);
-    //         (actions[2 * FOLDING_STEPS + 2], data[2 * FOLDING_STEPS + 2]) = user
-    //             .encodeWithdraw(
-    //                 market.poolToken,
-    //                 address(0xDECAFC0FFEE),
-    //                 type(uint256).max,
-    //                 IMainnetMorphoTxBuilder.OpType.RAW
-    //             );
-
-    //         user.execute(actions, data);
-
-    //         (, , uint256 totalSupply) = LENS.getCurrentSupplyBalanceInOf(
-    //             market.poolToken,
-    //             address(user)
-    //         );
-    //         (, , uint256 totalBorrow) = LENS.getCurrentBorrowBalanceInOf(
-    //             market.poolToken,
-    //             address(user)
-    //         );
-
-    //         uint256 receiverBalance = ERC20(market.underlying).balanceOf(
-    //             address(0xDECAFC0FFEE)
-    //         );
-    //         assertGt(receiverBalance, 0, "unexpected total borrow");
-
-    //         assertEq(totalSupply, 0, "unexpected total supply");
-    //         assertEq(totalBorrow, 0, "unexpected total borrow");
-    //         assertApproxEqAbs(
-    //             ERC20(market.underlying).balanceOf(address(user)) +
-    //                 receiverBalance,
-    //             initialAmount,
-    //             initialAmount / 1e6,
-    //             "unexpected underlying balance"
-    //         );
-    //     }
-    // }
-
-    // function leverage(
-    //     TestMarket memory collateralMarket,
-    //     TestMarket memory borrowedMarket
-    // ) public returns (LeverageTest memory test) {
-    //     test.borrowedPrice = oracle.getAssetPrice(borrowedMarket.underlying);
-    //     test.collateralPrice = oracle.getAssetPrice(
-    //         collateralMarket.underlying
-    //     );
-    //     test.collateralBorrowedPrice = (test.collateralPrice *
-    //         10**borrowedMarket.decimals).wadDiv(
-    //             test.borrowedPrice * 10**collateralMarket.decimals
-    //         );
-
-    //     test.collateralMultiplier = (collateralMarket.ltv * 1e14) // ltv is in bps but collateralMultiplier is expected in WAD
-    //         .wadMul(test.collateralBorrowedPrice)
-    //         .wadMul(0.999e18); // small ltv margin
-
-    //     test.initialCollateralAmount = ERC20(collateralMarket.underlying)
-    //         .balanceOf(address(user));
-    //     test.initialBorrowedAmount = test.initialCollateralAmount.wadMul(
-    //         test.collateralMultiplier
-    //     );
-
-    //     IMainnetMorphoTxBuilder.ActionType[]
-    //         memory actions = new IMainnetMorphoTxBuilder.ActionType[](
-    //             LEVERAGE_STEPS * 3 + 2
-    //         );
-    //     bytes[] memory data = new bytes[](actions.length);
-
-    //     (actions[0], data[0]) = user.encodeApprove(
-    //         collateralMarket.underlying,
-    //         address(MORPHO),
-    //         test.initialCollateralAmount * LEVERAGE_STEPS
-    //     );
-    //     (actions[1], data[1]) = user.encodeApprove(
-    //         borrowedMarket.underlying,
-    //         UNISWAP_V3_ROUTER,
-    //         test.initialBorrowedAmount * LEVERAGE_STEPS
-    //     );
-
-    //     for (uint256 i; i < LEVERAGE_STEPS; i++) {
-    //         test.leverageMultiplier =
-    //             1e18 +
-    //             test.leverageMultiplier.percentMul(collateralMarket.ltv);
-
-    //         (actions[3 * i + 2], data[3 * i + 2]) = i > 0
-    //             ? user.encodeSupply(
-    //                 collateralMarket.poolToken,
-    //                 0,
-    //                 IMainnetMorphoTxBuilder.OpType.ADD
-    //             )
-    //             : user.encodeSupply(
-    //                 collateralMarket.poolToken,
-    //                 test.initialCollateralAmount,
-    //                 IMainnetMorphoTxBuilder.OpType.RAW
-    //             );
-
-    //         (actions[3 * i + 3], data[3 * i + 3]) = i > 0
-    //             ? user.encodeBorrow(
-    //                 borrowedMarket.poolToken,
-    //                 test.collateralMultiplier,
-    //                 IMainnetMorphoTxBuilder.OpType.MUL
-    //             )
-    //             : user.encodeBorrow(
-    //                 borrowedMarket.poolToken,
-    //                 test.initialBorrowedAmount,
-    //                 IMainnetMorphoTxBuilder.OpType.RAW
-    //             );
-
-    //         (actions[3 * i + 4], data[3 * i + 4]) = user.encodeSwapExactIn(
-    //             borrowedMarket.underlying,
-    //             collateralMarket.underlying,
-    //             0,
-    //             test.collateralBorrowedPrice,
-    //             MAX_SLIPPAGE_BPS,
-    //             IMainnetMorphoTxBuilder.OpType.ADD
-    //         );
-    //     }
-
-    //     user.execute(actions, data);
-    // }
-
-    // function testShouldLeverageActiveMarketWithCollateralMarket() public {
-    //     for (
-    //         uint256 collateralMarketIndex;
-    //         collateralMarketIndex < collateralMarkets.length;
-    //         ++collateralMarketIndex
-    //     ) {
-    //         for (
-    //             uint256 borrowedMarketIndex;
-    //             borrowedMarketIndex < activeMarkets.length;
-    //             ++borrowedMarketIndex
-    //         ) {
-    //             if (snapshotId > 0) vm.revertTo(snapshotId);
-    //             snapshotId = vm.snapshot();
-
-    //             TestMarket memory collateralMarket = collateralMarkets[
-    //                 collateralMarketIndex
-    //             ];
-    //             TestMarket memory borrowedMarket = activeMarkets[
-    //                 borrowedMarketIndex
-    //             ];
-    //             if (collateralMarket.poolToken == borrowedMarket.poolToken)
-    //                 continue;
-
-    //             uint256 borrowedBalanceBefore = ERC20(borrowedMarket.underlying)
-    //                 .balanceOf(address(user));
-
-    //             LeverageTest memory test = leverage(
-    //                 collateralMarket,
-    //                 borrowedMarket
-    //             );
-
-    //             (, , uint256 totalSupply) = LENS.getCurrentSupplyBalanceInOf(
-    //                 collateralMarket.poolToken,
-    //                 address(user)
-    //             );
-    //             (, , uint256 totalBorrow) = LENS.getCurrentBorrowBalanceInOf(
-    //                 borrowedMarket.poolToken,
-    //                 address(user)
-    //             );
-    //             uint256 healthFactor = LENS.getUserHealthFactor(address(user));
-
-    //             uint256 expectedSupply = test.initialCollateralAmount.wadMul(
-    //                 test.leverageMultiplier
-    //             );
-    //             uint256 expectedBorrow = (expectedSupply -
-    //                 test.initialCollateralAmount).wadMul(
-    //                     test.collateralBorrowedPrice
-    //                 );
-
-    //             assertEq(
-    //                 borrowedBalanceBefore,
-    //                 ERC20(borrowedMarket.underlying).balanceOf(address(user)),
-    //                 "unexpected borrowed balance"
-    //             );
-    //             assertApproxEqAbs(
-    //                 totalSupply,
-    //                 expectedSupply,
-    //                 expectedSupply.percentMul(MAX_SLIPPAGE_BPS),
-    //                 "unexpected total supply"
-    //             );
-    //             assertApproxEqAbs(
-    //                 totalBorrow,
-    //                 expectedBorrow,
-    //                 expectedBorrow.percentMul(MAX_SLIPPAGE_BPS),
-    //                 "unexpected total borrow"
-    //             );
-    //             assertApproxEqAbs(
-    //                 healthFactor,
-    //                 collateralMarket
-    //                     .liquidationThreshold
-    //                     .wadDiv(collateralMarket.ltv)
-    //                     .percentDiv(99_90),
-    //                 1e15,
-    //                 "unexpected health factor"
-    //             );
-    //         }
-    //     }
-    // }
-
-    // function testShouldDeleverageActiveMarketWithCollateralMarketToReceiver()
-    //     public
-    // {
-    //     for (
-    //         uint256 collateralMarketIndex;
-    //         collateralMarketIndex < collateralMarkets.length;
-    //         ++collateralMarketIndex
-    //     ) {
-    //         for (
-    //             uint256 borrowedMarketIndex;
-    //             borrowedMarketIndex < activeMarkets.length;
-    //             ++borrowedMarketIndex
-    //         ) {
-    //             if (snapshotId > 0) vm.revertTo(snapshotId);
-    //             snapshotId = vm.snapshot();
-
-    //             TestMarket memory collateralMarket = collateralMarkets[
-    //                 collateralMarketIndex
-    //             ];
-    //             TestMarket memory borrowedMarket = activeMarkets[
-    //                 borrowedMarketIndex
-    //             ];
-    //             if (collateralMarket.poolToken == borrowedMarket.poolToken)
-    //                 continue;
-
-    //             LeverageTest memory test = leverage(
-    //                 collateralMarket,
-    //                 borrowedMarket
-    //             );
-
-    //             vm.roll(block.number + 10_000);
-
-    //             /// DELEVERAGE
-
-    //             (, , test.totalSupplyBefore) = LENS.getCurrentSupplyBalanceInOf(
-    //                 collateralMarket.poolToken,
-    //                 address(user)
-    //             );
-    //             (, , test.totalBorrowBefore) = LENS.getCurrentBorrowBalanceInOf(
-    //                 borrowedMarket.poolToken,
-    //                 address(user)
-    //             );
-
-    //             uint256 amount = ERC20(collateralMarket.underlying).balanceOf(
-    //                 address(user)
-    //             );
-
-    //             IMainnetMorphoTxBuilder.ActionType[]
-    //                 memory actions = new IMainnetMorphoTxBuilder.ActionType[](
-    //                     LEVERAGE_STEPS * 3 + 5
-    //                 );
-    //             bytes[] memory data = new bytes[](actions.length);
-
-    //             (actions[0], data[0]) = user.encodeApprove(
-    //                 borrowedMarket.underlying,
-    //                 address(MORPHO),
-    //                 test.totalBorrowBefore.percentAdd(MAX_SLIPPAGE_BPS)
-    //             );
-    //             (actions[1], data[1]) = user.encodeApprove(
-    //                 collateralMarket.underlying,
-    //                 UNISWAP_V3_ROUTER,
-    //                 test.totalSupplyBefore.percentAdd(MAX_SLIPPAGE_BPS)
-    //             );
-
-    //             uint256 borrowedCollateralPrice = uint256(1e18).wadDiv(
-    //                 test.collateralBorrowedPrice
-    //             );
-    //             for (uint256 i; i < LEVERAGE_STEPS; i++) {
-    //                 (actions[3 * i + 2], data[3 * i + 2]) = i > 0
-    //                     ? user.encodeSwapExactIn(
-    //                         collateralMarket.underlying,
-    //                         borrowedMarket.underlying,
-    //                         0,
-    //                         borrowedCollateralPrice,
-    //                         MAX_SLIPPAGE_BPS,
-    //                         IMainnetMorphoTxBuilder.OpType.ADD
-    //                     )
-    //                     : user.encodeSwapExactIn(
-    //                         collateralMarket.underlying,
-    //                         borrowedMarket.underlying,
-    //                         amount,
-    //                         borrowedCollateralPrice,
-    //                         MAX_SLIPPAGE_BPS,
-    //                         IMainnetMorphoTxBuilder.OpType.RAW
-    //                     );
-
-    //                 (actions[3 * i + 3], data[3 * i + 3]) = user.encodeRepay(
-    //                     borrowedMarket.poolToken,
-    //                     0,
-    //                     IMainnetMorphoTxBuilder.OpType.ADD
-    //                 );
-
-    //                 (actions[3 * i + 4], data[3 * i + 4]) = user.encodeWithdraw(
-    //                     collateralMarket.poolToken,
-    //                     uint256(0.98e18).wadDiv(test.collateralMultiplier),
-    //                     IMainnetMorphoTxBuilder.OpType.MUL
-    //                 );
-    //             }
-
-    //             // Last step to repay & withdraw all (because of slippage)
-    //             (
-    //                 actions[3 * LEVERAGE_STEPS + 2],
-    //                 data[3 * LEVERAGE_STEPS + 2]
-    //             ) = user.encodeSwapExactIn(
-    //                 collateralMarket.underlying,
-    //                 borrowedMarket.underlying,
-    //                 0,
-    //                 borrowedCollateralPrice,
-    //                 MAX_SLIPPAGE_BPS,
-    //                 IMainnetMorphoTxBuilder.OpType.ADD
-    //             );
-    //             (
-    //                 actions[3 * LEVERAGE_STEPS + 3],
-    //                 data[3 * LEVERAGE_STEPS + 3]
-    //             ) = user.encodeRepay(
-    //                 borrowedMarket.poolToken,
-    //                 type(uint256).max
-    //             );
-    //             (
-    //                 actions[3 * LEVERAGE_STEPS + 4],
-    //                 data[3 * LEVERAGE_STEPS + 4]
-    //             ) = user.encodeWithdraw(
-    //                 collateralMarket.poolToken,
-    //                 address(0xDECAFC0FFEE),
-    //                 type(uint256).max,
-    //                 IMainnetMorphoTxBuilder.OpType.RAW
-    //             );
-
-    //             user.execute(actions, data);
-
-    //             (, , uint256 totalSupply) = LENS.getCurrentSupplyBalanceInOf(
-    //                 collateralMarket.poolToken,
-    //                 address(user)
-    //             );
-    //             (, , uint256 totalBorrow) = LENS.getCurrentBorrowBalanceInOf(
-    //                 borrowedMarket.poolToken,
-    //                 address(user)
-    //             );
-    //             assertEq(totalSupply, 0, "unexpected total supply");
-    //             assertEq(totalBorrow, 0, "unexpected total borrow");
-
-    //             uint256 receiverBalance = ERC20(collateralMarket.underlying)
-    //                 .balanceOf(address(0xDECAFC0FFEE));
-    //             assertGt(receiverBalance, 0, "unexpected receiver balance");
-
-    //             uint256 usdcPrice = oracle.getAssetPrice(USDC);
-    //             uint256 totalUsd = ((ERC20(borrowedMarket.underlying).balanceOf(
-    //                 address(user)
-    //             ) *
-    //                 test.borrowedPrice *
-    //                 1e18) / (usdcPrice * 10**borrowedMarket.decimals)) +
-    //                 ((ERC20(collateralMarket.underlying).balanceOf(
-    //                     address(user)
-    //                 ) + receiverBalance) *
-    //                     test.collateralPrice *
-    //                     1e18) /
-    //                 (usdcPrice * 10**collateralMarket.decimals);
-
-    //             assertGt(
-    //                 totalUsd,
-    //                 (2 * INITIAL_USD_BALANCE).percentSub(MAX_SLIPPAGE_BPS),
-    //                 "lower total usd balance than expected"
-    //             );
-    //             assertLt(
-    //                 totalUsd,
-    //                 2 * INITIAL_USD_BALANCE,
-    //                 "greater total usd balance than expected"
-    //             );
-    //         }
-    //     }
-    // }
+        assertEq(ERC20(market.underlying).balanceOf(address(bulker)), 0, "bulker balance");
+        assertApproxEqAbs(morpho.supplyBalance(market.underlying, onBehalf), amount, 2, "onBehalf balance");
+    }
 
     function _getApproveData(
         uint256 privateKey,
