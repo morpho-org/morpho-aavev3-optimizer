@@ -160,10 +160,11 @@ contract TestExtensionsBulker is IntegrationTest {
     function testShouldSupply(uint256 seed, address delegator, uint256 amount, address onBehalf, uint256 maxIterations)
         public
     {
-        amount = bound(amount, 1, type(uint160).max);
+        vm.assume(onBehalf != address(0));
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
         maxIterations = bound(maxIterations, 1, 10);
+        amount = _boundSupply(market, amount);
 
-        TestMarket memory market = testMarkets[_randomUnderlying(seed)];
         deal(market.underlying, address(bulker), amount);
 
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
