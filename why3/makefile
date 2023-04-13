@@ -1,13 +1,5 @@
-.EXPORT_ALL_VARIABLES:
-
-PATH:=${shell pwd}/why3-provers:${PATH}
-
 install:
-	git lfs install
-	git submodule update --init
-	why3 config detect
+	docker pull registry.gitlab.inria.fr/why3/why3:1.6.0
+	docker tag  registry.gitlab.inria.fr/why3/why3:1.6.0 why3
 
-replay-%:
-	why3 replay -L. $*
-
-.PHONY: install 
+.PHONY: install

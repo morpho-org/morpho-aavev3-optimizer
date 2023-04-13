@@ -2,18 +2,15 @@
 <!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
 "http://why3.lri.fr/why3session.dtd">
 <why3session shape_version="6">
-<prover id="0" name="Z3" version="4.11.0" timelimit="1" steplimit="0" memlimit="1000"/>
-<prover id="1" name="Alt-Ergo" version="2.4.2" timelimit="1" steplimit="0" memlimit="1000"/>
+<prover id="2" name="Alt-Ergo" version="2.0.0" timelimit="1" steplimit="0" memlimit="1000"/>
 <file format="whyml" proved="true">
 <path name=".."/><path name="solidity.mlw"/>
 <theory name="Solidity" proved="true">
  <goal name="morpho&#39;vc" expl="VC for morpho" proved="true">
- <proof prover="0"><result status="valid" time="0.02" steps="6"/></proof>
- <proof prover="1" obsolete="true"><result status="valid" time="0.01" steps="0"/></proof>
+ <proof prover="2"><result status="valid" time="0.01" steps="1"/></proof>
  </goal>
  <goal name="get&#39;vc" expl="VC for get" proved="true">
- <proof prover="0"><result status="valid" time="0.01" steps="2639"/></proof>
- <proof prover="1" obsolete="true"><result status="valid" time="0.01" steps="2"/></proof>
+ <proof prover="2"><result status="valid" time="0.01" steps="2"/></proof>
  </goal>
 </theory>
 </file>
