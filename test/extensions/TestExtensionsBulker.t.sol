@@ -391,7 +391,7 @@ contract TestExtensionsBulker is IntegrationTest {
 
         assertEq(ERC20(market.underlying).balanceOf(address(bulker)), 0, "bulker balance");
         assertEq(ERC20(market.underlying).balanceOf(address(delegator)), 0, "delegator balance");
-        assertApproxEqAbs(morpho.supplyBalance(market.underlying, delegator), amount, 2, "delegator collateral");
+        assertApproxEqAbs(morpho.supplyBalance(market.underlying, delegator), amount, 2, "delegator supply");
     }
 
     function _getApproveData(
