@@ -41,15 +41,8 @@ interface IBulkerGateway {
         WRAP_ETH,
         UNWRAP_ETH,
         WRAP_ST_ETH,
-        UNWRAP_ST_ETH
-    }
-
-    enum OpType {
-        RAW,
-        ADD,
-        SUB,
-        MUL,
-        DIV
+        UNWRAP_ST_ETH,
+        SKIM
     }
 
     /* FUNCTIONS */
@@ -59,9 +52,6 @@ interface IBulkerGateway {
     function wstETH() external pure returns (address);
 
     function MORPHO() external view returns (address);
-    function MORPHO_DAO() external pure returns (address);
-
-    function skim(address erc20) external;
 
     function execute(ActionType[] calldata actions, bytes[] calldata data) external payable;
 }
