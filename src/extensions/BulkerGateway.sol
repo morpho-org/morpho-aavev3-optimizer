@@ -93,7 +93,7 @@ contract BulkerGateway is IBulkerGateway {
     /// @notice Performs the given action, given its associated parameters.
     /// @param action The type of action to perform on behalf of the caller.
     /// @param data The data to decode, associated with the action.
-    function _performAction(ActionType action, bytes memory data) internal {
+    function _performAction(ActionType action, bytes calldata data) internal {
         if (action == ActionType.APPROVE2) {
             _approve2(data);
         } else if (action == ActionType.TRANSFER_FROM2) {
@@ -132,7 +132,7 @@ contract BulkerGateway is IBulkerGateway {
     /* INTERNAL ACTIONS */
 
     /// @notice Approves the given `amount` of `asset` from sender to be spent by this contract via Permit2 with the given `deadline` & EIP712 `signature`.
-    function _approve2(bytes memory data) internal {
+    function _approve2(bytes calldata data) internal {
         (address asset, uint256 amount, uint256 deadline, Types.Signature memory signature) =
             abi.decode(data, (address, uint256, uint256, Types.Signature));
         if (amount == 0) revert AmountIsZero();
@@ -143,7 +143,7 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Transfers the given `amount` of `asset` from sender to this contract via ERC20 transfer with Permit2 fallback.
-    function _transferFrom2(bytes memory data) internal {
+    function _transferFrom2(bytes calldata data) internal {
         (address asset, uint256 amount) = abi.decode(data, (address, uint256));
         if (amount == 0) revert AmountIsZero();
 
@@ -151,7 +151,7 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Approves this contract to manage the position of `msg.sender` via EIP712 `signature`.
-    function _approveManager(bytes memory data) internal {
+    function _approveManager(bytes calldata data) internal {
         (bool isAllowed, uint256 nonce, uint256 deadline, Types.Signature memory signature) =
             abi.decode(data, (bool, uint256, uint256, Types.Signature));
 
@@ -160,7 +160,7 @@ contract BulkerGateway is IBulkerGateway {
 
     /// @notice Supplies `amount` of `asset` of `onBehalf` using permit2 in a single tx.
     ///         The supplied amount cannot be used as collateral but is eligible for the peer-to-peer matching.
-    function _supply(bytes memory data) internal {
+    function _supply(bytes calldata data) internal {
         (address asset, uint256 amount, address onBehalf, uint256 maxIterations) =
             abi.decode(data, (address, uint256, address, uint256));
         if (amount == 0) revert AmountIsZero();
@@ -171,7 +171,7 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Supplies `amount` of `asset` collateral to the pool on behalf of `onBehalf`.
-    function _supplyCollateral(bytes memory data) internal {
+    function _supplyCollateral(bytes calldata data) internal {
         (address asset, uint256 amount, address onBehalf) = abi.decode(data, (address, uint256, address));
         if (amount == 0) revert AmountIsZero();
 
@@ -181,7 +181,7 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Borrows `amount` of `asset` on behalf of the sender. Sender must have previously approved the bulker as their manager on Morpho.
-    function _borrow(bytes memory data) internal {
+    function _borrow(bytes calldata data) internal {
         (address asset, uint256 amount, address receiver, uint256 maxIterations) =
             abi.decode(data, (address, uint256, address, uint256));
         if (amount == 0) revert AmountIsZero();
@@ -190,7 +190,7 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Repays `amount` of `asset` on behalf of `onBehalf`.
-    function _repay(bytes memory data) internal {
+    function _repay(bytes calldata data) internal {
         (address asset, uint256 amount, address onBehalf) = abi.decode(data, (address, uint256, address));
         if (amount == 0) revert AmountIsZero();
 
@@ -200,7 +200,7 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Withdraws `amount` of `asset` on behalf of `onBehalf`. Sender must have previously approved the bulker as their manager on Morpho.
-    function _withdraw(bytes memory data) internal {
+    function _withdraw(bytes calldata data) internal {
         (address asset, uint256 amount, address receiver, uint256 maxIterations) =
             abi.decode(data, (address, uint256, address, uint256));
         if (amount == 0) revert AmountIsZero();
@@ -209,7 +209,7 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Withdraws `amount` of `asset` on behalf of sender. Sender must have previously approved the bulker as their manager on Morpho.
-    function _withdrawCollateral(bytes memory data) internal {
+    function _withdrawCollateral(bytes calldata data) internal {
         (address asset, uint256 amount, address receiver) = abi.decode(data, (address, uint256, address));
         if (amount == 0) revert AmountIsZero();
 
@@ -217,13 +217,13 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Claims rewards for the given assets, on behalf of an address, sending the funds to the given address.
-    function _claimRewards(bytes memory data) internal {
+    function _claimRewards(bytes calldata data) internal {
         (address[] memory assets, address onBehalf) = abi.decode(data, (address[], address));
         _MORPHO.claimRewards(assets, onBehalf);
     }
 
     /// @notice Wraps the given input of ETH to WETH.
-    function _wrapEth(bytes memory data) internal {
+    function _wrapEth(bytes calldata data) internal {
         (uint256 amount) = abi.decode(data, (uint256));
         if (amount == 0) revert AmountIsZero();
 
@@ -231,7 +231,7 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Unwraps the given input of WETH to ETH.
-    function _unwrapEth(bytes memory data) internal {
+    function _unwrapEth(bytes calldata data) internal {
         (uint256 amount, address receiver) = abi.decode(data, (uint256, address));
         if (amount == 0) revert AmountIsZero();
 
@@ -241,7 +241,7 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Wraps the given input of stETH to wstETH.
-    function _wrapStEth(bytes memory data) internal {
+    function _wrapStEth(bytes calldata data) internal {
         (uint256 amount) = abi.decode(data, (uint256));
         if (amount == 0) revert AmountIsZero();
 
@@ -249,7 +249,7 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Unwraps the given input of wstETH to stETH.
-    function _unwrapStEth(bytes memory data) internal {
+    function _unwrapStEth(bytes calldata data) internal {
         (uint256 amount, address receiver) = abi.decode(data, (uint256, address));
         if (amount == 0) revert AmountIsZero();
 
@@ -259,7 +259,7 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Sends any ERC20 in this contract to the receiver.
-    function _skim(bytes memory data) internal {
+    function _skim(bytes calldata data) internal {
         (address asset, address receiver) = abi.decode(data, (address, address));
         uint256 balance = ERC20(asset).balanceOf(address(this));
         ERC20(asset).safeTransfer(receiver, balance);
