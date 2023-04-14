@@ -13,9 +13,9 @@ This should give you access to the `why3` binary.
 
 ## Installation using docker
 
-If you have docker installed on your machine, you can pull a docker image by invoking `make`.
+If you have docker installed on your machine, you can pull a docker image by invoking `make` in the `why3` folder.
 
-Then, if you have a X server (Linux), you can use `./why3-X.sh`. Otherwise, you can use `./why3-web.sh`.
+Then, if you have a X server (Linux), you can use `./why3-X.sh` (in the `why3` folder). Otherwise, you can use `./why3-web.sh`.
 
 In the following, we will write `WHY3` for either `why3`, `./why3-X.sh` or `./why3-web.sh` depending on the installation you chose.
 
