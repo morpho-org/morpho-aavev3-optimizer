@@ -31,9 +31,6 @@ contract BulkerGateway is IBulkerGateway {
     /// @dev The address of the wstETH contract.
     address internal constant _WST_ETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
 
-    /// @dev The address of the Morpho DAO.
-    address internal constant _MORPHO_DAO = 0xcBa28b38103307Ec8dA98377ffF9816C164f9AFa;
-
     /* IMMUTABLES */
 
     IMorpho internal immutable _MORPHO;
@@ -70,11 +67,6 @@ contract BulkerGateway is IBulkerGateway {
     /// @notice Returns the address of the Morpho protocol.
     function MORPHO() external view returns (address) {
         return address(_MORPHO);
-    }
-
-    /// @notice Returns the address of the Morpho DAO.
-    function MORPHO_DAO() external pure returns (address) {
-        return _MORPHO_DAO;
     }
 
     /// @notice Executes the given batch of actions, with the given input data.
