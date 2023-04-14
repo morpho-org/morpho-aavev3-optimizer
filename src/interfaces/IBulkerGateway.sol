@@ -52,7 +52,6 @@ interface IBulkerGateway {
     function wstETH() external pure returns (address);
 
     function MORPHO() external view returns (address);
-    function MORPHO_DAO() external pure returns (address);
 
     function execute(ActionType[] calldata actions, bytes[] calldata data) external payable;
 }
