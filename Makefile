@@ -73,5 +73,8 @@ lcov-html:
 gas-report:
 	forge test --match-contract TestIntegration --gas-report
 
+deploy-morpho-mainnet:
+	forge script script/eth-mainnet/EthEModeDeploy.s.sol --broadcast -vvv --ledger
+
 
 .PHONY: contracts test coverage
