@@ -234,11 +234,16 @@ contract TestExtensionsBulker is IntegrationTest {
 
         (actions[0], data[0]) = _getBorrowData(borrowedMarket.underlying, amount, receiver, maxIterations);
 
+        uint256 balanceBefore = ERC20(borrowedMarket.underlying).balanceOf(address(receiver));
+
         bulker.execute(actions, data);
 
         assertEq(ERC20(borrowedMarket.underlying).balanceOf(address(receiver)), amount, "bulker balance");
         assertApproxEqAbs(
-            morpho.borrowBalance(borrowedMarket.underlying, delegator), amount, 2, "receiver borrow balance"
+            morpho.borrowBalance(borrowedMarket.underlying, delegator),
+            amount + balanceBefore,
+            2,
+            "receiver borrow balance"
         );
     }
 
@@ -342,6 +347,17 @@ contract TestExtensionsBulker is IntegrationTest {
         bulker.execute(actions, data);
 
         assertEq(ERC20(market.underlying).balanceOf(address(receiver)), amount + balanceBefore, "receiver balance");
+    }
+
+    function testBulkerShouldNotAcceptETH(address sender, uint256 amount) public {
+        vm.assume(sender != bulker.WETH());
+        vm.assume(amount > 0 && amount <= type(uint256).max - 1 ether);
+
+        deal(sender, amount + 1 ether);
+        vm.prank(sender);
+
+        vm.expectRevert(IBulkerGateway.OnlyWETH.selector);
+        payable(address(bulker)).transfer(amount);
     }
 
     function _getApproveData(uint256 privateKey, address underlying, uint160 amount, uint48 deadline)
