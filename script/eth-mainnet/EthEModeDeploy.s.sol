@@ -92,9 +92,12 @@ contract EthEModeDeploy is Script {
             address(proxyAdmin),
             abi.encodeWithSelector(
                 morphoImpl.initialize.selector,
-                address(addressesProvider), E_MODE_CATEGORY_ID,
+                address(addressesProvider),
+                E_MODE_CATEGORY_ID,
                 address(positionsManager),
-                Types.Iterations({repay: MAX_ITERATIONS, withdraw: MAX_ITERATIONS})));
+                Types.Iterations({repay: MAX_ITERATIONS, withdraw: MAX_ITERATIONS})
+            )
+        );
         morpho = Morpho(payable(address(morphoProxy)));
     }
 
