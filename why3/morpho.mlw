@@ -63,7 +63,7 @@ type morpho_storage = {
 val matched_address () : address
 
 (* No assumptions are made about the gas consumption. *)
-val constant iterations () : int
+val iterations () : int
 
 (* To force the invariant to be verified in the logic *)
 predicate type_invariant_hold (_: pool_storage) (_: morpho_storage) = true

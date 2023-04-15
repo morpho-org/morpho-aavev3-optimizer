@@ -3,8 +3,8 @@ use export int.Int
 
 type address
 
-val function pool : address
-val function morpho : address
+val constant pool : address
+val constant morpho : address
     ensures { result <> pool }
 
 clone fmap.MapImp as Map with type key = address
