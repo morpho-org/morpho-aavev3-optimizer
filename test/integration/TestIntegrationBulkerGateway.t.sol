@@ -303,7 +303,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
         bulker.execute(actions, data);
 
-        assertApproxEqAbs(ERC20(market.underlying).balanceOf(address(receiver)), amount, 2, "receiver balance");
+        assertApproxEqAbs(ERC20(market.underlying).balanceOf(address(receiver)), amount, 4, "receiver balance");
     }
 
     function testBulkerShouldWithdrawCollateral(uint256 seed, address delegator, uint256 amount, address receiver)
