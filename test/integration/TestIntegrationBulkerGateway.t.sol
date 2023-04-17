@@ -18,7 +18,7 @@ import {SigUtils} from "test/helpers/SigUtils.sol";
 
 import "test/helpers/IntegrationTest.sol";
 
-contract TestExtensionsBulker is IntegrationTest {
+contract TestIntegrationBulkerGateway is IntegrationTest {
     using SafeTransferLib for ERC20;
     using TestMarketLib for TestMarket;
 
