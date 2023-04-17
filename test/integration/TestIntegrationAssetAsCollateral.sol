@@ -85,13 +85,10 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
 
     function testSetAssetIsCollateralOnPoolShouldRevertWhenMarketIsNotCreated() public {
         assertEq(morpho.market(link).isCollateral, false);
-        assertEq(pool.getUserConfiguration(address(morpho)).isUsingAsCollateral(pool.getReserveData(link).id), false);
+        assertEq(_isUsingAsCollateral(link), false);
 
-        vm.expectRevert(Errors.MarketNotCreated.selector);
+        vm.expectRevert(Errors.SetAsCollateralOnPoolButMarketNotCreated.selector);
         morpho.setAssetIsCollateralOnPool(link, true);
-
-        vm.expectRevert(Errors.MarketNotCreated.selector);
-        morpho.setAssetIsCollateralOnPool(link, false);
     }
 
     function testSetAssetIsCollateralOnPoolShouldRevertWhenMarketIsCollateralOnMorpho() public {
@@ -142,6 +139,27 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
 
         assertEq(morpho.market(dai).isCollateral, false);
         assertEq(_isUsingAsCollateral(dai), true);
+    }
+
+    function testSetAssetIsNotCollateralOnPoolWhenMarketIsNotCreated() public {
+        // Deposit some dust of LINK so that setting it as collateral on pool does not revert.
+        deal(link, address(this), type(uint256).max);
+        ERC20(link).approve(address(pool), type(uint256).max);
+        pool.deposit(link, 1e12, address(morpho), 0);
+
+        vm.prank(address(morpho));
+        pool.setUserUseReserveAsCollateral(link, true);
+
+        assertEq(morpho.market(link).isCollateral, false);
+        assertEq(_isUsingAsCollateral(link), true);
+
+        morpho.setAssetIsCollateralOnPool(link, false);
+
+        assertEq(morpho.market(link).isCollateral, false);
+        assertEq(_isUsingAsCollateral(link), false);
+
+        vm.expectRevert(Errors.SetAsCollateralOnPoolButMarketNotCreated.selector);
+        morpho.setAssetIsCollateralOnPool(link, true);
     }
 
     function testSetAssetIsNotCollateralOnPoolWhenMarketIsCreatedAndIsNotCollateralOnMorphoOnly() public {
