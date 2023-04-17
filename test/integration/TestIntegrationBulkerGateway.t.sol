@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {PermitHash} from "@permit2/libraries/PermitHash.sol";
-import {IAllowanceTransfer, AllowanceTransfer} from "@permit2/AllowanceTransfer.sol";
 import {SafeCast160} from "@permit2/libraries/SafeCast160.sol";
 import {Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
 
@@ -21,8 +19,6 @@ import "test/helpers/IntegrationTest.sol";
 contract TestIntegrationBulkerGateway is IntegrationTest {
     using SafeTransferLib for ERC20;
     using TestMarketLib for TestMarket;
-
-    AllowanceTransfer internal constant PERMIT2 = AllowanceTransfer(address(0x000000000022D473030F116dDEE9F6B43aC78BA3));
 
     SigUtils internal sigUtils;
     IBulkerGateway internal bulker;
