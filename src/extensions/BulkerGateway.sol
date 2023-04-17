@@ -237,7 +237,7 @@ contract BulkerGateway is IBulkerGateway {
 
         IWETH(_WETH).withdraw(amount);
 
-        SafeTransferLib.safeTransferETH(receiver, amount);
+        if (receiver != address(this)) SafeTransferLib.safeTransferETH(receiver, amount);
     }
 
     /// @notice Wraps the given input of stETH to wstETH.
