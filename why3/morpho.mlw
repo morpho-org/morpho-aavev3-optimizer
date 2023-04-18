@@ -1,6 +1,5 @@
 module MorphoInternal
 use export int.MinMax
-use int.Power
 use int.ComputerDivision
 use set.Fset
 use set.FsetSum
@@ -175,11 +174,11 @@ let update_borrower (m: morpho_storage) (user: address) (p2p_amount: int) (pool_
     m.sum_pool_borrow_balance <- m.sum_pool_borrow_balance + pool_amount - former_pool;
     map_add user pool_amount m.pool_borrow_balance
 
-(* The number of decimals of our fixed point numbers *)
-let function decimals = 18
+(* Percentage operations are done on basis points. *)
+let constant percentage_factor = 100_00
 
-(* The multiplication of fixed point numbers *)
-let function mul (x y: int) : int = div (x * y) (power 10 decimals)
+(* Multiplication by a percentage, named percentMulDown in the code. *)
+let function mul (x y: int) : int = div (x * y) percentage_factor
 
 let lemma div_add (x y z: int)
     requires { x >= 0 && y >= 0 && z > 0 }
@@ -199,7 +198,7 @@ let lemma div_add (x y z: int)
 let lemma mul_add (x y z: int)
     requires { x >= 0 && y >= 0 && z >= 0 }
     ensures { mul x z + mul y z <= mul (x + y) z }
-= div_add (x * z) (y * z) (power 10 decimals)
+= div_add (x * z) (y * z) percentage_factor
 
 let lemma mul_right_increasing (x y z: int)
     requires { x >= 0 && y >= 0 && z >= 0 }
@@ -208,8 +207,8 @@ let lemma mul_right_increasing (x y z: int)
 = mul_add (x - y) y z
 
 (* The liquidation threshold, a factor smaller than 1. *)
-val function lt : int
-    ensures { 0 <= result < power 10 decimals }
+val constant lt : int
+    ensures { 0 <= result < percentage_factor }
 
 (* All invariants verified by the main functions: supply, borrow, ... *)
 predicate well_formed (t: token_storage) (p: pool_storage) (m: morpho_storage) =
