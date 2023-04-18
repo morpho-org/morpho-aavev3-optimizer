@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {PermitHash} from "@permit2/libraries/PermitHash.sol";
 import {SignatureVerification} from "@permit2/libraries/SignatureVerification.sol";
 import {SafeCast160} from "@permit2/libraries/SafeCast160.sol";
-import {IAllowanceTransfer, AllowanceTransfer} from "@permit2/AllowanceTransfer.sol";
 import {SignatureExpired} from "@permit2/PermitErrors.sol";
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -14,8 +12,6 @@ import "test/helpers/IntegrationTest.sol";
 contract TestIntegrationPermit2 is IntegrationTest {
     using SafeTransferLib for ERC20;
     using WadRayMath for uint256;
-
-    AllowanceTransfer internal constant PERMIT2 = AllowanceTransfer(address(0x000000000022D473030F116dDEE9F6B43aC78BA3));
 
     function _signPermit2(
         address underlying,

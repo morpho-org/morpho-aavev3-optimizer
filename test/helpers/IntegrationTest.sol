@@ -11,6 +11,9 @@ import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transpa
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2StepUpgradeable.sol";
 
+import {PermitHash} from "@permit2/libraries/PermitHash.sol";
+import {IAllowanceTransfer, AllowanceTransfer} from "@permit2/AllowanceTransfer.sol";
+
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
 import {RewardsManager} from "src/RewardsManager.sol";
@@ -32,6 +35,8 @@ contract IntegrationTest is ForkTest {
     // AaveV3 base currency is USD, 8 decimals on all L2s.
     uint256 internal constant MIN_USD_AMOUNT = 1e8; // 1$
     uint256 internal constant MAX_USD_AMOUNT = 500_000_000e8; // 500m$
+
+    AllowanceTransfer internal constant PERMIT2 = AllowanceTransfer(address(0x000000000022D473030F116dDEE9F6B43aC78BA3));
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
