@@ -17,16 +17,24 @@ import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
+import {Config, ConfigLib} from "../helpers/ConfigLib.sol";
 
 contract EthEModeDeploy is Script {
-    using TestConfigLib for TestConfig;
+    using ConfigLib for Config;
     using SafeTransferLib for ERC20;
 
-    uint8 internal constant E_MODE_CATEGORY_ID = 1;
+    uint8 internal constant E_MODE_CATEGORY_ID = 1; // ETH e-mode.
     uint128 internal constant MAX_ITERATIONS = 4;
 
     address[] internal assetsToList;
+
+    address internal wEth;
+    address internal wstEth;
+    address internal rEth;
+    address internal cbEth;
+    address internal dai;
+    address internal usdc;
+    address internal wBtc;
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
@@ -39,7 +47,7 @@ contract EthEModeDeploy is Script {
     IMorpho internal morphoImpl;
     TransparentUpgradeableProxy internal morphoProxy;
 
-    TestConfig internal config;
+    Config internal config;
 
     function run() external {
         _initConfig();
@@ -51,11 +59,15 @@ contract EthEModeDeploy is Script {
         //_createMarkets();
         //_sendATokens();
         //_setAssetsAsCollateral();
+        //_setAsSupplyOnlyAndDisableBorrow();
+
+        // Pause Rewards as there is no rewards on Aave V3 Mainnet.
+        morpho.setIsClaimRewardsPaused(true);
 
         vm.stopBroadcast();
     }
 
-    function _initConfig() internal returns (TestConfig storage) {
+    function _initConfig() internal returns (Config storage) {
         if (bytes(config.json).length == 0) {
             string memory root = vm.projectRoot();
             string memory path = string.concat(root, "/config/ethereum-mainnet.json");
@@ -71,13 +83,13 @@ contract EthEModeDeploy is Script {
         pool = IPool(addressesProvider.getPool());
         poolDataProvider = IPoolDataProvider(addressesProvider.getPoolDataProvider());
 
-        address wEth = config.getAddress("WETH");
-        address wstEth = config.getAddress("wstETH");
-        address rEth = config.getAddress("rETH");
-        address cbEth = config.getAddress("cbETH");
-        address dai = config.getAddress("DAI");
-        address usdc = config.getAddress("USDC");
-        address wBtc = config.getAddress("WBTC");
+        wEth = config.getAddress("WETH");
+        wstEth = config.getAddress("wstETH");
+        rEth = config.getAddress("rETH");
+        cbEth = config.getAddress("cbETH");
+        dai = config.getAddress("DAI");
+        usdc = config.getAddress("USDC");
+        wBtc = config.getAddress("WBTC");
 
         assetsToList = [wEth, wstEth, rEth, cbEth, dai, usdc, wBtc];
     }
@@ -129,5 +141,21 @@ contract EthEModeDeploy is Script {
             morpho.setAssetIsCollateralOnPool(underlying, true);
             morpho.setAssetIsCollateral(underlying, true);
         }
+    }
+
+    function _disableSupplyOnlyAndBorrow() internal {
+        morpho.setIsSupplyPaused(wstEth, true);
+        morpho.setIsSupplyPaused(cbEth, true);
+        morpho.setIsSupplyPaused(rEth, true);
+        morpho.setIsSupplyPaused(dai, true);
+        morpho.setIsSupplyPaused(usdc, true);
+        morpho.setIsSupplyPaused(wBtc, true);
+
+        morpho.setIsBorrowPaused(wstEth, true);
+        morpho.setIsBorrowPaused(cbEth, true);
+        morpho.setIsBorrowPaused(rEth, true);
+        morpho.setIsBorrowPaused(dai, true);
+        morpho.setIsBorrowPaused(usdc, true);
+        morpho.setIsBorrowPaused(wBtc, true);
     }
 }

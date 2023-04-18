@@ -14,7 +14,7 @@ import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewards
 
 import {ReserveDataLib} from "src/libraries/ReserveDataLib.sol";
 import {ReserveDataTestLib} from "test/helpers/ReserveDataTestLib.sol";
-import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
+import {Config, ConfigLib} from "script/helpers/ConfigLib.sol";
 import {MathUtils} from "@aave-v3-core/protocol/libraries/math/MathUtils.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";
@@ -30,7 +30,7 @@ contract ForkTest is BaseTest {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
     using SafeTransferLib for ERC20;
-    using TestConfigLib for TestConfig;
+    using ConfigLib for Config;
     using ReserveDataLib for DataTypes.ReserveData;
     using ReserveDataTestLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
@@ -50,7 +50,7 @@ contract ForkTest is BaseTest {
 
     string internal network;
     uint256 internal forkId;
-    TestConfig internal config;
+    Config internal config;
 
     address internal dai;
     address internal usdc;
@@ -103,7 +103,7 @@ contract ForkTest is BaseTest {
         }
     }
 
-    function _initConfig() internal returns (TestConfig storage) {
+    function _initConfig() internal returns (Config storage) {
         if (bytes(config.json).length == 0) {
             string memory root = vm.projectRoot();
             string memory path = string.concat(root, "/config/", _network(), ".json");

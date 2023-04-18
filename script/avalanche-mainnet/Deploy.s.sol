@@ -14,10 +14,10 @@ import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.s
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
 
-import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
+import {Config, ConfigLib} from "../helpers/ConfigLib.sol";
 
 contract Deploy is Script {
-    using TestConfigLib for TestConfig;
+    using ConfigLib for Config;
 
     uint8 internal constant E_MODE_CATEGORY_ID = 0;
 
@@ -34,7 +34,7 @@ contract Deploy is Script {
     IMorpho internal morphoImpl;
     TransparentUpgradeableProxy internal morphoProxy;
 
-    TestConfig internal config;
+    Config internal config;
 
     function run() external {
         _initConfig();
@@ -48,7 +48,7 @@ contract Deploy is Script {
         vm.stopBroadcast();
     }
 
-    function _initConfig() internal returns (TestConfig storage) {
+    function _initConfig() internal returns (Config storage) {
         if (bytes(config.json).length == 0) {
             string memory root = vm.projectRoot();
             string memory path = string.concat(root, "/config/avalanche-mainnet.json");
