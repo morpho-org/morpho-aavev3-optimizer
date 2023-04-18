@@ -20,6 +20,9 @@ import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";
 import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
 
+import {PermitHash} from "@permit2/libraries/PermitHash.sol";
+import {IAllowanceTransfer, AllowanceTransfer} from "@permit2/AllowanceTransfer.sol";
+
 import {RewardsControllerMock} from "test/mocks/RewardsControllerMock.sol";
 import {PriceOracleSentinelMock} from "test/mocks/PriceOracleSentinelMock.sol";
 import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
@@ -44,9 +47,12 @@ contract ForkTest is BaseTest {
         uint40 stableDebtLastUpdateTimestamp;
     }
 
-    /* STORAGE */
+    /* CONSTANTS */
 
     address internal constant POOL_ADMIN = address(0xB055);
+    AllowanceTransfer internal constant PERMIT2 = AllowanceTransfer(0x000000000022D473030F116dDEE9F6B43aC78BA3);
+
+    /* STORAGE */
 
     string internal network;
     uint256 internal forkId;
