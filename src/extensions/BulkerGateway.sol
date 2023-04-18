@@ -252,6 +252,7 @@ contract BulkerGateway is IBulkerGateway {
     function _unwrapStEth(bytes calldata data) internal {
         (uint256 amount, address receiver) = abi.decode(data, (uint256, address));
         if (amount == 0) revert AmountIsZero();
+        if (receiver == address(this)) revert TransferToSelf();
 
         uint256 unwrapped = IWSTETH(_WST_ETH).unwrap(amount);
 
@@ -261,6 +262,7 @@ contract BulkerGateway is IBulkerGateway {
     /// @notice Sends any ERC20 in this contract to the receiver.
     function _skim(bytes calldata data) internal {
         (address asset, address receiver) = abi.decode(data, (address, address));
+        if (receiver == address(this)) revert TransferToSelf();
         uint256 balance = ERC20(asset).balanceOf(address(this));
         ERC20(asset).safeTransfer(receiver, balance);
     }

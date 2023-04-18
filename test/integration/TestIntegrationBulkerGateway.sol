@@ -142,7 +142,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerShouldUnwrapStETH(address delegator, uint256 amount, address receiver) public {
-        vm.assume(delegator != address(0) && receiver != address(0));
+        vm.assume(delegator != address(0) && receiver != address(0) && receiver != address(bulker));
         amount = bound(amount, 1, IWSTETH(sNative).totalSupply());
         deal(sNative, address(bulker), amount);
 
@@ -158,6 +158,23 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
         // Rounding because stETH is rebasing and therefore can have rounding errors on transfer.
         assertApproxEqAbs(ERC20(stETH).balanceOf(receiver), expectedBalance, 2, "bulker balance");
+    }
+
+    function testBulkerShouldRevertIfReceiverIsBulkerUnwrapStETH(address delegator, uint256 amount) public {
+        vm.assume(delegator != address(0));
+        address receiver = address(bulker);
+        amount = bound(amount, 1, IWSTETH(sNative).totalSupply());
+        deal(sNative, address(bulker), amount);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getUnwrapStETHData(amount, receiver);
+
+        vm.prank(delegator);
+
+        vm.expectRevert(IBulkerGateway.TransferToSelf.selector);
+        bulker.execute(actions, data);
     }
 
     function testBulkerShouldSupply(
@@ -358,6 +375,23 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         bulker.execute(actions, data);
 
         assertEq(ERC20(market.underlying).balanceOf(address(receiver)), amount + balanceBefore, "receiver balance");
+    }
+
+    function testBulkerShouldRevertIfReceiverIsBulkerSkim(uint256 seed, address delegator, uint256 amount) public {
+        vm.assume(delegator != address(0));
+        address receiver = address(bulker);
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+
+        deal(market.underlying, address(bulker), amount);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getSkimData(market.underlying, receiver);
+
+        vm.prank(delegator);
+        vm.expectRevert(IBulkerGateway.TransferToSelf.selector);
+        bulker.execute(actions, data);
     }
 
     function testBulkerShouldNotAcceptETH(address sender, uint256 amount) public {
