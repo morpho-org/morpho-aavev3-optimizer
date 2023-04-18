@@ -66,7 +66,8 @@ contract ForkTest is BaseTest {
     address internal wbtc;
     address internal weth;
     address internal wNative;
-    address internal sNative;
+    address internal stNative;
+    address[] internal lsdNatives;
     address[] internal allUnderlyings;
 
     IPool internal pool;
@@ -144,9 +145,14 @@ contract ForkTest is BaseTest {
         wbtc = config.getAddress("WBTC");
         weth = config.getAddress("WETH");
         wNative = config.getWrappedNative();
-        sNative = config.getStakedNative();
+        lsdNatives = config.getLsdNatives();
+        stNative = lsdNatives[0];
 
-        allUnderlyings = [dai, usdc, aave, usdt, wbtc, weth, sNative];
+        allUnderlyings = [dai, usdc, aave, usdt, wbtc, weth];
+
+        for (uint256 i; i < lsdNatives.length; ++i) {
+            allUnderlyings.push(lsdNatives[i]);
+        }
     }
 
     function _label() internal virtual {
@@ -289,7 +295,17 @@ contract ForkTest is BaseTest {
         }
     }
 
+    function _assumeNotLsdNative(address input) internal view {
+        for (uint256 i; i < lsdNatives.length; ++i) {
+            vm.assume(input != lsdNatives[i]);
+        }
+    }
+
     function _randomUnderlying(uint256 seed) internal view returns (address) {
         return allUnderlyings[seed % allUnderlyings.length];
+    }
+
+    function _randomLsdNative(uint256 seed) internal view returns (address) {
+        return lsdNatives[seed % lsdNatives.length];
     }
 }

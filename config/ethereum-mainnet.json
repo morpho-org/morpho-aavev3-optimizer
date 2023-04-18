@@ -11,6 +11,12 @@
     "WBTC": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
     "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     "wstETH": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
+    "cbETH": "0xBe9895146f7AF43049ca1c1AE358B0541Ea49704",
+    "rETH": "0xae78736Cd615f374D3085123A210448E74Fc6393",
     "wrappedNative": "WETH",
-    "stakedNative": "wstETH"
+    "lsdNatives": [
+        "wstETH",
+        "cbETH",
+        "rETH"
+    ]
 }
