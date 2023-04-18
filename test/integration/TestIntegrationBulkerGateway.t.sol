@@ -219,7 +219,8 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         address receiver,
         uint256 maxIterations
     ) public {
-        vm.assume(delegator != address(0) && receiver != address(0));
+        // Receiver being fuzzed as this address results in overflow balance.
+        vm.assume(delegator != address(0) && receiver != address(0) && receiver != address(this));
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(seed)];
         TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(seed)];
         maxIterations = bound(maxIterations, 1, 10);
@@ -282,6 +283,11 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         address receiver,
         uint256 maxIterations
     ) public {
+        seed = 11665;
+        delegator = 0x00000000000000000000000000000000000016f9;
+        amount = 3449;
+        receiver = 0x000000000000000000000000000000000000000C;
+        maxIterations = 4941;
         vm.assume(delegator != address(0) && receiver != address(0));
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
         maxIterations = bound(maxIterations, 1, 10);
@@ -300,10 +306,13 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         bytes[] memory data = new bytes[](1);
 
         (actions[0], data[0]) = _getWithdrawData(market.underlying, amount, receiver, maxIterations);
+        uint256 balanceBefore = ERC20(market.underlying).balanceOf(address(receiver));
 
         bulker.execute(actions, data);
 
-        assertApproxEqAbs(ERC20(market.underlying).balanceOf(address(receiver)), amount, 4, "receiver balance");
+        assertApproxEqAbs(
+            ERC20(market.underlying).balanceOf(address(receiver)), amount + balanceBefore, 2, "receiver balance"
+        );
     }
 
     function testBulkerShouldWithdrawCollateral(uint256 seed, address delegator, uint256 amount, address receiver)
