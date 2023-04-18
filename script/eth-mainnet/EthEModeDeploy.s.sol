@@ -56,10 +56,10 @@ contract EthEModeDeploy is Script {
         vm.startBroadcast();
 
         _deploy();
-        //_createMarkets();
-        //_sendATokens();
-        //_setAssetsAsCollateral();
-        //_setAsSupplyOnlyAndDisableBorrow();
+        _createMarkets();
+        _sendATokens();
+        _setAssetsAsCollateral();
+        _disableSupplyOnlyAndBorrow();
 
         // Pause Rewards as there is no rewards on Aave V3 Mainnet.
         morpho.setIsClaimRewardsPaused(true);
@@ -116,7 +116,7 @@ contract EthEModeDeploy is Script {
     function _createMarkets() internal {
         for (uint256 i; i < assetsToList.length; ++i) {
             // Create market.
-            morpho.createMarket(assetsToList[i], 0, 3_333);
+            morpho.createMarket(assetsToList[i], 0, 0);
 
             // Send dust of listed assets to Morpho contract.
             address underlying = assetsToList[i];
