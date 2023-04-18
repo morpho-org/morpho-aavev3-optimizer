@@ -138,21 +138,23 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         (actions[0], data[0]) = _getWrapStETHData(amount);
 
         bulker.execute(actions, data);
-        assertEq(ERC20(sNative).balanceOf(address(bulker)), IWSTETH(sNative).getWstETHByStETH(amount), "bulker balance");
+        assertEq(
+            ERC20(stNative).balanceOf(address(bulker)), IWSTETH(stNative).getWstETHByStETH(amount), "bulker balance"
+        );
         assertEq(ERC20(stETH).balanceOf(address(bulker)), 0, "bulker balance");
     }
 
     function testBulkerShouldUnwrapStETH(address delegator, uint256 amount, address receiver) public {
         vm.assume(delegator != address(0) && receiver != address(0));
-        amount = bound(amount, 1, IWSTETH(sNative).totalSupply());
-        deal(sNative, address(bulker), amount);
+        amount = bound(amount, 1, IWSTETH(stNative).totalSupply());
+        deal(stNative, address(bulker), amount);
 
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
         bytes[] memory data = new bytes[](1);
 
         (actions[0], data[0]) = _getUnwrapStETHData(amount, receiver);
 
-        uint256 expectedBalance = ERC20(stETH).balanceOf(receiver) + IWSTETH(sNative).getStETHByWstETH(amount);
+        uint256 expectedBalance = ERC20(stETH).balanceOf(receiver) + IWSTETH(stNative).getStETHByWstETH(amount);
 
         vm.prank(delegator);
         bulker.execute(actions, data);

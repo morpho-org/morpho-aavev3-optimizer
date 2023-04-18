@@ -14,13 +14,24 @@ library TestConfigLib {
     string internal constant FORK_BLOCK_NUMBER_PATH = "$.forkBlockNumber";
     string internal constant ADDRESSES_PROVIDER_PATH = "$.addressesProvider";
     string internal constant WRAPPED_NATIVE_PATH = "$.wrappedNative";
-    string internal constant STAKED_NATIVE_PATH = "$.stakedNative";
+    string internal constant LSD_NATIVES_PATH = "$.lsdNatives";
     string internal constant MARKETS_PATH = "$.markets";
     string internal constant MORPHO_DAO_PATH = "$.morphoDao";
     string internal constant REWARDS_CONTROLLER_PATH = "$.rewardsController";
 
     function getAddress(TestConfig storage config, string memory key) internal returns (address) {
         return config.json.readAddress(string.concat("$.", key));
+    }
+
+    function getAddressArray(TestConfig storage config, string[] memory keys)
+        internal
+        returns (address[] memory addresses)
+    {
+        addresses = new address[](keys.length);
+
+        for (uint256 i; i < keys.length; ++i) {
+            addresses[i] = getAddress(config, keys[i]);
+        }
     }
 
     function getRpcAlias(TestConfig storage config) internal returns (string memory) {
@@ -47,7 +58,7 @@ library TestConfigLib {
         return getAddress(config, config.json.readString(WRAPPED_NATIVE_PATH));
     }
 
-    function getStakedNative(TestConfig storage config) internal returns (address) {
-        return getAddress(config, config.json.readString(STAKED_NATIVE_PATH));
+    function getLsdNatives(TestConfig storage config) internal returns (address[] memory) {
+        return getAddressArray(config, config.json.readStringArray(LSD_NATIVES_PATH));
     }
 }
