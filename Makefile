@@ -73,8 +73,8 @@ lcov-html:
 gas-report:
 	forge test --match-contract TestIntegration --gas-report
 
-deploy-morpho-mainnet:
-	FOUNDRY_TEST=/dev/null forge script script/eth-mainnet/EthEModeDeploy.s.sol:EthEModeDeploy --via-ir --broadcast --slow -vvv --fork-url tenderly --ledger
+deploy-emode-%:
+	FOUNDRY_TEST=/dev/null forge script script/$*/EthEModeDeploy.s.sol:EthEModeDeploy --via-ir --broadcast --slow -vvv --fork-url tenderly --ledger
 
 
 .PHONY: contracts test coverage
