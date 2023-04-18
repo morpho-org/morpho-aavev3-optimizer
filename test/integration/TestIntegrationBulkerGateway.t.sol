@@ -19,6 +19,7 @@ import "test/helpers/IntegrationTest.sol";
 contract TestIntegrationBulkerGateway is IntegrationTest {
     using SafeTransferLib for ERC20;
     using TestMarketLib for TestMarket;
+    using PermitHash for IAllowanceTransfer.PermitSingle;
 
     SigUtils internal sigUtils;
     IBulkerGateway internal bulker;
@@ -418,8 +419,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
         Types.Signature memory sig;
 
-        bytes32 hashed = PermitHash.hash(permitSingle);
-        hashed = ECDSA.toTypedDataHash(PERMIT2.DOMAIN_SEPARATOR(), hashed);
+        bytes32 hashed = ECDSA.toTypedDataHash(PERMIT2.DOMAIN_SEPARATOR(), permitSingle.hash());
 
         (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashed);
         data = abi.encode(underlying, amount, deadline, sig);
