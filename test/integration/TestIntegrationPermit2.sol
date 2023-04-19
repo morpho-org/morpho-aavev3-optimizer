@@ -16,8 +16,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
     using WadRayMath for uint256;
     using PermitHash for IAllowanceTransfer.PermitSingle;
 
-    AllowanceTransfer internal constant PERMIT2 = AllowanceTransfer(address(0x000000000022D473030F116dDEE9F6B43aC78BA3));
-
     function _signPermit2(
         address underlying,
         address delegator,
