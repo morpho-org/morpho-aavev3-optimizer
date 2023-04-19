@@ -14,8 +14,7 @@ import "test/helpers/IntegrationTest.sol";
 contract TestIntegrationPermit2 is IntegrationTest {
     using SafeTransferLib for ERC20;
     using WadRayMath for uint256;
-
-    AllowanceTransfer internal constant PERMIT2 = AllowanceTransfer(address(0x000000000022D473030F116dDEE9F6B43aC78BA3));
+    using PermitHash for IAllowanceTransfer.PermitSingle;
 
     function _signPermit2(
         address underlying,
@@ -37,8 +36,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         IAllowanceTransfer.PermitSingle memory permitSingle =
             IAllowanceTransfer.PermitSingle({details: details, spender: spender, sigDeadline: deadline});
 
-        bytes32 hashed = PermitHash.hash(permitSingle);
-        hashed = ECDSA.toTypedDataHash(PERMIT2.DOMAIN_SEPARATOR(), hashed);
+        bytes32 hashed = ECDSA.toTypedDataHash(PERMIT2.DOMAIN_SEPARATOR(), permitSingle.hash());
 
         (sig.v, sig.r, sig.s) = vm.sign(privateKey, hashed);
     }
