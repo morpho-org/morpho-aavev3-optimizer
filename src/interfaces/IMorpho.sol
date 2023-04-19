@@ -130,9 +130,13 @@ interface IMorpho is IMorphoGetters, IMorphoSetters {
         Types.Signature calldata signature
     ) external;
 
-    function liquidate(address underlyingBorrowed, address underlyingCollateral, address user, uint256 amount)
-        external
-        returns (uint256 repaid, uint256 seized);
+    function liquidate(
+        address underlyingBorrowed,
+        address underlyingCollateral,
+        address user,
+        uint256 amount,
+        address collateralReceiver
+    ) external returns (uint256 repaid, uint256 seized);
 
     function claimRewards(address[] calldata assets, address onBehalf)
         external

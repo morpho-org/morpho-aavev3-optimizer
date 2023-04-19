@@ -34,6 +34,7 @@ interface IPositionsManager {
         address underlyingCollateral,
         uint256 amount,
         address borrower,
-        address liquidator
+        address liquidator,
+        address collateralReceiver
     ) external returns (uint256 liquidated, uint256 seized);
 }

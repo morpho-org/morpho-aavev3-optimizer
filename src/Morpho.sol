@@ -206,11 +206,14 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
     /// @param user The address of the user to liquidate.
     /// @param amount The amount of `underlyingBorrowed` to repay.
     /// @return The `underlyingBorrowed` amount repaid (in underlying) and the `underlyingCollateral` amount seized (in underlying).
-    function liquidate(address underlyingBorrowed, address underlyingCollateral, address user, uint256 amount)
-        external
-        returns (uint256, uint256)
-    {
-        return _liquidate(underlyingBorrowed, underlyingCollateral, amount, user, msg.sender);
+    function liquidate(
+        address underlyingBorrowed,
+        address underlyingCollateral,
+        address user,
+        uint256 amount,
+        address collateralReceiver
+    ) external returns (uint256, uint256) {
+        return _liquidate(underlyingBorrowed, underlyingCollateral, amount, user, msg.sender, collateralReceiver);
     }
 
     /// @notice Approves a `manager` to borrow/withdraw on behalf of the sender.
@@ -350,12 +353,13 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         address underlyingCollateral,
         uint256 amount,
         address borrower,
-        address liquidator
+        address liquidator,
+        address collateralReceiver
     ) internal returns (uint256 repaid, uint256 seized) {
         bytes memory returnData = _positionsManager.functionDelegateCall(
             abi.encodeCall(
                 IPositionsManager.liquidateLogic,
-                (underlyingBorrowed, underlyingCollateral, amount, borrower, liquidator)
+                (underlyingBorrowed, underlyingCollateral, amount, borrower, liquidator, collateralReceiver)
             )
         );
 

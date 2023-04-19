@@ -226,7 +226,8 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         address underlyingCollateral,
         uint256 amount,
         address borrower,
-        address liquidator
+        address liquidator,
+        address collateralReceiver
     ) external returns (uint256, uint256) {
         _validateLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
 
@@ -244,8 +245,9 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         // If the check is done later, it is ambiguous whether debt is truly zero or whether there's not enough collateral to cover for 1 dust of debt.
         if (amount == 0) revert Errors.DebtIsZero();
 
+        uint256 collateralPoolSupplyIndex = collateralIndexes.supply.poolIndex;
         (amount, vars.seized) = _calculateAmountToSeize(
-            underlyingBorrowed, underlyingCollateral, amount, borrower, collateralIndexes.supply.poolIndex
+            underlyingBorrowed, underlyingCollateral, amount, borrower, collateralPoolSupplyIndex
         );
 
         if (vars.seized == 0) revert Errors.CollateralIsZero();
@@ -255,15 +257,20 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.SupplyRepayVars memory repayVars =
             _executeRepay(underlyingBorrowed, amount, liquidator, borrower, 0, borrowIndexes);
-        _executeWithdrawCollateral(
-            underlyingCollateral, vars.seized, borrower, liquidator, collateralIndexes.supply.poolIndex
-        );
+        _executeWithdrawCollateral(underlyingCollateral, vars.seized, borrower, liquidator, collateralPoolSupplyIndex);
+        if (collateralReceiver != address(0)) {
+            _executeSupplyCollateral(
+                underlyingCollateral, vars.seized, borrower, collateralReceiver, collateralPoolSupplyIndex
+            );
+        }
 
         _pool.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, repayVars.toRepay);
         _pool.supplyToPool(underlyingBorrowed, repayVars.toSupply, borrowIndexes.supply.poolIndex);
-        _pool.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.seized);
+        if (collateralReceiver == address(0)) {
+            _pool.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.seized);
 
-        ERC20(underlyingCollateral).safeTransfer(liquidator, vars.seized);
+            ERC20(underlyingCollateral).safeTransfer(liquidator, vars.seized);
+        }
 
         emit Events.Liquidated(liquidator, borrower, underlyingBorrowed, amount, underlyingCollateral, vars.seized);
 
