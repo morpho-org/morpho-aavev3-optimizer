@@ -7,8 +7,6 @@ import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {IBulkerGateway} from "src/interfaces/IBulkerGateway.sol";
 
 import {Types} from "src/libraries/Types.sol";
-import {Math} from "@morpho-utils/math/Math.sol";
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
 import {ERC20 as ERC20Permit2, Permit2Lib} from "@permit2/libraries/Permit2Lib.sol";
 
@@ -16,7 +14,6 @@ import {ERC20 as ERC20Permit2, Permit2Lib} from "@permit2/libraries/Permit2Lib.s
 /// @author Morpho Labs.
 /// @custom:contact security@morpho.xyz
 contract BulkerGateway is IBulkerGateway {
-    using WadRayMath for uint256;
     using SafeTransferLib for ERC20;
     using Permit2Lib for ERC20Permit2;
 
@@ -234,10 +231,11 @@ contract BulkerGateway is IBulkerGateway {
     function _unwrapEth(bytes calldata data) internal {
         (uint256 amount, address receiver) = abi.decode(data, (uint256, address));
         if (amount == 0) revert AmountIsZero();
+        if (receiver == address(this)) revert TransferToSelf();
 
         IWETH(_WETH).withdraw(amount);
 
-        if (receiver != address(this)) SafeTransferLib.safeTransferETH(receiver, amount);
+        SafeTransferLib.safeTransferETH(receiver, amount);
     }
 
     /// @notice Wraps the given input of stETH to wstETH.

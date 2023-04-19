@@ -104,6 +104,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
     function testBulkerShouldUnwrapETH(address delegator, uint256 amount, address receiver) public {
         vm.assume(!Address.isContract(receiver));
+        vm.assume(receiver != address(bulker));
         amount = bound(amount, 1, type(uint160).max);
         deal(wNative, amount);
         deal(wNative, address(bulker), amount);
@@ -120,6 +121,22 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
         assertEq(ERC20(bulker.WETH()).balanceOf(address(bulker)), 0, "bulker balance");
         assertEq(receiver.balance, balanceBefore + amount, "receiver balance");
+    }
+
+    function testBulkerUnwrapETHShouldRevertIfReceiverIsZero(address delegator, uint256 amount) public {
+        address receiver = address(bulker);
+        amount = bound(amount, 1, type(uint160).max);
+        deal(wNative, amount);
+        deal(wNative, address(bulker), amount);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getUnwrapETHData(amount, receiver);
+
+        vm.prank(delegator);
+        vm.expectRevert(IBulkerGateway.TransferToSelf.selector);
+        bulker.execute(actions, data);
     }
 
     function testBulkerShouldWrapStETH(address delegator, uint256 amount) public {
@@ -300,11 +317,6 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         address receiver,
         uint256 maxIterations
     ) public {
-        seed = 11665;
-        delegator = 0x00000000000000000000000000000000000016f9;
-        amount = 3449;
-        receiver = 0x000000000000000000000000000000000000000C;
-        maxIterations = 4941;
         vm.assume(delegator != address(0) && receiver != address(0));
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
         maxIterations = bound(maxIterations, 1, 10);
@@ -359,7 +371,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerShouldSkim(uint256 seed, address delegator, uint256 amount, address receiver) public {
-        vm.assume(delegator != address(0) && receiver != address(0));
+        vm.assume(delegator != address(0) && receiver != address(0) && receiver != address(bulker));
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         deal(market.underlying, address(bulker), amount);
@@ -377,7 +389,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         assertEq(ERC20(market.underlying).balanceOf(address(receiver)), amount + balanceBefore, "receiver balance");
     }
 
-    function testBulkerShouldRevertIfReceiverIsBulkerSkim(uint256 seed, address delegator, uint256 amount) public {
+    function testBulkerSkimShouldRevertIfReceiverIsBulker(uint256 seed, address delegator, uint256 amount) public {
         vm.assume(delegator != address(0));
         address receiver = address(bulker);
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
