@@ -54,7 +54,7 @@ contract EthEModeDeploy is Script {
         _initConfig();
         _loadConfig();
 
-        vm.startBroadcast();
+        vm.startBroadcast(vm.envAddress("DEPLOYER"));
 
         _deploy();
         _createMarkets();
@@ -136,7 +136,7 @@ contract EthEModeDeploy is Script {
     }
 
     function _sendATokens() internal {
-        IPoolDataProvider.TokenData[] memory aTokens = poolDataProvider.getAllReservesTokens();
+        IPoolDataProvider.TokenData[] memory aTokens = poolDataProvider.getAllATokens();
 
         // Send aTokens to Morpho contract.
         for (uint256 i; i < aTokens.length; ++i) {
