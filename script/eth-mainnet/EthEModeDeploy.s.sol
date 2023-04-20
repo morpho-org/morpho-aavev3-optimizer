@@ -25,6 +25,7 @@ contract EthEModeDeploy is Script {
 
     uint8 internal constant E_MODE_CATEGORY_ID = 1; // ETH e-mode.
     uint128 internal constant MAX_ITERATIONS = 4;
+    uint256 internal constant DUST = 1_000;
 
     address[] internal assetsToList;
 
@@ -57,6 +58,7 @@ contract EthEModeDeploy is Script {
 
         _deploy();
         _createMarkets();
+        _sendUnderlyings();
         _sendATokens();
         _setAssetsAsCollateral();
         _disableSupplyOnlyAndBorrow();
@@ -114,14 +116,23 @@ contract EthEModeDeploy is Script {
     }
 
     function _createMarkets() internal {
-        for (uint256 i; i < assetsToList.length; ++i) {
-            // Create market.
-            morpho.createMarket(assetsToList[i], 0, 0);
+        morpho.createMarket(wEth, 0, 50_00);
+        morpho.createMarket(wstEth, 0, 0);
+        morpho.createMarket(rEth, 0, 0);
+        morpho.createMarket(cbEth, 0, 0);
+        morpho.createMarket(dai, 0, 0);
+        morpho.createMarket(usdc, 0, 0);
+        morpho.createMarket(wBtc, 0, 0);
+    }
 
-            // Send dust of listed assets to Morpho contract.
-            address underlying = assetsToList[i];
-            ERC20(underlying).safeTransfer(address(morpho), ERC20(underlying).balanceOf(msg.sender) / 2);
-        }
+    function _sendUnderlyings() internal {
+        ERC20(wEth).safeTransfer(address(morpho), DUST);
+        ERC20(wstEth).safeTransfer(address(morpho), DUST);
+        ERC20(rEth).safeTransfer(address(morpho), DUST);
+        ERC20(cbEth).safeTransfer(address(morpho), DUST);
+        ERC20(dai).safeTransfer(address(morpho), DUST);
+        ERC20(usdc).safeTransfer(address(morpho), DUST);
+        ERC20(wBtc).safeTransfer(address(morpho), DUST);
     }
 
     function _sendATokens() internal {
@@ -130,7 +141,7 @@ contract EthEModeDeploy is Script {
         // Send aTokens to Morpho contract.
         for (uint256 i; i < aTokens.length; ++i) {
             address aToken = aTokens[i].tokenAddress;
-            ERC20(aToken).safeTransfer(address(morpho), ERC20(aToken).balanceOf(msg.sender) / 2);
+            ERC20(aToken).safeTransfer(address(morpho), DUST);
             morpho.setAssetIsCollateralOnPool(IAToken(aToken).UNDERLYING_ASSET_ADDRESS(), false);
         }
     }
