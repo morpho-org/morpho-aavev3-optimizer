@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {Config, ConfigLib} from "script/helpers/ConfigLib.sol";
+import {Config, ConfigLib} from "config/ConfigLib.sol";
 import {PoolLib} from "src/libraries/PoolLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";

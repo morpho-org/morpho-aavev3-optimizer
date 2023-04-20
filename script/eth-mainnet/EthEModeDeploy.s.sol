@@ -17,7 +17,7 @@ import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-import {Config, ConfigLib} from "../helpers/ConfigLib.sol";
+import {Config, ConfigLib} from "config/ConfigLib.sol";
 
 contract EthEModeDeploy is Script {
     using ConfigLib for Config;

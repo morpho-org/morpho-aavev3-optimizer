@@ -14,7 +14,7 @@ import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewards
 
 import {ReserveDataLib} from "src/libraries/ReserveDataLib.sol";
 import {ReserveDataTestLib} from "test/helpers/ReserveDataTestLib.sol";
-import {Config, ConfigLib} from "script/helpers/ConfigLib.sol";
+import {Config, ConfigLib} from "config/ConfigLib.sol";
 import {MathUtils} from "@aave-v3-core/protocol/libraries/math/MathUtils.sol";
 import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
 import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";

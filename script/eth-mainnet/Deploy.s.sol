@@ -14,7 +14,7 @@ import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.s
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
 
-import {Config, ConfigLib} from "../helpers/ConfigLib.sol";
+import {Config, ConfigLib} from "config/ConfigLib.sol";
 
 contract Deploy is Script {
     using ConfigLib for Config;
