@@ -13,6 +13,7 @@ import {ERC20 as ERC20Permit2, Permit2Lib} from "@permit2/libraries/Permit2Lib.s
 /// @title BulkerGateway.
 /// @author Morpho Labs.
 /// @custom:contact security@morpho.xyz
+/// @notice A contract allowing to bundle multiple interactions with Morpho together.
 contract BulkerGateway is IBulkerGateway {
     using SafeTransferLib for ERC20;
     using Permit2Lib for ERC20Permit2;
