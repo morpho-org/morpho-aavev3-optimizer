@@ -36,8 +36,6 @@ contract IntegrationTest is ForkTest {
     uint256 internal constant MIN_USD_AMOUNT = 1e8; // 1$
     uint256 internal constant MAX_USD_AMOUNT = 500_000_000e8; // 500m$
 
-    AllowanceTransfer internal constant PERMIT2 = AllowanceTransfer(address(0x000000000022D473030F116dDEE9F6B43aC78BA3));
-
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
     IRewardsManager internal rewardsManager;

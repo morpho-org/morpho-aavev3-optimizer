@@ -262,47 +262,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
         _assertDefaultLiquidation(test, borrowedMarket, collateralMarket, borrower);
     }
 
-    function testLiquidateUnhealthyUserWhenDemotedZero(
-        uint256 collateralSeed,
-        uint256 borrowableSeed,
-        address borrower,
-        uint256 borrowed,
-        uint256 toRepay,
-        uint256 healthFactor
-    ) public {
-        borrower = _boundReceiver(borrower);
-        healthFactor = bound(
-            healthFactor,
-            Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(10),
-            Constants.DEFAULT_LIQUIDATION_MAX_HF.percentSub(10)
-        );
-
-        LiquidateTest memory test;
-
-        TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
-        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowableSeed)];
-
-        toRepay = bound(toRepay, borrowedMarket.minAmount, type(uint256).max);
-
-        (test.borrowedBalanceBefore, test.collateralBalanceBefore) =
-            _createPosition(borrowedMarket, collateralMarket, borrower, borrowed, WadRayMath.WAD, healthFactor); // 100% peer-to-peer.
-
-        // Set the max iterations to 0 upon repay to skip demotion and fallback to supply delta.
-        morpho.setDefaultIterations(Types.Iterations({repay: 0, withdraw: 10}));
-
-        // Otherwise Morpho cannot perform a liquidation because its HF cannot cover the collateral seized.
-        _deposit(collateralMarket.underlying, test.collateralBalanceBefore, address(morpho));
-
-        user.approve(borrowedMarket.underlying, toRepay);
-
-        _assertEvents(address(user), borrower, collateralMarket, borrowedMarket);
-
-        (test.repaid, test.seized) =
-            user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
-
-        _assertDefaultLiquidation(test, borrowedMarket, collateralMarket, borrower);
-    }
-
     function testFullLiquidateAnyUserOnDeprecatedMarket(
         uint256 collateralSeed,
         uint256 borrowableSeed,

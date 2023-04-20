@@ -22,7 +22,7 @@ TL;DR: Instead of borrowing or lending on your favorite AaveV3 pool, you would b
 
 The Morpho protocol is designed at its core with the main Morpho contract delegating calls to the PositionsManager implementation contract (to overcome the contract size limit).
 
-The main user's entry points are exposed in the [`Morpho`](./src/Morpho.sol) contract. It inherits from [`MorphoGetters`](./src/MorphoGetters.sol) which contains all the functions used to query Morpho-AaveV3, [`MorphoSetters`](./src/MorphoSetters.sol) which contains all the functions used by the governance to manage the protocol, [`MorphoInternal`](./src/MorphoInternal.sol), and [`MorphoStorage`](./src/MorphoStorage.sol), where the protocol's internal logic & storage is located. This contract delegates call to the [`PositionsManager`](./src/PositionsManager.sol), that has the exact same storage layout: this contracts inherits from [`PositionsManagerInternal](./src/PositionsManagerInternal.sol) which contains all the internal accounting logic and in turn inherits from [`MatchingEngine`](./src/MatchingEngine.sol), which contains the matching engine internal functions.
+The main user's entry points are exposed in the [`Morpho`](./src/Morpho.sol) contract. It inherits from [`MorphoGetters`](./src/MorphoGetters.sol) which contains all the functions used to query Morpho-AaveV3, [`MorphoSetters`](./src/MorphoSetters.sol) which contains all the functions used by the governance to manage the protocol, [`MorphoInternal`](./src/MorphoInternal.sol), and [`MorphoStorage`](./src/MorphoStorage.sol), where the protocol's internal logic & storage is located. This contract delegates call to the [`PositionsManager`](./src/PositionsManager.sol), that has the exact same storage layout: this contracts inherits from [`PositionsManagerInternal`](./src/PositionsManagerInternal.sol) which contains all the internal accounting logic and in turn inherits from [`MatchingEngine`](./src/MatchingEngine.sol), which contains the matching engine internal functions.
 
 It also interacts with [`RewardsManager`](./src/RewardsManager.sol), which manages AaveV3's rewards if any.
 
@@ -80,7 +80,7 @@ forge install morpho-dao/morpho-aave-v3
 
 - Install [Foundry](https://github.com/foundry-rs/foundry).
 - Run `make install` to initialize the repository.
-- Create a `.env` according to the example file.
+- Create a `.env` file according to the [`.env.example`](./.env.example) file.
 
 ### Testing with [Foundry](https://github.com/foundry-rs/foundry) 🔨
 
