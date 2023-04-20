@@ -110,8 +110,6 @@ contract BulkerGateway is IBulkerGateway {
             _withdraw(data);
         } else if (action == ActionType.WITHDRAW_COLLATERAL) {
             _withdrawCollateral(data);
-        } else if (action == ActionType.CLAIM_REWARDS) {
-            _claimRewards(data);
         } else if (action == ActionType.WRAP_ETH) {
             _wrapEth(data);
         } else if (action == ActionType.UNWRAP_ETH) {
@@ -122,6 +120,8 @@ contract BulkerGateway is IBulkerGateway {
             _unwrapStEth(data);
         } else if (action == ActionType.SKIM) {
             _skim(data);
+        } else if (action == ActionType.CLAIM_REWARDS) {
+            _claimRewards(data);
         } else {
             revert UnsupportedAction(action);
         }
@@ -214,12 +214,6 @@ contract BulkerGateway is IBulkerGateway {
         _MORPHO.withdrawCollateral(asset, amount, msg.sender, receiver);
     }
 
-    /// @dev Claims rewards for the given assets, on behalf of an address, sending the funds to the given address.
-    function _claimRewards(bytes calldata data) internal {
-        (address[] memory assets, address onBehalf) = abi.decode(data, (address[], address));
-        _MORPHO.claimRewards(assets, onBehalf);
-    }
-
     /// @dev Wraps the given input of ETH to WETH.
     function _wrapEth(bytes calldata data) internal {
         (uint256 amount) = abi.decode(data, (uint256));
@@ -264,6 +258,12 @@ contract BulkerGateway is IBulkerGateway {
         if (receiver == address(this)) revert TransferToSelf();
         uint256 balance = ERC20(asset).balanceOf(address(this));
         ERC20(asset).safeTransfer(receiver, balance);
+    }
+
+    /// @dev Claims rewards for the given assets, on behalf of an address, sending the funds to the given address.
+    function _claimRewards(bytes calldata data) internal {
+        (address[] memory assets, address onBehalf) = abi.decode(data, (address[], address));
+        _MORPHO.claimRewards(assets, onBehalf);
     }
 
     /* INTERNAL HELPERS */
