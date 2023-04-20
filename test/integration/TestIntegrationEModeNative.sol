@@ -13,40 +13,44 @@ contract TestIntegrationEModeNative is IntegrationTest {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     function setUp() public virtual override {
-        DataTypes.ReserveConfigurationMap memory stakedConfig = pool.getConfiguration(sNative);
+        DataTypes.ReserveConfigurationMap memory lsdConfig = pool.getConfiguration(stNative);
 
-        eModeCategoryId = uint8(stakedConfig.getEModeCategory());
+        eModeCategoryId = uint8(lsdConfig.getEModeCategory());
 
         super.setUp();
     }
 
-    function testShouldLeverageStakedNative(uint256 rawCollateral, address onBehalf, address receiver) public {
+    function testShouldLeverageLsdNative(uint256 seed, uint256 rawCollateral, address onBehalf, address receiver)
+        public
+    {
         onBehalf = _boundOnBehalf(onBehalf);
         receiver = _boundReceiver(receiver);
 
         _assumeETHReceiver(receiver);
         _prepareOnBehalf(onBehalf);
 
-        TestMarket storage sNativeMarket = testMarkets[sNative];
+        address lsdNative = _randomLsdNative(seed);
+
+        TestMarket storage lsdNativeMarket = testMarkets[lsdNative];
         TestMarket storage wNativeMarket = testMarkets[wNative];
 
-        rawCollateral = _boundCollateral(sNativeMarket, rawCollateral, wNativeMarket);
-        uint256 borrowed = wNativeMarket.borrowable(sNativeMarket, rawCollateral, eModeCategoryId);
+        rawCollateral = _boundCollateral(lsdNativeMarket, rawCollateral, wNativeMarket);
+        uint256 borrowed = wNativeMarket.borrowable(lsdNativeMarket, rawCollateral, eModeCategoryId);
 
-        user.approve(sNative, rawCollateral);
-        user.supplyCollateral(sNative, rawCollateral, onBehalf);
+        user.approve(lsdNative, rawCollateral);
+        user.supplyCollateral(lsdNative, rawCollateral, onBehalf);
 
         user.borrow(wNative, borrowed, onBehalf, receiver);
 
         user.withdrawCollateral(
-            sNative,
-            wNativeMarket.collateralized(sNativeMarket, rawCollateral, eModeCategoryId) - borrowed,
+            lsdNative,
+            wNativeMarket.collateralized(lsdNativeMarket, rawCollateral, eModeCategoryId) - borrowed,
             onBehalf,
             receiver
         );
     }
 
-    function testShouldNotLeverageNotStakedNative(
+    function testShouldNotLeverageNotLsdNative(
         uint256 seed,
         uint256 rawCollateral,
         uint256 borrowed,
@@ -63,7 +67,8 @@ contract TestIntegrationEModeNative is IntegrationTest {
 
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(seed)];
 
-        vm.assume(collateralMarket.underlying != wNative && collateralMarket.underlying != sNative);
+        _assumeNotLsdNative(collateralMarket.underlying);
+        vm.assume(collateralMarket.underlying != wNative);
 
         rawCollateral = _boundCollateral(collateralMarket, rawCollateral, wNativeMarket);
         borrowed = bound(
