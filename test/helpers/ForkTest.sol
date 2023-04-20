@@ -27,9 +27,10 @@ import {RewardsControllerMock} from "test/mocks/RewardsControllerMock.sol";
 import {PriceOracleSentinelMock} from "test/mocks/PriceOracleSentinelMock.sol";
 import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
 import {PoolAdminMock} from "test/mocks/PoolAdminMock.sol";
+import {Configured} from "config/Configured.sol";
 import "./BaseTest.sol";
 
-contract ForkTest is BaseTest {
+contract ForkTest is BaseTest, Configured {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
     using SafeTransferLib for ERC20;
@@ -56,19 +57,6 @@ contract ForkTest is BaseTest {
 
     string internal network;
     uint256 internal forkId;
-    Config internal config;
-
-    address internal dai;
-    address internal usdc;
-    address internal usdt;
-    address internal aave;
-    address internal link;
-    address internal wbtc;
-    address internal weth;
-    address internal wNative;
-    address internal stNative;
-    address[] internal lsdNatives;
-    address[] internal allUnderlyings;
 
     IPool internal pool;
     IACLManager internal aclManager;
@@ -102,28 +90,8 @@ contract ForkTest is BaseTest {
         _label();
     }
 
-    function _network() internal view virtual returns (string memory) {
-        try vm.envString("NETWORK") returns (string memory configNetwork) {
-            return configNetwork;
-        } catch {
-            return "ethereum-mainnet";
-        }
-    }
-
-    function _initConfig() internal returns (Config storage) {
-        if (bytes(config.json).length == 0) {
-            string memory root = vm.projectRoot();
-            string memory path = string.concat(root, "/config/", _network(), ".json");
-
-            config.json = vm.readFile(path);
-        }
-
-        return config;
-    }
-
-    function _loadConfig() internal {
-        string memory rpcAlias = config.getRpcAlias();
-        Chain memory chain = getChain(rpcAlias);
+    function _loadConfig() internal virtual override {
+        super._loadConfig();
 
         forkId = vm.createSelectFork(chain.rpcUrl, config.getForkBlockNumber());
         vm.chainId(chain.chainId);
@@ -136,23 +104,6 @@ contract ForkTest is BaseTest {
         aclManager = IACLManager(addressesProvider.getACLManager());
         poolConfigurator = IPoolConfigurator(addressesProvider.getPoolConfigurator());
         poolDataProvider = IPoolDataProvider(addressesProvider.getPoolDataProvider());
-
-        dai = config.getAddress("DAI");
-        usdc = config.getAddress("USDC");
-        usdt = config.getAddress("USDT");
-        aave = config.getAddress("AAVE");
-        link = config.getAddress("LINK");
-        wbtc = config.getAddress("WBTC");
-        weth = config.getAddress("WETH");
-        wNative = config.getWrappedNative();
-        lsdNatives = config.getLsdNatives();
-        stNative = lsdNatives[0];
-
-        allUnderlyings = [dai, usdc, aave, usdt, wbtc, weth];
-
-        for (uint256 i; i < lsdNatives.length; ++i) {
-            allUnderlyings.push(lsdNatives[i]);
-        }
     }
 
     function _label() internal virtual {
