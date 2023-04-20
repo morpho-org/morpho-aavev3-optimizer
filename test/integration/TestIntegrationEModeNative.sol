@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {IWETHGateway} from "src/interfaces/IWETHGateway.sol";
+import {IWETHGateway} from "src/interfaces/extensions/IWETHGateway.sol";
 
 import {WETHGateway} from "src/extensions/WETHGateway.sol";
 
