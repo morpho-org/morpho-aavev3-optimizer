@@ -1,25 +1,24 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import "@forge-std/Script.sol";
-
-import {Types} from "src/libraries/Types.sol";
-
 import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {IPositionsManager} from "src/interfaces/IPositionsManager.sol";
 import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 import {IPoolDataProvider} from "@aave-v3-core/interfaces/IPoolDataProvider.sol";
 import {IAToken} from "@aave-v3-core/interfaces/IAToken.sol";
 
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {Morpho} from "src/Morpho.sol";
-import {PositionsManager} from "src/PositionsManager.sol";
+import {Types} from "src/libraries/Types.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-import {Config, ConfigLib} from "config/ConfigLib.sol";
+import {Morpho} from "src/Morpho.sol";
+import {PositionsManager} from "src/PositionsManager.sol";
+import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-contract EthEModeDeploy is Script {
+import {Configured, ConfigLib, Config} from "config/Configured.sol";
+import "@forge-std/Script.sol";
+
+contract EthEModeDeploy is Script, Configured {
     using ConfigLib for Config;
     using SafeTransferLib for ERC20;
 
@@ -29,13 +28,9 @@ contract EthEModeDeploy is Script {
 
     address[] internal assetsToList;
 
-    address internal wEth;
     address internal wstEth;
     address internal rEth;
     address internal cbEth;
-    address internal dai;
-    address internal usdc;
-    address internal wBtc;
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
@@ -47,8 +42,6 @@ contract EthEModeDeploy is Script {
 
     IMorpho internal morphoImpl;
     TransparentUpgradeableProxy internal morphoProxy;
-
-    Config internal config;
 
     function run() external {
         _initConfig();
@@ -69,31 +62,22 @@ contract EthEModeDeploy is Script {
         vm.stopBroadcast();
     }
 
-    function _initConfig() internal returns (Config storage) {
-        if (bytes(config.json).length == 0) {
-            string memory root = vm.projectRoot();
-            string memory path = string.concat(root, "/config/ethereum-mainnet.json");
-
-            config.json = vm.readFile(path);
-        }
-
-        return config;
+    function _network() internal pure virtual override returns (string memory) {
+        return "ethereum-mainnet";
     }
 
-    function _loadConfig() internal {
+    function _loadConfig() internal virtual override {
+        super._loadConfig();
+
         addressesProvider = IPoolAddressesProvider(config.getAddressesProvider());
         pool = IPool(addressesProvider.getPool());
         poolDataProvider = IPoolDataProvider(addressesProvider.getPoolDataProvider());
 
-        wEth = config.getAddress("WETH");
         wstEth = config.getAddress("wstETH");
         rEth = config.getAddress("rETH");
         cbEth = config.getAddress("cbETH");
-        dai = config.getAddress("DAI");
-        usdc = config.getAddress("USDC");
-        wBtc = config.getAddress("WBTC");
 
-        assetsToList = [wEth, wstEth, rEth, cbEth, dai, usdc, wBtc];
+        assetsToList = [weth, wstEth, rEth, cbEth, dai, usdc, wbtc];
     }
 
     function _deploy() internal {
@@ -116,23 +100,23 @@ contract EthEModeDeploy is Script {
     }
 
     function _createMarkets() internal {
-        morpho.createMarket(wEth, 0, 50_00);
+        morpho.createMarket(weth, 0, 50_00);
         morpho.createMarket(wstEth, 0, 0);
         morpho.createMarket(rEth, 0, 0);
         morpho.createMarket(cbEth, 0, 0);
         morpho.createMarket(dai, 0, 0);
         morpho.createMarket(usdc, 0, 0);
-        morpho.createMarket(wBtc, 0, 0);
+        morpho.createMarket(wbtc, 0, 0);
     }
 
     function _sendUnderlyings() internal {
-        ERC20(wEth).safeTransfer(address(morpho), DUST);
+        ERC20(weth).safeTransfer(address(morpho), DUST);
         ERC20(wstEth).safeTransfer(address(morpho), DUST);
         ERC20(rEth).safeTransfer(address(morpho), DUST);
         ERC20(cbEth).safeTransfer(address(morpho), DUST);
         ERC20(dai).safeTransfer(address(morpho), DUST);
         ERC20(usdc).safeTransfer(address(morpho), DUST);
-        ERC20(wBtc).safeTransfer(address(morpho), DUST);
+        ERC20(wbtc).safeTransfer(address(morpho), DUST);
     }
 
     function _sendATokens() internal {
@@ -160,13 +144,13 @@ contract EthEModeDeploy is Script {
         morpho.setIsSupplyPaused(rEth, true);
         morpho.setIsSupplyPaused(dai, true);
         morpho.setIsSupplyPaused(usdc, true);
-        morpho.setIsSupplyPaused(wBtc, true);
+        morpho.setIsSupplyPaused(wbtc, true);
 
         morpho.setIsBorrowPaused(wstEth, true);
         morpho.setIsBorrowPaused(cbEth, true);
         morpho.setIsBorrowPaused(rEth, true);
         morpho.setIsBorrowPaused(dai, true);
         morpho.setIsBorrowPaused(usdc, true);
-        morpho.setIsBorrowPaused(wBtc, true);
+        morpho.setIsBorrowPaused(wbtc, true);
     }
 }
