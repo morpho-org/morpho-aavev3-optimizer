@@ -40,12 +40,12 @@ interface IBulkerGateway {
         REPAY,
         WITHDRAW,
         WITHDRAW_COLLATERAL,
-        CLAIM_REWARDS,
         WRAP_ETH,
         UNWRAP_ETH,
         WRAP_ST_ETH,
         UNWRAP_ST_ETH,
-        SKIM
+        SKIM,
+        CLAIM_REWARDS
     }
 
     /* FUNCTIONS */
