@@ -44,7 +44,7 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
     /// INITIALIZER ///
 
     /// @dev Initializes the vault.
-    /// @param newUnderlying The address of the pool token corresponding to the market to supply through this vault.
+    /// @param newUnderlying The address of the underlying market to supply through this vault to Morpho.
     /// @param name The name of the ERC20 token associated to this tokenized vault.
     /// @param symbol The symbol of the ERC20 token associated to this tokenized vault.
     /// @param initialDeposit The amount of the initial deposit used to prevent pricePerShare manipulation.

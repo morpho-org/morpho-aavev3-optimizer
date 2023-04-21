@@ -28,7 +28,7 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
 
     /// STORAGE ///
 
-    address internal _underlying; // The pool token corresponding to the market to supply to through this vault.
+    address internal _underlying; // The underlying market to supply to through this vault.
     uint8 internal _maxIterations; // The max iterations to use when this vault interacts with Morpho.
 
     /// CONSTRUCTOR ///
@@ -49,7 +49,7 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
     /// INITIALIZER ///
 
     /// @dev Initializes the vault.
-    /// @param newUnderlying The address of the pool token corresponding to the market to supply through this vault.
+    /// @param newUnderlying The address of the underlying market to supply through this vault.
     /// @param name The name of the ERC20 token associated to this tokenized vault.
     /// @param symbol The symbol of the ERC20 token associated to this tokenized vault.
     /// @param initialDeposit The amount of the initial deposit used to prevent pricePerShare manipulation.
@@ -98,8 +98,9 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
     /// @notice Transfers the MORPHO rewards to the rewards recipient.
     function transferRewards() external {
         uint256 amount = _morphoToken.balanceOf(address(this));
-        _morphoToken.safeTransfer(_recipient, amount);
-        emit RewardsTransferred(_recipient, amount);
+        address recipientMem = _recipient;
+        _morphoToken.safeTransfer(recipientMem, amount);
+        emit RewardsTransferred(recipientMem, amount);
     }
 
     function setMaxIterations(uint8 newMaxIterations) external onlyOwner {
@@ -118,18 +119,18 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
 
     /// INTERNAL ///
 
-    function _deposit(address _caller, address _receiver, uint256 _assets, uint256 _shares) internal virtual override {
-        super._deposit(_caller, _receiver, _assets, _shares);
-        _morpho.supply(_underlying, _assets, address(this), uint256(_maxIterations));
+    function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal virtual override {
+        super._deposit(caller, receiver, assets, shares);
+        _morpho.supply(_underlying, assets, address(this), uint256(_maxIterations));
     }
 
-    function _withdraw(address _caller, address _receiver, address _owner, uint256 _assets, uint256 _shares)
+    function _withdraw(address caller, address receiver, address owner, uint256 assets, uint256 shares)
         internal
         virtual
         override
     {
-        _morpho.withdraw(_underlying, _assets, address(this), address(this), uint256(_maxIterations));
-        super._withdraw(_caller, _receiver, _owner, _assets, _shares);
+        _morpho.withdraw(_underlying, assets, address(this), address(this), uint256(_maxIterations));
+        super._withdraw(caller, receiver, owner, assets, shares);
     }
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
