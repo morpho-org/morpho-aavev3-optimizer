@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IMorpho} from "src/interfaces/IMorpho.sol";
+import {ERC4626UpgradeableSafe} from "src/extensions/ERC4626UpgradeableSafe.sol";
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
@@ -148,5 +149,64 @@ contract UserMock {
 
     function approveManager(address manager, bool isApproved) external {
         morpho.approveManager(manager, isApproved);
+    }
+
+    function depositVault(ERC4626UpgradeableSafe tokenizedVault, uint256 amount) external returns (uint256) {
+        ERC20(tokenizedVault.asset()).safeApprove(address(tokenizedVault), amount);
+        return tokenizedVault.deposit(amount, address(this));
+    }
+
+    function depositVault(ERC4626UpgradeableSafe tokenizedVault, uint256 amount, address to)
+        external
+        returns (uint256)
+    {
+        ERC20(tokenizedVault.asset()).safeApprove(address(tokenizedVault), amount);
+        return tokenizedVault.deposit(amount, to);
+    }
+
+    function mintVault(ERC4626UpgradeableSafe tokenizedVault, uint256 shares) external returns (uint256) {
+        ERC20(tokenizedVault.asset()).safeApprove(address(tokenizedVault), tokenizedVault.previewMint(shares));
+        return tokenizedVault.mint(shares, address(this));
+    }
+
+    function mintVault(ERC4626UpgradeableSafe tokenizedVault, uint256 shares, address to) external returns (uint256) {
+        ERC20(tokenizedVault.asset()).safeApprove(address(tokenizedVault), tokenizedVault.previewMint(shares));
+        return tokenizedVault.mint(shares, to);
+    }
+
+    function withdrawVault(ERC4626UpgradeableSafe tokenizedVault, uint256 amount, address owner)
+        public
+        returns (uint256)
+    {
+        return tokenizedVault.withdraw(amount, address(this), owner);
+    }
+
+    function withdrawVault(ERC4626UpgradeableSafe tokenizedVault, uint256 amount, address receiver, address owner)
+        public
+        returns (uint256)
+    {
+        return tokenizedVault.withdraw(amount, receiver, owner);
+    }
+
+    function withdrawVault(ERC4626UpgradeableSafe tokenizedVault, uint256 amount) external returns (uint256) {
+        return withdrawVault(tokenizedVault, amount, address(this));
+    }
+
+    function redeemVault(ERC4626UpgradeableSafe tokenizedVault, uint256 shares, address owner)
+        public
+        returns (uint256)
+    {
+        return tokenizedVault.redeem(shares, address(this), owner);
+    }
+
+    function redeemVault(ERC4626UpgradeableSafe tokenizedVault, uint256 shares, address receiver, address owner)
+        public
+        returns (uint256)
+    {
+        return tokenizedVault.redeem(shares, receiver, owner);
+    }
+
+    function redeemVault(ERC4626UpgradeableSafe tokenizedVault, uint256 shares) external returns (uint256) {
+        return redeemVault(tokenizedVault, shares, address(this));
     }
 }
