@@ -74,10 +74,8 @@ contract EthEModeDeploy is Script, Configured {
         poolDataProvider = IPoolDataProvider(addressesProvider.getPoolDataProvider());
 
         wstEth = config.getAddress("wstETH");
-        rEth = config.getAddress("rETH");
-        cbEth = config.getAddress("cbETH");
 
-        assetsToList = [weth, wstEth, rEth, cbEth, dai, usdc, wbtc];
+        assetsToList = [weth, wstEth, dai, usdc, wbtc];
     }
 
     function _deploy() internal {
@@ -102,8 +100,6 @@ contract EthEModeDeploy is Script, Configured {
     function _createMarkets() internal {
         morpho.createMarket(weth, 0, 50_00);
         morpho.createMarket(wstEth, 0, 0);
-        morpho.createMarket(rEth, 0, 0);
-        morpho.createMarket(cbEth, 0, 0);
         morpho.createMarket(dai, 0, 0);
         morpho.createMarket(usdc, 0, 0);
         morpho.createMarket(wbtc, 0, 0);
@@ -112,8 +108,6 @@ contract EthEModeDeploy is Script, Configured {
     function _sendUnderlyings() internal {
         ERC20(weth).safeTransfer(address(morpho), DUST);
         ERC20(wstEth).safeTransfer(address(morpho), DUST);
-        ERC20(rEth).safeTransfer(address(morpho), DUST);
-        ERC20(cbEth).safeTransfer(address(morpho), DUST);
         ERC20(dai).safeTransfer(address(morpho), DUST);
         ERC20(usdc).safeTransfer(address(morpho), DUST);
         ERC20(wbtc).safeTransfer(address(morpho), DUST);
@@ -140,15 +134,11 @@ contract EthEModeDeploy is Script, Configured {
 
     function _disableSupplyOnlyAndBorrow() internal {
         morpho.setIsSupplyPaused(wstEth, true);
-        morpho.setIsSupplyPaused(cbEth, true);
-        morpho.setIsSupplyPaused(rEth, true);
         morpho.setIsSupplyPaused(dai, true);
         morpho.setIsSupplyPaused(usdc, true);
         morpho.setIsSupplyPaused(wbtc, true);
 
         morpho.setIsBorrowPaused(wstEth, true);
-        morpho.setIsBorrowPaused(cbEth, true);
-        morpho.setIsBorrowPaused(rEth, true);
         morpho.setIsBorrowPaused(dai, true);
         morpho.setIsBorrowPaused(usdc, true);
         morpho.setIsBorrowPaused(wbtc, true);
