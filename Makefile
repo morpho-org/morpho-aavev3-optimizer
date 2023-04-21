@@ -74,7 +74,6 @@ gas-report:
 	forge test --match-contract TestIntegration --gas-report
 
 deploy-emode-%:
-	FOUNDRY_TEST=/dev/null forge script script/$*/EthEModeDeploy.s.sol:EthEModeDeploy --via-ir --broadcast --slow -vvv --fork-url tenderly --ledger
-
+	FOUNDRY_TEST=/dev/null forge script script/$*/EthEModeDeploy.s.sol:EthEModeDeploy --via-ir --broadcast --slow -vvvvv --rpc-url mainnet --ledger
 
 .PHONY: contracts test coverage
