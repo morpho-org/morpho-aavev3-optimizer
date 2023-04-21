@@ -20,16 +20,16 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
     using SafeCastLib for uint256;
     using SafeTransferLib for ERC20;
 
-    /// CONSTANTS AND IMMUTABLES ///
+    /* CONSTANTS AND IMMUTABLES */
 
     IRewardsManager internal immutable _REWARDS_MANAGER; // Morpho's rewards manager.
 
-    /// STORAGE ///
+    /* STORAGE */
 
     mapping(address => uint128) internal _rewardsIndex; // The current reward index for the given reward token.
     mapping(address => mapping(address => UserRewardsData)) internal _userRewards; // User rewards data. rewardToken -> user -> userRewards.
 
-    /// CONSTRUCTOR ///
+    /* CONSTRUCTOR */
 
     /// @dev Initializes network-wide immutables.
     /// @param morpho The address of the main Morpho contract.
@@ -41,7 +41,7 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
         _REWARDS_MANAGER = IRewardsManager(_MORPHO.rewardsManager());
     }
 
-    /// INITIALIZER ///
+    /* INITIALIZER */
 
     /// @dev Initializes the vault.
     /// @param newUnderlying The address of the underlying market to supply through this vault to Morpho.
@@ -59,7 +59,7 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
         __SupplyVaultBase_init(newUnderlying, name, symbol, initialDeposit, newMaxIterations);
     }
 
-    /// EXTERNAL ///
+    /* EXTERNAL */
 
     function REWARDS_MANAGER() external view returns (IRewardsManager) {
         return _REWARDS_MANAGER;
@@ -134,7 +134,7 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
         return (userRewardsData.index, userRewardsData.unclaimed);
     }
 
-    /// INTERNAL ///
+    /* INTERNAL */
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         (address[] memory rewardTokens, uint256[] memory rewardsIndexes) = _claimVaultRewards();

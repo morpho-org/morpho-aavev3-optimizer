@@ -5,7 +5,7 @@ import {IRewardsManager} from "src/interfaces/IRewardsManager.sol";
 import {ISupplyVaultBase} from "src/interfaces/extensions/ISupplyVaultBase.sol";
 
 interface ISupplyVault is ISupplyVaultBase {
-    /// EVENTS ///
+    /* EVENTS */
 
     /// @notice Emitted when rewards of an asset are accrued on behalf of a user.
     /// @param rewardToken The address of the reward token.
@@ -20,14 +20,14 @@ interface ISupplyVault is ISupplyVaultBase {
     /// @param claimed The amount of rewards claimed.
     event Claimed(address indexed rewardToken, address indexed user, uint256 claimed);
 
-    /// STRUCTS ///
+    /* STRUCTS */
 
     struct UserRewardsData {
         uint128 index; // User rewards index for a given reward token (in ray).
         uint128 unclaimed; // Unclaimed amount for a given reward token (in reward tokens).
     }
 
-    /// FUNCTIONS ///
+    /* FUNCTIONS */
 
     function REWARDS_MANAGER() external view returns (IRewardsManager);
 

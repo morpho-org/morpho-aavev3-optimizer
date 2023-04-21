@@ -20,18 +20,18 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
     using WadRayMath for uint256;
     using SafeTransferLib for ERC20;
 
-    /// IMMUTABLES ///
+    /* IMMUTABLES */
 
     IMorpho internal immutable _MORPHO; // The main Morpho contract.
     ERC20 internal immutable _MORPHO_TOKEN; // The address of the Morpho Token.
     address internal immutable _RECIPIENT; // The recipient of the rewards that will redistribute them to vault's users.
 
-    /// STORAGE ///
+    /* STORAGE */
 
     address internal _underlying; // The underlying market to supply to through this vault.
     uint8 internal _maxIterations; // The max iterations to use when this vault interacts with Morpho.
 
-    /// CONSTRUCTOR ///
+    /* CONSTRUCTOR */
 
     /// @dev Initializes network-wide immutables.
     /// @param morpho The address of the main Morpho contract.
@@ -46,7 +46,7 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
         _RECIPIENT = recipient;
     }
 
-    /// INITIALIZER ///
+    /* INITIALIZER */
 
     /// @dev Initializes the vault.
     /// @param newUnderlying The address of the underlying market to supply through this vault.
@@ -81,7 +81,7 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
         ERC20(newUnderlying).safeApprove(address(_MORPHO), type(uint256).max);
     }
 
-    /// EXTERNAL ///
+    /* EXTERNAL */
 
     function MORPHO() external view returns (IMorpho) {
         return _MORPHO;
@@ -111,7 +111,7 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
         _maxIterations = newMaxIterations;
     }
 
-    /// PUBLIC ///
+    /* PUBLIC */
 
     /// @notice The amount of assets in the vault.
     /// @dev The indexes used by this function might not be up-to-date.
@@ -121,7 +121,7 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
         return _MORPHO.supplyBalance(_underlying, address(this));
     }
 
-    /// INTERNAL ///
+    /* INTERNAL */
 
     function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal virtual override {
         super._deposit(caller, receiver, assets, shares);

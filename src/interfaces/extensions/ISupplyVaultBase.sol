@@ -6,19 +6,19 @@ import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {ERC20} from "@solmate/utils/SafeTransferLib.sol";
 
 interface ISupplyVaultBase is IERC4626Upgradeable {
-    /// EVENTS ///
+    /* EVENTS */
 
     /// @notice Emitted when MORPHO rewards are transferred to `recipient`.
     /// @param recipient The recipient of the rewards.
     /// @param amount The amount of rewards transferred.
     event RewardsTransferred(address recipient, uint256 amount);
 
-    /// ERRORS ///
+    /* ERRORS */
 
     /// @notice Thrown when the zero address is passed as input or is the recipient address when calling `transferRewards`.
     error ZeroAddress();
 
-    /// FUNCTIONS ///
+    /* FUNCTIONS */
 
     function MORPHO() external view returns (IMorpho);
 

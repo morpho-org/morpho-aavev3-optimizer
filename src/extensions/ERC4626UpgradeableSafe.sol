@@ -12,14 +12,14 @@ import {
 /// @custom:contact security@morpho.xyz
 /// @notice ERC4626 Tokenized Vault abstract upgradeable implementation tweaking OZ's implementation to make it safer at initialization.
 abstract contract ERC4626UpgradeableSafe is ERC4626Upgradeable {
-    /// CONSTRUCTOR ///
+    /* CONSTRUCTOR */
 
     /// @dev The contract automatically disables initializers when deployed so that nobody can highjack the implementation contract.
     constructor() {
         _disableInitializers();
     }
 
-    /// INITIALIZER ///
+    /* INITIALIZER */
 
     function __ERC4626UpgradeableSafe_init(IERC20MetadataUpgradeable asset, uint256 initialDeposit)
         internal
