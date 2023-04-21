@@ -29,7 +29,7 @@ interface ISupplyVault is ISupplyVaultBase {
 
     /// FUNCTIONS ///
 
-    function rewardsManager() external view returns (IRewardsManager);
+    function REWARDS_MANAGER() external view returns (IRewardsManager);
 
     function rewardsIndex(address rewardToken) external view returns (uint128);
 

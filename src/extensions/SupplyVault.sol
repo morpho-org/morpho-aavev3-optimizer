@@ -22,7 +22,7 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
 
     /// CONSTANTS AND IMMUTABLES ///
 
-    IRewardsManager internal immutable _rewardsManager; // Morpho's rewards manager.
+    IRewardsManager internal immutable _REWARDS_MANAGER; // Morpho's rewards manager.
 
     /// STORAGE ///
 
@@ -32,13 +32,13 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
     /// CONSTRUCTOR ///
 
     /// @dev Initializes network-wide immutables.
-    /// @param newMorpho The address of the main Morpho contract.
-    /// @param newMorphoToken The address of the Morpho Token.
-    /// @param newRecipient The recipient of the rewards that will redistribute them to vault's users.
-    constructor(address newMorpho, address newMorphoToken, address newRecipient)
-        SupplyVaultBase(newMorpho, newMorphoToken, newRecipient)
+    /// @param morpho The address of the main Morpho contract.
+    /// @param morphoToken The address of the Morpho Token.
+    /// @param recipient The recipient of the rewards that will redistribute them to vault's users.
+    constructor(address morpho, address morphoToken, address recipient)
+        SupplyVaultBase(morpho, morphoToken, recipient)
     {
-        _rewardsManager = IRewardsManager(_morpho.rewardsManager());
+        _REWARDS_MANAGER = IRewardsManager(_MORPHO.rewardsManager());
     }
 
     /// INITIALIZER ///
@@ -60,6 +60,10 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
     }
 
     /// EXTERNAL ///
+
+    function REWARDS_MANAGER() external view returns (IRewardsManager) {
+        return _REWARDS_MANAGER;
+    }
 
     /// @notice Claims rewards on behalf of `_user`.
     /// @param user The address of the user to claim rewards for.
@@ -97,7 +101,7 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
         underlyings[0] = _underlying;
 
         uint256[] memory claimableAmounts;
-        (rewardTokens, claimableAmounts) = _rewardsManager.getAllUserRewards(underlyings, address(this));
+        (rewardTokens, claimableAmounts) = _REWARDS_MANAGER.getAllUserRewards(underlyings, address(this));
 
         unclaimedAmounts = new uint256[](claimableAmounts.length);
         uint256 supply = totalSupply();
@@ -116,17 +120,13 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
         address[] memory underlyings = new address[](1);
         underlyings[0] = _underlying;
 
-        uint256 claimableRewards = _rewardsManager.getUserRewards(underlyings, address(this), rewardToken);
+        uint256 claimableRewards = _REWARDS_MANAGER.getUserRewards(underlyings, address(this), rewardToken);
 
         return _getUpdatedUnclaimedReward(user, rewardToken, claimableRewards, totalSupply());
     }
 
     function rewardsIndex(address rewardToken) external view returns (uint128) {
         return _rewardsIndex[rewardToken];
-    }
-
-    function rewardsManager() external view returns (IRewardsManager) {
-        return _rewardsManager;
     }
 
     function userRewards(address rewardToken, address user) external view returns (uint128 index, uint128 unclaimed) {
@@ -149,7 +149,7 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
         underlyings[0] = _underlying;
 
         uint256[] memory claimedAmounts;
-        (rewardTokens, claimedAmounts) = _morpho.claimRewards(underlyings, address(this));
+        (rewardTokens, claimedAmounts) = _MORPHO.claimRewards(underlyings, address(this));
 
         rewardsIndexes = new uint256[](rewardTokens.length);
 

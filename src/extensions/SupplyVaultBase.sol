@@ -22,9 +22,9 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
 
     /// IMMUTABLES ///
 
-    IMorpho internal immutable _morpho; // The main Morpho contract.
-    ERC20 internal immutable _morphoToken; // The address of the Morpho Token.
-    address internal immutable _recipient; // The recipient of the rewards that will redistribute them to vault's users.
+    IMorpho internal immutable _MORPHO; // The main Morpho contract.
+    ERC20 internal immutable _MORPHO_TOKEN; // The address of the Morpho Token.
+    address internal immutable _RECIPIENT; // The recipient of the rewards that will redistribute them to vault's users.
 
     /// STORAGE ///
 
@@ -34,16 +34,16 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
     /// CONSTRUCTOR ///
 
     /// @dev Initializes network-wide immutables.
-    /// @param newMorpho The address of the main Morpho contract.
-    /// @param newMorphoToken The address of the Morpho Token.
-    /// @param newRecipient The recipient of the rewards that will redistribute them to vault's users.
-    constructor(address newMorpho, address newMorphoToken, address newRecipient) {
-        if (newMorpho == address(0) || newMorphoToken == address(0) || newRecipient == address(0)) {
+    /// @param morpho The address of the main Morpho contract.
+    /// @param morphoToken The address of the Morpho Token.
+    /// @param recipient The recipient of the rewards that will redistribute them to vault's users.
+    constructor(address morpho, address morphoToken, address recipient) {
+        if (morpho == address(0) || morphoToken == address(0) || recipient == address(0)) {
             revert ZeroAddress();
         }
-        _morpho = IMorpho(newMorpho);
-        _morphoToken = ERC20(newMorphoToken);
-        _recipient = newRecipient;
+        _MORPHO = IMorpho(morpho);
+        _MORPHO_TOKEN = ERC20(morphoToken);
+        _RECIPIENT = recipient;
     }
 
     /// INITIALIZER ///
@@ -78,29 +78,33 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
         _underlying = newUnderlying;
         _maxIterations = newMaxIterations;
 
-        ERC20(newUnderlying).safeApprove(address(_morpho), type(uint256).max);
+        ERC20(newUnderlying).safeApprove(address(_MORPHO), type(uint256).max);
     }
 
     /// EXTERNAL ///
 
-    function morpho() external view returns (IMorpho) {
-        return _morpho;
+    function MORPHO() external view returns (IMorpho) {
+        return _MORPHO;
+    }
+
+    function MORPHO_TOKEN() external view returns (ERC20) {
+        return _MORPHO_TOKEN;
+    }
+
+    function RECIPIENT() external view returns (address) {
+        return _RECIPIENT;
     }
 
     function underlying() external view returns (address) {
         return _underlying;
     }
 
-    function recipient() external view returns (address) {
-        return _recipient;
-    }
-
     /// @notice Transfers the MORPHO rewards to the rewards recipient.
     function transferRewards() external {
-        uint256 amount = _morphoToken.balanceOf(address(this));
-        address recipientMem = _recipient;
-        _morphoToken.safeTransfer(recipientMem, amount);
-        emit RewardsTransferred(recipientMem, amount);
+        uint256 amount = _MORPHO_TOKEN.balanceOf(address(this));
+        address recipient = _RECIPIENT;
+        _MORPHO_TOKEN.safeTransfer(recipient, amount);
+        emit RewardsTransferred(recipient, amount);
     }
 
     function setMaxIterations(uint8 newMaxIterations) external onlyOwner {
@@ -114,14 +118,14 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
     ///      As a consequence, view functions (like `maxWithdraw`) could underestimate the withdrawable amount.
     ///      To redeem all their assets, users are encouraged to use the `redeem` function passing their vault tokens balance.
     function totalAssets() public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
-        return _morpho.supplyBalance(_underlying, address(this));
+        return _MORPHO.supplyBalance(_underlying, address(this));
     }
 
     /// INTERNAL ///
 
     function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal virtual override {
         super._deposit(caller, receiver, assets, shares);
-        _morpho.supply(_underlying, assets, address(this), uint256(_maxIterations));
+        _MORPHO.supply(_underlying, assets, address(this), uint256(_maxIterations));
     }
 
     function _withdraw(address caller, address receiver, address owner, uint256 assets, uint256 shares)
@@ -129,7 +133,7 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
         virtual
         override
     {
-        _morpho.withdraw(_underlying, assets, address(this), address(this), uint256(_maxIterations));
+        _MORPHO.withdraw(_underlying, assets, address(this), address(this), uint256(_maxIterations));
         super._withdraw(caller, receiver, owner, assets, shares);
     }
 
