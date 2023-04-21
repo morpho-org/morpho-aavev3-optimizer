@@ -226,7 +226,7 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
         view
         returns (uint256 unaccruedReward)
     {
-        unaccruedReward = balanceOf(user).rayMulDown(indexAccrual); // Equivalent to rayMul rounded down
+        unaccruedReward = balanceOf(user).rayMulDown(indexAccrual);
     }
 
     function _getUnaccruedRewardIndex(uint256 claimableReward, uint256 totalSupply)
@@ -234,6 +234,6 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
         pure
         returns (uint256 unaccruedRewardIndex)
     {
-        if (totalSupply > 0) unaccruedRewardIndex = claimableReward.rayDivDown(totalSupply); // Equivalent to rayDiv rounded down
+        if (totalSupply > 0) unaccruedRewardIndex = claimableReward.rayDivDown(totalSupply);
     }
 }
