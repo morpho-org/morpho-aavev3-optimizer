@@ -2,7 +2,7 @@
 pragma solidity >=0.5.0;
 
 import {IRewardsManager} from "src/interfaces/IRewardsManager.sol";
-import {ISupplyVaultBase} from "./ISupplyVaultBase.sol";
+import {ISupplyVaultBase} from "src/interfaces/extensions/ISupplyVaultBase.sol";
 
 interface ISupplyVault is ISupplyVaultBase {
     /// EVENTS ///

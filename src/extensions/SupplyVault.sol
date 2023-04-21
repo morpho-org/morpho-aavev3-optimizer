@@ -9,7 +9,7 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {SafeCastLib} from "@solmate/utils/SafeCastLib.sol";
 
-import {SupplyVaultBase} from "./SupplyVaultBase.sol";
+import {SupplyVaultBase} from "src/extensions/SupplyVaultBase.sol";
 
 /// @title SupplyVault.
 /// @author Morpho Labs.
