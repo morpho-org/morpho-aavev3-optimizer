@@ -14,6 +14,8 @@ import {IWSTETH} from "src/interfaces/extensions/IWSTETH.sol";
 
 import {SigUtils} from "test/helpers/SigUtils.sol";
 
+import {RewardsManagerMock} from "test/mocks/RewardsManagerMock.sol";
+
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationBulkerGateway is IntegrationTest {
@@ -23,6 +25,10 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     SigUtils internal sigUtils;
     IBulkerGateway internal bulker;
     address stETH;
+
+    event Accrued(
+        address indexed asset, address indexed reward, address indexed user, uint256 assetIndex, uint256 rewardsAccrued
+    );
 
     function setUp() public virtual override {
         super.setUp();
@@ -415,6 +421,46 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
         vm.expectRevert(IBulkerGateway.OnlyWETH.selector);
         payable(address(bulker)).transfer(amount);
+    }
+
+    function testBulkerClaimRewardsShouldRevertIfRewardsManagerNotSet(address delegator, address onBehalf) public {
+        vm.assume(delegator != address(0) && onBehalf != address(0));
+
+        address[] memory assets = new address[](1);
+        assets[0] = testMarkets[dai].aToken;
+        morpho.setRewardsManager(address(0));
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getClaimRewardsData(assets, onBehalf);
+
+        vm.prank(delegator);
+
+        vm.expectRevert(IBulkerGateway.AddressIsZero.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerClaimRewards(address delegator, address onBehalf) public {
+        vm.assume(delegator != address(0) && onBehalf != address(0));
+
+        rewardsManager = IRewardsManager(new RewardsManagerMock(address(morpho)));
+        morpho.setRewardsManager(address(rewardsManager));
+
+        address[] memory assets = new address[](1);
+        assets[0] = testMarkets[dai].aToken;
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getClaimRewardsData(assets, onBehalf);
+
+        // We don't have a rewards controller on mainnet right now, so here we just test that a mock rewards manager is receiving the correct data.
+        vm.prank(delegator);
+        vm.expectEmit(true, true, true, true);
+        emit Accrued(testMarkets[dai].aToken, address(0), onBehalf, 0, 0);
+        vm.expectRevert(RewardsManagerMock.RewardsControllerCall.selector);
+        bulker.execute(actions, data);
     }
 
     function testMultipleActions(uint256 privateKey, uint256 seed, uint256 amount, uint256 maxIterations) public {
