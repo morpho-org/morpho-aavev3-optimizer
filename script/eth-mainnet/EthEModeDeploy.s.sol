@@ -17,8 +17,9 @@ import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transpa
 
 import {Configured, ConfigLib, Config} from "config/Configured.sol";
 import "@forge-std/Script.sol";
+import "@forge-std/Test.sol";
 
-contract EthEModeDeploy is Script, Configured {
+contract EthEModeDeploy is Script, Test, Configured {
     using ConfigLib for Config;
     using SafeTransferLib for ERC20;
 
@@ -60,6 +61,28 @@ contract EthEModeDeploy is Script, Configured {
         morpho.setIsClaimRewardsPaused(true);
 
         vm.stopBroadcast();
+
+        assertEq(pool.getUserEMode(address(morpho)), E_MODE_CATEGORY_ID);
+
+        assertFalse(morpho.market(weth).pauseStatuses.isSupplyPaused);
+        assertFalse(morpho.market(weth).pauseStatuses.isBorrowPaused);
+        assertTrue(morpho.market(weth).isCollateral);
+
+        assertTrue(morpho.market(wstEth).pauseStatuses.isSupplyPaused);
+        assertTrue(morpho.market(wstEth).pauseStatuses.isBorrowPaused);
+        assertTrue(morpho.market(wstEth).isCollateral);
+
+        assertTrue(morpho.market(dai).pauseStatuses.isSupplyPaused);
+        assertTrue(morpho.market(dai).pauseStatuses.isBorrowPaused);
+        assertTrue(morpho.market(dai).isCollateral);
+
+        assertTrue(morpho.market(usdc).pauseStatuses.isSupplyPaused);
+        assertTrue(morpho.market(usdc).pauseStatuses.isBorrowPaused);
+        assertTrue(morpho.market(usdc).isCollateral);
+
+        assertTrue(morpho.market(wbtc).pauseStatuses.isSupplyPaused);
+        assertTrue(morpho.market(wbtc).pauseStatuses.isBorrowPaused);
+        assertTrue(morpho.market(wbtc).isCollateral);
     }
 
     function _network() internal pure virtual override returns (string memory) {
