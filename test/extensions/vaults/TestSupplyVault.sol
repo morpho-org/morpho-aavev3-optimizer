@@ -24,34 +24,31 @@ contract TestSupplyVault is TestSetupVaults {
         assertEq(usdcSupplyVault.decimals(), 18);
     }
 
-    function testShouldDepositAmount() public {
-        uint256 amount = 10_000 ether;
+    function testShouldDepositAmount(uint256 amount) public {
+        amount = _boundSupply(testMarkets[dai], amount);
 
         user.depositVault(daiSupplyVault, amount);
 
         (uint256 totalBalance) = morpho.supplyBalance(dai, address(daiSupplyVault));
 
         assertGt(daiSupplyVault.balanceOf(address(user)), 0, "mcDAI balance is zero");
-        assertApproxEqAbs(totalBalance, amount, 1);
+        assertApproxEqAbs(totalBalance, amount, 2, "totalBalance");
     }
 
-    function testShouldWithdrawAllAmount() public {
-        uint256 amount = 10_000 ether;
-
-        uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(dai);
-        uint256 expectedOnPool = amount.rayDiv(poolSupplyIndex);
+    function testShouldWithdrawAllAmount(uint256 amount) public {
+        amount = _boundSupply(testMarkets[dai], amount);
 
         user.depositVault(daiSupplyVault, amount);
-        user.withdrawVault(daiSupplyVault, expectedOnPool.rayMul(poolSupplyIndex));
+        user.withdrawVault(daiSupplyVault, amount);
 
         uint256 totalBalance = morpho.supplyBalance(dai, address(daiSupplyVault));
 
-        assertApproxEqAbs(daiSupplyVault.balanceOf(address(user)), 0, 1e3, "mcDAI balance not zero");
+        assertApproxEqAbs(daiSupplyVault.balanceOf(address(user)), 0, 1, "mcDAI balance not zero");
         assertEq(totalBalance, 0, "totalBalance not zero");
     }
 
-    function testShouldWithdrawAllUsdcAmount() public {
-        uint256 amount = 1e9;
+    function testShouldWithdrawAllUsdcAmount(uint256 amount) public {
+        amount = _boundSupply(testMarkets[usdc], amount);
 
         uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(usdc);
         uint256 expectedOnPool = amount.rayDiv(poolSupplyIndex);
@@ -61,12 +58,12 @@ contract TestSupplyVault is TestSetupVaults {
 
         uint256 totalBalance = morpho.supplyBalance(address(usdc), address(usdcSupplyVault));
 
-        assertApproxEqAbs(usdcSupplyVault.balanceOf(address(user)), 0, 10, "mcUSDT balance not zero");
+        assertApproxEqAbs(usdcSupplyVault.balanceOf(address(user)), 0, 1, "mcUSDT balance not zero");
         assertEq(totalBalance, 0, "totalBalance not zero");
     }
 
-    function testShouldWithdrawAllShares() public {
-        uint256 amount = 10_000 ether;
+    function testShouldWithdrawAllShares(uint256 amount) public {
+        amount = _boundSupply(testMarkets[dai], amount);
 
         uint256 shares = user.depositVault(daiSupplyVault, amount);
         user.redeemVault(daiSupplyVault, shares); // cannot withdraw amount because of Compound rounding errors
@@ -77,8 +74,8 @@ contract TestSupplyVault is TestSetupVaults {
         assertEq(totalBalance, 0, "totalBalance not zero");
     }
 
-    function testShouldNotWithdrawWhenNotDeposited() public {
-        uint256 amount = 10_000 ether;
+    function testShouldNotWithdrawWhenNotDeposited(uint256 amount) public {
+        amount = _boundSupply(testMarkets[dai], amount);
 
         uint256 shares = user.depositVault(daiSupplyVault, amount);
 
@@ -86,8 +83,8 @@ contract TestSupplyVault is TestSetupVaults {
         promoter1.redeemVault(daiSupplyVault, shares);
     }
 
-    function testShouldNotWithdrawOnBehalfIfNotAllowed() public {
-        uint256 amount = 10_000 ether;
+    function testShouldNotWithdrawOnBehalfIfNotAllowed(uint256 amount) public {
+        amount = _boundSupply(testMarkets[dai], amount);
 
         uint256 shares = user.depositVault(daiSupplyVault, amount);
 
@@ -95,8 +92,8 @@ contract TestSupplyVault is TestSetupVaults {
         user.redeemVault(daiSupplyVault, shares, address(promoter1));
     }
 
-    function testShouldWithdrawOnBehalfIfAllowed() public {
-        uint256 amount = 10_000 ether;
+    function testShouldWithdrawOnBehalfIfAllowed(uint256 amount) public {
+        amount = _boundSupply(testMarkets[dai], amount);
 
         uint256 shares = user.depositVault(daiSupplyVault, amount);
 
@@ -109,8 +106,8 @@ contract TestSupplyVault is TestSetupVaults {
         user.mintVault(daiSupplyVault, 0);
     }
 
-    function testShouldNotWithdrawGreaterAmount() public {
-        uint256 amount = 10_000 ether;
+    function testShouldNotWithdrawGreaterAmount(uint256 amount) public {
+        amount = _boundSupply(testMarkets[dai], amount);
 
         user.depositVault(daiSupplyVault, amount);
 
@@ -118,8 +115,8 @@ contract TestSupplyVault is TestSetupVaults {
         user.withdrawVault(daiSupplyVault, amount * 2);
     }
 
-    function testShouldNotRedeemMoreShares() public {
-        uint256 amount = 10_000 ether;
+    function testShouldNotRedeemMoreShares(uint256 amount) public {
+        amount = _boundSupply(testMarkets[dai], amount);
 
         uint256 shares = user.depositVault(daiSupplyVault, amount);
 
@@ -127,12 +124,13 @@ contract TestSupplyVault is TestSetupVaults {
         user.redeemVault(daiSupplyVault, shares + 1);
     }
 
-    function testShouldClaimRewards() public {
-        uint256 amount = 10_000 ether;
+    function testShouldClaimRewards(uint256 amount, uint256 timePassed) public {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
 
         user.depositVault(daiSupplyVault, amount);
 
-        vm.warp(block.timestamp + 20 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 balanceBefore = user.balanceOf(rewardToken);
 
@@ -146,26 +144,29 @@ contract TestSupplyVault is TestSetupVaults {
 
         assertGt(claimedAmounts[0], 0);
         assertApproxEqAbs(
-            ERC20(rewardToken).balanceOf(address(daiSupplyVault)), 0, 1e4, "non zero rewardToken balance on vault"
+            ERC20(rewardToken).balanceOf(address(daiSupplyVault)), 0, 1, "non zero rewardToken balance on vault"
         );
         assertEq(balanceAfter, balanceBefore + claimedAmounts[0], "unexpected rewardToken balance");
     }
 
-    function testShouldClaimTwiceRewardsWhenDepositedForSameAmountAndTwiceDuration() public {
-        uint256 amount = 10_000 ether;
+    function testShouldClaimTwiceRewardsWhenDepositedForSameAmountAndTwiceDuration(uint256 amount, uint256 timePassed)
+        public
+    {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
         address[] memory poolTokens = new address[](1);
         poolTokens[0] = dai;
 
         user.depositVault(daiSupplyVault, amount);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 expectedTotalRewardsAmount =
             rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
 
         promoter1.depositVault(daiSupplyVault, amount);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         expectedTotalRewardsAmount += rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
 
@@ -183,21 +184,22 @@ contract TestSupplyVault is TestSetupVaults {
         assertEq(claimedAmounts2.length, 1);
 
         assertApproxEqAbs(
-            expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0], 1e5, "unexpected total rewards amount"
+            expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0], 1, "unexpected total rewards amount"
         );
         assertLe(claimedAmounts1[0] + claimedAmounts2[0], expectedTotalRewardsAmount);
-        assertApproxEqAbs(claimedAmounts1[0], 2 * claimedAmounts2[0], 1e15, "unexpected rewards amount"); // not exact because of rewardTokenounded interests
+        assertApproxEqAbs(claimedAmounts1[0], 2 * claimedAmounts2[0], 1, "unexpected rewards amount"); // not exact because of rounded interests
     }
 
-    function testShouldClaimSameRewardsWhenDepositedAtSameTime() public {
-        uint256 amount = 10_000 ether;
+    function testShouldClaimSameRewardsWhenDepositedAtSameTime(uint256 amount, uint256 timePassed) public {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
         address[] memory poolTokens = new address[](1);
         poolTokens[0] = dai;
 
         uint256 shares1 = user.depositVault(daiSupplyVault, amount);
         uint256 shares2 = promoter1.depositVault(daiSupplyVault, amount);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 expectedTotalRewardsAmount =
             rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
@@ -205,7 +207,7 @@ contract TestSupplyVault is TestSetupVaults {
         user.redeemVault(daiSupplyVault, shares1 / 2);
         promoter1.redeemVault(daiSupplyVault, shares2 / 2);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         expectedTotalRewardsAmount += rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
 
@@ -226,20 +228,23 @@ contract TestSupplyVault is TestSetupVaults {
         assertEq(claimedAmounts2.length, 1);
 
         assertApproxEqAbs(
-            expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0], 1e5, "unexpected total rewards amount"
+            expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0], 1, "unexpected total rewards amount"
         );
         assertGe(expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0]);
-        assertApproxEqAbs(claimedAmounts1[0], claimedAmounts2[0], 1e15, "unexpected rewards amount"); // not exact because of rewardTokenounded interests
+        assertApproxEqAbs(claimedAmounts1[0], claimedAmounts2[0], 1, "unexpected rewards amount"); // not exact because of rewardTokenounded interests
     }
 
-    function testShouldClaimSameRewardsWhenDepositedForSameAmountAndDuration1() public {
-        uint256 amount = 10_000 ether;
+    function testShouldClaimSameRewardsWhenDepositedForSameAmountAndDuration1(uint256 amount, uint256 timePassed)
+        public
+    {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
         address[] memory poolTokens = new address[](1);
         poolTokens[0] = dai;
 
         uint256 shares1 = user.depositVault(daiSupplyVault, amount);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 expectedTotalRewardsAmount =
             rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
@@ -247,14 +252,14 @@ contract TestSupplyVault is TestSetupVaults {
         uint256 shares2 = promoter1.depositVault(daiSupplyVault, amount);
         user.redeemVault(daiSupplyVault, shares1 / 2);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         expectedTotalRewardsAmount += rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
 
         user.redeemVault(daiSupplyVault, shares1 / 2);
         promoter1.redeemVault(daiSupplyVault, shares2 / 2);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         expectedTotalRewardsAmount += rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
 
@@ -275,17 +280,20 @@ contract TestSupplyVault is TestSetupVaults {
             expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0], 1e5, "unexpected total rewards amount"
         );
         assertGe(expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0]);
-        assertApproxEqAbs(claimedAmounts1[0], claimedAmounts2[0], 1e15, "unexpected rewards amount"); // not exact because of rewardTokenounded interests
+        assertApproxEqAbs(claimedAmounts1[0], claimedAmounts2[0], 1, "unexpected rewards amount"); // not exact because of rewardTokenounded interests
     }
 
-    function testShouldClaimSameRewardsWhenDepositedForSameAmountAndDuration2() public {
-        uint256 amount = 10_000 ether;
+    function testShouldClaimSameRewardsWhenDepositedForSameAmountAndDuration2(uint256 amount, uint256 timePassed)
+        public
+    {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
         address[] memory poolTokens = new address[](1);
         poolTokens[0] = dai;
 
         uint256 shares1 = user.depositVault(daiSupplyVault, amount);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 expectedTotalRewardsAmount =
             rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
@@ -293,7 +301,7 @@ contract TestSupplyVault is TestSetupVaults {
         uint256 shares2 = promoter1.depositVault(daiSupplyVault, amount);
         user.redeemVault(daiSupplyVault, shares1 / 2);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         expectedTotalRewardsAmount += rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
 
@@ -301,14 +309,14 @@ contract TestSupplyVault is TestSetupVaults {
         user.redeemVault(daiSupplyVault, shares1 / 2);
         promoter1.redeemVault(daiSupplyVault, shares2 / 2);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         expectedTotalRewardsAmount += rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
 
         promoter1.redeemVault(daiSupplyVault, shares2 / 2);
         promoter2.redeemVault(daiSupplyVault, shares3 / 2);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         expectedTotalRewardsAmount += rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
 
@@ -342,19 +350,20 @@ contract TestSupplyVault is TestSetupVaults {
         );
         assertGe(expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0] + claimedAmounts3[0]);
         assertApproxEqAbs(
-            ERC20(rewardToken).balanceOf(address(daiSupplyVault)), 0, 1e15, "non zero rewardToken balance on vault"
+            ERC20(rewardToken).balanceOf(address(daiSupplyVault)), 0, 1, "non zero rewardToken balance on vault"
         );
-        assertApproxEqAbs(claimedAmounts1[0], claimedAmounts2[0], 1e15, "unexpected rewards amount 1-2"); // not exact because of rewardTokenounded interests
-        assertApproxEqAbs(claimedAmounts2[0], claimedAmounts3[0], 1e15, "unexpected rewards amount 2-3"); // not exact because of rewardTokenounded interests
+        assertApproxEqAbs(claimedAmounts1[0], claimedAmounts2[0], 1, "unexpected rewards amount 1-2"); // not exact because of rewardTokenounded interests
+        assertApproxEqAbs(claimedAmounts2[0], claimedAmounts3[0], 1, "unexpected rewards amount 2-3"); // not exact because of rewardTokenounded interests
     }
 
-    function testRewardsShouldAccrueWhenDepositingOnBehalf() public {
-        uint256 amount = 10_000 ether;
+    function testRewardsShouldAccrueWhenDepositingOnBehalf(uint256 amount, uint256 timePassed) public {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
         address[] memory poolTokens = new address[](1);
         poolTokens[0] = dai;
 
         promoter1.depositVault(daiSupplyVault, amount, address(user));
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 expectedTotalRewardsAmount =
             rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
@@ -363,24 +372,25 @@ contract TestSupplyVault is TestSetupVaults {
         promoter1.depositVault(daiSupplyVault, amount, address(user));
         uint256 userReward1_1 = daiSupplyVault.getUnclaimedRewards(address(user), rewardToken);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
         uint256 userReward1_2 = daiSupplyVault.getUnclaimedRewards(address(user), rewardToken);
 
         uint256 userReward2 = daiSupplyVault.getUnclaimedRewards(address(promoter1), rewardToken);
         assertEq(userReward2, 0);
         assertGt(userReward1_1, 0);
         assertGt(userReward1_2, 0);
-        assertApproxEqAbs(userReward1_1, expectedTotalRewardsAmount, 10000);
+        assertApproxEqAbs(userReward1_1, expectedTotalRewardsAmount, 1);
         assertApproxEqAbs(userReward1_1 * 3, userReward1_2, userReward1_2 / 1000);
     }
 
-    function testRewardsShouldAccrueWhenMintingOnBehalf() public {
-        uint256 amount = 10_000 ether;
+    function testRewardsShouldAccrueWhenMintingOnBehalf(uint256 amount, uint256 timePassed) public {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
         address[] memory poolTokens = new address[](1);
         poolTokens[0] = dai;
 
         promoter1.mintVault(daiSupplyVault, daiSupplyVault.previewMint(amount), address(user));
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 expectedTotalRewardsAmount =
             rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
@@ -390,23 +400,24 @@ contract TestSupplyVault is TestSetupVaults {
 
         uint256 userReward1_1 = daiSupplyVault.getUnclaimedRewards(address(user), rewardToken);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
         uint256 userReward1_2 = daiSupplyVault.getUnclaimedRewards(address(user), rewardToken);
 
         uint256 userReward2 = daiSupplyVault.getUnclaimedRewards(address(promoter1), rewardToken);
         assertEq(userReward2, 0);
         assertGt(userReward1_1, 0);
-        assertApproxEqAbs(userReward1_1, expectedTotalRewardsAmount, 10000);
+        assertApproxEqAbs(userReward1_1, expectedTotalRewardsAmount, 1);
         assertApproxEqAbs(userReward1_1 * 3, userReward1_2, userReward1_2 / 1000);
     }
 
-    function testRewardsShouldAccrueWhenRedeemingToReceiver() public {
-        uint256 amount = 10_000 ether;
+    function testRewardsShouldAccrueWhenRedeemingToReceiver(uint256 amount, uint256 timePassed) public {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
         address[] memory poolTokens = new address[](1);
         poolTokens[0] = dai;
 
         user.depositVault(daiSupplyVault, amount);
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 expectedTotalRewardsAmount =
             rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
@@ -415,7 +426,7 @@ contract TestSupplyVault is TestSetupVaults {
         user.redeemVault(daiSupplyVault, daiSupplyVault.balanceOf(address(user)), address(promoter1), address(user));
         (, uint128 userReward1_1) = daiSupplyVault.userRewards(rewardToken, address(user));
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 userReward1_2 = daiSupplyVault.getUnclaimedRewards(address(user), rewardToken);
         uint256 userReward2 = daiSupplyVault.getUnclaimedRewards(address(promoter1), rewardToken);
@@ -424,17 +435,18 @@ contract TestSupplyVault is TestSetupVaults {
         assertEq(index2, 0);
         assertEq(userReward2, 0);
         assertGt(uint256(userReward1_1), 0);
-        assertApproxEqAbs(uint256(userReward1_1), expectedTotalRewardsAmount, 10000);
+        assertApproxEqAbs(uint256(userReward1_1), expectedTotalRewardsAmount, 1);
         assertApproxEqAbs(uint256(userReward1_1), userReward1_2, 1);
     }
 
-    function testRewardsShouldAccrueWhenWithdrawingToReceiver() public {
-        uint256 amount = 10_000 ether;
+    function testRewardsShouldAccrueWhenWithdrawingToReceiver(uint256 amount, uint256 timePassed) public {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
         address[] memory poolTokens = new address[](1);
         poolTokens[0] = dai;
 
         user.depositVault(daiSupplyVault, amount);
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 expectedTotalRewardsAmount =
             rewardsManager.getUserRewards(poolTokens, address(daiSupplyVault), rewardToken);
@@ -444,7 +456,7 @@ contract TestSupplyVault is TestSetupVaults {
 
         (, uint128 userReward1_1) = daiSupplyVault.userRewards(rewardToken, address(user));
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 userReward1_2 = daiSupplyVault.getUnclaimedRewards(address(user), rewardToken);
         uint256 userReward2 = daiSupplyVault.getUnclaimedRewards(address(promoter1), rewardToken);
@@ -453,12 +465,12 @@ contract TestSupplyVault is TestSetupVaults {
         assertEq(index2, 0);
         assertEq(userReward2, 0);
         assertGt(uint256(userReward1_1), 0);
-        assertApproxEqAbs(uint256(userReward1_1), expectedTotalRewardsAmount, 10000);
+        assertApproxEqAbs(uint256(userReward1_1), expectedTotalRewardsAmount, 1);
         assertApproxEqAbs(uint256(userReward1_1), userReward1_2, 1);
     }
 
-    function testTransfer() public {
-        uint256 amount = 1e6 ether;
+    function testTransfer(uint256 amount) public {
+        amount = _boundSupply(testMarkets[dai], amount);
 
         user.depositVault(daiSupplyVault, amount);
 
@@ -470,8 +482,8 @@ contract TestSupplyVault is TestSetupVaults {
         assertEq(daiSupplyVault.balanceOf(address(promoter1)), balance);
     }
 
-    function testTransferFrom() public {
-        uint256 amount = 1e6 ether;
+    function testTransferFrom(uint256 amount) public {
+        amount = _boundSupply(testMarkets[dai], amount);
 
         user.depositVault(daiSupplyVault, amount);
 
@@ -486,12 +498,13 @@ contract TestSupplyVault is TestSetupVaults {
         assertEq(daiSupplyVault.balanceOf(address(promoter1)), balance);
     }
 
-    function testTransferAccrueRewards() public {
-        uint256 amount = 1e6 ether;
+    function testTransferAccrueRewards(uint256 amount, uint256 timePassed) public {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
 
         user.depositVault(daiSupplyVault, amount);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 balance = daiSupplyVault.balanceOf(address(user));
         vm.prank(address(user));
@@ -518,12 +531,13 @@ contract TestSupplyVault is TestSetupVaults {
         assertEq(rewardsAmount2[0], 0);
     }
 
-    function testTransferFromAccrueRewards() public {
-        uint256 amount = 1e6 ether;
+    function testTransferFromAccrueRewards(uint256 amount, uint256 timePassed) public {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
 
         user.depositVault(daiSupplyVault, amount);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 balance = daiSupplyVault.balanceOf(address(user));
         vm.prank(address(user));
@@ -559,22 +573,23 @@ contract TestSupplyVault is TestSetupVaults {
         assertEq(rewardsAmount3[0], 0);
     }
 
-    function testTransferAndClaimRewards() public {
-        uint256 amount = 1e6 ether;
+    function testTransferAndClaimRewards(uint256 amount, uint256 timePassed) public {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
 
         user.depositVault(daiSupplyVault, amount);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         promoter1.depositVault(daiSupplyVault, amount);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 balance = daiSupplyVault.balanceOf(address(user));
         vm.prank(address(user));
         daiSupplyVault.transfer(address(promoter1), balance);
 
-        vm.warp(block.timestamp + 10 days);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 rewardsAmount1 = daiSupplyVault.getUnclaimedRewards(address(user), rewardToken);
         uint256 rewardsAmount2 = daiSupplyVault.getUnclaimedRewards(address(promoter1), rewardToken);
@@ -588,12 +603,13 @@ contract TestSupplyVault is TestSetupVaults {
         // In the end, user got 2 * X rewards while promoter1 got 3 * X
     }
 
-    function testShouldDepositCorrectAmountWhenMorphoPoolIndexesOutdated() public {
-        uint256 amount = 10_000 ether;
+    function testShouldDepositCorrectAmountWhenMorphoPoolIndexesOutdated(uint256 amount, uint256 timePassed) public {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
 
         user.depositVault(daiSupplyVault, amount);
 
-        vm.roll(block.number + 100_000);
+        vm.roll(block.number + (timePassed + 19) / 20);
         vm.warp(block.timestamp + 1_000_000);
 
         uint256 shares = promoter1.depositVault(daiSupplyVault, amount);
@@ -602,30 +618,32 @@ contract TestSupplyVault is TestSetupVaults {
         assertApproxEqAbs(assets, amount, 1, "unexpected withdrawn assets");
     }
 
-    function testShouldRedeemAllAmountWhenMorphoPoolIndexesOutdated() public {
-        uint256 amount = 10_000 ether;
+    function testShouldRedeemAllAmountWhenMorphoPoolIndexesOutdated(uint256 amount, uint256 timePassed) public {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
 
         uint256 expectedOnPool = amount.rayDiv(pool.getReserveNormalizedIncome(dai));
 
         uint256 shares = user.depositVault(daiSupplyVault, amount);
 
-        vm.roll(block.number + 100_000);
-        vm.warp(block.timestamp + 1_000_000);
+        vm.roll(block.number + (timePassed + 19) / 20);
+        vm.warp(block.timestamp + timePassed);
 
         uint256 assets = user.redeemVault(daiSupplyVault, shares);
 
         assertEq(assets, expectedOnPool.rayMul(pool.getReserveNormalizedIncome(dai)), "unexpected withdrawn assets");
     }
 
-    function testShouldWithdrawAllAmountWhenMorphoPoolIndexesOutdated() public {
-        uint256 amount = 10_000 ether;
+    function testShouldWithdrawAllAmountWhenMorphoPoolIndexesOutdated(uint256 amount, uint256 timePassed) public {
+        amount = _boundSupply(testMarkets[dai], amount);
+        timePassed = bound(timePassed, 1, 10 days);
 
         uint256 expectedOnPool = amount.rayDiv(pool.getReserveNormalizedIncome(dai));
 
         user.depositVault(daiSupplyVault, amount);
 
-        vm.roll(block.number + 100_000);
-        vm.warp(block.timestamp + 1_000_000);
+        vm.roll(block.number + (timePassed + 19) / 20);
+        vm.warp(block.timestamp + timePassed);
 
         user.withdrawVault(daiSupplyVault, expectedOnPool.rayMul(pool.getReserveNormalizedIncome(dai)));
 
