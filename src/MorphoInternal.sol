@@ -162,7 +162,8 @@ abstract contract MorphoInternal is MorphoStorage {
         return keccak256(abi.encodePacked(Constants.EIP712_MSG_PREFIX, _domainSeparator(), structHash));
     }
 
-    /// @notice Approves a `manager` to borrow/withdraw on behalf of the sender.
+    /// @dev Approves a `manager` to borrow/withdraw on behalf of the `delegator`.
+    /// @param delegator The address of the delegator.
     /// @param manager The address of the manager.
     /// @param isAllowed Whether `manager` is allowed to manage `delegator`'s position or not.
     function _approveManager(address delegator, address manager, bool isAllowed) internal {
