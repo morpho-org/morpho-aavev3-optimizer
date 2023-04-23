@@ -77,7 +77,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
         // `liquidationThreshold < Constants.LT_LOWER_BOUND` checks that the asset's LT is not too low to be listed as a collateral on Morpho.
         // If the LT is 0, the check is skipped to be able to create markets for non-collateral assets.
-        // The check still works for e-mode assets since if the "standard" LT is 0, then the e-mode LT is also 0.
+        // In the case where the "standard" LT is below the `LT_LOWER_BOUND` while the eMode LT is higher, the check will still revert for safety.
         uint256 liquidationThreshold = reserve.configuration.getLiquidationThreshold();
         if (liquidationThreshold > 0 && liquidationThreshold < Constants.LT_LOWER_BOUND) {
             revert Errors.MarketLtTooLow();
