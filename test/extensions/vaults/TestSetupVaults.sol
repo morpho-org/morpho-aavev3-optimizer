@@ -35,6 +35,7 @@ contract TestSetupVaults is IntegrationTest {
         super.setUp();
         MORPHO_TOKEN = address(new ERC20Mock());
         rewardToken = aave;
+        morpho.setRewardsManager(address(0));
         initVaultContracts();
         setVaultContractsLabels();
     }

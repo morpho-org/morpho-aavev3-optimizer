@@ -26,6 +26,7 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
 
     /* STORAGE */
 
+    address internal _aToken; // The address of the Aave's aToken associated to the underlying market.
     mapping(address => uint128) internal _rewardsIndex; // The current reward index for the given reward token.
     mapping(address => mapping(address => UserRewardsData)) internal _userRewards; // User rewards data. rewardToken -> user -> userRewards.
 
@@ -57,6 +58,7 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
         uint8 newMaxIterations
     ) external initializer {
         __SupplyVaultBase_init(newUnderlying, name, symbol, initialDeposit, newMaxIterations);
+        _aToken = _MORPHO.market(newUnderlying).aToken;
     }
 
     /* EXTERNAL */
@@ -97,11 +99,11 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
         view
         returns (address[] memory rewardTokens, uint256[] memory unclaimedAmounts)
     {
-        address[] memory underlyings = new address[](1);
-        underlyings[0] = _underlying;
+        address[] memory poolTokens = new address[](1);
+        poolTokens[0] = _aToken;
 
         uint256[] memory claimableAmounts;
-        (rewardTokens, claimableAmounts) = _REWARDS_MANAGER.getAllUserRewards(underlyings, address(this));
+        (rewardTokens, claimableAmounts) = _REWARDS_MANAGER.getAllUserRewards(poolTokens, address(this));
 
         unclaimedAmounts = new uint256[](claimableAmounts.length);
         uint256 supply = totalSupply();
@@ -117,10 +119,10 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
     /// @param rewardToken The address of the reward token
     /// @return The user's rewards in reward token.
     function getUnclaimedRewards(address user, address rewardToken) external view returns (uint256) {
-        address[] memory underlyings = new address[](1);
-        underlyings[0] = _underlying;
+        address[] memory poolTokens = new address[](1);
+        poolTokens[0] = _aToken;
 
-        uint256 claimableRewards = _REWARDS_MANAGER.getUserRewards(underlyings, address(this), rewardToken);
+        uint256 claimableRewards = _REWARDS_MANAGER.getUserRewards(poolTokens, address(this), rewardToken);
 
         return _getUpdatedUnclaimedReward(user, rewardToken, claimableRewards, totalSupply());
     }
@@ -137,19 +139,21 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
     /* INTERNAL */
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
-        (address[] memory rewardTokens, uint256[] memory rewardsIndexes) = _claimVaultRewards();
-        _accrueUnclaimedRewardsFromRewardIndexes(from, rewardTokens, rewardsIndexes);
-        _accrueUnclaimedRewardsFromRewardIndexes(to, rewardTokens, rewardsIndexes);
+        if (address(_REWARDS_MANAGER) != address(0)) {
+            (address[] memory rewardTokens, uint256[] memory rewardsIndexes) = _claimVaultRewards();
+            _accrueUnclaimedRewardsFromRewardIndexes(from, rewardTokens, rewardsIndexes);
+            _accrueUnclaimedRewardsFromRewardIndexes(to, rewardTokens, rewardsIndexes);
+        }
 
         super._beforeTokenTransfer(from, to, amount);
     }
 
     function _claimVaultRewards() internal returns (address[] memory rewardTokens, uint256[] memory rewardsIndexes) {
-        address[] memory underlyings = new address[](1);
-        underlyings[0] = _underlying;
+        address[] memory poolTokens = new address[](1);
+        poolTokens[0] = _aToken;
 
         uint256[] memory claimedAmounts;
-        (rewardTokens, claimedAmounts) = _MORPHO.claimRewards(underlyings, address(this));
+        (rewardTokens, claimedAmounts) = _MORPHO.claimRewards(poolTokens, address(this));
 
         rewardsIndexes = new uint256[](rewardTokens.length);
 
