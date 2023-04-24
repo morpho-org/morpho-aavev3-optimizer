@@ -29,15 +29,16 @@ contract TestSetupVaults is IntegrationTest {
     ERC20 internal maDai;
     ERC20 internal maUsdc;
 
-    address rewardToken;
-
-    function setUp() public override {
+    function setUp() public virtual override {
         super.setUp();
         MORPHO_TOKEN = address(new ERC20Mock());
-        rewardToken = aave;
-        morpho.setRewardsManager(address(0));
+        morpho.setRewardsManager(_rewardsManager());
         initVaultContracts();
         setVaultContractsLabels();
+    }
+
+    function _rewardsManager() internal view virtual returns (address) {
+        return address(0);
     }
 
     function initVaultContracts() internal {
