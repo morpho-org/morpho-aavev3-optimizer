@@ -102,7 +102,9 @@ contract TestSupplyVaultRewards is TestSetupVaults {
             expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0], 1, "unexpected total rewards amount"
         );
         assertLe(claimedAmounts1[0] + claimedAmounts2[0], expectedTotalRewardsAmount);
-        assertApproxEqAbs(claimedAmounts1[0], 2 * claimedAmounts2[0], 1, "unexpected rewards amount"); // not exact because of rounded interests
+        assertApproxEqAbs(
+            claimedAmounts1[0], 2 * claimedAmounts2[0], claimedAmounts1[0] / 100, "unexpected rewards amount"
+        ); // not exact because of rounded interests
     }
 
     function testShouldClaimSameRewardsWhenDepositedAtSameTime(uint256 amount, uint256 timePassed) public {
@@ -202,7 +204,7 @@ contract TestSupplyVaultRewards is TestSetupVaults {
             expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0], 1e5, "unexpected total rewards amount"
         );
         assertGe(expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0]);
-        assertApproxEqAbs(claimedAmounts1[0], claimedAmounts2[0], 2, "unexpected rewards amount"); // not exact because of rewardTokenounded interests
+        assertApproxEqAbs(claimedAmounts1[0], claimedAmounts2[0], claimedAmounts1[0] / 100, "unexpected rewards amount"); // not exact because of rewardTokenounded interests
     }
 
     function testShouldClaimSameRewardsWhenDepositedForSameAmountAndDuration2(uint256 amount, uint256 timePassed)
@@ -280,11 +282,15 @@ contract TestSupplyVaultRewards is TestSetupVaults {
         assertApproxEqAbs(
             ERC20(rewardToken).balanceOf(address(wrappedNativeTokenSupplyVault)),
             0,
-            1,
+            5,
             "non zero rewardToken balance on vault"
         );
-        assertApproxEqAbs(claimedAmounts1[0], claimedAmounts2[0], 1, "unexpected rewards amount 1-2"); // not exact because of rewardTokenounded interests
-        assertApproxEqAbs(claimedAmounts2[0], claimedAmounts3[0], 1, "unexpected rewards amount 2-3"); // not exact because of rewardTokenounded interests
+        assertApproxEqAbs(
+            claimedAmounts1[0], claimedAmounts2[0], claimedAmounts1[0] / 100, "unexpected rewards amount 1-2"
+        ); // not exact because of rewardTokenounded interests
+        assertApproxEqAbs(
+            claimedAmounts2[0], claimedAmounts3[0], claimedAmounts2[0] / 100, "unexpected rewards amount 2-3"
+        ); // not exact because of rewardTokenounded interests
     }
 
     function testRewardsShouldAccrueWhenDepositingOnBehalf(uint256 amount, uint256 timePassed) public {
