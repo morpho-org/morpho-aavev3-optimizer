@@ -39,8 +39,6 @@ contract EthEModeDeploy is Script, Test, Configured {
     address[] internal assetsToList;
 
     address internal wstEth;
-    address internal rEth;
-    address internal cbEth;
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
