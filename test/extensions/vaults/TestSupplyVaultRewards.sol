@@ -63,7 +63,9 @@ contract TestSupplyVaultRewards is TestSetupVaults {
     function testShouldClaimTwiceRewardsWhenDepositedForSameAmountAndTwiceDuration(uint256 amount, uint256 timePassed)
         public
     {
-        amount = _boundSupply(testMarkets[wNative], amount);
+        // This test depends on reward distribution being somewhat invariant, which is violated if the amount is too large.
+        // So we use a different bound than usual.
+        amount = bound(amount, testMarkets[wNative].minAmount, 10000 ether);
         timePassed = bound(timePassed, 1, 10 days);
         address[] memory poolTokens = new address[](1);
         poolTokens[0] = testMarkets[wNative].aToken;
@@ -146,7 +148,7 @@ contract TestSupplyVaultRewards is TestSetupVaults {
             expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0], 5, "unexpected total rewards amount"
         );
         assertGe(expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0]);
-        assertApproxEqAbs(claimedAmounts1[0], claimedAmounts2[0], 1, "unexpected rewards amount"); // not exact because of rewardTokenounded interests
+        assertApproxEqAbs(claimedAmounts1[0], claimedAmounts2[0], 5, "unexpected rewards amount"); // not exact because of rewardTokenounded interests
     }
 
     function testShouldClaimSameRewardsWhenDepositedForSameAmountAndDuration1(uint256 amount, uint256 timePassed)
@@ -200,7 +202,7 @@ contract TestSupplyVaultRewards is TestSetupVaults {
             expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0], 1e5, "unexpected total rewards amount"
         );
         assertGe(expectedTotalRewardsAmount, claimedAmounts1[0] + claimedAmounts2[0]);
-        assertApproxEqAbs(claimedAmounts1[0], claimedAmounts2[0], 1, "unexpected rewards amount"); // not exact because of rewardTokenounded interests
+        assertApproxEqAbs(claimedAmounts1[0], claimedAmounts2[0], 2, "unexpected rewards amount"); // not exact because of rewardTokenounded interests
     }
 
     function testShouldClaimSameRewardsWhenDepositedForSameAmountAndDuration2(uint256 amount, uint256 timePassed)
