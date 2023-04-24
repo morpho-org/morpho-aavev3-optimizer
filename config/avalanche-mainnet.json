@@ -14,5 +14,7 @@
     "WETH": "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB",
     "sAVAX": "0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE",
     "wrappedNative": "WAVAX",
-    "stakedNative": "sAVAX"
+    "lsdNatives": [
+        "sAVAX"
+    ]
 }
