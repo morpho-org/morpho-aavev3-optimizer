@@ -13,11 +13,18 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {Configured, ConfigLib, Config} from "config/Configured.sol";
 import "@forge-std/Script.sol";
 import "@forge-std/Test.sol";
+
+interface IDeployer {
+    function performCreate2(uint256 value, bytes memory deploymentData, bytes32 salt, address owner)
+        external
+        returns (address newContract);
+}
 
 contract EthEModeDeploy is Script, Test, Configured {
     using ConfigLib for Config;
@@ -26,12 +33,12 @@ contract EthEModeDeploy is Script, Test, Configured {
     uint8 internal constant E_MODE_CATEGORY_ID = 1; // ETH e-mode.
     uint128 internal constant MAX_ITERATIONS = 4;
     uint256 internal constant DUST = 1_000;
+    IDeployer internal constant DEPLOYER = IDeployer(0xD90bbCa6a99A53f8B26782EDB0B190A7D599C585);
+    bytes32 internal constant SALT = 0x89a56b04d24a35c79d19800bd5ccf61c5f641037d5583422006c06bdba75af9b;
 
     address[] internal assetsToList;
 
     address internal wstEth;
-    address internal rEth;
-    address internal cbEth;
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
@@ -42,7 +49,7 @@ contract EthEModeDeploy is Script, Test, Configured {
     ProxyAdmin internal proxyAdmin;
 
     IMorpho internal morphoImpl;
-    TransparentUpgradeableProxy internal morphoProxy;
+    address internal morphoProxy;
 
     function run() external {
         _initConfig();
@@ -62,27 +69,7 @@ contract EthEModeDeploy is Script, Test, Configured {
 
         vm.stopBroadcast();
 
-        assertEq(pool.getUserEMode(address(morpho)), E_MODE_CATEGORY_ID);
-
-        assertFalse(morpho.market(weth).pauseStatuses.isSupplyPaused);
-        assertFalse(morpho.market(weth).pauseStatuses.isBorrowPaused);
-        assertTrue(morpho.market(weth).isCollateral);
-
-        assertTrue(morpho.market(wstEth).pauseStatuses.isSupplyPaused);
-        assertTrue(morpho.market(wstEth).pauseStatuses.isBorrowPaused);
-        assertTrue(morpho.market(wstEth).isCollateral);
-
-        assertTrue(morpho.market(dai).pauseStatuses.isSupplyPaused);
-        assertTrue(morpho.market(dai).pauseStatuses.isBorrowPaused);
-        assertTrue(morpho.market(dai).isCollateral);
-
-        assertTrue(morpho.market(usdc).pauseStatuses.isSupplyPaused);
-        assertTrue(morpho.market(usdc).pauseStatuses.isBorrowPaused);
-        assertTrue(morpho.market(usdc).isCollateral);
-
-        assertTrue(morpho.market(wbtc).pauseStatuses.isSupplyPaused);
-        assertTrue(morpho.market(wbtc).pauseStatuses.isBorrowPaused);
-        assertTrue(morpho.market(wbtc).isCollateral);
+        _checkAssertions();
     }
 
     function _network() internal pure virtual override returns (string memory) {
@@ -106,7 +93,8 @@ contract EthEModeDeploy is Script, Test, Configured {
         morphoImpl = new Morpho();
 
         proxyAdmin = new ProxyAdmin();
-        morphoProxy = new TransparentUpgradeableProxy(
+
+        bytes memory input = abi.encode(
             payable(address(morphoImpl)),
             address(proxyAdmin),
             abi.encodeWithSelector(
@@ -117,7 +105,14 @@ contract EthEModeDeploy is Script, Test, Configured {
                 Types.Iterations({repay: MAX_ITERATIONS, withdraw: MAX_ITERATIONS})
             )
         );
-        morpho = Morpho(payable(address(morphoProxy)));
+        bytes memory bytecode = type(TransparentUpgradeableProxy).creationCode;
+        bytes memory deploymentData = abi.encodePacked(bytecode, input);
+
+        morphoProxy = DEPLOYER.performCreate2(0, deploymentData, SALT, vm.envAddress("DEPLOYER"));
+
+        Ownable2StepUpgradeable(morphoProxy).acceptOwnership();
+        console2.log("Morpho Proxy Address: ", morphoProxy);
+        morpho = Morpho(payable(morphoProxy));
     }
 
     function _createMarkets() internal {
@@ -165,5 +160,29 @@ contract EthEModeDeploy is Script, Test, Configured {
         morpho.setIsBorrowPaused(dai, true);
         morpho.setIsBorrowPaused(usdc, true);
         morpho.setIsBorrowPaused(wbtc, true);
+    }
+
+    function _checkAssertions() internal {
+        assertEq(pool.getUserEMode(address(morpho)), E_MODE_CATEGORY_ID);
+
+        assertFalse(morpho.market(weth).pauseStatuses.isSupplyPaused);
+        assertFalse(morpho.market(weth).pauseStatuses.isBorrowPaused);
+        assertTrue(morpho.market(weth).isCollateral);
+
+        assertTrue(morpho.market(wstEth).pauseStatuses.isSupplyPaused);
+        assertTrue(morpho.market(wstEth).pauseStatuses.isBorrowPaused);
+        assertTrue(morpho.market(wstEth).isCollateral);
+
+        assertTrue(morpho.market(dai).pauseStatuses.isSupplyPaused);
+        assertTrue(morpho.market(dai).pauseStatuses.isBorrowPaused);
+        assertTrue(morpho.market(dai).isCollateral);
+
+        assertTrue(morpho.market(usdc).pauseStatuses.isSupplyPaused);
+        assertTrue(morpho.market(usdc).pauseStatuses.isBorrowPaused);
+        assertTrue(morpho.market(usdc).isCollateral);
+
+        assertTrue(morpho.market(wbtc).pauseStatuses.isSupplyPaused);
+        assertTrue(morpho.market(wbtc).pauseStatuses.isBorrowPaused);
+        assertTrue(morpho.market(wbtc).isCollateral);
     }
 }
