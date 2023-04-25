@@ -10,6 +10,10 @@ contract RewardsManagerMock is IRewardsManager {
     address public immutable POOL;
     address public immutable MORPHO;
 
+    event Accrued(
+        address indexed asset, address indexed reward, address indexed user, uint256 assetIndex, uint256 rewardsAccrued
+    );
+
     constructor(address morpho) {
         MORPHO = morpho;
         POOL = IMorpho(morpho).pool();
@@ -50,7 +54,14 @@ contract RewardsManagerMock is IRewardsManager {
     function claimRewards(address[] calldata assets, address user)
         external
         returns (address[] memory rewardsList, uint256[] memory claimedAmounts)
-    {}
+    {
+        for (uint256 i; i < assets.length; i++) {
+            emit Accrued(assets[i], address(0), user, 0, 0);
+        }
+        // Just silencing a compiler warning
+        rewardsList = rewardsList;
+        claimedAmounts = claimedAmounts;
+    }
 
     function updateUserRewards(address user, address asset, uint256 userBalance) external {}
 }

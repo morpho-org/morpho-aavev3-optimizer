@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {PermitHash} from "@permit2/libraries/PermitHash.sol";
 import {SignatureVerification} from "@permit2/libraries/SignatureVerification.sol";
 import {SafeCast160} from "@permit2/libraries/SafeCast160.sol";
-import {IAllowanceTransfer, AllowanceTransfer} from "@permit2/AllowanceTransfer.sol";
 import {SignatureExpired} from "@permit2/PermitErrors.sol";
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
