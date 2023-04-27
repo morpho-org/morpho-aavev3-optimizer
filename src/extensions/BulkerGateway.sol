@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IWETH} from "src/interfaces/IWETH.sol";
-import {IWSTETH} from "src/interfaces/IWSTETH.sol";
+import {IWETH} from "src/interfaces/extensions/IWETH.sol";
+import {IWSTETH} from "src/interfaces/extensions/IWSTETH.sol";
 import {IMorpho} from "src/interfaces/IMorpho.sol";
-import {IBulkerGateway} from "src/interfaces/IBulkerGateway.sol";
+import {IBulkerGateway} from "src/interfaces/extensions/IBulkerGateway.sol";
 
 import {Types} from "src/libraries/Types.sol";
 import {SafeTransferLib, ERC20} from "@solmate/utils/SafeTransferLib.sol";
