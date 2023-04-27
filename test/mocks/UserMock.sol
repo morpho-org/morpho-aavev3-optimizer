@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IMorpho} from "src/interfaces/IMorpho.sol";
-import {ERC4626UpgradeableSafe} from "src/extensions/ERC4626UpgradeableSafe.sol";
+import {ERC4626UpgradeableSafe} from "@morpho-utils/ERC4626UpgradeableSafe.sol";
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";

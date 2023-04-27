@@ -10,7 +10,7 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {Types} from "src/libraries/Types.sol";
 
-import {ERC4626UpgradeableSafe, ERC4626Upgradeable, ERC20Upgradeable} from "src/extensions/ERC4626UpgradeableSafe.sol";
+import {ERC4626UpgradeableSafe, ERC4626Upgradeable, ERC20Upgradeable} from "@morpho-utils/ERC4626UpgradeableSafe.sol";
 
 /// @title SupplyVaultBase.
 /// @author Morpho Labs.

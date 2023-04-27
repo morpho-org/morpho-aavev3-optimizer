@@ -6,10 +6,6 @@ import "test/extensions/vaults/TestSetupVaults.sol";
 contract TestSupplyVaultNoRewards is TestSetupVaults {
     using WadRayMath for uint256;
 
-    function setUp() public virtual override {
-        super.setUp();
-    }
-
     function testCorrectInitialisationDai() public {
         assertEq(daiSupplyVault.owner(), address(this));
         assertEq(daiSupplyVault.name(), "MorphoAaveDAI");
