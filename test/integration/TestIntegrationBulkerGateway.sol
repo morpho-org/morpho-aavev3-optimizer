@@ -8,9 +8,9 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 import {BulkerGateway} from "src/extensions/BulkerGateway.sol";
-import {IBulkerGateway} from "src/interfaces/IBulkerGateway.sol";
-import {ILido} from "src/interfaces/ILido.sol";
-import {IWSTETH} from "src/interfaces/IWSTETH.sol";
+import {IBulkerGateway} from "src/interfaces/extensions/IBulkerGateway.sol";
+import {ILido} from "src/interfaces/extensions/ILido.sol";
+import {IWSTETH} from "src/interfaces/extensions/IWSTETH.sol";
 
 import {SigUtils} from "test/helpers/SigUtils.sol";
 
