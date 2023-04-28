@@ -5,11 +5,11 @@ import {IERC4626Upgradeable} from "@openzeppelin-upgradeable/interfaces/IERC4626
 import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {ISupplyVaultBase} from "src/interfaces/extensions/ISupplyVaultBase.sol";
 
-import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {Types} from "src/libraries/Types.sol";
 
+import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
 import {ERC4626UpgradeableSafe, ERC4626Upgradeable, ERC20Upgradeable} from "@morpho-utils/ERC4626UpgradeableSafe.sol";
 
 /// @title SupplyVaultBase.
@@ -114,9 +114,6 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
     /* PUBLIC */
 
     /// @notice The amount of assets in the vault.
-    /// @dev The indexes used by this function might not be up-to-date.
-    ///      As a consequence, view functions (like `maxWithdraw`) could underestimate the withdrawable amount.
-    ///      To redeem all their assets, users are encouraged to use the `redeem` function passing their vault tokens balance.
     function totalAssets() public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
         return _MORPHO.supplyBalance(_underlying, address(this));
     }
