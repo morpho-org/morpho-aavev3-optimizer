@@ -99,12 +99,8 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
         return _underlying;
     }
 
-    /// @notice Transfers the MORPHO rewards to the rewards recipient.
-    function transferRewards() external {
-        uint256 amount = _MORPHO_TOKEN.balanceOf(address(this));
-        address recipient = _RECIPIENT;
-        _MORPHO_TOKEN.safeTransfer(recipient, amount);
-        emit RewardsTransferred(recipient, amount);
+    function maxIterations() external view returns (uint8) {
+        return _maxIterations;
     }
 
     function setMaxIterations(uint8 newMaxIterations) external onlyOwner {

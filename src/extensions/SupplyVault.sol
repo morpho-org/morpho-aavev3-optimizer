@@ -45,9 +45,12 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
 
     /// @notice Transfers any underlyings to the vault recipient.
     /// @dev This is meant to be used to transfer rewards that are claimed to the vault. The vault does not hold any underlying tokens between calls.
-    function skim(address[] memory tokens) external {
+    function skim(address[] calldata tokens) external {
         for (uint256 i; i < tokens.length; i++) {
-            ERC20(tokens[i]).safeTransfer(_RECIPIENT, ERC20(tokens[i]).balanceOf(address(this)));
+            address recipient = _RECIPIENT;
+            uint256 amount = ERC20(tokens[i]).balanceOf(address(this));
+            emit Skimmed(tokens[i], recipient, amount);
+            ERC20(tokens[i]).safeTransfer(_RECIPIENT, amount);
         }
     }
 

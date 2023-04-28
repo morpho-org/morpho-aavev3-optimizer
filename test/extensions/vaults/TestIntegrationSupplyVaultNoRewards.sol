@@ -31,7 +31,7 @@ contract TestIntegrationSupplyVaultNoRewards is TestSetupVaults {
 
         (uint256 totalBalance) = morpho.supplyBalance(dai, address(daiSupplyVault));
 
-        assertGt(daiSupplyVault.balanceOf(address(user)), 0, "mcDAI balance is zero");
+        assertGt(daiSupplyVault.balanceOf(address(user)), 0, "maDAI balance is zero");
         assertApproxEqAbs(totalBalance, amount, 2, "totalBalance");
     }
 
@@ -43,7 +43,7 @@ contract TestIntegrationSupplyVaultNoRewards is TestSetupVaults {
 
         uint256 totalBalance = morpho.supplyBalance(dai, address(daiSupplyVault));
 
-        assertApproxEqAbs(daiSupplyVault.balanceOf(address(user)), 0, 1, "mcDAI balance not zero");
+        assertApproxEqAbs(daiSupplyVault.balanceOf(address(user)), 0, 1, "maDAI balance not zero");
         assertEq(totalBalance, 0, "totalBalance not zero");
     }
 
@@ -57,7 +57,7 @@ contract TestIntegrationSupplyVaultNoRewards is TestSetupVaults {
 
         uint256 totalBalance = morpho.supplyBalance(address(usdc), address(usdcSupplyVault));
 
-        assertApproxEqAbs(usdcSupplyVault.balanceOf(address(user)), 0, 1, "mcUSDT balance not zero");
+        assertApproxEqAbs(usdcSupplyVault.balanceOf(address(user)), 0, 1, "maUSDT balance not zero");
         assertEq(totalBalance, 0, "totalBalance not zero");
         assertApproxEqAbs(ERC20(usdc).balanceOf(address(user)) - balanceBefore, amount, 2, "expectedWithdraw");
     }
@@ -66,11 +66,11 @@ contract TestIntegrationSupplyVaultNoRewards is TestSetupVaults {
         amount = _boundSupply(testMarkets[dai], amount);
 
         uint256 shares = user.depositVault(daiSupplyVault, amount);
-        user.redeemVault(daiSupplyVault, shares); // cannot withdraw amount because of Compound rounding errors
+        user.redeemVault(daiSupplyVault, shares);
 
         uint256 totalBalance = morpho.supplyBalance(dai, address(daiSupplyVault));
 
-        assertEq(daiSupplyVault.balanceOf(address(user)), 0, "mcDAI balance not zero");
+        assertEq(daiSupplyVault.balanceOf(address(user)), 0, "maDAI balance not zero");
         assertEq(totalBalance, 0, "totalBalance not zero");
     }
 
