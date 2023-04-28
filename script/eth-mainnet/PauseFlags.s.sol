@@ -7,7 +7,7 @@ import {Configured, ConfigLib, Config} from "config/Configured.sol";
 import "@forge-std/Script.sol";
 import "@forge-std/Test.sol";
 
-contract DisableRepayAndWithdraw is Script, Test, Configured {
+contract PauseFlags is Script, Test, Configured {
     using ConfigLib for Config;
 
     IMorpho internal constant MORPHO = IMorpho(0x333F4448435Ba2D05e2B2CCd15dD50eA36839333);
@@ -20,7 +20,7 @@ contract DisableRepayAndWithdraw is Script, Test, Configured {
 
         vm.startBroadcast(vm.envAddress("DEPLOYER"));
 
-        _disableRepayAndWithdraw();
+        _pauseFlags();
 
         vm.stopBroadcast();
 
@@ -37,7 +37,7 @@ contract DisableRepayAndWithdraw is Script, Test, Configured {
         wstEth = config.getAddress("wstETH");
     }
 
-    function _disableRepayAndWithdraw() internal {
+    function _pauseFlags() internal {
         MORPHO.setIsRepayPaused(wstEth, true);
         MORPHO.setIsRepayPaused(dai, true);
         MORPHO.setIsRepayPaused(usdc, true);
@@ -47,19 +47,37 @@ contract DisableRepayAndWithdraw is Script, Test, Configured {
         MORPHO.setIsWithdrawPaused(dai, true);
         MORPHO.setIsWithdrawPaused(usdc, true);
         MORPHO.setIsWithdrawPaused(wbtc, true);
+
+        MORPHO.setIsLiquidateBorrowPaused(wstEth, true);
+        MORPHO.setIsLiquidateBorrowPaused(dai, true);
+        MORPHO.setIsLiquidateBorrowPaused(usdc, true);
+        MORPHO.setIsLiquidateBorrowPaused(wbtc, true);
+
+        MORPHO.setIsP2PDisabled(wstEth, true);
+        MORPHO.setIsP2PDisabled(dai, true);
+        MORPHO.setIsP2PDisabled(usdc, true);
+        MORPHO.setIsP2PDisabled(wbtc, true);
     }
 
     function _checkAssertions() internal {
         assertTrue(MORPHO.market(wstEth).pauseStatuses.isRepayPaused);
         assertTrue(MORPHO.market(wstEth).pauseStatuses.isWithdrawPaused);
+        assertTrue(MORPHO.market(wstEth).pauseStatuses.isLiquidateBorrowPaused);
+        assertTrue(MORPHO.market(wstEth).pauseStatuses.isP2PDisabled);
 
         assertTrue(MORPHO.market(dai).pauseStatuses.isRepayPaused);
         assertTrue(MORPHO.market(dai).pauseStatuses.isWithdrawPaused);
+        assertTrue(MORPHO.market(dai).pauseStatuses.isLiquidateBorrowPaused);
+        assertTrue(MORPHO.market(dai).pauseStatuses.isP2PDisabled);
 
         assertTrue(MORPHO.market(usdc).pauseStatuses.isRepayPaused);
         assertTrue(MORPHO.market(usdc).pauseStatuses.isWithdrawPaused);
+        assertTrue(MORPHO.market(usdc).pauseStatuses.isLiquidateBorrowPaused);
+        assertTrue(MORPHO.market(usdc).pauseStatuses.isP2PDisabled);
 
         assertTrue(MORPHO.market(wbtc).pauseStatuses.isRepayPaused);
         assertTrue(MORPHO.market(wbtc).pauseStatuses.isWithdrawPaused);
+        assertTrue(MORPHO.market(wbtc).pauseStatuses.isLiquidateBorrowPaused);
+        assertTrue(MORPHO.market(wbtc).pauseStatuses.isP2PDisabled);
     }
 }
