@@ -61,23 +61,23 @@ contract PauseFlags is Script, Test, Configured {
 
     function _checkAssertions() internal {
         assertTrue(MORPHO.market(wstEth).pauseStatuses.isRepayPaused);
-        assertTrue(MORPHO.market(wstEth).pauseStatuses.isWithdrawPaused);
-        assertTrue(MORPHO.market(wstEth).pauseStatuses.isLiquidateBorrowPaused);
-        assertTrue(MORPHO.market(wstEth).pauseStatuses.isP2PDisabled);
-
         assertTrue(MORPHO.market(dai).pauseStatuses.isRepayPaused);
-        assertTrue(MORPHO.market(dai).pauseStatuses.isWithdrawPaused);
-        assertTrue(MORPHO.market(dai).pauseStatuses.isLiquidateBorrowPaused);
-        assertTrue(MORPHO.market(dai).pauseStatuses.isP2PDisabled);
-
         assertTrue(MORPHO.market(usdc).pauseStatuses.isRepayPaused);
-        assertTrue(MORPHO.market(usdc).pauseStatuses.isWithdrawPaused);
-        assertTrue(MORPHO.market(usdc).pauseStatuses.isLiquidateBorrowPaused);
-        assertTrue(MORPHO.market(usdc).pauseStatuses.isP2PDisabled);
-
         assertTrue(MORPHO.market(wbtc).pauseStatuses.isRepayPaused);
+
+        assertTrue(MORPHO.market(wstEth).pauseStatuses.isWithdrawPaused);
+        assertTrue(MORPHO.market(dai).pauseStatuses.isWithdrawPaused);
+        assertTrue(MORPHO.market(usdc).pauseStatuses.isWithdrawPaused);
         assertTrue(MORPHO.market(wbtc).pauseStatuses.isWithdrawPaused);
+
+        assertTrue(MORPHO.market(wstEth).pauseStatuses.isLiquidateBorrowPaused);
+        assertTrue(MORPHO.market(dai).pauseStatuses.isLiquidateBorrowPaused);
+        assertTrue(MORPHO.market(usdc).pauseStatuses.isLiquidateBorrowPaused);
         assertTrue(MORPHO.market(wbtc).pauseStatuses.isLiquidateBorrowPaused);
+
+        assertTrue(MORPHO.market(wstEth).pauseStatuses.isP2PDisabled);
+        assertTrue(MORPHO.market(dai).pauseStatuses.isP2PDisabled);
+        assertTrue(MORPHO.market(usdc).pauseStatuses.isP2PDisabled);
         assertTrue(MORPHO.market(wbtc).pauseStatuses.isP2PDisabled);
     }
 }
