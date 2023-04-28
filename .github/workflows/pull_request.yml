@@ -11,10 +11,15 @@ on:
       - .github/workflows/pull_request.yml
 
 jobs:
+  forge-fmt:
+    name: Forge format
+
+    uses: ./.github/workflows/forge-fmt.yml
+    secrets: inherit
   test-ethereum-mainnet:
     if: github.head_ref != 'main' && github.head_ref != 'dev' # already triggered by push
 
-    name: Forge
+    name: Forge tests
 
     uses: ./.github/workflows/forge-test.yml
     with:
