@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "test/extensions/vaults/TestSetupVaults.sol";
 
-contract TestSupplyVaultBase is TestSetupVaults {
+contract TestIntegrationSupplyVaultBase is TestSetupVaults {
     function testShouldTransferRewardsToRecipient(address caller, uint256 amount) public {
         vm.assume(amount > 0);
 

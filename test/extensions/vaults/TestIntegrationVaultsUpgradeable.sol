@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "test/extensions/vaults/TestSetupVaults.sol";
 
-contract TestVaultsUpgradeable is TestSetupVaults {
+contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
     using WadRayMath for uint256;
 
     function testUpgradeSupplyVault() public {

@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "test/extensions/vaults/TestSetupVaults.sol";
 
-contract TestSupplyVaultNoRewards is TestSetupVaults {
+contract TestIntegrationSupplyVaultNoRewards is TestSetupVaults {
     using WadRayMath for uint256;
 
     function testCorrectInitialisationDai() public {
