@@ -10,7 +10,7 @@ import "@forge-std/Test.sol";
 contract PauseFlags is Script, Test, Configured {
     using ConfigLib for Config;
 
-    IMorpho internal constant MORPHO = IMorpho(0x333F4448435Ba2D05e2B2CCd15dD50eA36839333);
+    IMorpho internal constant MORPHO = IMorpho(0x33333aea097c193e66081E930c33020272b33333);
 
     address internal wstEth;
 
