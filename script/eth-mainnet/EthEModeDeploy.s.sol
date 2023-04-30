@@ -34,7 +34,7 @@ contract EthEModeDeploy is Script, Test, Configured {
     uint128 internal constant MAX_ITERATIONS = 4;
     uint256 internal constant DUST = 1_000;
     IDeployer internal constant DEPLOYER = IDeployer(0xD90bbCa6a99A53f8B26782EDB0B190A7D599C585);
-    bytes32 internal constant SALT = 0x89a56b04d24a35c79d19800bd5ccf61c5f641037d5583422006c06bdba75af9b;
+    bytes32 internal constant SALT = 0x90749f1db1a3964409d358f8fa5893c851e3c41eabb082eff481f6ef4048d275;
 
     address[] internal assetsToList;
 
