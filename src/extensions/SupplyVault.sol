@@ -8,8 +8,8 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {SupplyVaultBase} from "src/extensions/SupplyVaultBase.sol";
 
-/// @title SupplyVault.
-/// @author Morpho Labs.
+/// @title SupplyVault
+/// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
 /// @notice ERC4626-upgradeable Tokenized Vault implementation for Morpho-Aave V3.
 contract SupplyVault is ISupplyVault, SupplyVaultBase {
@@ -19,11 +19,8 @@ contract SupplyVault is ISupplyVault, SupplyVaultBase {
 
     /// @dev Initializes network-wide immutables.
     /// @param morpho The address of the main Morpho contract.
-    /// @param morphoToken The address of the Morpho Token.
     /// @param recipient The recipient of the rewards that will redistribute them to vault's users.
-    constructor(address morpho, address morphoToken, address recipient)
-        SupplyVaultBase(morpho, morphoToken, recipient)
-    {}
+    constructor(address morpho, address recipient) SupplyVaultBase(morpho, recipient) {}
 
     /* INITIALIZER */
 

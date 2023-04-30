@@ -6,6 +6,12 @@ import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {ERC20} from "@solmate/utils/SafeTransferLib.sol";
 
 interface ISupplyVaultBase is IERC4626Upgradeable {
+    /* EVENTS */
+
+    /// @notice Emitted when max iterations is set.
+    /// @param maxIterations The max iterations.
+    event MaxIterationsSet(uint8 maxIterations);
+
     /* ERRORS */
 
     /// @notice Thrown when the zero address is passed as input or is the recipient address when calling `transferRewards`.
@@ -14,8 +20,6 @@ interface ISupplyVaultBase is IERC4626Upgradeable {
     /* FUNCTIONS */
 
     function MORPHO() external view returns (IMorpho);
-
-    function MORPHO_TOKEN() external view returns (ERC20);
 
     function RECIPIENT() external view returns (address);
 

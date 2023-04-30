@@ -9,7 +9,6 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
     function testUpgradeSupplyVault() public {
         SupplyVault wethSupplyVaultImplV2 = new SupplyVault(
             address(morpho),
-            MORPHO_TOKEN,
             RECIPIENT
         );
 
@@ -34,7 +33,7 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
     }
 
     function testOnlyProxyOwnerCanUpgradeSupplyVault() public {
-        SupplyVault supplyVaultImplV2 = new SupplyVault(address(morpho), MORPHO_TOKEN, RECIPIENT);
+        SupplyVault supplyVaultImplV2 = new SupplyVault(address(morpho), RECIPIENT);
 
         vm.prank(address(user));
         vm.expectRevert("Ownable: caller is not the owner");
@@ -47,7 +46,6 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
     function testOnlyProxyOwnerCanUpgradeAndCallSupplyVault() public {
         SupplyVault wethSupplyVaultImplV2 = new SupplyVault(
             address(morpho),
-            MORPHO_TOKEN,
             RECIPIENT
         );
 

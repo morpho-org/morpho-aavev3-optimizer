@@ -15,13 +15,13 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         assertEq(daiSupplyVault.decimals(), 18);
     }
 
-    function testCorrectInitialisationUsdc() public {
-        assertEq(usdcSupplyVault.owner(), address(this));
-        assertEq(usdcSupplyVault.name(), "MorphoAaveUSDC");
-        assertEq(usdcSupplyVault.symbol(), "maUSDC");
-        assertEq(usdcSupplyVault.underlying(), usdc);
-        assertEq(usdcSupplyVault.asset(), usdc);
-        assertEq(usdcSupplyVault.decimals(), 6);
+    function testCorrectInitialisationWrappedNative() public {
+        assertEq(wrappedNativeTokenSupplyVault.owner(), address(this));
+        assertEq(wrappedNativeTokenSupplyVault.name(), "MorphoAaveWNATIVE");
+        assertEq(wrappedNativeTokenSupplyVault.symbol(), "maWNATIVE");
+        assertEq(wrappedNativeTokenSupplyVault.underlying(), wNative);
+        assertEq(wrappedNativeTokenSupplyVault.asset(), wNative);
+        assertEq(wrappedNativeTokenSupplyVault.decimals(), 18);
     }
 
     function testShouldNotMintZeroShare() public {
@@ -133,13 +133,14 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         promoter1.redeemVault(daiSupplyVault, shares, address(user));
     }
 
-    function testShouldNotWithdrawGreaterAmount(uint256 amount) public {
+    function testShouldNotWithdrawGreaterAmount(uint256 amount, uint256 amountOverdrawn) public {
         amount = _boundSupply(testMarkets[dai], amount);
+        amountOverdrawn = bound(amountOverdrawn, 1, type(uint256).max - amount);
 
         user.depositVault(daiSupplyVault, amount);
 
         vm.expectRevert("ERC4626: withdraw more than max");
-        user.withdrawVault(daiSupplyVault, amount * 2);
+        user.withdrawVault(daiSupplyVault, amount + amountOverdrawn);
     }
 
     function testTransfer(uint256 amount) public {
@@ -248,5 +249,6 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         daiSupplyVault.skim(underlyings);
 
         assertEq(ERC20(underlying).balanceOf(daiSupplyVault.RECIPIENT()), amount + balanceBefore);
+        assertEq(ERC20(underlying).balanceOf(address(daiSupplyVault)), 0);
     }
 }

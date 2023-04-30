@@ -12,8 +12,8 @@ import {Types} from "src/libraries/Types.sol";
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
 import {ERC4626UpgradeableSafe, ERC4626Upgradeable, ERC20Upgradeable} from "@morpho-utils/ERC4626UpgradeableSafe.sol";
 
-/// @title SupplyVaultBase.
-/// @author Morpho Labs.
+/// @title SupplyVaultBase
+/// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
 /// @notice ERC4626-upgradeable Tokenized Vault abstract implementation for Morpho-Aave V3.
 abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, OwnableUpgradeable {
@@ -23,7 +23,6 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
     /* IMMUTABLES */
 
     IMorpho internal immutable _MORPHO; // The main Morpho contract.
-    ERC20 internal immutable _MORPHO_TOKEN; // The address of the Morpho Token.
     address internal immutable _RECIPIENT; // The recipient of the rewards that will redistribute them to vault's users.
 
     /* STORAGE */
@@ -35,14 +34,12 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
 
     /// @dev Initializes network-wide immutables.
     /// @param morpho The address of the main Morpho contract.
-    /// @param morphoToken The address of the Morpho Token.
     /// @param recipient The recipient of the rewards that will redistribute them to vault's users.
-    constructor(address morpho, address morphoToken, address recipient) {
-        if (morpho == address(0) || morphoToken == address(0) || recipient == address(0)) {
+    constructor(address morpho, address recipient) {
+        if (morpho == address(0) || recipient == address(0)) {
             revert ZeroAddress();
         }
         _MORPHO = IMorpho(morpho);
-        _MORPHO_TOKEN = ERC20(morphoToken);
         _RECIPIENT = recipient;
     }
 
@@ -71,6 +68,7 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
 
     /// @dev Initializes the vault whithout initializing parent contracts (avoid the double initialization problem).
     /// @param newUnderlying The address of the pool token corresponding to the market to supply through this vault.
+    /// @param newMaxIterations The max iterations to use when this vault interacts with Morpho.
     function __SupplyVaultBase_init_unchained(address newUnderlying, uint8 newMaxIterations)
         internal
         onlyInitializing
@@ -87,10 +85,6 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
         return _MORPHO;
     }
 
-    function MORPHO_TOKEN() external view returns (ERC20) {
-        return _MORPHO_TOKEN;
-    }
-
     function RECIPIENT() external view returns (address) {
         return _RECIPIENT;
     }
@@ -105,6 +99,7 @@ abstract contract SupplyVaultBase is ISupplyVaultBase, ERC4626UpgradeableSafe, O
 
     function setMaxIterations(uint8 newMaxIterations) external onlyOwner {
         _maxIterations = newMaxIterations;
+        emit MaxIterationsSet(newMaxIterations);
     }
 
     /* PUBLIC */

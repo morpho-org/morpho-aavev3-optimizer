@@ -12,7 +12,6 @@ import {SupplyVaultBaseMock} from "test/mocks/SupplyVaultBaseMock.sol";
 contract TestSetupVaults is IntegrationTest {
     using SafeTransferLib for ERC20;
 
-    address internal MORPHO_TOKEN;
     address internal constant MORPHO_DAO = 0xcBa28b38103307Ec8dA98377ffF9816C164f9AFa;
     address internal constant RECIPIENT = 0x60345417a227ad7E312eAa1B5EC5CD1Fe5E2Cdc6;
 
@@ -31,7 +30,6 @@ contract TestSetupVaults is IntegrationTest {
 
     function setUp() public virtual override {
         super.setUp();
-        MORPHO_TOKEN = address(new ERC20Mock());
         morpho.setRewardsManager(_rewardsManager());
         initVaultContracts();
         setVaultContractsLabels();
@@ -42,11 +40,11 @@ contract TestSetupVaults is IntegrationTest {
     }
 
     function initVaultContracts() internal {
-        supplyVaultImplV1 = new SupplyVault(address(morpho), MORPHO_TOKEN, RECIPIENT);
+        supplyVaultImplV1 = new SupplyVault(address(morpho), RECIPIENT);
         supplyVaultBase = SupplyVaultBase(
             address(
                 new TransparentUpgradeableProxy(
-                    address(new SupplyVaultBaseMock(address(morpho), MORPHO_TOKEN, RECIPIENT)),
+                    address(new SupplyVaultBaseMock(address(morpho), RECIPIENT)),
                     address(proxyAdmin),
                     ""
                 )
