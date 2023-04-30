@@ -3,6 +3,13 @@ names = true
 sizes = true
 libs = ["node_modules", "lib"]
 fs_permissions = [{ access = "read", path = "./config/"}]
+solc_version = "0.8.19"
+
+# Inherits the properties of the default profile
+[profile.make]
+test = "/dev/null/"
+optimizer_runs = 200
+via_ir = true
 
 [fuzz]
 runs = 32

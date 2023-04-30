@@ -3,6 +3,7 @@
 MAKEFLAGS += --no-print-directory
 
 NETWORK ?= ethereum-mainnet
+FOUNDRY_PROFILE ?= make
 
 
 install:
@@ -11,7 +12,7 @@ install:
 	forge install
 
 contracts:
-	FOUNDRY_TEST=/dev/null FOUNDRY_SCRIPT=/dev/null forge build --via-ir --extra-output-files irOptimized --sizes --force
+	FOUNDRY_TEST=/dev/null forge build --extra-output-files irOptimized --sizes --force
 
 
 test-invariant:
@@ -74,6 +75,6 @@ gas-report:
 	forge test --match-contract TestIntegration --gas-report
 
 deploy-emode-%:
-	FOUNDRY_TEST=/dev/null forge script script/$*/EthEModeDeploy.s.sol:EthEModeDeploy --via-ir --broadcast --slow -vvvvv --rpc-url mainnet --ledger
+	FOUNDRY_TEST=/dev/null forge script script/$*/EthEModeDeploy.s.sol:EthEModeDeploy --broadcast --slow -vvvvv --rpc-url mainnet --ledger
 
 .PHONY: contracts test coverage
