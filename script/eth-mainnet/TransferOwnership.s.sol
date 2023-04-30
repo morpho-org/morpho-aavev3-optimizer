@@ -13,9 +13,9 @@ import "@forge-std/Test.sol";
 contract TransferOwnership is Script, Test, Configured {
     using ConfigLib for Config;
 
-    address internal constant MORPHO = 0x333F4448435Ba2D05e2B2CCd15dD50eA36839333;
+    address internal constant MORPHO = 0x33333aea097c193e66081E930c33020272b33333;
     address internal constant MORPHO_DAO = 0xcBa28b38103307Ec8dA98377ffF9816C164f9AFa;
-    address internal constant CURRENT_PROXY_ADMIN = 0x561206044f5351613e8B5cB6aeCD37D813591555;
+    address internal constant CURRENT_PROXY_ADMIN = 0x857FF845F9b11c19553b1D090b41C2255c67aCC0;
     address internal constant DAO_PROXY_ADMIN = 0x99917ca0426fbC677e84f873Fb0b726Bb4799cD8;
 
     function run() external {
