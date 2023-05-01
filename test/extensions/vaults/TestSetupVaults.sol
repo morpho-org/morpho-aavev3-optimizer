@@ -3,11 +3,7 @@ pragma solidity ^0.8.0;
 
 import "test/helpers/IntegrationTest.sol";
 
-import {SupplyVaultBase} from "src/extensions/SupplyVaultBase.sol";
 import {SupplyVault} from "src/extensions/SupplyVault.sol";
-
-import {ERC20Mock} from "test/mocks/ERC20Mock.sol";
-import {SupplyVaultBaseMock} from "test/mocks/SupplyVaultBaseMock.sol";
 
 contract TestSetupVaults is IntegrationTest {
     using SafeTransferLib for ERC20;
@@ -22,7 +18,6 @@ contract TestSetupVaults is IntegrationTest {
     SupplyVault internal wrappedNativeTokenSupplyVault;
     SupplyVault internal daiSupplyVault;
     SupplyVault internal usdcSupplyVault;
-    SupplyVaultBase internal supplyVaultBase;
 
     ERC20 internal maWrappedNativeToken;
     ERC20 internal maDai;
@@ -41,15 +36,6 @@ contract TestSetupVaults is IntegrationTest {
 
     function initVaultContracts() internal {
         supplyVaultImplV1 = new SupplyVault(address(morpho), RECIPIENT);
-        supplyVaultBase = SupplyVaultBase(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(new SupplyVaultBaseMock(address(morpho), RECIPIENT)),
-                    address(proxyAdmin),
-                    ""
-                )
-            )
-        );
 
         wrappedNativeTokenSupplyVaultProxy = new TransparentUpgradeableProxy(
             address(supplyVaultImplV1),
