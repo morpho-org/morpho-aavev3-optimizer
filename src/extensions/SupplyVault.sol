@@ -68,6 +68,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
 
     /// @dev Initializes the vault without initializing parent contracts (avoid the double initialization problem).
     /// @param newUnderlying The address of the pool token corresponding to the market to supply through this vault.
+    /// @param newRecipient The recipient to receive skimmed funds.
     /// @param newMaxIterations The max iterations to use when this vault interacts with Morpho.
     function __SupplyVault_init_unchained(address newUnderlying, address newRecipient, uint8 newMaxIterations)
         internal
@@ -82,8 +83,9 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
 
     /* EXTERNAL */
 
-    /// @notice Transfers any underlyings to the vault recipient.
-    /// @dev This is meant to be used to transfer rewards that are claimed to the vault. The vault does not hold any underlying tokens between calls.
+    /// @notice Transfers the given ERC20 tokens to the vault recipient.
+    /// @dev This is meant to be used to transfer rewards that are claimed to the vault or rescue tokens.
+    ///      The vault is not intended to hold any ERC20 tokens between calls.
     function skim(address[] calldata tokens) external {
         address recipientMem = _recipient;
         for (uint256 i; i < tokens.length; i++) {
@@ -134,11 +136,13 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
 
     /* INTERNAL */
 
+    /// @dev Used in mint or deposit to deposit the underlying asset to Morpho.
     function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal virtual override {
         super._deposit(caller, receiver, assets, shares);
         _MORPHO.supply(_underlying, assets, address(this), uint256(_maxIterations));
     }
 
+    /// @dev Used in redeem or withdraw to withdraw the underlying asset from Morpho.
     function _withdraw(address caller, address receiver, address owner, uint256 assets, uint256 shares)
         internal
         virtual
@@ -151,5 +155,5 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting down storage in the inheritance chain.
     /// See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-    uint256[49] private __gap;
+    uint256[48] private __gap;
 }
