@@ -33,7 +33,6 @@
     "prettier": "^2.8.1"
   },
   "lint-staged": {
-    "*.sol": "forge fmt",
     "*.json": "yarn prettier",
     "*.yml": "yarn prettier"
   },

@@ -31,6 +31,7 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /// @dev The list of created markets.
     address[] internal _marketsCreated;
 
+
     /// @dev The markets data.
     mapping(address => Types.Market) internal _market;
 
