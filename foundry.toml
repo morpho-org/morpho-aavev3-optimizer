@@ -14,6 +14,7 @@ depth = 64
 [rpc_endpoints]
 mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"
 avalanche = "https://rpc.ankr.com/avalanche"
+tenderly = "https://rpc.tenderly.co/fork/${TENDERLY_FORK_ID}"
 
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

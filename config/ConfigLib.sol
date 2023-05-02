@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 import {stdJson} from "@forge-std/StdJson.sol";
 
-struct TestConfig {
+struct Config {
     string json;
 }
 
-library TestConfigLib {
+library ConfigLib {
     using stdJson for string;
 
     string internal constant RPC_ALIAS_PATH = "$.rpcAlias";
@@ -19,11 +19,11 @@ library TestConfigLib {
     string internal constant MORPHO_DAO_PATH = "$.morphoDao";
     string internal constant REWARDS_CONTROLLER_PATH = "$.rewardsController";
 
-    function getAddress(TestConfig storage config, string memory key) internal returns (address) {
+    function getAddress(Config storage config, string memory key) internal returns (address) {
         return config.json.readAddress(string.concat("$.", key));
     }
 
-    function getAddressArray(TestConfig storage config, string[] memory keys)
+    function getAddressArray(Config storage config, string[] memory keys)
         internal
         returns (address[] memory addresses)
     {
@@ -34,31 +34,31 @@ library TestConfigLib {
         }
     }
 
-    function getRpcAlias(TestConfig storage config) internal returns (string memory) {
+    function getRpcAlias(Config storage config) internal returns (string memory) {
         return config.json.readString(RPC_ALIAS_PATH);
     }
 
-    function getForkBlockNumber(TestConfig storage config) internal returns (uint256) {
+    function getForkBlockNumber(Config storage config) internal returns (uint256) {
         return config.json.readUint(FORK_BLOCK_NUMBER_PATH);
     }
 
-    function getAddressesProvider(TestConfig storage config) internal returns (address) {
+    function getAddressesProvider(Config storage config) internal returns (address) {
         return config.json.readAddress(ADDRESSES_PROVIDER_PATH);
     }
 
-    function getMorphoDao(TestConfig storage config) internal returns (address) {
+    function getMorphoDao(Config storage config) internal returns (address) {
         return config.json.readAddress(MORPHO_DAO_PATH);
     }
 
-    function getRewardsController(TestConfig storage config) internal returns (address) {
+    function getRewardsController(Config storage config) internal returns (address) {
         return config.json.readAddress(REWARDS_CONTROLLER_PATH);
     }
 
-    function getWrappedNative(TestConfig storage config) internal returns (address) {
+    function getWrappedNative(Config storage config) internal returns (address) {
         return getAddress(config, config.json.readString(WRAPPED_NATIVE_PATH));
     }
 
-    function getLsdNatives(TestConfig storage config) internal returns (address[] memory) {
+    function getLsdNatives(Config storage config) internal returns (address[] memory) {
         return getAddressArray(config, config.json.readStringArray(LSD_NATIVES_PATH));
     }
 }

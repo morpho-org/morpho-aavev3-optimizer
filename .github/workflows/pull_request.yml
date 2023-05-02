@@ -3,12 +3,13 @@ name: Pull request
 on:
   pull_request:
     paths:
+      - .github/actions/**
+      - .github/workflows/**
       - lib/**
       - src/**
       - test/**
       - foundry.toml
       - remappings.txt
-      - .github/workflows/pull_request.yml
 
 jobs:
   forge-fmt:

@@ -6,10 +6,10 @@ import {Morpho} from "src/Morpho.sol";
 import "./ForkTest.sol";
 
 contract InternalTest is ForkTest, Morpho {
-    using TestConfigLib for TestConfig;
+    using ConfigLib for Config;
 
     address internal constant POSITIONS_MANAGER = address(0xCA11);
-    bytes32 internal constant INITIALIZED_SLOT = bytes32(uint256(53));
+    bytes32 internal constant INITIALIZED_SLOT = bytes32(uint256(57));
 
     function setUp() public virtual override {
         super.setUp();

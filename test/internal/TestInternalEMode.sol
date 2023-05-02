@@ -24,7 +24,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
     using Math for uint256;
-    using TestConfigLib for TestConfig;
+    using ConfigLib for Config;
     using SafeTransferLib for ERC20;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
