@@ -108,7 +108,7 @@ jobs:
       - uses: ./.github/actions/install
 
       - name: Check Morpho storage layout
-        uses: Rubilmax/foundry-storage-check@v3.3
+        uses: Rubilmax/foundry-storage-check@v3.4
         with:
           contract: src/Morpho.sol:Morpho
           rpcUrl: wss://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_KEY }}
