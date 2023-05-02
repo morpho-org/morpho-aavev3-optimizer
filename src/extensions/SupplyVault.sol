@@ -34,31 +34,31 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
 
     /// @dev Initializes network-wide immutables.
     /// @param newMorpho The address of the main Morpho contract.
-    /// @param newRecipient The recipient of the rewards that will redistribute them to vault's users.
-    constructor(address newMorpho, address newRecipient) {
-        if (newMorpho == address(0) || newRecipient == address(0)) {
+    constructor(address newMorpho) {
+        if (newMorpho == address(0)) {
             revert ZeroAddress();
         }
         _MORPHO = IMorpho(newMorpho);
-        _recipient = newRecipient;
     }
 
     /* INITIALIZER */
 
     /// @dev Initializes the vault.
     /// @param newUnderlying The address of the underlying market to supply through this vault to Morpho.
+    /// @param newRecipient The recipient to receive skimmed funds.
     /// @param name The name of the ERC20 token associated to this tokenized vault.
     /// @param symbol The symbol of the ERC20 token associated to this tokenized vault.
     /// @param initialDeposit The amount of the initial deposit used to prevent pricePerShare manipulation.
     /// @param newMaxIterations The max iterations to use when this vault interacts with Morpho.
     function initialize(
         address newUnderlying,
+        address newRecipient,
         string calldata name,
         string calldata symbol,
         uint256 initialDeposit,
         uint8 newMaxIterations
     ) external initializer {
-        __SupplyVault_init_unchained(newUnderlying, newMaxIterations);
+        __SupplyVault_init_unchained(newUnderlying, newRecipient, newMaxIterations);
 
         __Ownable_init_unchained();
         __ERC20_init_unchained(name, symbol);
@@ -69,8 +69,12 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     /// @dev Initializes the vault without initializing parent contracts (avoid the double initialization problem).
     /// @param newUnderlying The address of the pool token corresponding to the market to supply through this vault.
     /// @param newMaxIterations The max iterations to use when this vault interacts with Morpho.
-    function __SupplyVault_init_unchained(address newUnderlying, uint8 newMaxIterations) internal onlyInitializing {
+    function __SupplyVault_init_unchained(address newUnderlying, address newRecipient, uint8 newMaxIterations)
+        internal
+        onlyInitializing
+    {
         _underlying = newUnderlying;
+        _recipient = newRecipient;
         _maxIterations = newMaxIterations;
 
         ERC20(newUnderlying).safeApprove(address(_MORPHO), type(uint256).max);

@@ -8,8 +8,7 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
 
     function testUpgradeSupplyVault() public {
         SupplyVault wethSupplyVaultImplV2 = new SupplyVault(
-            address(morpho),
-            RECIPIENT
+            address(morpho)
         );
 
         vm.record();
@@ -33,7 +32,7 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
     }
 
     function testOnlyProxyOwnerCanUpgradeSupplyVault() public {
-        SupplyVault supplyVaultImplV2 = new SupplyVault(address(morpho), RECIPIENT);
+        SupplyVault supplyVaultImplV2 = new SupplyVault(address(morpho));
 
         vm.prank(address(user));
         vm.expectRevert("Ownable: caller is not the owner");
@@ -45,8 +44,7 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
 
     function testOnlyProxyOwnerCanUpgradeAndCallSupplyVault() public {
         SupplyVault wethSupplyVaultImplV2 = new SupplyVault(
-            address(morpho),
-            RECIPIENT
+            address(morpho)
         );
 
         vm.prank(address(user));
@@ -60,6 +58,6 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
 
     function testSupplyVaultImplementationsShouldBeInitialized() public {
         vm.expectRevert("Initializable: contract is already initialized");
-        supplyVaultImplV1.initialize(address(wNative), "MorphoAaveWETH", "maWETH", 0, 4);
+        supplyVaultImplV1.initialize(address(wNative), RECIPIENT, "MorphoAaveWETH", "maWETH", 0, 4);
     }
 }
