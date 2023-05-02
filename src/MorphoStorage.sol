@@ -61,6 +61,8 @@ abstract contract MorphoStorage is Initializable, Ownable2StepUpgradeable {
     /// @dev The address of the treasury vault, recipient of the reserve fee.
     address internal _treasuryVault;
 
+    bool internal _lol;
+
     /// @dev Whether claiming rewards is paused or not.
     bool internal _isClaimRewardsPaused;
 
