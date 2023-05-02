@@ -23,24 +23,24 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     /* IMMUTABLES */
 
     IMorpho internal immutable _MORPHO; // The main Morpho contract.
-    address internal immutable _RECIPIENT; // The recipient of the rewards that will redistribute them to vault's users.
 
     /* STORAGE */
 
     address internal _underlying; // The underlying market to supply to through this vault.
     uint8 internal _maxIterations; // The max iterations to use when this vault interacts with Morpho.
+    address internal _recipient; // The recipient of the rewards that will redistribute them to vault's users.
 
     /* CONSTRUCTOR */
 
     /// @dev Initializes network-wide immutables.
-    /// @param morpho The address of the main Morpho contract.
-    /// @param recipient The recipient of the rewards that will redistribute them to vault's users.
-    constructor(address morpho, address recipient) {
-        if (morpho == address(0) || recipient == address(0)) {
+    /// @param newMorpho The address of the main Morpho contract.
+    /// @param newRecipient The recipient of the rewards that will redistribute them to vault's users.
+    constructor(address newMorpho, address newRecipient) {
+        if (newMorpho == address(0) || newRecipient == address(0)) {
             revert ZeroAddress();
         }
-        _MORPHO = IMorpho(morpho);
-        _RECIPIENT = recipient;
+        _MORPHO = IMorpho(newMorpho);
+        _recipient = newRecipient;
     }
 
     /* INITIALIZER */
@@ -81,11 +81,11 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     /// @notice Transfers any underlyings to the vault recipient.
     /// @dev This is meant to be used to transfer rewards that are claimed to the vault. The vault does not hold any underlying tokens between calls.
     function skim(address[] calldata tokens) external {
+        address recipientMem = _recipient;
         for (uint256 i; i < tokens.length; i++) {
-            address recipient = _RECIPIENT;
             uint256 amount = ERC20(tokens[i]).balanceOf(address(this));
-            emit Skimmed(tokens[i], recipient, amount);
-            ERC20(tokens[i]).safeTransfer(_RECIPIENT, amount);
+            emit Skimmed(tokens[i], recipientMem, amount);
+            ERC20(tokens[i]).safeTransfer(recipientMem, amount);
         }
     }
 
@@ -95,18 +95,28 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
         emit MaxIterationsSet(newMaxIterations);
     }
 
+    /// @notice Sets the recipient for the skim function.
+    function setRecipient(address newRecipient) external onlyOwner {
+        _recipient = newRecipient;
+        emit RecipientSet(newRecipient);
+    }
+
+    /// @notice The address of the Morpho contract this vault utilizes.
     function MORPHO() external view returns (IMorpho) {
         return _MORPHO;
     }
 
-    function RECIPIENT() external view returns (address) {
-        return _RECIPIENT;
+    /// @notice The recipient of any ERC20 tokens skimmed from this contract.
+    function recipient() external view returns (address) {
+        return _recipient;
     }
 
+    /// @notice The address of the underlying market to supply through this vault to Morpho.
     function underlying() external view returns (address) {
         return _underlying;
     }
 
+    /// @notice The max iterations to use when this vault interacts with Morpho.
     function maxIterations() external view returns (uint8) {
         return _maxIterations;
     }

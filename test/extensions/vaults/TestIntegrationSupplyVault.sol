@@ -241,14 +241,14 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         amount = _boundSupply(testMarkets[underlying], amount);
 
         deal(underlying, address(daiSupplyVault), amount);
-        uint256 balanceBefore = ERC20(underlying).balanceOf(daiSupplyVault.RECIPIENT());
+        uint256 balanceBefore = ERC20(underlying).balanceOf(daiSupplyVault.recipient());
 
         address[] memory underlyings = new address[](1);
         underlyings[0] = underlying;
 
         daiSupplyVault.skim(underlyings);
 
-        assertEq(ERC20(underlying).balanceOf(daiSupplyVault.RECIPIENT()), amount + balanceBefore);
+        assertEq(ERC20(underlying).balanceOf(daiSupplyVault.recipient()), amount + balanceBefore);
         assertEq(ERC20(underlying).balanceOf(address(daiSupplyVault)), 0);
     }
 }
