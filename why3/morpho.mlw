@@ -70,7 +70,7 @@ predicate type_invariant_hold (_: pool_storage) (_: morpho_storage) = true
 (* If a mapping contains only non-negative numbers, then for any set of keys, the sum of all the corresponding values is non-negative *)
 predicate sum_of_positive (set: fset address) =
     forall m. (forall a. get a m >= 0) ->
-    FsetSum.sum set (fun x -> get x m) >= 0
+        FsetSum.sum set (fun x -> get x m) >= 0
 clone set.FsetInduction with type t=address, predicate p=sum_of_positive
 lemma sum_of_positive_holds:
     forall set. sum_of_positive set
@@ -462,7 +462,7 @@ let withdraw (t: token_storage) (p: pool_storage) (m: morpho_storage) (user: add
     requires { well_formed t p m }
     ensures { well_formed t p m }
     ensures { supply_balance m user = supply_balance (old m) user - amount }
-    raises { Underflow }
+    raises { Underflow -> amount > supply_balance (old m) user  }
 =
     let former_p2p = get user m.p2p_supply_balance in
     let former_pool = get user m.pool_supply_balance in
@@ -555,7 +555,7 @@ let withdraw_collateral (t: token_storage) (p: pool_storage) (m: morpho_storage)
     requires { well_formed t p m }
     ensures { well_formed t p m }
     ensures { get user m.collateral_supply_balance = get user (old m).collateral_supply_balance - amount }
-    raises { Underflow }
+    raises { Underflow -> amount > get user (old m).collateral_supply_balance }
     raises { Unauthorized }
 =
     let former_collateral = get user m.collateral_supply_balance in
@@ -581,7 +581,7 @@ let repay (t: token_storage) (p: pool_storage) (m: morpho_storage) (user: addres
     requires { well_formed t p m }
     ensures { well_formed t p m }
     ensures { borrow_balance m user = borrow_balance (old m) user - amount }
-    raises { Underflow }
+    raises { Underflow -> amount > borrow_balance (old m) user }
     raises { SupplyCapReached -> false }
 =
     transfer_from t user morpho amount;
