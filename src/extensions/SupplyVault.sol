@@ -27,7 +27,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     /* STORAGE */
 
     address internal _underlying; // The underlying market to supply to through this vault.
-    uint8 internal _maxIterations; // The max iterations to use when this vault interacts with Morpho.
+    uint96 internal _maxIterations; // The max iterations to use when this vault interacts with Morpho.
     address internal _recipient; // The recipient of the rewards that will redistribute them to vault's users.
 
     /* CONSTRUCTOR */
@@ -56,7 +56,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
         string calldata name,
         string calldata symbol,
         uint256 initialDeposit,
-        uint8 newMaxIterations
+        uint96 newMaxIterations
     ) external initializer {
         __SupplyVault_init_unchained(newUnderlying, newRecipient, newMaxIterations);
 
@@ -70,7 +70,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     /// @param newUnderlying The address of the underlying token corresponding to the market to supply through this vault.
     /// @param newRecipient The recipient to receive skimmed funds.
     /// @param newMaxIterations The max iterations to use when this vault interacts with Morpho.
-    function __SupplyVault_init_unchained(address newUnderlying, address newRecipient, uint8 newMaxIterations)
+    function __SupplyVault_init_unchained(address newUnderlying, address newRecipient, uint96 newMaxIterations)
         internal
         onlyInitializing
     {
@@ -99,7 +99,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     }
 
     /// @notice Sets the max iterations to use when this vault interacts with Morpho.
-    function setMaxIterations(uint8 newMaxIterations) external onlyOwner {
+    function setMaxIterations(uint96 newMaxIterations) external onlyOwner {
         _maxIterations = newMaxIterations;
         emit MaxIterationsSet(newMaxIterations);
     }
@@ -126,7 +126,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     }
 
     /// @notice The max iterations to use when this vault interacts with Morpho.
-    function maxIterations() external view returns (uint8) {
+    function maxIterations() external view returns (uint96) {
         return _maxIterations;
     }
 
