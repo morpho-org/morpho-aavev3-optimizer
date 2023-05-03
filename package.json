@@ -1,5 +1,5 @@
 {
-  "name": "morpho-aave-v3",
+  "name": "@morpho-labs/morpho-aave-v3",
   "version": "1.0.0",
   "description": "Core contracts of Morpho-AaveV3's protocol",
   "author": "Morpho Labs <security@morpho.xyz>",
@@ -21,16 +21,34 @@
     "type": "git",
     "url": "https://github.com/morpho-dao/morpho-aave-v3.git"
   },
+  "files": [
+    "src/**/interfaces",
+    "src/**/libraries",
+    "artifacts/src/extensions",
+    "artifacts/src/**/interfaces",
+    "artifacts/src/Morpho.sol/Morpho.json",
+    "artifacts/src/PositionsManager.sol/PositionsManager.json",
+    "artifacts/src/RewardsManager.sol/RewardsManager.json",
+    "!artifacts/src/**/interfaces/**/*.dbg.json"
+  ],
+  "engines": {
+    "node": ">=10"
+  },
   "scripts": {
+    "compile": "hardhat compile",
     "test": "forge test",
     "postinstall": "husky install"
   },
   "devDependencies": {
     "@commitlint/cli": "17.3.0",
     "@commitlint/config-conventional": "^17.3.0",
+    "@nomicfoundation/hardhat-foundry": "^1.0.1",
+    "cz-conventional-changelog": "^3.3.0",
+    "hardhat": "^2.14.0",
     "husky": "8.0.2",
     "lint-staged": "^13.1.0",
-    "prettier": "^2.8.1"
+    "prettier": "^2.8.1",
+    "typescript": "^5.0.4"
   },
   "lint-staged": {
     "*.sol": "forge fmt",
@@ -40,6 +58,53 @@
   "commitlint": {
     "extends": [
       "@commitlint/config-conventional"
+    ]
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "release": {
+    "branches": [
+      "main"
+    ],
+    "plugins": [
+      [
+        "@semantic-release/commit-analyzer",
+        {
+          "preset": "conventionalcommits",
+          "releaseRules": [
+            {
+              "type": "build",
+              "scope": "deps",
+              "release": "patch"
+            }
+          ]
+        }
+      ],
+      [
+        "@semantic-release/release-notes-generator",
+        {
+          "preset": "conventionalcommits",
+          "presetConfig": {
+            "types": [
+              {
+                "type": "feat",
+                "section": "Features"
+              },
+              {
+                "type": "fix",
+                "section": "Bug Fixes"
+              },
+              {
+                "type": "build",
+                "section": "Dependencies and Other Build Updates",
+                "hidden": false
+              }
+            ]
+          }
+        }
+      ],
+      "@semantic-release/npm"
     ]
   }
 }

@@ -1,5 +1,7 @@
 # Compiler files
-cache/
+cache_hardhat/
+cache_forge/
+artifacts/
 out/
 
 # Ignores broadcast

@@ -89,7 +89,7 @@ jobs:
         uses: actions/cache/save@v3
         with:
           path: |
-            cache
+            cache_forge
             out
           key: forge-${{ github.ref_name }}
 

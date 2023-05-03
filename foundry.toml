@@ -1,7 +1,8 @@
 [profile.default]
 names = true
 sizes = true
-libs = ["node_modules", "lib"]
+libs = ["lib"]
+cache_path = 'cache_forge'
 fs_permissions = [{ access = "read", path = "./config/"}]
 
 [fuzz]
