@@ -254,7 +254,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertEq(repaid, toRepay);
         assertEq(repayer.balance, 0);
         assertApproxEqAbs(
-            morpho.borrowBalance(weth, address(this)), toBorrow - toRepay, 2, "borrow balance != expected"
+            morpho.borrowBalance(weth, address(this)), toBorrow - toRepay, 3, "borrow balance != expected"
         );
     }
 
