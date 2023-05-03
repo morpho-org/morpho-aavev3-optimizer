@@ -74,6 +74,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
         internal
         onlyInitializing
     {
+        if (newUnderlying == address(0)) revert ZeroAddress();
         _underlying = newUnderlying;
         _recipient = newRecipient;
         _maxIterations = newMaxIterations;
@@ -90,9 +91,10 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
         address recipientMem = _recipient;
         if (recipientMem == address(0)) revert ZeroAddress();
         for (uint256 i; i < tokens.length; i++) {
-            uint256 amount = ERC20(tokens[i]).balanceOf(address(this));
-            emit Skimmed(tokens[i], recipientMem, amount);
-            ERC20(tokens[i]).safeTransfer(recipientMem, amount);
+            address token = tokens[i];
+            uint256 amount = ERC20(token).balanceOf(address(this));
+            emit Skimmed(token, recipientMem, amount);
+            ERC20(token).safeTransfer(recipientMem, amount);
         }
     }
 
