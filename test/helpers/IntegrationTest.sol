@@ -463,6 +463,7 @@ contract IntegrationTest is ForkTest {
         output = _boundAddressNotZero(input);
 
         vm.assume(output != address(this));
+        vm.assume(output != address(proxyAdmin));
 
         for (uint256 i; i < allUnderlyings.length; ++i) {
             TestMarket storage market = testMarkets[allUnderlyings[i]];
