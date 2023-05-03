@@ -67,7 +67,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     }
 
     /// @dev Initializes the vault without initializing parent contracts (avoid the double initialization problem).
-    /// @param newUnderlying The address of the pool token corresponding to the market to supply through this vault.
+    /// @param newUnderlying The address of the underlying token corresponding to the market to supply through this vault.
     /// @param newRecipient The recipient to receive skimmed funds.
     /// @param newMaxIterations The max iterations to use when this vault interacts with Morpho.
     function __SupplyVault_init_unchained(address newUnderlying, address newRecipient, uint8 newMaxIterations)
