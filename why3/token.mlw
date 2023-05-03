@@ -1,0 +1,54 @@
+module TokenSetup
+use export solidity.Solidity
+
+type token_storage = {
+    balance: Map.t int;
+} invariant {
+    forall a. get a balance >= 0
+} by {
+    balance = Map.create();
+}
+end
+
+module Token
+use export TokenSetup
+
+val transfer_from (t: token_storage) (sender: address) (receiver: address) (amount: int) : unit
+    writes { t.balance }
+    requires { get sender t.balance >= amount >= 0 }
+    ensures { sender <> receiver ->
+                get sender t.balance = get sender (old t).balance - amount &&
+                get receiver t.balance = get receiver (old t).balance + amount }
+    ensures { sender = receiver ->
+                get sender t.balance = get sender (old t).balance }
+    ensures { forall a. a <> sender && a <> receiver ->
+                get a t.balance = get a (old t).balance }
+end
+
+module TokenRealize
+use export TokenSetup
+
+let transfer_from (t: token_storage) (sender: address) (receiver: address) (amount: int) : unit
+    writes { t.balance }
+    requires { get sender t.balance >= amount >= 0 }
+    ensures { sender <> receiver ->
+                get sender t.balance = get sender (old t).balance - amount &&
+                get receiver t.balance = get receiver (old t).balance + amount }
+    ensures { sender = receiver ->
+                get sender t.balance = get sender (old t).balance }
+    ensures { forall a. a <> sender && a <> receiver ->
+                get a t.balance = get a (old t).balance }
+=
+    Map.add sender (get sender t.balance - amount) t.balance;
+    label Rem in
+    assert { forall a. get a t.balance >= 0
+             by if a = sender then get a t.balance >= 0
+                else get a t.balance = get a (old t).balance
+    };
+    Map.add receiver (get receiver t.balance + amount) t.balance;
+    assert { forall a. get a t.balance >= 0
+             by if a = receiver then get a t.balance = get a (t at Rem).balance + amount
+                else get a t.balance = get a (t at Rem).balance }
+
+clone Token with val transfer_from
+end
