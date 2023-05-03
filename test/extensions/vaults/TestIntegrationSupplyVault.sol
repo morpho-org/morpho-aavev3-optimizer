@@ -7,19 +7,23 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
     using WadRayMath for uint256;
 
     function testCorrectInitialisationDai() public {
+        assertEq(address(daiSupplyVault.MORPHO()), address(morpho));
+        assertEq(daiSupplyVault.UNDERLYING(), dai);
+        assertEq(daiSupplyVault.recipient(), RECIPIENT);
         assertEq(daiSupplyVault.owner(), address(this));
         assertEq(daiSupplyVault.name(), "MorphoAaveDAI");
         assertEq(daiSupplyVault.symbol(), "maDAI");
-        assertEq(daiSupplyVault.underlying(), dai);
         assertEq(daiSupplyVault.asset(), dai);
         assertEq(daiSupplyVault.decimals(), 18);
     }
 
     function testCorrectInitialisationWrappedNative() public {
+        assertEq(address(wrappedNativeTokenSupplyVault.MORPHO()), address(morpho));
+        assertEq(wrappedNativeTokenSupplyVault.UNDERLYING(), wNative);
+        assertEq(wrappedNativeTokenSupplyVault.recipient(), RECIPIENT);
         assertEq(wrappedNativeTokenSupplyVault.owner(), address(this));
         assertEq(wrappedNativeTokenSupplyVault.name(), "MorphoAaveWNATIVE");
         assertEq(wrappedNativeTokenSupplyVault.symbol(), "maWNATIVE");
-        assertEq(wrappedNativeTokenSupplyVault.underlying(), wNative);
         assertEq(wrappedNativeTokenSupplyVault.asset(), wNative);
         assertEq(wrappedNativeTokenSupplyVault.decimals(), 18);
     }

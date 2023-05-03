@@ -31,9 +31,9 @@ interface ISupplyVault is IERC4626Upgradeable {
 
     function MORPHO() external view returns (IMorpho);
 
-    function recipient() external view returns (address);
+    function UNDERLYING() external view returns (address);
 
-    function underlying() external view returns (address);
+    function recipient() external view returns (address);
 
     function maxIterations() external view returns (uint96);
 

@@ -23,10 +23,10 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     /* IMMUTABLES */
 
     IMorpho internal immutable _MORPHO; // The main Morpho contract.
+    address internal immutable _UNDERLYING; // The underlying market to supply to through this vault.
 
     /* STORAGE */
 
-    address internal _underlying; // The underlying market to supply to through this vault.
     uint96 internal _maxIterations; // The max iterations to use when this vault interacts with Morpho.
     address internal _recipient; // The recipient of the rewards that will redistribute them to vault's users.
 
@@ -34,52 +34,44 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
 
     /// @dev Initializes network-wide immutables.
     /// @param newMorpho The address of the main Morpho contract.
-    constructor(address newMorpho) {
-        if (newMorpho == address(0)) {
-            revert ZeroAddress();
-        }
+    /// @param newUnderlying The address of the underlying asset.
+    constructor(address newMorpho, address newUnderlying) {
+        if (newMorpho == address(0) || newUnderlying == address(0)) revert ZeroAddress();
         _MORPHO = IMorpho(newMorpho);
+        _UNDERLYING = newUnderlying;
     }
 
     /* INITIALIZER */
 
     /// @dev Initializes the vault.
-    /// @param newUnderlying The address of the underlying market to supply through this vault to Morpho.
     /// @param newRecipient The recipient to receive skimmed funds.
     /// @param name The name of the ERC20 token associated to this tokenized vault.
     /// @param symbol The symbol of the ERC20 token associated to this tokenized vault.
     /// @param initialDeposit The amount of the initial deposit used to prevent pricePerShare manipulation.
     /// @param newMaxIterations The max iterations to use when this vault interacts with Morpho.
     function initialize(
-        address newUnderlying,
         address newRecipient,
         string calldata name,
         string calldata symbol,
         uint256 initialDeposit,
         uint96 newMaxIterations
     ) external initializer {
-        __SupplyVault_init_unchained(newUnderlying, newRecipient, newMaxIterations);
+        __SupplyVault_init_unchained(newRecipient, newMaxIterations);
 
         __Ownable_init_unchained();
         __ERC20_init_unchained(name, symbol);
-        __ERC4626_init_unchained(ERC20Upgradeable(newUnderlying));
+        __ERC4626_init_unchained(ERC20Upgradeable(_UNDERLYING));
         __ERC4626UpgradeableSafe_init_unchained(initialDeposit);
     }
 
     /// @dev Initializes the vault without initializing parent contracts (avoid the double initialization problem).
-    /// @param newUnderlying The address of the underlying token corresponding to the market to supply through this vault.
     /// @param newRecipient The recipient to receive skimmed funds.
     /// @param newMaxIterations The max iterations to use when this vault interacts with Morpho.
-    function __SupplyVault_init_unchained(address newUnderlying, address newRecipient, uint96 newMaxIterations)
-        internal
-        onlyInitializing
-    {
-        if (newUnderlying == address(0)) revert ZeroAddress();
-        _underlying = newUnderlying;
+    function __SupplyVault_init_unchained(address newRecipient, uint96 newMaxIterations) internal onlyInitializing {
         _recipient = newRecipient;
         _maxIterations = newMaxIterations;
 
-        ERC20(newUnderlying).safeApprove(address(_MORPHO), type(uint256).max);
+        ERC20(_UNDERLYING).safeApprove(address(_MORPHO), type(uint256).max);
     }
 
     /* EXTERNAL */
@@ -115,14 +107,14 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
         return _MORPHO;
     }
 
+    /// @notice The address of the underlying market to supply through this vault to Morpho.
+    function UNDERLYING() external view returns (address) {
+        return _UNDERLYING;
+    }
+
     /// @notice The recipient of any ERC20 tokens skimmed from this contract.
     function recipient() external view returns (address) {
         return _recipient;
-    }
-
-    /// @notice The address of the underlying market to supply through this vault to Morpho.
-    function underlying() external view returns (address) {
-        return _underlying;
     }
 
     /// @notice The max iterations to use when this vault interacts with Morpho.
@@ -134,7 +126,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
 
     /// @notice The amount of assets in the vault.
     function totalAssets() public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
-        return _MORPHO.supplyBalance(_underlying, address(this));
+        return _MORPHO.supplyBalance(_UNDERLYING, address(this));
     }
 
     /* INTERNAL */
@@ -142,7 +134,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     /// @dev Used in mint or deposit to deposit the underlying asset to Morpho.
     function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal virtual override {
         super._deposit(caller, receiver, assets, shares);
-        _MORPHO.supply(_underlying, assets, address(this), uint256(_maxIterations));
+        _MORPHO.supply(_UNDERLYING, assets, address(this), uint256(_maxIterations));
     }
 
     /// @dev Used in redeem or withdraw to withdraw the underlying asset from Morpho.
@@ -151,7 +143,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
         virtual
         override
     {
-        _MORPHO.withdraw(_underlying, assets, address(this), address(this), uint256(_maxIterations));
+        _MORPHO.withdraw(_UNDERLYING, assets, address(this), address(this), uint256(_maxIterations));
         super._withdraw(caller, receiver, owner, assets, shares);
     }
 
