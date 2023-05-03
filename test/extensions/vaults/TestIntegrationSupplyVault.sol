@@ -236,6 +236,21 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         );
     }
 
+    function testShouldRevertSkimWhenRecipientZero(uint256 seed, uint256 amount) public {
+        daiSupplyVault.setRecipient(address(0));
+        address underlying = _randomUnderlying(seed);
+        amount = _boundSupply(testMarkets[underlying], amount);
+
+        deal(underlying, address(daiSupplyVault), amount);
+        uint256 balanceBefore = ERC20(underlying).balanceOf(daiSupplyVault.recipient());
+
+        address[] memory underlyings = new address[](1);
+        underlyings[0] = underlying;
+
+        vm.expectRevert(ISupplyVault.ZeroAddress.selector);
+        daiSupplyVault.skim(underlyings);
+    }
+
     function testShouldSkim(uint256 seed, uint256 amount) public {
         address underlying = _randomUnderlying(seed);
         amount = _boundSupply(testMarkets[underlying], amount);

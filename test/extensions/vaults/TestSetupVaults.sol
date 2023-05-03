@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "test/helpers/IntegrationTest.sol";
 
 import {SupplyVault} from "src/extensions/SupplyVault.sol";
+import {ISupplyVault} from "src/interfaces/extensions/ISupplyVault.sol";
 
 contract TestSetupVaults is IntegrationTest {
     using SafeTransferLib for ERC20;

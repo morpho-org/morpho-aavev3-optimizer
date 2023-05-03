@@ -88,6 +88,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     ///      The vault is not intended to hold any ERC20 tokens between calls.
     function skim(address[] calldata tokens) external {
         address recipientMem = _recipient;
+        if (recipientMem == address(0)) revert ZeroAddress();
         for (uint256 i; i < tokens.length; i++) {
             uint256 amount = ERC20(tokens[i]).balanceOf(address(this));
             emit Skimmed(tokens[i], recipientMem, amount);
