@@ -2402,43 +2402,43 @@
  <goal name="increase_p2p_deltas&#39;vc" expl="VC for increase_p2p_deltas" proved="true">
  <transf name="split_vc" proved="true" >
   <goal name="increase_p2p_deltas&#39;vc.0" expl="postcondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.02" steps="5889"/></proof>
+  <proof prover="4"><result status="valid" time="0.02" steps="5904"/></proof>
   </goal>
   <goal name="increase_p2p_deltas&#39;vc.1" expl="postcondition" proved="true">
-  <proof prover="0"><result status="valid" time="0.10" steps="15682"/></proof>
+  <proof prover="0"><result status="valid" time="0.10" steps="15731"/></proof>
   </goal>
   <goal name="increase_p2p_deltas&#39;vc.2" expl="postcondition" proved="true">
-  <proof prover="0"><result status="valid" time="0.09" steps="15700"/></proof>
+  <proof prover="0"><result status="valid" time="0.09" steps="15749"/></proof>
   </goal>
   <goal name="increase_p2p_deltas&#39;vc.3" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.03" steps="84407"/></proof>
+  <proof prover="4"><result status="valid" time="0.03" steps="85633"/></proof>
   </goal>
   <goal name="increase_p2p_deltas&#39;vc.4" expl="precondition" proved="true">
-  <proof prover="1"><result status="valid" time="0.05" steps="74"/></proof>
+  <proof prover="4"><result status="valid" time="0.27" steps="715829"/></proof>
   </goal>
   <goal name="increase_p2p_deltas&#39;vc.5" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.10" steps="89226"/></proof>
+  <proof prover="4"><result status="valid" time="0.10" steps="88480"/></proof>
   </goal>
   <goal name="increase_p2p_deltas&#39;vc.6" expl="precondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.04" steps="86780"/></proof>
+  <proof prover="4"><result status="valid" time="0.04" steps="87458"/></proof>
   </goal>
   <goal name="increase_p2p_deltas&#39;vc.7" expl="type invariant" proved="true">
-  <proof prover="1"><result status="valid" time="0.10" steps="134"/></proof>
+  <proof prover="1"><result status="valid" time="0.94" steps="2234"/></proof>
   </goal>
   <goal name="increase_p2p_deltas&#39;vc.8" expl="postcondition" proved="true">
-  <proof prover="1"><result status="valid" time="0.08" steps="133"/></proof>
+  <proof prover="1"><result status="valid" time="0.27" steps="393"/></proof>
   </goal>
   <goal name="increase_p2p_deltas&#39;vc.9" expl="postcondition" proved="true">
-  <proof prover="0"><result status="valid" time="0.11" steps="16292"/></proof>
+  <proof prover="0"><result status="valid" time="0.11" steps="16330"/></proof>
   </goal>
   <goal name="increase_p2p_deltas&#39;vc.10" expl="postcondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.03" steps="48584"/></proof>
+  <proof prover="4"><result status="valid" time="0.03" steps="48862"/></proof>
   </goal>
   <goal name="increase_p2p_deltas&#39;vc.11" expl="type invariant" proved="true">
-  <proof prover="1"><result status="valid" time="0.08" steps="117"/></proof>
+  <proof prover="1"><result status="valid" time="1.08" steps="2027"/></proof>
   </goal>
   <goal name="increase_p2p_deltas&#39;vc.12" expl="exceptional postcondition" proved="true">
-  <proof prover="4"><result status="valid" time="0.03" steps="96514"/></proof>
+  <proof prover="4"><result status="valid" time="0.03" steps="97615"/></proof>
   </goal>
  </transf>
  </goal>

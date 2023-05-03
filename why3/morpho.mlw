@@ -674,13 +674,14 @@ use MorphoInternal
 let increase_p2p_deltas (t: token_storage) (p: pool_storage) (m: morpho_storage) (amount: int) : (increased: int)
     requires { amount >= 0 }
     requires { well_formed t p m }
+    requires { get pool t.balance >= amount }
     ensures { well_formed t p m }
     ensures { m.p2p_supply_delta = (old m).p2p_supply_delta + increased }
     ensures { m.p2p_borrow_delta = (old m).p2p_borrow_delta + increased }
     raises { SupplyCapReached -> amount > (old p).suppliable }
 =
     let true_supply = m.p2p_supply_amount - m.p2p_supply_delta - m.idle_supply in
-    let true_borrow = m.p2p_borrow_amount - m.p2p_borrow_amount in
+    let true_borrow = m.p2p_borrow_amount - m.p2p_borrow_delta in
     let increased = min amount (min true_supply true_borrow) in
 
     if increased = 0 then return 0;
