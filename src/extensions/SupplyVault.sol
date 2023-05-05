@@ -6,8 +6,6 @@ import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {ISupplyVault} from "src/interfaces/extensions/ISupplyVault.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
-import {Types} from "src/libraries/Types.sol";
 
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
 import {ERC4626UpgradeableSafe, ERC4626Upgradeable, ERC20Upgradeable} from "@morpho-utils/ERC4626UpgradeableSafe.sol";
@@ -17,7 +15,6 @@ import {ERC4626UpgradeableSafe, ERC4626Upgradeable, ERC20Upgradeable} from "@mor
 /// @custom:contact security@morpho.xyz
 /// @notice ERC4626-upgradeable Tokenized Vault implementation for Morpho-Aave V3.
 contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable {
-    using WadRayMath for uint256;
     using SafeTransferLib for ERC20;
 
     /* IMMUTABLES */
@@ -35,9 +32,8 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     /// @dev Initializes network-wide immutables.
     /// @param newMorpho The address of the main Morpho contract.
     constructor(address newMorpho) {
-        if (newMorpho == address(0)) {
-            revert ZeroAddress();
-        }
+        if (newMorpho == address(0)) revert ZeroAddress();
+
         _MORPHO = IMorpho(newMorpho);
     }
 
