@@ -39,12 +39,10 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     /* CONSTRUCTOR */
 
     /// @dev Initializes network-wide immutables.
-    /// @param newMorpho The address of the main Morpho contract.
-    constructor(address newMorpho) {
-        if (newMorpho == address(0)) {
-            revert ZeroAddress();
-        }
-        _MORPHO = IMorpho(newMorpho);
+    /// @param morpho The address of the main Morpho contract.
+    constructor(address morpho) {
+        if (morpho == address(0)) revert ZeroAddress();
+        _MORPHO = IMorpho(morpho);
     }
 
     /* INITIALIZER */
@@ -65,7 +63,6 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
         uint8 newMaxIterations
     ) external initializer {
         __SupplyVault_init_unchained(newUnderlying, newRecipient, newMaxIterations);
-
         __Ownable_init_unchained();
         __ERC20_init_unchained(name, symbol);
         __ERC4626_init_unchained(ERC20Upgradeable(newUnderlying));
@@ -95,6 +92,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     function skim(address[] calldata tokens) external {
         address recipientMem = _recipient;
         if (recipientMem == address(0)) revert ZeroAddress();
+
         for (uint256 i; i < tokens.length; i++) {
             uint256 amount = ERC20(tokens[i]).balanceOf(address(this));
             emit Skimmed(tokens[i], recipientMem, amount);
