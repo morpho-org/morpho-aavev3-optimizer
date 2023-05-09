@@ -89,8 +89,8 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
         for (uint256 i; i < tokens.length; i++) {
             address token = tokens[i];
             uint256 amount = ERC20(token).balanceOf(address(this));
-            emit Skimmed(token, recipientMem, amount);
             ERC20(token).safeTransfer(recipientMem, amount);
+            emit Skimmed(token, recipientMem, amount);
         }
     }
 

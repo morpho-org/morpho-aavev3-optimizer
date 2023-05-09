@@ -70,43 +70,52 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
     function testShouldWithdrawAllAmount(uint256 amount) public {
         amount = _boundSupply(testMarkets[dai], amount);
 
+        uint256 balanceBefore = ERC20(dai).balanceOf(address(user));
+
         user.depositVault(daiSupplyVault, amount);
         user.withdrawVault(daiSupplyVault, daiSupplyVault.maxWithdraw(address(user)));
 
         uint256 totalBalance = morpho.supplyBalance(dai, address(daiSupplyVault));
 
         assertApproxEqAbs(daiSupplyVault.balanceOf(address(user)), 0, 1, "maDAI balance not zero");
+        assertApproxEqAbs(ERC20(dai).balanceOf(address(user)), balanceBefore, 5, "amount withdrawn != amount deposited");
         assertEq(totalBalance, 0, "totalBalance not zero");
     }
 
     function testShouldWithdrawAllUsdcAmount(uint256 amount) public {
         amount = _boundSupply(testMarkets[usdc], amount);
 
+        uint256 balanceBeforeDeposit = ERC20(usdc).balanceOf(address(user));
         user.depositVault(usdcSupplyVault, amount);
 
-        uint256 balanceBefore = ERC20(usdc).balanceOf(address(user));
+        uint256 balanceBeforeWithdraw = ERC20(usdc).balanceOf(address(user));
         user.withdrawVault(usdcSupplyVault, usdcSupplyVault.maxWithdraw(address(user)));
 
         uint256 totalBalance = morpho.supplyBalance(address(usdc), address(usdcSupplyVault));
 
-        assertApproxEqAbs(usdcSupplyVault.balanceOf(address(user)), 0, 1, "maUSDT balance not zero");
+        assertApproxEqAbs(usdcSupplyVault.balanceOf(address(user)), 0, 1, "maUSDC balance not zero");
+        assertApproxEqAbs(
+            ERC20(usdc).balanceOf(address(user)), balanceBeforeDeposit, 5, "amount withdrawn != amount deposited"
+        );
         assertEq(totalBalance, 0, "totalBalance not zero");
-        assertApproxEqAbs(ERC20(usdc).balanceOf(address(user)) - balanceBefore, amount, 2, "expectedWithdraw");
+        assertApproxEqAbs(ERC20(usdc).balanceOf(address(user)) - balanceBeforeWithdraw, amount, 2, "expectedWithdraw");
     }
 
-    function testShouldWithdrawAllShares(uint256 amount) public {
+    function testShouldRedeemAllShares(uint256 amount) public {
         amount = _boundSupply(testMarkets[dai], amount);
 
+        uint256 balanceBefore = ERC20(dai).balanceOf(address(user));
         uint256 shares = user.depositVault(daiSupplyVault, amount);
         user.redeemVault(daiSupplyVault, shares);
 
         uint256 totalBalance = morpho.supplyBalance(dai, address(daiSupplyVault));
 
+        assertApproxEqAbs(ERC20(dai).balanceOf(address(user)), balanceBefore, 5, "amount withdrawn != amount deposited");
         assertEq(daiSupplyVault.balanceOf(address(user)), 0, "maDAI balance not zero");
         assertEq(totalBalance, 0, "totalBalance not zero");
     }
 
-    function testShouldNotWithdrawWhenNotDeposited(uint256 amount) public {
+    function testShouldNotRedeemWhenNotDeposited(uint256 amount) public {
         amount = _boundSupply(testMarkets[dai], amount);
 
         uint256 shares = user.depositVault(daiSupplyVault, amount);
@@ -115,22 +124,29 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         promoter1.redeemVault(daiSupplyVault, shares);
     }
 
-    function testShouldNotWithdrawOnBehalfIfNotAllowed(uint256 amount) public {
+    function testShouldNotRedeemOnBehalfIfNotAllowed(uint256 amount) public {
         amount = _boundSupply(testMarkets[dai], amount);
 
         uint256 shares = user.depositVault(daiSupplyVault, amount);
 
-        vm.expectRevert("ERC4626: redeem more than max");
-        user.redeemVault(daiSupplyVault, shares, address(promoter1));
+        vm.expectRevert("ERC20: insufficient allowance");
+        promoter1.redeemVault(daiSupplyVault, shares, address(user));
     }
 
-    function testShouldWithdrawOnBehalfIfAllowed(uint256 amount) public {
+    function testShouldRedeemOnBehalfIfAllowed(uint256 amount) public {
         amount = _boundSupply(testMarkets[dai], amount);
 
+        uint256 balanceBeforeDepositor = ERC20(dai).balanceOf(address(user));
+        uint256 balanceBeforeRedeemer = ERC20(dai).balanceOf(address(promoter1));
         uint256 shares = user.depositVault(daiSupplyVault, amount);
 
         user.approve(address(maDai), address(promoter1), shares);
         promoter1.redeemVault(daiSupplyVault, shares, address(user));
+
+        assertApproxEqAbs(ERC20(dai).balanceOf(address(user)), balanceBeforeDepositor - amount, 5, "amount deposited");
+        assertApproxEqAbs(
+            ERC20(dai).balanceOf(address(promoter1)), balanceBeforeRedeemer + amount, 5, "amount withdrawn"
+        );
     }
 
     function testShouldNotWithdrawGreaterAmount(uint256 amount, uint256 amountOverdrawn) public {

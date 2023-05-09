@@ -31,10 +31,11 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
         assertEq(newImplem, address(wethSupplyVaultImplV2));
     }
 
-    function testOnlyProxyOwnerCanUpgradeSupplyVault() public {
+    function testOnlyProxyOwnerCanUpgradeSupplyVault(address caller) public {
+        vm.assume(caller != proxyAdmin.owner());
         SupplyVault supplyVaultImplV2 = new SupplyVault(address(morpho));
 
-        vm.prank(address(user));
+        vm.prank(caller);
         vm.expectRevert("Ownable: caller is not the owner");
         proxyAdmin.upgrade(wrappedNativeTokenSupplyVaultProxy, address(supplyVaultImplV2));
 
