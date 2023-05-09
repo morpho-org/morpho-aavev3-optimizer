@@ -59,27 +59,18 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
         uint256 initialDeposit,
         uint96 newMaxIterations
     ) external initializer {
-        __SupplyVault_init_unchained(newUnderlying, newRecipient, newMaxIterations);
-        __Ownable_init_unchained();
-        __ERC20_init_unchained(name, symbol);
-        __ERC4626_init_unchained(ERC20Upgradeable(newUnderlying));
-        __ERC4626UpgradeableSafe_init_unchained(initialDeposit);
-    }
-
-    /// @dev Initializes the vault without initializing parent contracts (avoid the double initialization problem).
-    /// @param newUnderlying The address of the underlying token corresponding to the market to supply through this vault.
-    /// @param newRecipient The recipient to receive skimmed funds.
-    /// @param newMaxIterations The max iterations to use when this vault interacts with Morpho.
-    function __SupplyVault_init_unchained(address newUnderlying, address newRecipient, uint96 newMaxIterations)
-        internal
-        onlyInitializing
-    {
         if (newUnderlying == address(0)) revert ZeroAddress();
+
         _underlying = newUnderlying;
         _recipient = newRecipient;
         _maxIterations = newMaxIterations;
 
         ERC20(newUnderlying).safeApprove(address(_MORPHO), type(uint256).max);
+
+        __Ownable_init_unchained();
+        __ERC20_init_unchained(name, symbol);
+        __ERC4626_init_unchained(ERC20Upgradeable(newUnderlying));
+        __ERC4626UpgradeableSafe_init_unchained(initialDeposit);
     }
 
     /* EXTERNAL */
