@@ -22,13 +22,19 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
 
     /* IMMUTABLES */
 
-    IMorpho internal immutable _MORPHO; // The main Morpho contract.
+    /// @dev The main Morpho contract.
+    IMorpho internal immutable _MORPHO;
 
     /* STORAGE */
 
-    address internal _underlying; // The underlying market to supply to through this vault.
-    uint8 internal _maxIterations; // The max iterations to use when this vault interacts with Morpho.
-    address internal _recipient; // The recipient of the rewards that will redistribute them to vault's users.
+    /// @dev The underlying market to supply to through this vault.
+    address internal _underlying;
+
+    /// @dev The max iterations to use when this vault interacts with Morpho.
+    uint8 internal _maxIterations;
+
+    /// @dev The recipient of the rewards that will redistribute them to vault's users.
+    address internal _recipient;
 
     /* CONSTRUCTOR */
 
