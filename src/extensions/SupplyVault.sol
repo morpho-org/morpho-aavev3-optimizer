@@ -5,8 +5,6 @@ import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {ISupplyVault} from "src/interfaces/extensions/ISupplyVault.sol";
 import {IERC4626Upgradeable} from "@openzeppelin-upgradeable/interfaces/IERC4626Upgradeable.sol";
 
-import {Types} from "src/libraries/Types.sol";
-import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
@@ -17,7 +15,6 @@ import {ERC4626UpgradeableSafe, ERC4626Upgradeable, ERC20Upgradeable} from "@mor
 /// @custom:contact security@morpho.xyz
 /// @notice ERC4626-upgradeable Tokenized Vault implementation for Morpho-Aave V3.
 contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable {
-    using WadRayMath for uint256;
     using SafeTransferLib for ERC20;
 
     /* IMMUTABLES */
@@ -31,7 +28,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     address internal _underlying;
 
     /// @dev The max iterations to use when this vault interacts with Morpho.
-    uint8 internal _maxIterations;
+    uint96 internal _maxIterations;
 
     /// @dev The recipient of the rewards that will redistribute them to vault's users.
     address internal _recipient;
@@ -60,7 +57,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
         string calldata name,
         string calldata symbol,
         uint256 initialDeposit,
-        uint8 newMaxIterations
+        uint96 newMaxIterations
     ) external initializer {
         __SupplyVault_init_unchained(newUnderlying, newRecipient, newMaxIterations);
         __Ownable_init_unchained();
@@ -73,10 +70,11 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     /// @param newUnderlying The address of the underlying token corresponding to the market to supply through this vault.
     /// @param newRecipient The recipient to receive skimmed funds.
     /// @param newMaxIterations The max iterations to use when this vault interacts with Morpho.
-    function __SupplyVault_init_unchained(address newUnderlying, address newRecipient, uint8 newMaxIterations)
+    function __SupplyVault_init_unchained(address newUnderlying, address newRecipient, uint96 newMaxIterations)
         internal
         onlyInitializing
     {
+        if (newUnderlying == address(0)) revert ZeroAddress();
         _underlying = newUnderlying;
         _recipient = newRecipient;
         _maxIterations = newMaxIterations;
@@ -94,14 +92,15 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
         if (recipientMem == address(0)) revert ZeroAddress();
 
         for (uint256 i; i < tokens.length; i++) {
-            uint256 amount = ERC20(tokens[i]).balanceOf(address(this));
-            emit Skimmed(tokens[i], recipientMem, amount);
-            ERC20(tokens[i]).safeTransfer(recipientMem, amount);
+            address token = tokens[i];
+            uint256 amount = ERC20(token).balanceOf(address(this));
+            emit Skimmed(token, recipientMem, amount);
+            ERC20(token).safeTransfer(recipientMem, amount);
         }
     }
 
     /// @notice Sets the max iterations to use when this vault interacts with Morpho.
-    function setMaxIterations(uint8 newMaxIterations) external onlyOwner {
+    function setMaxIterations(uint96 newMaxIterations) external onlyOwner {
         _maxIterations = newMaxIterations;
         emit MaxIterationsSet(newMaxIterations);
     }
@@ -128,7 +127,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     }
 
     /// @notice The max iterations to use when this vault interacts with Morpho.
-    function maxIterations() external view returns (uint8) {
+    function maxIterations() external view returns (uint96) {
         return _maxIterations;
     }
 

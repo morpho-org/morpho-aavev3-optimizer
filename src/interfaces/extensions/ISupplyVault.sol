@@ -10,7 +10,7 @@ interface ISupplyVault is IERC4626Upgradeable {
 
     /// @notice Emitted when max iterations is set.
     /// @param maxIterations The max iterations.
-    event MaxIterationsSet(uint8 maxIterations);
+    event MaxIterationsSet(uint96 maxIterations);
 
     /// @notice Emitted when the recipient is set.
     /// @param recipient The recipient.
@@ -35,11 +35,11 @@ interface ISupplyVault is IERC4626Upgradeable {
 
     function underlying() external view returns (address);
 
-    function maxIterations() external view returns (uint8);
+    function maxIterations() external view returns (uint96);
 
     function skim(address[] calldata tokens) external;
 
-    function setMaxIterations(uint8 newMaxIterations) external;
+    function setMaxIterations(uint96 newMaxIterations) external;
 
     function setRecipient(address newRecipient) external;
 }
