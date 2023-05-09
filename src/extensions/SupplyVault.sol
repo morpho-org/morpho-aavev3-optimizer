@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IERC4626Upgradeable} from "@openzeppelin-upgradeable/interfaces/IERC4626Upgradeable.sol";
 import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {ISupplyVault} from "src/interfaces/extensions/ISupplyVault.sol";
+import {IERC4626Upgradeable} from "@openzeppelin-upgradeable/interfaces/IERC4626Upgradeable.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
@@ -19,22 +19,27 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
 
     /* IMMUTABLES */
 
-    IMorpho internal immutable _MORPHO; // The main Morpho contract.
+    /// @dev The main Morpho contract.
+    IMorpho internal immutable _MORPHO;
 
     /* STORAGE */
 
-    address internal _underlying; // The underlying market to supply to through this vault.
-    uint96 internal _maxIterations; // The max iterations to use when this vault interacts with Morpho.
-    address internal _recipient; // The recipient of the rewards that will redistribute them to vault's users.
+    /// @dev The underlying market to supply to through this vault.
+    address internal _underlying;
+
+    /// @dev The max iterations to use when this vault interacts with Morpho.
+    uint96 internal _maxIterations;
+
+    /// @dev The recipient of the rewards that will redistribute them to vault's users.
+    address internal _recipient;
 
     /* CONSTRUCTOR */
 
     /// @dev Initializes network-wide immutables.
-    /// @param newMorpho The address of the main Morpho contract.
-    constructor(address newMorpho) {
-        if (newMorpho == address(0)) revert ZeroAddress();
-
-        _MORPHO = IMorpho(newMorpho);
+    /// @param morpho The address of the main Morpho contract.
+    constructor(address morpho) {
+        if (morpho == address(0)) revert ZeroAddress();
+        _MORPHO = IMorpho(morpho);
     }
 
     /* INITIALIZER */
@@ -54,28 +59,18 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
         uint256 initialDeposit,
         uint96 newMaxIterations
     ) external initializer {
-        __SupplyVault_init_unchained(newUnderlying, newRecipient, newMaxIterations);
-
-        __Ownable_init_unchained();
-        __ERC20_init_unchained(name, symbol);
-        __ERC4626_init_unchained(ERC20Upgradeable(newUnderlying));
-        __ERC4626UpgradeableSafe_init_unchained(initialDeposit);
-    }
-
-    /// @dev Initializes the vault without initializing parent contracts (avoid the double initialization problem).
-    /// @param newUnderlying The address of the underlying token corresponding to the market to supply through this vault.
-    /// @param newRecipient The recipient to receive skimmed funds.
-    /// @param newMaxIterations The max iterations to use when this vault interacts with Morpho.
-    function __SupplyVault_init_unchained(address newUnderlying, address newRecipient, uint96 newMaxIterations)
-        internal
-        onlyInitializing
-    {
         if (newUnderlying == address(0)) revert ZeroAddress();
+
         _underlying = newUnderlying;
         _recipient = newRecipient;
         _maxIterations = newMaxIterations;
 
         ERC20(newUnderlying).safeApprove(address(_MORPHO), type(uint256).max);
+
+        __Ownable_init_unchained();
+        __ERC20_init_unchained(name, symbol);
+        __ERC4626_init_unchained(ERC20Upgradeable(newUnderlying));
+        __ERC4626UpgradeableSafe_init_unchained(initialDeposit);
     }
 
     /* EXTERNAL */
@@ -86,6 +81,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     function skim(address[] calldata tokens) external {
         address recipientMem = _recipient;
         if (recipientMem == address(0)) revert ZeroAddress();
+
         for (uint256 i; i < tokens.length; i++) {
             address token = tokens[i];
             uint256 amount = ERC20(token).balanceOf(address(this));
