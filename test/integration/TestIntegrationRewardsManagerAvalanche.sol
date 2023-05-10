@@ -6,7 +6,7 @@ import {IScaledBalanceToken} from "@aave-v3-core/interfaces/IScaledBalanceToken.
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
-    using TestConfigLib for TestConfig;
+    using ConfigLib for Config;
 
     uint256 internal constant MAX_BLOCKS = 100_000;
 

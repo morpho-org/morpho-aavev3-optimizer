@@ -14,7 +14,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     using EnumerableSet for EnumerableSet.AddressSet;
     using WadRayMath for uint256;
     using PercentageMath for uint256;
-    using TestConfigLib for TestConfig;
+    using ConfigLib for Config;
     using PoolLib for IPool;
     using MarketLib for Types.Market;
     using SafeTransferLib for ERC20;

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
+"http://why3.lri.fr/why3session.dtd">
+<why3session shape_version="6">
+<prover id="0" name="Alt-Ergo" version="2.0.0" timelimit="1" steplimit="0" memlimit="1000"/>
+<file format="whyml" proved="true">
+<path name=".."/><path name="pool.mlw"/>
+<theory name="Pool" proved="true">
+ <goal name="pool_storage&#39;vc" expl="VC for pool_storage" proved="true">
+ <proof prover="0"><result status="valid" time="0.01" steps="2"/></proof>
+ </goal>
+</theory>
+<theory name="PoolRealize" proved="true">
+ <goal name="pool_storage&#39;vc" expl="VC for pool_storage" proved="true">
+ <proof prover="0"><result status="valid" time="0.01" steps="2"/></proof>
+ </goal>
+ <goal name="supply_to_pool&#39;vc" expl="VC for supply_to_pool" proved="true">
+ <transf name="split_vc" proved="true" >
+  <goal name="supply_to_pool&#39;vc.0" expl="exceptional postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.01" steps="9"/></proof>
+  </goal>
+  <goal name="supply_to_pool&#39;vc.1" expl="precondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.01" steps="9"/></proof>
+  </goal>
+  <goal name="supply_to_pool&#39;vc.2" expl="type invariant" proved="true">
+  <proof prover="0"><result status="valid" time="0.01" steps="21"/></proof>
+  </goal>
+  <goal name="supply_to_pool&#39;vc.3" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.01" steps="14"/></proof>
+  </goal>
+  <goal name="supply_to_pool&#39;vc.4" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.01" steps="14"/></proof>
+  </goal>
+  <goal name="supply_to_pool&#39;vc.5" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.02" steps="14"/></proof>
+  </goal>
+  <goal name="supply_to_pool&#39;vc.6" expl="postcondition" proved="true">
+  <proof prover="0"><result status="valid" time="0.01" steps="14"/></proof>
+  </goal>
+ </transf>
+ </goal>
+ <goal name="borrow_from_pool&#39;vc" expl="VC for borrow_from_pool" proved="true">
+ <proof prover="0"><result status="valid" time="0.01" steps="58"/></proof>
+ </goal>
+ <goal name="withdraw_from_pool&#39;vc" expl="VC for withdraw_from_pool" proved="true">
+ <proof prover="0"><result status="valid" time="0.01" steps="50"/></proof>
+ </goal>
+ <goal name="repay_to_pool&#39;vc" expl="VC for repay_to_pool" proved="true">
+ <proof prover="0"><result status="valid" time="0.01" steps="43"/></proof>
+ </goal>
+ <goal name="Pool.pool_storage&#39;refn&#39;vc" expl="VC for pool_storage" proved="true">
+ <proof prover="0"><result status="valid" time="0.01" steps="5"/></proof>
+ </goal>
+ <goal name="Pool.supply_to_pool&#39;refn&#39;vc" expl="VC for supply_to_pool&#39;refn" proved="true">
+ <proof prover="0"><result status="valid" time="0.01" steps="8"/></proof>
+ </goal>
+ <goal name="Pool.borrow_from_pool&#39;refn&#39;vc" expl="VC for borrow_from_pool&#39;refn" proved="true">
+ <proof prover="0"><result status="valid" time="0.01" steps="8"/></proof>
+ </goal>
+ <goal name="Pool.withdraw_from_pool&#39;refn&#39;vc" expl="VC for withdraw_from_pool&#39;refn" proved="true">
+ <proof prover="0"><result status="valid" time="0.01" steps="8"/></proof>
+ </goal>
+ <goal name="Pool.repay_to_pool&#39;refn&#39;vc" expl="VC for repay_to_pool&#39;refn" proved="true">
+ <proof prover="0"><result status="valid" time="0.01" steps="9"/></proof>
+ </goal>
+</theory>
+</file>
+</why3session>

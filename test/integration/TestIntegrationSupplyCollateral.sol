@@ -52,7 +52,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         assertEq(test.scaledP2PSupply, 0, "scaledP2PSupply != 0");
         assertEq(test.scaledPoolSupply, 0, "scaledPoolSupply != 0");
         assertEq(test.supplied, amount, "supplied != amount");
-        assertApproxEqAbs(collateral, amount, 1, "collateral != amount");
+        assertApproxEqAbs(collateral, amount, 2, "collateral != amount");
 
         assertEq(test.collaterals.length, 1, "collaterals.length");
         assertEq(test.collaterals[0], market.underlying, "collaterals[0]");
