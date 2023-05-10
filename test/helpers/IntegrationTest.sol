@@ -451,10 +451,16 @@ contract IntegrationTest is ForkTest {
         return amount;
     }
 
+    function _boundAddressNotZero(address input) internal view virtual override returns (address) {
+        input = super._boundAddressNotZero(input);
+
+        vm.assume(input != address(proxyAdmin)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target.
+
+        return input;
+    }
+
     function _boundOnBehalf(address onBehalf) internal view returns (address) {
         onBehalf = _boundAddressNotZero(onBehalf);
-
-        vm.assume(onBehalf != address(proxyAdmin)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target.
 
         return onBehalf;
     }

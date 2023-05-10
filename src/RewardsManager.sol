@@ -240,6 +240,7 @@ contract RewardsManager is IRewardsManager, Initializable {
     }
 
     /// @notice Returns the user's index for the specified asset and reward token.
+    /// @dev If an already listed AaveV3 reward token is not yet tracked (startingIndex == 0), this view function ignores that it will get updated upon interaction.
     /// @param user The address of the user.
     /// @param asset The address of the reference asset of the distribution (aToken or variable debt token).
     /// @param reward The address of the reward token.
@@ -430,9 +431,6 @@ contract RewardsManager is IRewardsManager, Initializable {
         pure
         returns (uint256 rewards)
     {
-        // If `userIndex` is 0, it means that it has not accrued reward yet.
-        if (userIndex == 0) return 0;
-
         rewards = userBalance * (reserveIndex - userIndex);
         assembly {
             rewards := div(rewards, assetUnit)

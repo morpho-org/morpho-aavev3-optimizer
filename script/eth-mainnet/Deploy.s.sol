@@ -1,29 +1,24 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import "@forge-std/Script.sol";
-
-import {Types} from "src/libraries/Types.sol";
-
 import {IMorpho} from "src/interfaces/IMorpho.sol";
 import {IPositionsManager} from "src/interfaces/IPositionsManager.sol";
 import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {Types} from "src/libraries/Types.sol";
+
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
+import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
+import {Configured, ConfigLib, Config} from "config/Configured.sol";
+import "@forge-std/Script.sol";
 
-contract Deploy is Script {
-    using TestConfigLib for TestConfig;
+contract Deploy is Script, Configured {
+    using ConfigLib for Config;
 
     uint8 internal constant E_MODE_CATEGORY_ID = 0;
-
-    address internal dai;
-    address internal usdc;
-    address internal wbtc;
 
     IMorpho internal morpho;
     IPositionsManager internal positionsManager;
@@ -33,8 +28,6 @@ contract Deploy is Script {
 
     IMorpho internal morphoImpl;
     TransparentUpgradeableProxy internal morphoProxy;
-
-    TestConfig internal config;
 
     function run() external {
         _initConfig();
@@ -48,23 +41,14 @@ contract Deploy is Script {
         vm.stopBroadcast();
     }
 
-    function _initConfig() internal returns (TestConfig storage) {
-        if (bytes(config.json).length == 0) {
-            string memory root = vm.projectRoot();
-            string memory path = string.concat(root, "/config/ethereum-mainnet.json");
-
-            config.json = vm.readFile(path);
-        }
-
-        return config;
+    function _network() internal pure virtual override returns (string memory) {
+        return "ethereum-mainnet";
     }
 
-    function _loadConfig() internal {
-        addressesProvider = IPoolAddressesProvider(config.getAddressesProvider());
+    function _loadConfig() internal virtual override {
+        super._loadConfig();
 
-        dai = config.getAddress("DAI");
-        usdc = config.getAddress("USDC");
-        wbtc = config.getAddress("WBTC");
+        addressesProvider = IPoolAddressesProvider(config.getAddressesProvider());
     }
 
     function _deploy() internal {

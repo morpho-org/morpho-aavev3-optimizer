@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {TestConfig, TestConfigLib} from "test/helpers/TestConfigLib.sol";
+import {Config, ConfigLib} from "config/ConfigLib.sol";
 import {PoolLib} from "src/libraries/PoolLib.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
@@ -11,7 +11,7 @@ import {ERC20 as OZERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationClaimToTreasury is IntegrationTest {
-    using TestConfigLib for TestConfig;
+    using ConfigLib for Config;
     using PoolLib for IPool;
     using Math for uint256;
     using WadRayMath for uint256;
