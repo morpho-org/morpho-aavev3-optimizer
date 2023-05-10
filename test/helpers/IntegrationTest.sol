@@ -454,7 +454,7 @@ contract IntegrationTest is ForkTest {
     function _boundOnBehalf(address onBehalf) internal view returns (address) {
         onBehalf = _boundAddressNotZero(onBehalf);
 
-        vm.assume(onBehalf != address(proxyAdmin));
+        vm.assume(onBehalf != address(proxyAdmin)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target.
 
         return onBehalf;
     }
@@ -463,7 +463,6 @@ contract IntegrationTest is ForkTest {
         output = _boundAddressNotZero(input);
 
         vm.assume(output != address(this));
-        vm.assume(output != address(proxyAdmin));
 
         for (uint256 i; i < allUnderlyings.length; ++i) {
             TestMarket storage market = testMarkets[allUnderlyings[i]];
