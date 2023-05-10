@@ -1,0 +1,16 @@
+module Solidity
+use export int.Int
+
+type address
+
+val constant pool : address
+val constant morpho : address
+    ensures { result <> pool }
+
+clone fmap.MapImp as Map with type key = address
+let function get (user: address) (mapping: Map.t int) =
+    if Map.mem user mapping then Map.find user mapping
+    else 0
+
+exception Underflow (* To simulate solidity 0.8.0^ underflow behavior *)
+end
