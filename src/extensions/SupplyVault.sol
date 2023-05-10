@@ -36,9 +36,12 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
     /* CONSTRUCTOR */
 
     /// @dev Initializes network-wide immutables.
+    /// @dev The implementation contract disables initialization upon deployment to avoid being hijacked.
     /// @param morpho The address of the main Morpho contract.
     constructor(address morpho) {
         if (morpho == address(0)) revert ZeroAddress();
+
+        _disableInitializers();
         _MORPHO = IMorpho(morpho);
     }
 
