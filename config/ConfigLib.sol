@@ -17,7 +17,6 @@ library ConfigLib {
     string internal constant LSD_NATIVES_PATH = "$.lsdNatives";
     string internal constant MARKETS_PATH = "$.markets";
     string internal constant MORPHO_DAO_PATH = "$.morphoDao";
-    string internal constant REWARDS_CONTROLLER_PATH = "$.rewardsController";
 
     function getAddress(Config storage config, string memory key) internal returns (address) {
         return config.json.readAddress(string.concat("$.", key));
@@ -48,10 +47,6 @@ library ConfigLib {
 
     function getMorphoDao(Config storage config) internal returns (address) {
         return config.json.readAddress(MORPHO_DAO_PATH);
-    }
-
-    function getRewardsController(Config storage config) internal returns (address) {
-        return config.json.readAddress(REWARDS_CONTROLLER_PATH);
     }
 
     function getWrappedNative(Config storage config) internal returns (address) {

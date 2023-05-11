@@ -2,10 +2,15 @@
 pragma solidity ^0.8.0;
 
 import {IScaledBalanceToken} from "@aave-v3-core/interfaces/IScaledBalanceToken.sol";
+import {IEACAggregatorProxy} from "@aave-v3-periphery/misc/interfaces/IEACAggregatorProxy.sol";
+import {ITransferStrategyBase} from "@aave-v3-periphery/rewards/interfaces/ITransferStrategyBase.sol";
 
+import {RewardsDataTypes} from "@aave-v3-periphery/rewards/libraries/RewardsDataTypes.sol";
+
+import {PullRewardsTransferStrategyMock} from "test/mocks/PullRewardsTransferStrategyMock.sol";
 import "test/helpers/IntegrationTest.sol";
 
-contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
+contract TestIntegrationRewardsManager is IntegrationTest {
     using ConfigLib for Config;
 
     uint256 internal constant MAX_BLOCKS = 100_000;
@@ -23,19 +28,35 @@ contract TestIntegrationRewardsManagerAvalanche is IntegrationTest {
 
     function setUp() public virtual override {
         super.setUp();
-        rewardsController = IRewardsController(config.getRewardsController());
-        rewardsManager = IRewardsManager(new RewardsManager(address(rewardsController), address(morpho)));
-        morpho.setRewardsManager(address(rewardsManager));
+
         aDai = testMarkets[dai].aToken;
         vDai = testMarkets[dai].variableDebtToken;
         aUsdc = testMarkets[usdc].aToken;
         vUsdc = testMarkets[usdc].variableDebtToken;
         assets = [aDai, vDai, aUsdc, vUsdc];
-    }
 
-    /// @dev We can only use avalanche mainnet because mainnet doesn't have a rewards controller yet
-    function _network() internal view virtual override returns (string memory) {
-        return "avalanche-mainnet";
+        ITransferStrategyBase transferStrategy = new PullRewardsTransferStrategyMock();
+        deal(wNative, address(transferStrategy), type(uint256).max);
+
+        IEACAggregatorProxy rewardOracle = IEACAggregatorProxy(oracle.getSourceOfAsset(wNative));
+
+        RewardsDataTypes.RewardsConfigInput[] memory rewardsConfig =
+            new RewardsDataTypes.RewardsConfigInput[](assets.length);
+
+        for (uint256 i; i < assets.length; ++i) {
+            rewardsConfig[i] = RewardsDataTypes.RewardsConfigInput({
+                emissionPerSecond: 1 ether,
+                totalSupply: 0,
+                distributionEnd: 1711944000,
+                asset: assets[i],
+                reward: wNative,
+                transferStrategy: transferStrategy,
+                rewardOracle: rewardOracle
+            });
+        }
+
+        vm.prank(emissionManager);
+        rewardsController.configureAssets(rewardsConfig);
     }
 
     function testGetMorpho() public {
