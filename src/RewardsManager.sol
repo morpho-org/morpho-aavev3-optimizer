@@ -259,6 +259,20 @@ contract RewardsManager is IRewardsManager, Initializable {
 
     /* INTERNAL */
 
+    /// @notice Returns the virtually updated asset index for the specified asset and reward token.
+    /// @param asset The address of the reference asset of the distribution (aToken or variable debt token).
+    /// @param reward The address of the reward token.
+    /// @return oldIndex The old reward token's asset index.
+    /// @return assetIndex The reward token's virtually updated asset index.
+    function _getAssetIndex(address asset, address reward)
+        internal
+        view
+        returns (uint256 oldIndex, uint256 assetIndex)
+    {
+        oldIndex = _localAssetData[asset][reward].index;
+        (, assetIndex) = _REWARDS_CONTROLLER.getAssetIndex(asset, reward);
+    }
+
     /// @dev Updates the state of the distribution for the specified reward.
     /// @param localRewardData The local reward's data.
     /// @param asset The asset being rewarded.
@@ -270,7 +284,7 @@ contract RewardsManager is IRewardsManager, Initializable {
         returns (uint256 newIndex, bool indexUpdated)
     {
         uint256 oldIndex;
-        (oldIndex, newIndex) = _REWARDS_CONTROLLER.getAssetIndex(asset, reward);
+        (oldIndex, newIndex) = _getAssetIndex(asset, reward);
 
         // If this is the first initiation of the distribution, set the starting index.
         // In the case that rewards have already started accumulating, rewards will not be credited before this starting index.
