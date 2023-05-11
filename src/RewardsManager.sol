@@ -451,26 +451,8 @@ contract RewardsManager is IRewardsManager, Initializable {
         uint256 scaledTotalSupply,
         uint256 assetUnit
     ) internal view returns (uint256, uint256) {
-        uint256 currentTimestamp = block.timestamp;
-
-        if (currentTimestamp == localRewardData.lastUpdateTimestamp) {
-            return (localRewardData.index, localRewardData.index);
-        }
-
-        (uint256 rewardIndex, uint256 emissionPerSecond, uint256 lastUpdateTimestamp, uint256 distributionEnd) =
-            _REWARDS_CONTROLLER.getRewardsData(asset, reward);
-
-        if (
-            emissionPerSecond == 0 || scaledTotalSupply == 0 || lastUpdateTimestamp == currentTimestamp
-                || lastUpdateTimestamp >= distributionEnd
-        ) return (localRewardData.index, rewardIndex);
-
-        currentTimestamp = currentTimestamp > distributionEnd ? distributionEnd : currentTimestamp;
-        uint256 totalEmitted = emissionPerSecond * (currentTimestamp - lastUpdateTimestamp) * assetUnit;
-        assembly {
-            totalEmitted := div(totalEmitted, scaledTotalSupply)
-        }
-        return (localRewardData.index, (totalEmitted + rewardIndex));
+        (, uint256 newAssetIndex) = _REWARDS_CONTROLLER.getAssetIndex(asset, reward);
+        return (localRewardData.index, newAssetIndex);
     }
 
     /// @dev Returns user balances and total supply of all the assets specified by the assets parameter.
