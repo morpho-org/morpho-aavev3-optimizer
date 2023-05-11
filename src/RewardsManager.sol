@@ -137,7 +137,7 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @param asset The address of the reference asset of the distribution (aToken or variable debt token).
     /// @param userBalance The current user asset balance.
     function updateUserRewards(address user, address asset, uint256 userBalance) external onlyMorpho {
-        _updateData(user, asset, userBalance, IScaledBalanceToken(asset).scaledTotalSupply());
+        _updateData(user, asset, userBalance);
     }
 
     /* GETTERS */
@@ -253,14 +253,8 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @param asset The address of the reference asset of the distribution (aToken or variable debt token).
     /// @param reward The address of the reward token.
     /// @return assetIndex The reward token's virtually updated asset index.
-    function getAssetIndex(address asset, address reward) external view returns (uint256 assetIndex) {
-        (, assetIndex) = _getAssetIndex(
-            _localAssetData[asset][reward],
-            asset,
-            reward,
-            IScaledBalanceToken(asset).scaledTotalSupply(),
-            10 ** _REWARDS_CONTROLLER.getAssetDecimals(asset)
-        );
+    function getAssetIndex(address asset, address reward) public view returns (uint256 assetIndex) {
+        (, assetIndex) = _REWARDS_CONTROLLER.getAssetIndex(asset, reward);
     }
 
     /* INTERNAL */
@@ -269,19 +263,14 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @param localRewardData The local reward's data.
     /// @param asset The asset being rewarded.
     /// @param reward The address of the reward token.
-    /// @param scaledTotalSupply The current scaled total supply of underlying assets for this distribution.
-    /// @param assetUnit The asset's unit (10**decimals).
     /// @return newIndex The new distribution index.
     /// @return indexUpdated True if the index was updated, false otherwise.
-    function _updateRewardData(
-        RewardData storage localRewardData,
-        address asset,
-        address reward,
-        uint256 scaledTotalSupply,
-        uint256 assetUnit
-    ) internal returns (uint256 newIndex, bool indexUpdated) {
+    function _updateRewardData(RewardData storage localRewardData, address asset, address reward)
+        internal
+        returns (uint256 newIndex, bool indexUpdated)
+    {
         uint256 oldIndex;
-        (oldIndex, newIndex) = _getAssetIndex(localRewardData, asset, reward, scaledTotalSupply, assetUnit);
+        (oldIndex, newIndex) = _REWARDS_CONTROLLER.getAssetIndex(asset, reward);
 
         // If this is the first initiation of the distribution, set the starting index.
         // In the case that rewards have already started accumulating, rewards will not be credited before this starting index.
@@ -334,8 +323,7 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @param user The user address.
     /// @param asset The address of the reference asset of the distribution.
     /// @param userBalance The current user asset balance.
-    /// @param scaledTotalSupply The current scaled total supply for this distribution.
-    function _updateData(address user, address asset, uint256 userBalance, uint256 scaledTotalSupply) internal {
+    function _updateData(address user, address asset, uint256 userBalance) internal {
         address[] memory availableRewards = _REWARDS_CONTROLLER.getRewardsByAsset(asset);
         if (availableRewards.length == 0) return;
 
@@ -346,8 +334,7 @@ contract RewardsManager is IRewardsManager, Initializable {
                 address reward = availableRewards[i];
                 RewardData storage localRewardData = _localAssetData[asset][reward];
 
-                (uint256 newAssetIndex, bool rewardDataUpdated) =
-                    _updateRewardData(localRewardData, asset, reward, scaledTotalSupply, assetUnit);
+                (uint256 newAssetIndex, bool rewardDataUpdated) = _updateRewardData(localRewardData, asset, reward);
 
                 (uint256 rewardsAccrued, bool userDataUpdated) =
                     _updateUserData(localRewardData, user, userBalance, newAssetIndex, assetUnit);
@@ -364,12 +351,7 @@ contract RewardsManager is IRewardsManager, Initializable {
     /// @param userAssetBalances The list of structs with the user balance and total supply of a set of assets.
     function _updateDataMultiple(address user, UserAssetBalance[] memory userAssetBalances) internal {
         for (uint256 i; i < userAssetBalances.length; ++i) {
-            _updateData(
-                user,
-                userAssetBalances[i].asset,
-                userAssetBalances[i].scaledBalance,
-                userAssetBalances[i].scaledTotalSupply
-            );
+            _updateData(user, userAssetBalances[i].asset, userAssetBalances[i].scaledBalance);
         }
     }
 
@@ -412,9 +394,7 @@ contract RewardsManager is IRewardsManager, Initializable {
             assetUnit = 10 ** _REWARDS_CONTROLLER.getAssetDecimals(userAssetBalance.asset);
         }
 
-        (, uint256 nextIndex) = _getAssetIndex(
-            localRewardData, userAssetBalance.asset, reward, userAssetBalance.scaledTotalSupply, assetUnit
-        );
+        uint256 nextIndex = getAssetIndex(userAssetBalance.asset, reward);
 
         return
             _getRewards(userAssetBalance.scaledBalance, nextIndex, _computeUserIndex(localRewardData, user), assetUnit);
@@ -435,42 +415,6 @@ contract RewardsManager is IRewardsManager, Initializable {
         assembly {
             rewards := div(rewards, assetUnit)
         }
-    }
-
-    /// @dev Computes the next value of an specific distribution index, with validations.
-    /// @param localRewardData The local reward's data.
-    /// @param asset The asset being rewarded.
-    /// @param reward The address of the reward token.
-    /// @param scaledTotalSupply The current total supply of underlying assets for this distribution.
-    /// @param assetUnit The asset's unit (10**decimals).
-    /// @return The former index and the new index in this order.
-    function _getAssetIndex(
-        RewardData storage localRewardData,
-        address asset,
-        address reward,
-        uint256 scaledTotalSupply,
-        uint256 assetUnit
-    ) internal view returns (uint256, uint256) {
-        uint256 currentTimestamp = block.timestamp;
-
-        if (currentTimestamp == localRewardData.lastUpdateTimestamp) {
-            return (localRewardData.index, localRewardData.index);
-        }
-
-        (uint256 rewardIndex, uint256 emissionPerSecond, uint256 lastUpdateTimestamp, uint256 distributionEnd) =
-            _REWARDS_CONTROLLER.getRewardsData(asset, reward);
-
-        if (
-            emissionPerSecond == 0 || scaledTotalSupply == 0 || lastUpdateTimestamp == currentTimestamp
-                || lastUpdateTimestamp >= distributionEnd
-        ) return (localRewardData.index, rewardIndex);
-
-        currentTimestamp = currentTimestamp > distributionEnd ? distributionEnd : currentTimestamp;
-        uint256 totalEmitted = emissionPerSecond * (currentTimestamp - lastUpdateTimestamp) * assetUnit;
-        assembly {
-            totalEmitted := div(totalEmitted, scaledTotalSupply)
-        }
-        return (localRewardData.index, (totalEmitted + rewardIndex));
     }
 
     /// @dev Returns user balances and total supply of all the assets specified by the assets parameter.
