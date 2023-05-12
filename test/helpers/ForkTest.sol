@@ -23,7 +23,6 @@ import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configurati
 import {PermitHash} from "@permit2/libraries/PermitHash.sol";
 import {IAllowanceTransfer, AllowanceTransfer} from "@permit2/AllowanceTransfer.sol";
 
-import {RewardsControllerMock} from "test/mocks/RewardsControllerMock.sol";
 import {PriceOracleSentinelMock} from "test/mocks/PriceOracleSentinelMock.sol";
 import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
 import {PoolAdminMock} from "test/mocks/PoolAdminMock.sol";
@@ -62,14 +61,16 @@ contract ForkTest is BaseTest, Configured {
     IACLManager internal aclManager;
     IPoolConfigurator internal poolConfigurator;
     IPoolDataProvider internal poolDataProvider;
+    IRewardsController internal rewardsController;
     IPoolAddressesProvider internal addressesProvider;
-    address internal morphoDao;
 
+    address internal morphoDao;
     address internal aclAdmin;
+    address internal emissionManager;
+
     AaveOracleMock internal oracle;
     PoolAdminMock internal poolAdmin;
     PriceOracleSentinelMock internal oracleSentinel;
-    IRewardsController internal rewardsController;
 
     uint256 internal snapshotId = type(uint256).max;
 
@@ -80,7 +81,6 @@ contract ForkTest is BaseTest, Configured {
         _mockPoolAdmin();
         _mockOracle();
         _mockOracleSentinel();
-        _mockRewardsController();
 
         deal(address(this), type(uint128).max);
         _setBalances(address(this), type(uint96).max);
@@ -104,6 +104,8 @@ contract ForkTest is BaseTest, Configured {
         aclManager = IACLManager(addressesProvider.getACLManager());
         poolConfigurator = IPoolConfigurator(addressesProvider.getPoolConfigurator());
         poolDataProvider = IPoolDataProvider(addressesProvider.getPoolDataProvider());
+        rewardsController = IRewardsController(addressesProvider.getAddress(keccak256("INCENTIVES_CONTROLLER")));
+        emissionManager = rewardsController.getEmissionManager();
     }
 
     function _label() internal virtual {
@@ -146,10 +148,6 @@ contract ForkTest is BaseTest, Configured {
 
         vm.prank(aclAdmin);
         addressesProvider.setPriceOracleSentinel(address(oracleSentinel));
-    }
-
-    function _mockRewardsController() internal {
-        rewardsController = IRewardsController(new RewardsControllerMock());
     }
 
     function _setBalances(address user, uint256 balance) internal {
