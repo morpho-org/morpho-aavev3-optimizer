@@ -127,7 +127,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         user.approve(dai, amount);
         user.supply(dai, amount);
 
-        uint256 expectedIndex = rewardsManager.getAssetIndex(aDai, wNative);
+        (, uint256 expectedIndex) = rewardsController.getAssetIndex(aDai, wNative);
         uint256 expectedTimestamp = block.timestamp;
 
         (startingIndex, index, lastUpdateTimestamp) = rewardsManager.getRewardData(aDai, wNative);
@@ -166,7 +166,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         user.approve(dai, amount);
         user.supply(dai, amount);
 
-        uint256 expectedIndex = rewardsManager.getAssetIndex(aDai, wNative);
+        (, uint256 expectedIndex) = rewardsController.getAssetIndex(aDai, wNative);
         uint256 expectedAccrued = rewardsManager.getUserRewards(assets, address(user), wNative);
 
         (index, accrued) = rewardsManager.getUserData(aDai, wNative, address(user));
@@ -176,7 +176,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         user.withdraw(dai, type(uint256).max);
 
-        expectedIndex = rewardsManager.getAssetIndex(aDai, wNative);
+        (, expectedIndex) = rewardsController.getAssetIndex(aDai, wNative);
         expectedAccrued = rewardsManager.getUserRewards(assets, address(user), wNative);
 
         (index, accrued) = rewardsManager.getUserData(aDai, wNative, address(user));
@@ -251,7 +251,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
     {
         uint256 assetUnit = 10 ** rewardsController.getAssetDecimals(asset);
         uint256 userIndex = rewardsManager.getUserAssetIndex(user, asset, reward);
-        uint256 assetIndex = rewardsManager.getAssetIndex(asset, reward);
+        (, uint256 assetIndex) = rewardsController.getAssetIndex(asset, reward);
 
         return scaledBalance * (assetIndex - userIndex) / assetUnit;
     }
@@ -260,7 +260,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         amount = _boundSupply(testMarkets[dai], amount);
         blocks = _boundBlocks(blocks);
 
-        uint256 startingAssetIndex = rewardsManager.getAssetIndex(aDai, wNative);
+        (, uint256 startingAssetIndex) = rewardsController.getAssetIndex(aDai, wNative);
 
         // The case where rewards manager has never been updated.
         uint256 index = rewardsManager.getUserAssetIndex(address(user), aDai, wNative);
@@ -283,30 +283,8 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         user.supplyCollateral(dai, amount);
 
         index = rewardsManager.getUserAssetIndex(address(user), aDai, wNative);
-        assertEq(index, rewardsManager.getAssetIndex(aDai, wNative), "index 4");
-    }
-
-    function testGetAssetIndex(uint256 blocks) public {
-        blocks = _boundBlocks(blocks);
-        uint256 assetUnit = 10 ** rewardsController.getAssetDecimals(aDai);
-        uint256 currentTimestamp = block.timestamp;
-
-        (uint256 rewardIndex, uint256 emissionPerSecond, uint256 lastUpdateTimestamp, uint256 distributionEnd) =
-            rewardsController.getRewardsData(aDai, wNative);
-        uint256 totalEmitted = emissionPerSecond * (currentTimestamp - lastUpdateTimestamp) * assetUnit
-            / IScaledBalanceToken(aDai).scaledTotalSupply();
-
-        assertEq(rewardsManager.getAssetIndex(aDai, wNative), rewardIndex + totalEmitted, "index 1");
-
-        _forward(blocks);
-
-        currentTimestamp = block.timestamp;
-
-        currentTimestamp = currentTimestamp > distributionEnd ? distributionEnd : currentTimestamp;
-        totalEmitted = emissionPerSecond * (currentTimestamp - lastUpdateTimestamp) * assetUnit
-            / IScaledBalanceToken(aDai).scaledTotalSupply();
-
-        assertEq(rewardsManager.getAssetIndex(aDai, wNative), rewardIndex + totalEmitted, "index 2");
+        (, uint256 expectedAssetIndex) = rewardsController.getAssetIndex(aDai, wNative);
+        assertEq(index, expectedAssetIndex, "index 4");
     }
 
     function testClaimRewardsRevertIfPaused() public {
@@ -340,10 +318,10 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         rewardBalancesBefore[0] = ERC20(wNative).balanceOf(address(user));
         rewardBalancesBefore[1] = ERC20(link).balanceOf(address(user));
 
+        (, uint256 expectedAssetIndex) = rewardsController.getAssetIndex(aDai, wNative);
+
         vm.expectEmit(true, true, true, true);
-        emit Accrued(
-            aDai, wNative, address(user), rewardsManager.getAssetIndex(testMarkets[dai].aToken, wNative), accruedRewards
-        );
+        emit Accrued(aDai, wNative, address(user), expectedAssetIndex, accruedRewards);
         vm.expectEmit(true, true, true, true);
         emit Events.RewardsClaimed(address(this), address(user), wNative, accruedRewards);
 
@@ -383,8 +361,10 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         rewardBalancesBefore[0] = ERC20(wNative).balanceOf(address(user));
         rewardBalancesBefore[1] = ERC20(link).balanceOf(address(user));
 
+        (, uint256 expectedAssetIndex) = rewardsController.getAssetIndex(aDai, wNative);
+
         vm.expectEmit(true, true, true, true);
-        emit Accrued(aDai, wNative, address(user), rewardsManager.getAssetIndex(aDai, wNative), accruedRewards);
+        emit Accrued(aDai, wNative, address(user), expectedAssetIndex, accruedRewards);
         vm.expectEmit(true, true, true, true);
         emit Events.RewardsClaimed(address(this), address(user), wNative, accruedRewards);
 
@@ -425,8 +405,10 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         rewardBalancesBefore[0] = ERC20(wNative).balanceOf(address(user));
         rewardBalancesBefore[1] = ERC20(link).balanceOf(address(user));
 
+        (, uint256 expectedAssetIndex) = rewardsController.getAssetIndex(vDai, wNative);
+
         vm.expectEmit(true, true, true, true);
-        emit Accrued(vDai, wNative, address(user), rewardsManager.getAssetIndex(vDai, wNative), accruedRewards);
+        emit Accrued(vDai, wNative, address(user), expectedAssetIndex, accruedRewards);
         vm.expectEmit(true, true, true, true);
         emit Events.RewardsClaimed(address(this), address(user), wNative, accruedRewards);
 
@@ -476,10 +458,13 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         rewardBalancesBefore[0] = ERC20(wNative).balanceOf(address(user));
         rewardBalancesBefore[1] = ERC20(link).balanceOf(address(user));
 
+        (, uint256 expectedAssetIndex0) = rewardsController.getAssetIndex(vDai, wNative);
+        (, uint256 expectedAssetIndex1) = rewardsController.getAssetIndex(aUsdc, link);
+
         vm.expectEmit(true, true, true, true);
-        emit Accrued(vDai, wNative, address(user), rewardsManager.getAssetIndex(vDai, wNative), unclaimed[0]);
+        emit Accrued(vDai, wNative, address(user), expectedAssetIndex0, unclaimed[0]);
         vm.expectEmit(true, true, true, true);
-        emit Accrued(aUsdc, link, address(user), rewardsManager.getAssetIndex(aUsdc, link), unclaimed[1]);
+        emit Accrued(aUsdc, link, address(user), expectedAssetIndex1, unclaimed[1]);
         vm.expectEmit(true, true, true, true);
         emit Events.RewardsClaimed(address(this), address(user), wNative, unclaimed[0]);
         vm.expectEmit(true, true, true, true);
