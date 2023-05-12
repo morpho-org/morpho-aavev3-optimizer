@@ -9,12 +9,18 @@ contract InternalTest is ForkTest, Morpho {
     using ConfigLib for Config;
 
     address internal constant POSITIONS_MANAGER = address(0xCA11);
-    bytes32 internal constant INITIALIZED_SLOT = bytes32(uint256(58));
+    bytes32 internal initializedSlot;
+
+    constructor() Morpho() {
+        assembly {
+            sstore(initializedSlot.slot, sub(_pool.slot, 151)) // All other storage variables are private and their storage slot thus cannot be dynamically accessed.
+        }
+    }
 
     function setUp() public virtual override {
         super.setUp();
 
-        vm.store(address(this), INITIALIZED_SLOT, 0); // Re-enable initialization.
+        vm.store(address(this), initializedSlot, 0); // Re-enable initialization.
         this.initialize(
             config.getAddressesProvider(),
             uint8(vm.envOr("E_MODE_CATEGORY_ID", uint256(0))),
