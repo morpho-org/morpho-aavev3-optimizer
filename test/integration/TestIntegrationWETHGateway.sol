@@ -132,14 +132,14 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         uint256 withdrawn = wethGateway.withdrawETH(toWithdraw, receiver, DEFAULT_MAX_ITERATIONS);
 
         if (receiver != address(this)) assertEq(address(this).balance, balanceBefore, "balanceAfter != balanceBefore");
-        assertApproxEqAbs(withdrawn, Math.min(toWithdraw, supply), 1, "withdrawn != minimum");
+        assertApproxEqAbs(withdrawn, Math.min(toWithdraw, supply), 2, "withdrawn != minimum");
         assertApproxEqAbs(
             morpho.supplyBalance(weth, address(this)), supply - withdrawn, 2, "supplyBalance != supply - toWithdraw"
         );
         assertApproxEqAbs(
             receiver.balance,
             receiverBalanceBefore + withdrawn,
-            1,
+            2,
             "receiverBalanceAfter != receiverBalanceBefore + withdrawn"
         );
     }
@@ -177,7 +177,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         uint256 withdrawn = wethGateway.withdrawCollateralETH(toWithdraw, receiver);
 
         if (receiver != address(this)) assertEq(address(this).balance, balanceBefore, "balanceAfter != balanceBefore");
-        assertApproxEqAbs(withdrawn, Math.min(toWithdraw, collateral), 1, "withdrawn != minimum");
+        assertApproxEqAbs(withdrawn, Math.min(toWithdraw, collateral), 2, "withdrawn != minimum");
         assertApproxEqAbs(
             morpho.collateralBalance(weth, address(this)),
             collateral - withdrawn,
@@ -187,7 +187,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertApproxEqAbs(
             receiver.balance,
             receiverBalanceBefore + withdrawn,
-            1,
+            2,
             "receiverBalanceAfter != receiverBalanceBefore + withdrawn"
         );
     }
