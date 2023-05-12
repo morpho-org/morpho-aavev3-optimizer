@@ -9,7 +9,7 @@ contract InternalTest is ForkTest, Morpho {
     using ConfigLib for Config;
 
     address internal constant POSITIONS_MANAGER = address(0xCA11);
-    bytes32 internal constant INITIALIZED_SLOT = bytes32(uint256(57));
+    bytes32 internal constant INITIALIZED_SLOT = bytes32(uint256(58));
 
     function setUp() public virtual override {
         super.setUp();
