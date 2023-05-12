@@ -7,14 +7,14 @@ import {IERC4626Upgradeable} from "@openzeppelin-upgradeable/interfaces/IERC4626
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
-import {OwnableUpgradeable} from "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {ERC4626UpgradeableSafe, ERC4626Upgradeable, ERC20Upgradeable} from "@morpho-utils/ERC4626UpgradeableSafe.sol";
 
 /// @title SupplyVault
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
 /// @notice ERC4626-upgradeable Tokenized Vault implementation for Morpho-Aave V3.
-contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable {
+contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgradeable {
     using SafeTransferLib for ERC20;
 
     /* IMMUTABLES */
@@ -70,7 +70,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, OwnableUpgradeable
 
         ERC20(newUnderlying).safeApprove(address(_MORPHO), type(uint256).max);
 
-        __Ownable_init_unchained();
+        __Ownable_init_unchained(); // Equivalent to __Ownable2Step_init
         __ERC20_init_unchained(name, symbol);
         __ERC4626_init_unchained(ERC20Upgradeable(newUnderlying));
         __ERC4626UpgradeableSafe_init_unchained(initialDeposit);

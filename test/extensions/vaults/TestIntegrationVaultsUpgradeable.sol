@@ -61,4 +61,33 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
         vm.expectRevert("Initializable: contract is already initialized");
         supplyVaultImplV1.initialize(address(wNative), RECIPIENT, "MorphoAaveWETH", "maWETH", 0, 4);
     }
+
+    function testTransferOwnershipRevertsIfNotOwner(address newOwner, address caller) public {
+        vm.assume(caller != wrappedNativeTokenSupplyVault.owner() && caller != address(proxyAdmin));
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        wrappedNativeTokenSupplyVault.transferOwnership(newOwner);
+    }
+
+    function testTransferOwnership(address newOwner) public {
+        wrappedNativeTokenSupplyVault.transferOwnership(newOwner);
+        assertEq(wrappedNativeTokenSupplyVault.pendingOwner(), newOwner);
+        assertEq(wrappedNativeTokenSupplyVault.owner(), address(this));
+    }
+
+    function testAcceptOwnershipFailsIfNotPendingOwner(address newOwner, address wrongOwner) public {
+        vm.assume(newOwner != wrongOwner);
+        wrappedNativeTokenSupplyVault.transferOwnership(newOwner);
+        vm.expectRevert("Ownable2Step: caller is not the new owner");
+        vm.prank(wrongOwner);
+        wrappedNativeTokenSupplyVault.acceptOwnership();
+    }
+
+    function testAcceptOwnership(address newOwner) public {
+        wrappedNativeTokenSupplyVault.transferOwnership(newOwner);
+        vm.prank(newOwner);
+        wrappedNativeTokenSupplyVault.acceptOwnership();
+        assertEq(wrappedNativeTokenSupplyVault.pendingOwner(), address(0));
+        assertEq(wrappedNativeTokenSupplyVault.owner(), newOwner);
+    }
 }
