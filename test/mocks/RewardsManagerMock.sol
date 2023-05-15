@@ -10,10 +10,6 @@ contract RewardsManagerMock is IRewardsManager {
     address public immutable POOL;
     address public immutable MORPHO;
 
-    event Accrued(
-        address indexed asset, address indexed reward, address indexed user, uint256 assetIndex, uint256 rewardsAccrued
-    );
-
     constructor(address morpho) {
         MORPHO = morpho;
         POOL = IMorpho(morpho).pool();
