@@ -141,11 +141,12 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
+        oracle.setAssetPrice(market.underlying, 0);
+
         vm.expectEmit(true, true, true, false, address(morpho));
         emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
-        test.borrowed =
-            _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+        test.borrowed = _borrowPriceZero(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
         test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
@@ -167,6 +168,8 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
+        oracle.setAssetPrice(market.underlying, 0);
+
         vm.expectEmit(true, true, true, false, address(morpho));
         emit Events.SupplyPositionUpdated(address(promoter1), market.underlying, 0, 0);
 
@@ -176,8 +179,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         vm.expectEmit(true, true, true, false, address(morpho));
         emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
-        test.borrowed =
-            _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+        test.borrowed = _borrowPriceZero(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
         test = _assertBorrowP2P(market, amount, onBehalf, receiver, test);
     }
@@ -198,6 +200,8 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
+        oracle.setAssetPrice(market.underlying, 0);
+
         vm.expectEmit(true, true, true, true, address(morpho));
         emit Events.IdleSupplyUpdated(market.underlying, 0);
 
@@ -207,8 +211,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         vm.expectEmit(true, true, true, false, address(morpho));
         emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
-        test.borrowed =
-            _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+        test.borrowed = _borrowPriceZero(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
         test = _assertBorrowP2P(market, amount, onBehalf, receiver, test);
     }
@@ -232,11 +235,12 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
+        oracle.setAssetPrice(market.underlying, 0);
+
         vm.expectEmit(true, true, true, false, address(morpho));
         emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
-        test.borrowed =
-            _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+        test.borrowed = _borrowPriceZero(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
         test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
@@ -259,6 +263,8 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
+        oracle.setAssetPrice(market.underlying, 0);
+
         vm.expectEmit(true, true, true, false, address(morpho));
         emit Events.P2PSupplyDeltaUpdated(market.underlying, 0);
 
@@ -268,8 +274,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         vm.expectEmit(true, true, true, false, address(morpho));
         emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
-        test.borrowed =
-            _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+        test.borrowed = _borrowPriceZero(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
         test = _assertBorrowP2P(market, amount, onBehalf, receiver, test);
     }
@@ -298,11 +303,12 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         test.balanceBefore = ERC20(market.underlying).balanceOf(receiver);
 
+        oracle.setAssetPrice(market.underlying, 0);
+
         vm.expectEmit(true, true, true, false, address(morpho));
         emit Events.Borrowed(address(user), onBehalf, receiver, market.underlying, 0, 0, 0);
 
-        test.borrowed =
-            _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
+        test.borrowed = _borrowPriceZero(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS);
 
         test = _assertBorrowPool(market, amount, onBehalf, receiver, test);
 
@@ -442,10 +448,12 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         Types.Indexes256 memory futureIndexes = morpho.updatedIndexes(market.underlying);
 
+        oracle.setAssetPrice(market.underlying, 0);
+
         vm.expectEmit(true, true, true, false, address(morpho));
         emit Events.IndexesUpdated(market.underlying, 0, 0, 0, 0);
 
-        _borrowWithoutCollateral(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS); // 100% pool.
+        _borrowPriceZero(address(user), market, amount, onBehalf, receiver, DEFAULT_MAX_ITERATIONS); // 100% pool.
 
         _assertMarketUpdatedIndexes(morpho.market(market.underlying), futureIndexes);
     }
