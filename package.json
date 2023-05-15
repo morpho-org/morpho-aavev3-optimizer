@@ -26,16 +26,16 @@
     "postinstall": "husky install"
   },
   "devDependencies": {
-    "@commitlint/cli": "17.3.0",
-    "@commitlint/config-conventional": "^17.3.0",
-    "husky": "8.0.2",
-    "lint-staged": "^13.1.0",
-    "prettier": "^2.8.1"
+    "@commitlint/cli": "^17.6.3",
+    "@commitlint/config-conventional": "^17.6.3",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.2",
+    "prettier": "^2.8.8"
   },
   "lint-staged": {
     "*.sol": "forge fmt",
-    "*.json": "yarn prettier",
-    "*.yml": "yarn prettier"
+    "*.json": "prettier",
+    "*.yml": "prettier"
   },
   "commitlint": {
     "extends": [
