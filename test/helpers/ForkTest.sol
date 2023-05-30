@@ -90,11 +90,15 @@ contract ForkTest is BaseTest, Configured {
         _label();
     }
 
+    function _fork() internal virtual {
+        forkId = vm.createSelectFork(chain.rpcUrl, config.getForkBlockNumber());
+        vm.chainId(chain.chainId);
+    }
+
     function _loadConfig() internal virtual override {
         super._loadConfig();
 
-        forkId = vm.createSelectFork(chain.rpcUrl, config.getForkBlockNumber());
-        vm.chainId(chain.chainId);
+        _fork();
 
         addressesProvider = IPoolAddressesProvider(config.getAddressesProvider());
         pool = IPool(addressesProvider.getPool());

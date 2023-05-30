@@ -10,13 +10,14 @@ struct Config {
 library ConfigLib {
     using stdJson for string;
 
-    string internal constant RPC_ALIAS_PATH = "$.rpcAlias";
-    string internal constant FORK_BLOCK_NUMBER_PATH = "$.forkBlockNumber";
-    string internal constant ADDRESSES_PROVIDER_PATH = "$.addressesProvider";
-    string internal constant WRAPPED_NATIVE_PATH = "$.wrappedNative";
-    string internal constant LSD_NATIVES_PATH = "$.lsdNatives";
-    string internal constant MARKETS_PATH = "$.markets";
-    string internal constant MORPHO_DAO_PATH = "$.morphoDao";
+    string internal constant _RPC_ALIAS_PATH = "$.rpcAlias";
+    string internal constant _FORK_BLOCK_NUMBER_PATH = "$.forkBlockNumber";
+    string internal constant _ADDRESSES_PROVIDER_PATH = "$.addressesProvider";
+    string internal constant _WRAPPED_NATIVE_PATH = "$.wrappedNative";
+    string internal constant _LSD_NATIVES_PATH = "$.lsdNatives";
+    string internal constant _MARKETS_PATH = "$.markets";
+    string internal constant _MORPHO_DAO_PATH = "$.morphoDao";
+    string internal constant _MORPHO_ETH_PATH = "$.morphoEth";
 
     function getAddress(Config storage config, string memory key) internal returns (address) {
         return config.json.readAddress(string.concat("$.", key));
@@ -34,26 +35,30 @@ library ConfigLib {
     }
 
     function getRpcAlias(Config storage config) internal returns (string memory) {
-        return config.json.readString(RPC_ALIAS_PATH);
+        return config.json.readString(_RPC_ALIAS_PATH);
     }
 
     function getForkBlockNumber(Config storage config) internal returns (uint256) {
-        return config.json.readUint(FORK_BLOCK_NUMBER_PATH);
+        return config.json.readUint(_FORK_BLOCK_NUMBER_PATH);
     }
 
     function getAddressesProvider(Config storage config) internal returns (address) {
-        return config.json.readAddress(ADDRESSES_PROVIDER_PATH);
+        return config.json.readAddress(_ADDRESSES_PROVIDER_PATH);
     }
 
     function getMorphoDao(Config storage config) internal returns (address) {
-        return config.json.readAddress(MORPHO_DAO_PATH);
+        return config.json.readAddress(_MORPHO_DAO_PATH);
+    }
+
+    function getMorphoEth(Config storage config) internal returns (address) {
+        return config.json.readAddress(_MORPHO_ETH_PATH);
     }
 
     function getWrappedNative(Config storage config) internal returns (address) {
-        return getAddress(config, config.json.readString(WRAPPED_NATIVE_PATH));
+        return getAddress(config, config.json.readString(_WRAPPED_NATIVE_PATH));
     }
 
     function getLsdNatives(Config storage config) internal returns (address[] memory) {
-        return getAddressArray(config, config.json.readStringArray(LSD_NATIVES_PATH));
+        return getAddressArray(config, config.json.readStringArray(_LSD_NATIVES_PATH));
     }
 }
