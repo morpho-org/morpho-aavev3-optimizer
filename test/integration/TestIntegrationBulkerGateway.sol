@@ -147,7 +147,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
     function testBulkerShouldWrapStETH(address delegator, uint256 amount) public {
         vm.assume(delegator != address(0));
-        amount = bound(amount, 1, ILido(stETH).getCurrentStakeLimit());
+        amount = bound(amount, 2, ILido(stETH).getCurrentStakeLimit());
         deal(delegator, type(uint256).max);
 
         vm.startPrank(delegator);
@@ -160,10 +160,10 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         (actions[0], data[0]) = _getWrapStETHData(amount);
 
         bulker.execute(actions, data);
-        assertEq(
-            ERC20(stNative).balanceOf(address(bulker)), IWSTETH(stNative).getWstETHByStETH(amount), "bulker balance"
+        assertApproxEqAbs(
+            ERC20(stNative).balanceOf(address(bulker)), IWSTETH(stNative).getWstETHByStETH(amount), 1, "bulker balance"
         );
-        assertEq(ERC20(stETH).balanceOf(address(bulker)), 0, "bulker balance");
+        assertApproxEqAbs(ERC20(stETH).balanceOf(address(bulker)), 0, 1, "bulker balance");
     }
 
     function testBulkerShouldUnwrapStETH(address delegator, uint256 amount, address receiver) public {
