@@ -10,6 +10,7 @@ struct Config {
 library ConfigLib {
     using stdJson for string;
 
+    string internal constant _CHAIN_ID_PATH = "$.chainId";
     string internal constant _RPC_ALIAS_PATH = "$.rpcAlias";
     string internal constant _FORK_BLOCK_NUMBER_PATH = "$.forkBlockNumber";
     string internal constant _ADDRESSES_PROVIDER_PATH = "$.addressesProvider";
@@ -32,6 +33,10 @@ library ConfigLib {
         for (uint256 i; i < keys.length; ++i) {
             addresses[i] = getAddress(config, keys[i]);
         }
+    }
+
+    function getChainId(Config storage config) internal returns (uint256) {
+        return config.json.readUint(_CHAIN_ID_PATH);
     }
 
     function getRpcAlias(Config storage config) internal returns (string memory) {
