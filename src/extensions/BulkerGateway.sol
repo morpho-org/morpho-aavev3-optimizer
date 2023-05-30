@@ -81,7 +81,7 @@ contract BulkerGateway is IBulkerGateway {
         }
     }
 
-    /// @dev Only the WETH contract is allowed to transfer ETH to this contract.
+    /// @dev Only the WETH contract is allowed to transfer ETH to this contract, without any calldata.
     receive() external payable {
         if (msg.sender != _WETH) revert OnlyWETH();
     }
