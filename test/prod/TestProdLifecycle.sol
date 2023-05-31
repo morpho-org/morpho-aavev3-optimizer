@@ -5,6 +5,7 @@ import "../helpers/ProductionTest.sol";
 
 contract TestProdLifecycle is ProductionTest {
     using WadRayMath for uint256;
+    using TestMarketLib for TestMarket;
 
     function _beforeSupplyCollateral(MarketSideTest memory collateral) internal virtual {}
 
@@ -22,8 +23,10 @@ contract TestProdLifecycle is ProductionTest {
     }
 
     struct MarketSideTest {
-        Types.Indexes256 indexes;
+        Types.Market market;
+        Types.Indexes256 updatedIndexes;
         uint256 amount;
+        uint256 balanceBefore;
         //
         uint256 morphoPoolSupplyBefore;
         uint256 morphoPoolBorrowBefore;
@@ -38,34 +41,48 @@ contract TestProdLifecycle is ProductionTest {
         virtual
         returns (MarketSideTest memory test)
     {
-        test.morphoPoolSupplyBefore = ERC20(market.aToken).balanceOf(address(morpho));
-        test.morphoPoolBorrowBefore = ERC20(market.variableDebtToken).balanceOf(address(morpho));
-        test.morphoUnderlyingBalanceBefore = ERC20(market.underlying).balanceOf(address(morpho));
+        test.market = morpho.market(market.underlying);
 
         test.amount = amount;
     }
 
-    function _updateSupplyTest(address underlying, MarketSideTest memory test) internal view {
-        test.indexes = morpho.updatedIndexes(underlying);
+    function _updateTestBefore(MarketSideTest memory test) internal view {
+        test.balanceBefore = ERC20(test.market.underlying).balanceOf(address(user));
 
-        test.position.p2p = test.position.scaledP2P.rayMul(test.indexes.supply.p2pIndex);
-        test.position.pool = test.position.scaledPool.rayMul(test.indexes.supply.poolIndex);
-        test.position.total = test.position.p2p + test.position.pool;
+        test.morphoPoolSupplyBefore = ERC20(test.market.aToken).balanceOf(address(morpho));
+        test.morphoPoolBorrowBefore = ERC20(test.market.variableDebtToken).balanceOf(address(morpho));
+        test.morphoUnderlyingBalanceBefore = ERC20(test.market.underlying).balanceOf(address(morpho));
     }
 
-    function _updateBorrowTest(address underlying, MarketSideTest memory test) internal view {
-        test.indexes = morpho.updatedIndexes(underlying);
+    function _updateCollateralTest(MarketSideTest memory test) internal view {
+        test.updatedIndexes = morpho.updatedIndexes(test.market.underlying);
 
-        test.position.p2p = test.position.scaledP2P.rayMul(test.indexes.borrow.p2pIndex);
-        test.position.pool = test.position.scaledPool.rayMul(test.indexes.borrow.poolIndex);
-        test.position.total = test.position.p2p + test.position.pool;
-    }
+        test.position.scaledPool = morpho.scaledCollateralBalance(test.market.underlying, address(user));
 
-    function _updateCollateralTest(address underlying, MarketSideTest memory test) internal view {
-        test.indexes = morpho.updatedIndexes(underlying);
-
-        test.position.pool = test.position.scaledPool.rayMul(test.indexes.supply.poolIndex);
+        test.position.pool = test.position.scaledPool.rayMulDown(test.updatedIndexes.supply.poolIndex);
         test.position.total = test.position.pool;
+    }
+
+    function _updateSupplyTest(MarketSideTest memory test) internal view {
+        test.updatedIndexes = morpho.updatedIndexes(test.market.underlying);
+
+        test.position.scaledP2P = morpho.scaledP2PSupplyBalance(test.market.underlying, address(user));
+        test.position.scaledPool = morpho.scaledPoolSupplyBalance(test.market.underlying, address(user));
+
+        test.position.p2p = test.position.scaledP2P.rayMulDown(test.updatedIndexes.supply.p2pIndex);
+        test.position.pool = test.position.scaledPool.rayMulDown(test.updatedIndexes.supply.poolIndex);
+        test.position.total = test.position.p2p + test.position.pool;
+    }
+
+    function _updateBorrowTest(MarketSideTest memory test) internal view {
+        test.updatedIndexes = morpho.updatedIndexes(test.market.underlying);
+
+        test.position.scaledP2P = morpho.scaledP2PBorrowBalance(test.market.underlying, address(user));
+        test.position.scaledPool = morpho.scaledPoolBorrowBalance(test.market.underlying, address(user));
+
+        test.position.p2p = test.position.scaledP2P.rayMulUp(test.updatedIndexes.borrow.p2pIndex);
+        test.position.pool = test.position.scaledPool.rayMulUp(test.updatedIndexes.borrow.poolIndex);
+        test.position.total = test.position.p2p + test.position.pool;
     }
 
     function _supplyCollateral(TestMarket storage market, uint256 amount)
@@ -75,51 +92,49 @@ contract TestProdLifecycle is ProductionTest {
     {
         collateral = _initMarketSideTest(market, amount);
 
+        if (collateral.market.pauseStatuses.isSupplyCollateralPaused) return collateral;
+
         _beforeSupplyCollateral(collateral);
+
+        _updateTestBefore(collateral);
 
         user.approve(market.underlying, collateral.amount);
         user.supplyCollateral(market.underlying, collateral.amount, address(user));
 
-        collateral.position.scaledPool = morpho.scaledCollateralBalance(market.underlying, address(user));
-
-        _updateCollateralTest(market.underlying, collateral);
+        _updateCollateralTest(collateral);
     }
 
-    function _testSupplyCollateral(
-        TestMarket storage testMarket,
-        Types.Market memory market,
-        MarketSideTest memory collateral
-    ) internal virtual {
+    function _testSupplyCollateral(TestMarket storage market, MarketSideTest memory collateral) internal virtual {
         assertEq(
-            ERC20(testMarket.underlying).balanceOf(address(user)),
-            0,
-            string.concat(testMarket.symbol, " balance after collateral supply")
+            ERC20(market.underlying).balanceOf(address(user)) + collateral.amount,
+            collateral.balanceBefore,
+            string.concat(market.symbol, " balance after collateral supply")
         );
         assertApproxEqAbs(
-            collateral.position.total, collateral.amount, 1, string.concat(testMarket.symbol, " total collateral")
+            collateral.position.total, collateral.amount, 2, string.concat(market.symbol, " total collateral")
         );
 
         assertEq(
-            ERC20(testMarket.underlying).balanceOf(address(morpho)),
+            ERC20(market.underlying).balanceOf(address(morpho)),
             collateral.morphoUnderlyingBalanceBefore,
-            string.concat(testMarket.symbol, " morpho balance")
+            string.concat(market.symbol, " morpho balance")
         );
         assertApproxEqAbs(
-            ERC20(testMarket.aToken).balanceOf(address(morpho)),
+            ERC20(market.aToken).balanceOf(address(morpho)),
             collateral.morphoPoolSupplyBefore + collateral.position.pool,
             10,
-            string.concat(testMarket.symbol, " morpho pool supply")
+            string.concat(market.symbol, " morpho pool supply")
         );
         assertApproxEqAbs(
-            ERC20(testMarket.variableDebtToken).balanceOf(address(morpho)) + collateral.position.p2p,
+            ERC20(market.variableDebtToken).balanceOf(address(morpho)),
             collateral.morphoPoolBorrowBefore,
             10,
-            string.concat(testMarket.symbol, " morpho pool borrow")
+            string.concat(market.symbol, " morpho pool borrow")
         );
 
         _forward(100_000);
 
-        _updateCollateralTest(market.underlying, collateral);
+        _updateCollateralTest(collateral);
     }
 
     function _supply(TestMarket storage market, uint256 amount)
@@ -129,66 +144,65 @@ contract TestProdLifecycle is ProductionTest {
     {
         supply = _initMarketSideTest(market, amount);
 
+        if (supply.market.pauseStatuses.isSupplyPaused) return supply;
+
         _beforeSupply(supply);
+
+        _updateTestBefore(supply);
 
         user.approve(market.underlying, supply.amount);
         user.supply(market.underlying, supply.amount, address(user));
 
-        supply.position.scaledP2P = morpho.scaledP2PSupplyBalance(market.underlying, address(user));
-        supply.position.scaledPool = morpho.scaledPoolSupplyBalance(market.underlying, address(user));
-
-        _updateSupplyTest(market.underlying, supply);
+        _updateSupplyTest(supply);
     }
 
-    function _testSupply(TestMarket storage testMarket, Types.Market memory market, MarketSideTest memory supply)
-        internal
-        virtual
-    {
+    function _testSupply(TestMarket storage market, MarketSideTest memory supply) internal virtual {
         assertEq(
-            ERC20(testMarket.underlying).balanceOf(address(user)),
-            0,
-            string.concat(testMarket.symbol, " balance after supply")
+            ERC20(market.underlying).balanceOf(address(user)) + supply.amount,
+            supply.balanceBefore,
+            string.concat(market.symbol, " balance after supply")
         );
-        assertApproxEqAbs(supply.position.total, supply.amount, 1, string.concat(testMarket.symbol, " total supply"));
+        assertApproxEqAbs(supply.position.total, supply.amount, 2, string.concat(market.symbol, " total supply"));
 
-        if (market.pauseStatuses.isP2PDisabled) {
-            assertEq(supply.position.scaledP2P, 0, string.concat(testMarket.symbol, " borrow delta matched"));
+        if (supply.market.pauseStatuses.isP2PDisabled) {
+            assertEq(supply.position.scaledP2P, 0, string.concat(market.symbol, " borrow delta matched"));
         } else {
-            uint256 underlyingBorrowDelta = market.deltas.borrow.scaledDelta.rayMul(supply.indexes.borrow.poolIndex);
+            uint256 underlyingBorrowDelta =
+                supply.market.deltas.borrow.scaledDelta.rayMul(supply.updatedIndexes.borrow.poolIndex);
             if (underlyingBorrowDelta <= supply.amount) {
                 assertGe(
                     supply.position.p2p,
                     underlyingBorrowDelta,
-                    string.concat(testMarket.symbol, " borrow delta minimum match")
+                    string.concat(market.symbol, " borrow delta minimum match")
                 );
             } else {
                 assertApproxEqAbs(
-                    supply.position.p2p, supply.amount, 1, string.concat(testMarket.symbol, " borrow delta full match")
+                    supply.position.p2p, supply.amount, 1, string.concat(market.symbol, " borrow delta full match")
                 );
             }
         }
 
         assertEq(
-            ERC20(testMarket.underlying).balanceOf(address(morpho)),
+            ERC20(market.underlying).balanceOf(address(morpho)),
             supply.morphoUnderlyingBalanceBefore,
-            string.concat(testMarket.symbol, " morpho balance")
+            string.concat(market.symbol, " morpho balance")
         );
         assertApproxEqAbs(
-            ERC20(testMarket.aToken).balanceOf(address(morpho)),
+            ERC20(market.aToken).balanceOf(address(morpho)),
             supply.morphoPoolSupplyBefore + supply.position.pool,
             10,
-            string.concat(testMarket.symbol, " morpho pool supply")
+            string.concat(market.symbol, " morpho pool supply")
         );
         assertApproxEqAbs(
-            ERC20(testMarket.variableDebtToken).balanceOf(address(morpho)) + supply.position.p2p,
+            ERC20(market.variableDebtToken).balanceOf(address(morpho)) + supply.position.p2p,
             supply.morphoPoolBorrowBefore,
             10,
-            string.concat(testMarket.symbol, " morpho pool borrow")
+            string.concat(market.symbol, " morpho pool borrow")
         );
 
         _forward(100_000);
 
-        _updateSupplyTest(market.underlying, supply);
+        _updateSupplyTest(supply);
     }
 
     function _borrow(TestMarket storage market, uint256 amount)
@@ -198,196 +212,176 @@ contract TestProdLifecycle is ProductionTest {
     {
         borrow = _initMarketSideTest(market, amount);
 
+        if (borrow.market.pauseStatuses.isBorrowPaused) return borrow;
+
         _beforeBorrow(borrow);
 
-        user.borrow(market.aToken, borrow.amount);
+        _updateTestBefore(borrow);
 
-        borrow.position.scaledP2P = morpho.scaledP2PBorrowBalance(market.underlying, address(user));
-        borrow.position.scaledPool = morpho.scaledPoolBorrowBalance(market.underlying, address(user));
+        user.borrow(market.underlying, borrow.amount);
 
-        _updateBorrowTest(market.underlying, borrow);
+        _updateBorrowTest(borrow);
     }
 
-    function _testBorrow(TestMarket storage testMarket, Types.Market memory market, MarketSideTest memory borrow)
-        internal
-        virtual
-    {
+    function _testBorrow(TestMarket storage market, MarketSideTest memory borrow) internal virtual {
         assertEq(
-            ERC20(testMarket.underlying).balanceOf(address(user)),
-            borrow.amount,
-            string.concat(testMarket.symbol, " balance after borrow")
+            ERC20(market.underlying).balanceOf(address(user)),
+            borrow.balanceBefore + borrow.amount,
+            string.concat(market.symbol, " balance after borrow")
         );
-        assertApproxEqAbs(borrow.position.total, borrow.amount, 1, string.concat(testMarket.symbol, " total borrow"));
-        if (market.pauseStatuses.isP2PDisabled) {
-            assertEq(borrow.position.scaledP2P, 0, string.concat(testMarket.symbol, " supply delta matched"));
+        assertApproxEqAbs(borrow.position.total, borrow.amount, 2, string.concat(market.symbol, " total borrow"));
+        if (borrow.market.pauseStatuses.isP2PDisabled) {
+            assertEq(borrow.position.scaledP2P, 0, string.concat(market.symbol, " supply delta matched"));
         } else {
-            uint256 underlyingSupplyDelta = market.deltas.supply.scaledDelta.rayMul(borrow.indexes.supply.poolIndex);
+            uint256 underlyingSupplyDelta =
+                borrow.market.deltas.supply.scaledDelta.rayMul(borrow.updatedIndexes.supply.poolIndex);
             if (underlyingSupplyDelta <= borrow.amount) {
                 assertGe(
                     borrow.position.p2p,
                     underlyingSupplyDelta,
-                    string.concat(testMarket.symbol, " supply delta minimum match")
+                    string.concat(market.symbol, " supply delta minimum match")
                 );
             } else {
                 assertApproxEqAbs(
-                    borrow.position.p2p, borrow.amount, 1, string.concat(testMarket.symbol, " supply delta full match")
+                    borrow.position.p2p, borrow.amount, 1, string.concat(market.symbol, " supply delta full match")
                 );
             }
         }
 
         assertEq(
-            ERC20(testMarket.underlying).balanceOf(address(morpho)),
+            ERC20(market.underlying).balanceOf(address(morpho)),
             borrow.morphoUnderlyingBalanceBefore,
-            string.concat(testMarket.symbol, " morpho borrowed balance")
+            string.concat(market.symbol, " morpho borrowed balance")
         );
         assertApproxEqAbs(
-            ERC20(testMarket.aToken).balanceOf(address(morpho)) + borrow.position.p2p,
+            ERC20(market.aToken).balanceOf(address(morpho)) + borrow.position.p2p,
             borrow.morphoPoolSupplyBefore,
             2,
-            string.concat(testMarket.symbol, " morpho borrowed pool supply")
+            string.concat(market.symbol, " morpho borrowed pool supply")
         );
         assertApproxEqAbs(
-            ERC20(testMarket.variableDebtToken).balanceOf(address(morpho)),
+            ERC20(market.variableDebtToken).balanceOf(address(morpho)),
             borrow.morphoPoolBorrowBefore + borrow.position.pool,
             1,
-            string.concat(testMarket.symbol, " morpho borrowed pool borrow")
+            string.concat(market.symbol, " morpho borrowed pool borrow")
         );
 
         _forward(100_000);
 
-        _updateBorrowTest(market.underlying, borrow);
+        _updateBorrowTest(borrow);
     }
 
-    function _repay(TestMarket storage market, MarketSideTest memory borrow) internal virtual {
-        _updateBorrowTest(market.underlying, borrow);
+    function _repay(MarketSideTest memory borrow) internal virtual {
+        _updateBorrowTest(borrow);
 
-        user.approve(market.underlying, borrow.position.total);
-        user.repay(market.aToken, type(uint256).max, address(user));
+        _updateTestBefore(borrow);
+
+        user.approve(borrow.market.underlying, borrow.position.total);
+        user.repay(borrow.market.underlying, type(uint256).max, address(user));
     }
 
     function _testRepay(TestMarket storage market, MarketSideTest memory borrow) internal virtual {
         assertApproxEqAbs(
-            ERC20(market.underlying).balanceOf(address(user)),
-            0,
-            10 ** (market.decimals / 2),
-            string.concat(market.symbol, " borrow after repay")
+            ERC20(market.underlying).balanceOf(address(user)) + borrow.position.total,
+            borrow.balanceBefore,
+            1,
+            string.concat(market.symbol, " after repay")
         );
 
-        _updateBorrowTest(market.underlying, borrow);
+        _updateBorrowTest(borrow);
 
         assertEq(borrow.position.p2p, 0, string.concat(market.symbol, " p2p borrow after repay"));
         assertEq(borrow.position.pool, 0, string.concat(market.symbol, " pool borrow after repay"));
         assertEq(borrow.position.total, 0, string.concat(market.symbol, " total borrow after repay"));
     }
 
-    function _withdraw(TestMarket storage market, MarketSideTest memory supply) internal virtual {
-        _updateSupplyTest(market.underlying, supply);
+    function _withdraw(MarketSideTest memory supply) internal virtual {
+        _updateSupplyTest(supply);
 
-        user.withdraw(market.underlying, type(uint256).max);
+        _updateTestBefore(supply);
+
+        user.withdraw(supply.market.underlying, type(uint256).max);
     }
 
     function _testWithdraw(TestMarket storage market, MarketSideTest memory supply) internal virtual {
         assertApproxEqAbs(
             ERC20(market.underlying).balanceOf(address(user)),
-            supply.position.total,
-            10 ** (market.decimals / 2),
-            string.concat(market.symbol, " supply after withdraw")
+            supply.balanceBefore + supply.position.total,
+            1,
+            string.concat(market.symbol, " after withdraw")
         );
 
-        _updateSupplyTest(market.underlying, supply);
+        _updateSupplyTest(supply);
 
         assertEq(supply.position.p2p, 0, string.concat(market.symbol, " p2p supply after withdraw"));
         assertEq(supply.position.pool, 0, string.concat(market.symbol, " pool supply after withdraw"));
         assertEq(supply.position.total, 0, string.concat(market.symbol, " total supply after withdraw"));
     }
 
-    function _withdrawCollateral(TestMarket storage market, MarketSideTest memory collateral) internal virtual {
-        _updateSupplyTest(market.underlying, collateral);
+    function _withdrawCollateral(MarketSideTest memory collateral) internal virtual {
+        _updateCollateralTest(collateral);
 
-        user.withdraw(market.underlying, type(uint256).max);
+        _updateTestBefore(collateral);
+
+        user.withdrawCollateral(collateral.market.underlying, type(uint256).max);
     }
 
     function _testWithdrawCollateral(TestMarket storage market, MarketSideTest memory collateral) internal virtual {
         assertApproxEqAbs(
             ERC20(market.underlying).balanceOf(address(user)),
-            collateral.position.total,
-            10 ** (market.decimals / 2),
+            collateral.balanceBefore + collateral.position.total,
+            1,
             string.concat(market.symbol, " collateral after withdraw")
         );
 
-        _updateSupplyTest(market.underlying, collateral);
+        _updateSupplyTest(collateral);
 
         assertEq(collateral.position.p2p, 0, string.concat(market.symbol, " p2p supply after withdraw"));
         assertEq(collateral.position.pool, 0, string.concat(market.symbol, " pool supply after withdraw"));
         assertEq(collateral.position.total, 0, string.concat(market.symbol, " total supply after withdraw"));
     }
 
-    function testShouldSupplyCollateralSupplyBorrowWithdrawRepayWithdrawCollateralAllMarkets(uint96 amount) public {
-        for (
-            uint256 collateralMarketIndex; collateralMarketIndex < collateralUnderlyings.length; ++collateralMarketIndex
-        ) {
-            TestMarket storage collateralTestMarket = testMarkets[collateralUnderlyings[collateralMarketIndex]];
-            Types.Market memory collateralMarket = morpho.market(collateralTestMarket.underlying);
+    function testShouldSupplyCollateralSupplyBorrowWithdrawRepayWithdrawCollateralAllMarkets(
+        uint256 collateralSeed,
+        uint256 borrowedSeed,
+        uint256 collateralAmount,
+        uint256 borrowedAmount
+    ) public {
+        TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowedSeed)];
 
-            if (collateralMarket.pauseStatuses.isSupplyCollateralPaused) continue;
+        borrowedAmount = _boundBorrow(borrowedMarket, borrowedAmount);
+        collateralAmount = collateralMarket.minBorrowCollateral(borrowedMarket, borrowedAmount, eModeCategoryId);
 
-            for (uint256 supplyMarketIndex; supplyMarketIndex < allUnderlyings.length; ++supplyMarketIndex) {
-                TestMarket storage supplyTestMarket = testMarkets[allUnderlyings[supplyMarketIndex]];
-                Types.Market memory supplyMarket = morpho.market(supplyTestMarket.underlying);
+        MarketSideTest memory collateral = _supplyCollateral(collateralMarket, collateralAmount);
+        vm.assume(!collateral.market.pauseStatuses.isSupplyCollateralPaused);
 
-                for (
-                    uint256 borrowMarketIndex;
-                    borrowMarketIndex < borrowableInEModeUnderlyings.length;
-                    ++borrowMarketIndex
-                ) {
-                    _revert();
+        _testSupplyCollateral(collateralMarket, collateral);
 
-                    TestMarket storage borrowTestMarket = testMarkets[borrowableInEModeUnderlyings[borrowMarketIndex]];
-                    Types.Market memory borrowMarket = morpho.market(borrowTestMarket.underlying);
+        MarketSideTest memory supply = _supply(borrowedMarket, borrowedAmount);
+        vm.assume(!supply.market.pauseStatuses.isSupplyPaused);
 
-                    uint256 borrowedPrice = oracle.getAssetPrice(borrowTestMarket.underlying);
-                    uint256 borrowAmount = _boundBorrowAmount(borrowMarket, amount, borrowedPrice);
-                    uint256 supplyAmount = _getMinimumCollateralAmount(
-                        borrowAmount,
-                        borrowedPrice,
-                        borrowMarket.decimals,
-                        oracle.getAssetPrice(supplyMarket.underlying),
-                        supplyMarket.decimals,
-                        supplyMarket.ltv
-                    ).wadMul(1.001 ether);
+        _testSupply(borrowedMarket, supply);
 
-                    MarketSideTest memory collateral = _supplyCollateral(supplyMarket, supplyAmount);
-                    _testSupplyCollateral(collateralTestMarket, collateral);
+        MarketSideTest memory borrow = _borrow(borrowedMarket, borrowedAmount);
+        vm.assume(!borrow.market.pauseStatuses.isBorrowPaused);
 
-                    MarketSideTest memory supply;
-                    if (!supplyMarket.pauseStatuses.isSupplyPaused) {
-                        supply = _supply(supplyMarket, supplyAmount);
-                        _testSupply(supplyTestMarket, supply);
-                    }
+        _testBorrow(borrowedMarket, borrow);
 
-                    MarketSideTest memory borrow;
-                    if (!borrowMarket.pauseStatuses.isBorrowPaused) {
-                        borrow = _borrow(borrowMarket, borrowAmount);
-                        _testBorrow(borrowTestMarket, borrow);
-                    }
-
-                    if (!supplyMarket.pauseStatuses.isSupplyPaused && !supplyMarket.pauseStatuses.isWithdrawPaused) {
-                        _withdraw(supplyTestMarket, supply);
-                        _testWithdraw(supplyTestMarket, supply);
-                    }
-
-                    if (!borrowMarket.pauseStatuses.isBorrowPaused && !borrowMarket.pauseStatuses.isRepayPaused) {
-                        _repay(borrowTestMarket, borrow);
-                        _testRepay(borrowTestMarket, borrow);
-                    }
-
-                    if (collateralMarket.pauseStatuses.isWithdrawCollateralPaused) continue;
-
-                    _withdrawCollateral(collateralTestMarket, supply);
-                    _testWithdrawCollateral(collateralTestMarket, supply);
-                }
-            }
+        if (!borrow.market.pauseStatuses.isRepayPaused) {
+            _repay(borrow);
+            _testRepay(borrowedMarket, borrow);
         }
+
+        if (!supply.market.pauseStatuses.isWithdrawPaused) {
+            _withdraw(supply);
+            _testWithdraw(borrowedMarket, supply);
+        }
+
+        if (collateral.market.pauseStatuses.isWithdrawCollateralPaused) return;
+
+        _withdrawCollateral(collateral);
+        _testWithdrawCollateral(collateralMarket, collateral);
     }
 
     // function testShouldNotBorrowWithoutEnoughCollateral(uint96 amount) public {
