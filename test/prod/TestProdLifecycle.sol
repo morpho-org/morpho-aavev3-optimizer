@@ -85,21 +85,13 @@ contract TestProdLifecycle is ProductionTest {
         test.position.total = test.position.p2p + test.position.pool;
     }
 
-    function _supplyCollateral(TestMarket storage market, uint256 amount)
-        internal
-        virtual
-        returns (MarketSideTest memory collateral)
-    {
-        collateral = _initMarketSideTest(market, amount);
-
-        if (collateral.market.pauseStatuses.isSupplyCollateralPaused) return collateral;
-
+    function _supplyCollateral(MarketSideTest memory collateral) internal virtual {
         _beforeSupplyCollateral(collateral);
 
         _updateTestBefore(collateral);
 
-        user.approve(market.underlying, collateral.amount);
-        user.supplyCollateral(market.underlying, collateral.amount, address(user));
+        user.approve(collateral.market.underlying, collateral.amount);
+        user.supplyCollateral(collateral.market.underlying, collateral.amount, address(user));
 
         _updateCollateralTest(collateral);
     }
@@ -137,21 +129,13 @@ contract TestProdLifecycle is ProductionTest {
         _updateCollateralTest(collateral);
     }
 
-    function _supply(TestMarket storage market, uint256 amount)
-        internal
-        virtual
-        returns (MarketSideTest memory supply)
-    {
-        supply = _initMarketSideTest(market, amount);
-
-        if (supply.market.pauseStatuses.isSupplyPaused) return supply;
-
+    function _supply(MarketSideTest memory supply) internal virtual {
         _beforeSupply(supply);
 
         _updateTestBefore(supply);
 
-        user.approve(market.underlying, supply.amount);
-        user.supply(market.underlying, supply.amount, address(user));
+        user.approve(supply.market.underlying, supply.amount);
+        user.supply(supply.market.underlying, supply.amount, address(user));
 
         _updateSupplyTest(supply);
     }
@@ -205,20 +189,12 @@ contract TestProdLifecycle is ProductionTest {
         _updateSupplyTest(supply);
     }
 
-    function _borrow(TestMarket storage market, uint256 amount)
-        internal
-        virtual
-        returns (MarketSideTest memory borrow)
-    {
-        borrow = _initMarketSideTest(market, amount);
-
-        if (borrow.market.pauseStatuses.isBorrowPaused) return borrow;
-
+    function _borrow(MarketSideTest memory borrow) internal virtual {
         _beforeBorrow(borrow);
 
         _updateTestBefore(borrow);
 
-        user.borrow(market.underlying, borrow.amount);
+        user.borrow(borrow.market.underlying, borrow.amount);
 
         _updateBorrowTest(borrow);
     }
@@ -353,19 +329,22 @@ contract TestProdLifecycle is ProductionTest {
         borrowedAmount = _boundBorrow(borrowedMarket, borrowedAmount);
         collateralAmount = collateralMarket.minBorrowCollateral(borrowedMarket, borrowedAmount, eModeCategoryId);
 
-        MarketSideTest memory collateral = _supplyCollateral(collateralMarket, collateralAmount);
+        MarketSideTest memory collateral = _initMarketSideTest(collateralMarket, collateralAmount);
         vm.assume(!collateral.market.pauseStatuses.isSupplyCollateralPaused);
 
+        _supplyCollateral(collateral);
         _testSupplyCollateral(collateralMarket, collateral);
 
-        MarketSideTest memory supply = _supply(borrowedMarket, borrowedAmount);
+        MarketSideTest memory supply = _initMarketSideTest(borrowedMarket, borrowedAmount);
         vm.assume(!supply.market.pauseStatuses.isSupplyPaused);
 
+        _supply(supply);
         _testSupply(borrowedMarket, supply);
 
-        MarketSideTest memory borrow = _borrow(borrowedMarket, borrowedAmount);
+        MarketSideTest memory borrow = _initMarketSideTest(borrowedMarket, borrowedAmount);
         vm.assume(!borrow.market.pauseStatuses.isBorrowPaused);
 
+        _borrow(borrow);
         _testBorrow(borrowedMarket, borrow);
 
         if (!borrow.market.pauseStatuses.isRepayPaused) {
