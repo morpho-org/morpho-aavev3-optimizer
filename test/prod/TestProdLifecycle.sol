@@ -5,6 +5,7 @@ import "../helpers/ProductionTest.sol";
 
 contract TestProdLifecycle is ProductionTest {
     using WadRayMath for uint256;
+    using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
 
     function _beforeSupplyCollateral(MarketSideTest memory collateral) internal virtual {}
@@ -332,17 +333,17 @@ contract TestProdLifecycle is ProductionTest {
         MarketSideTest memory collateral = _initMarketSideTest(collateralMarket, collateralAmount);
         vm.assume(!collateral.market.pauseStatuses.isSupplyCollateralPaused);
 
-        _supplyCollateral(collateral);
-        _testSupplyCollateral(collateralMarket, collateral);
-
         MarketSideTest memory supply = _initMarketSideTest(borrowedMarket, borrowedAmount);
         vm.assume(!supply.market.pauseStatuses.isSupplyPaused);
 
-        _supply(supply);
-        _testSupply(borrowedMarket, supply);
-
         MarketSideTest memory borrow = _initMarketSideTest(borrowedMarket, borrowedAmount);
         vm.assume(!borrow.market.pauseStatuses.isBorrowPaused);
+
+        _supplyCollateral(collateral);
+        _testSupplyCollateral(collateralMarket, collateral);
+
+        _supply(supply);
+        _testSupply(borrowedMarket, supply);
 
         _borrow(borrow);
         _testBorrow(borrowedMarket, borrow);
@@ -363,37 +364,30 @@ contract TestProdLifecycle is ProductionTest {
         _testWithdrawCollateral(collateralMarket, collateral);
     }
 
-    // function testShouldNotBorrowWithoutEnoughCollateral(uint96 amount) public {
-    //     for (uint256 supplyMarketIndex; supplyMarketIndex < collateralMarkets.length; ++supplyMarketIndex) {
-    //         TestMarket memory supplyMarket = collateralMarkets[supplyMarketIndex];
+    function testShouldNotBorrowWithoutEnoughCollateral(
+        uint256 collateralSeed,
+        uint256 borrowedSeed,
+        uint256 collateralAmount,
+        uint256 borrowedAmount
+    ) public {
+        TestMarket storage collateralMarket = testMarkets[_randomCollateral(collateralSeed)];
+        TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(borrowedSeed)];
 
-    //         if (supplyMarket.pauseStatuses.isSupplyPaused) continue;
+        borrowedAmount = _boundBorrow(borrowedMarket, borrowedAmount);
+        collateralAmount =
+            collateralMarket.minBorrowCollateral(borrowedMarket, borrowedAmount, eModeCategoryId).percentSub(1_00);
 
-    //         for (uint256 borrowMarketIndex; borrowMarketIndex < borrowableMarkets.length; ++borrowMarketIndex) {
-    //             _revert();
+        MarketSideTest memory collateral = _initMarketSideTest(collateralMarket, collateralAmount);
+        vm.assume(!collateral.market.pauseStatuses.isSupplyCollateralPaused);
 
-    //             TestMarket memory borrowMarket = borrowableMarkets[borrowMarketIndex];
+        MarketSideTest memory borrow = _initMarketSideTest(borrowedMarket, borrowedAmount);
+        vm.assume(!borrow.market.pauseStatuses.isBorrowPaused);
 
-    //             if (borrowMarket.pauseStatuses.isBorrowPaused) continue;
+        _supplyCollateral(collateral);
 
-    //             uint256 borrowedPrice = oracle.getAssetPrice(borrowMarket.underlying);
-    //             uint256 borrowAmount = _boundBorrowAmount(borrowMarket, amount, borrowedPrice);
-    //             uint256 supplyAmount = _getMinimumCollateralAmount(
-    //                 borrowAmount,
-    //                 borrowedPrice,
-    //                 borrowMarket.decimals,
-    //                 oracle.getAssetPrice(supplyMarket.underlying),
-    //                 supplyMarket.decimals,
-    //                 supplyMarket.ltv
-    //             ).wadMul(0.95 ether);
-
-    //             _supply(supplyMarket, supplyAmount);
-
-    //             vm.expectRevert(Errors.UnauthorisedBorrow.selector);
-    //             user.borrow(borrowMarket.poolToken, borrowAmount);
-    //         }
-    //     }
-    // }
+        vm.expectRevert(Errors.UnauthorizedBorrow.selector);
+        user.borrow(borrowedMarket.underlying, borrowedAmount);
+    }
 
     function testShouldNotSupplyZeroAmount() public {
         for (uint256 i; i < allUnderlyings.length; ++i) {
