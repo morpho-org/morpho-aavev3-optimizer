@@ -55,7 +55,7 @@ contract TestProdLifecycle is ProductionTest {
         test.morphoUnderlyingBalanceBefore = ERC20(test.market.underlying).balanceOf(address(morpho));
     }
 
-    function _updateCollateralTest(MarketSideTest memory test) internal view {
+    function _updateCollateralPositionTest(MarketSideTest memory test) internal view {
         test.updatedIndexes = morpho.updatedIndexes(test.market.underlying);
 
         test.position.scaledPool = morpho.scaledCollateralBalance(test.market.underlying, address(user));
@@ -64,7 +64,7 @@ contract TestProdLifecycle is ProductionTest {
         test.position.total = test.position.pool;
     }
 
-    function _updateSupplyTest(MarketSideTest memory test) internal view {
+    function _updateSupplyPositionTest(MarketSideTest memory test) internal view {
         test.updatedIndexes = morpho.updatedIndexes(test.market.underlying);
 
         test.position.scaledP2P = morpho.scaledP2PSupplyBalance(test.market.underlying, address(user));
@@ -75,7 +75,7 @@ contract TestProdLifecycle is ProductionTest {
         test.position.total = test.position.p2p + test.position.pool;
     }
 
-    function _updateBorrowTest(MarketSideTest memory test) internal view {
+    function _updateBorrowPositionTest(MarketSideTest memory test) internal view {
         test.updatedIndexes = morpho.updatedIndexes(test.market.underlying);
 
         test.position.scaledP2P = morpho.scaledP2PBorrowBalance(test.market.underlying, address(user));
@@ -94,7 +94,7 @@ contract TestProdLifecycle is ProductionTest {
         user.approve(collateral.market.underlying, collateral.amount);
         user.supplyCollateral(collateral.market.underlying, collateral.amount, address(user));
 
-        _updateCollateralTest(collateral);
+        _updateCollateralPositionTest(collateral);
     }
 
     function _testSupplyCollateral(TestMarket storage market, MarketSideTest memory collateral) internal virtual {
@@ -127,7 +127,7 @@ contract TestProdLifecycle is ProductionTest {
 
         _forward(100_000);
 
-        _updateCollateralTest(collateral);
+        _updateCollateralPositionTest(collateral);
     }
 
     function _supply(MarketSideTest memory supply) internal virtual {
@@ -138,7 +138,7 @@ contract TestProdLifecycle is ProductionTest {
         user.approve(supply.market.underlying, supply.amount);
         user.supply(supply.market.underlying, supply.amount, address(user));
 
-        _updateSupplyTest(supply);
+        _updateSupplyPositionTest(supply);
     }
 
     function _testSupply(TestMarket storage market, MarketSideTest memory supply) internal virtual {
@@ -185,7 +185,7 @@ contract TestProdLifecycle is ProductionTest {
 
         _forward(100_000);
 
-        _updateSupplyTest(supply);
+        _updateSupplyPositionTest(supply);
     }
 
     function _borrow(MarketSideTest memory borrow) internal virtual {
@@ -195,7 +195,7 @@ contract TestProdLifecycle is ProductionTest {
 
         user.borrow(borrow.market.underlying, borrow.amount);
 
-        _updateBorrowTest(borrow);
+        _updateBorrowPositionTest(borrow);
     }
 
     function _testBorrow(TestMarket storage market, MarketSideTest memory borrow) internal virtual {
@@ -225,28 +225,28 @@ contract TestProdLifecycle is ProductionTest {
         assertEq(
             ERC20(market.underlying).balanceOf(address(morpho)),
             borrow.morphoUnderlyingBalanceBefore,
-            string.concat(market.symbol, " morpho borrowed balance")
+            string.concat(market.symbol, " morpho balance")
         );
         assertApproxEqAbs(
             ERC20(market.aToken).balanceOf(address(morpho)) + borrow.position.p2p,
             borrow.morphoPoolSupplyBefore,
             2,
-            string.concat(market.symbol, " morpho borrowed pool supply")
+            string.concat(market.symbol, " morpho pool supply")
         );
         assertApproxEqAbs(
             ERC20(market.variableDebtToken).balanceOf(address(morpho)),
             borrow.morphoPoolBorrowBefore + borrow.position.pool,
             1,
-            string.concat(market.symbol, " morpho borrowed pool borrow")
+            string.concat(market.symbol, " morpho pool borrow")
         );
 
         _forward(100_000);
 
-        _updateBorrowTest(borrow);
+        _updateBorrowPositionTest(borrow);
     }
 
     function _repay(MarketSideTest memory borrow) internal virtual {
-        _updateBorrowTest(borrow);
+        _updateBorrowPositionTest(borrow);
 
         _updateTestBefore(borrow);
 
@@ -262,7 +262,7 @@ contract TestProdLifecycle is ProductionTest {
             string.concat(market.symbol, " after repay")
         );
 
-        _updateBorrowTest(borrow);
+        _updateBorrowPositionTest(borrow);
 
         assertEq(borrow.position.p2p, 0, string.concat(market.symbol, " p2p borrow after repay"));
         assertEq(borrow.position.pool, 0, string.concat(market.symbol, " pool borrow after repay"));
@@ -270,7 +270,7 @@ contract TestProdLifecycle is ProductionTest {
     }
 
     function _withdraw(MarketSideTest memory supply) internal virtual {
-        _updateSupplyTest(supply);
+        _updateSupplyPositionTest(supply);
 
         _updateTestBefore(supply);
 
@@ -285,7 +285,7 @@ contract TestProdLifecycle is ProductionTest {
             string.concat(market.symbol, " after withdraw")
         );
 
-        _updateSupplyTest(supply);
+        _updateSupplyPositionTest(supply);
 
         assertEq(supply.position.p2p, 0, string.concat(market.symbol, " p2p supply after withdraw"));
         assertEq(supply.position.pool, 0, string.concat(market.symbol, " pool supply after withdraw"));
@@ -293,7 +293,7 @@ contract TestProdLifecycle is ProductionTest {
     }
 
     function _withdrawCollateral(MarketSideTest memory collateral) internal virtual {
-        _updateCollateralTest(collateral);
+        _updateCollateralPositionTest(collateral);
 
         _updateTestBefore(collateral);
 
@@ -308,7 +308,7 @@ contract TestProdLifecycle is ProductionTest {
             string.concat(market.symbol, " collateral after withdraw")
         );
 
-        _updateCollateralTest(collateral);
+        _updateCollateralPositionTest(collateral);
 
         assertEq(collateral.position.p2p, 0, string.concat(market.symbol, " p2p supply after withdraw"));
         assertEq(collateral.position.pool, 0, string.concat(market.symbol, " pool supply after withdraw"));
