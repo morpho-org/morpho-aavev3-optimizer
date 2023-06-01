@@ -163,7 +163,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         assertApproxEqAbs(
             ERC20(stNative).balanceOf(address(bulker)), IWSTETH(stNative).getWstETHByStETH(amount), 1, "bulker balance"
         );
-        assertApproxEqAbs(ERC20(stETH).balanceOf(address(bulker)), 0, 1, "bulker balance");
+        assertApproxEqAbs(ERC20(stETH).balanceOf(address(bulker)), 0, 1, "bulker balance"); // Approximation due to internal rounding in lido's contract.
     }
 
     function testBulkerShouldUnwrapStETH(address delegator, uint256 amount, address receiver) public {
