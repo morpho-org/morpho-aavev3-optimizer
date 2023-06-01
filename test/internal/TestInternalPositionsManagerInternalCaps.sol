@@ -46,7 +46,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
     function testAuthorizeBorrowWithNoBorrowCap(uint256 amount, uint256 totalP2P, uint256 delta) public {
         Types.Market storage market = _market[dai];
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
 
         totalP2P = bound(totalP2P, 0, MAX_AMOUNT);
         delta = bound(delta, 0, totalP2P);
@@ -67,7 +67,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         uint256 borrowCap
     ) public {
         Types.Market storage market = _market[dai];
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
 
         uint256 poolDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
 
@@ -114,7 +114,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
     function testAccountRepayShouldIncreaseIdleSupplyIfSupplyCapReached(uint256 amount, uint256 supplyCap) public {
         Types.Market storage market = _market[dai];
 
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
         DataTypes.ReserveData memory reserve = pool.getReserveData(market.underlying);
         uint256 totalPoolSupply = (IAToken(market.aToken).scaledTotalSupply() + reserve.getAccruedToTreasury(indexes))
             .rayMul(indexes.supply.poolIndex);
@@ -179,7 +179,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
     }
 
     function authorizeBorrow(address underlying, uint256 onPool) external view {
-        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
         _authorizeBorrow(underlying, onPool, indexes);
     }
 
@@ -187,7 +187,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         external
         returns (Types.BorrowWithdrawVars memory vars)
     {
-        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
         vars = _accountBorrow(underlying, amount, borrower, maxIterations, indexes);
     }
 
@@ -195,7 +195,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         external
         returns (Types.SupplyRepayVars memory vars)
     {
-        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
         vars = _accountRepay(underlying, amount, onBehalf, maxIterations, indexes);
     }
 
@@ -203,7 +203,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         external
         returns (Types.BorrowWithdrawVars memory vars)
     {
-        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
         vars = _accountWithdraw(underlying, amount, supplier, maxIterations, indexes);
     }
 }

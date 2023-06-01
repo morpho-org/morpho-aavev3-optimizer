@@ -118,7 +118,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
     }
 
     function authorizeBorrow(address underlying, uint256 onPool) public view {
-        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
         _authorizeBorrow(underlying, onPool, indexes);
     }
 
@@ -172,7 +172,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testValidateWithdrawCollateral(uint256 onPool) public {
         onPool = bound(onPool, MIN_AMOUNT, MAX_AMOUNT);
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
         _userCollaterals[address(this)].add(dai);
         _marketBalances[dai].collateral[address(this)] = onPool.rayDivUp(indexes.supply.poolIndex);
         this.validateWithdrawCollateral(dai, onPool, address(this), address(this));
@@ -328,7 +328,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         amount = bound(amount, 0, 1 ether * 20);
         maxLoops = bound(maxLoops, 0, 20);
 
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
 
         for (uint256 i; i < 10; i++) {
             _updateSupplierInDS(dai, vm.addr(i + 1), uint256(1 ether).rayDiv(indexes.supply.poolIndex), 0, true);
@@ -351,7 +351,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         amount = bound(amount, 0, 1 ether * 20);
         maxLoops = bound(maxLoops, 0, 20);
 
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
 
         for (uint256 i; i < 10; i++) {
             _updateBorrowerInDS(dai, vm.addr(i + 1), uint256(1 ether).rayDiv(indexes.borrow.poolIndex), 0, true);
@@ -379,7 +379,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         Types.AmountToSeizeVars memory vars;
         maxToLiquidate = bound(maxToLiquidate, 0, 1_000_000 ether);
         collateralAmount = bound(collateralAmount, 0, 1_000_000 ether);
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
 
         _marketBalances[dai].collateral[address(1)] = collateralAmount.rayDivUp(indexes.supply.poolIndex);
 

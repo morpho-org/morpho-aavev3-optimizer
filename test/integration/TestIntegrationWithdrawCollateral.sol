@@ -8,6 +8,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using SafeTransferLib for ERC20;
 
     struct WithdrawCollateralTest {
@@ -315,6 +316,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
     function testShouldNotWithdrawMoreCollateralThanSuppliedWhenFlashLoanInflates(uint256 seed) public {
         TestMarket storage market = testMarkets[_randomCollateral(seed)];
+        vm.assume(pool.getConfiguration(market.underlying).getFlashLoanEnabled());
 
         user.approve(market.underlying, 1);
         user.supplyCollateral(market.underlying, 1);
@@ -333,9 +335,10 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         user.withdrawCollateral(market.underlying, liquidity);
 
-        assertEq(
+        assertApproxEqAbs(
             morpho.collateralBalance(market.underlying, address(user)) + liquidity,
             liquidity.rayDiv(poolSupplyIndexBefore).rayMul(poolSupplyIndexAfter),
+            10,
             "collateral"
         );
     }

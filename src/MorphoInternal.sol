@@ -284,7 +284,7 @@ abstract contract MorphoInternal is MorphoStorage {
         (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 underlyingUnit) =
             _assetLiquidityData(underlying, vars);
 
-        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
         uint256 rawCollateral = (
             (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex)) * underlyingPrice
         ) / underlyingUnit;
@@ -308,7 +308,7 @@ abstract contract MorphoInternal is MorphoStorage {
         (, uint256 underlyingPrice, uint256 underlyingUnit) =
             _assetData(underlying, vars.oracle, config, vars.eModeCategory.priceSource);
 
-        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
         debtValue =
             (_getUserBorrowBalanceFromIndexes(underlying, vars.user, indexes) * underlyingPrice).divUp(underlyingUnit);
     }
@@ -454,21 +454,15 @@ abstract contract MorphoInternal is MorphoStorage {
 
     /// @dev Updates the indexes of the `underlying` market and returns them.
     function _updateIndexes(address underlying) internal returns (Types.Indexes256 memory indexes) {
-        bool cached;
-        (cached, indexes) = _computeIndexes(underlying);
+        indexes = _computeIndexes(underlying);
 
-        if (!cached) {
-            _market[underlying].setIndexes(indexes);
-        }
+        _market[underlying].setIndexes(indexes);
     }
 
     /// @dev Computes the updated indexes of the `underlying` market (if not already updated) and returns them.
-    function _computeIndexes(address underlying) internal view returns (bool cached, Types.Indexes256 memory indexes) {
+    function _computeIndexes(address underlying) internal view returns (Types.Indexes256 memory indexes) {
         Types.Market storage market = _market[underlying];
         Types.Indexes256 memory lastIndexes = market.getIndexes();
-
-        cached = block.timestamp == market.lastUpdateTimestamp;
-        if (cached) return (true, lastIndexes);
 
         (indexes.supply.poolIndex, indexes.borrow.poolIndex) = _pool.getCurrentPoolIndexes(underlying);
 
