@@ -285,8 +285,9 @@ abstract contract MorphoInternal is MorphoStorage {
             _assetLiquidityData(underlying, vars);
 
         (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
-        uint256 rawCollateral = (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex))
-            * underlyingPrice / underlyingUnit;
+        uint256 rawCollateral = (
+            (_getUserCollateralBalanceFromIndex(underlying, vars.user, indexes.supply.poolIndex)) * underlyingPrice
+        ) / underlyingUnit;
 
         // Morpho has a slightly different method of health factor calculation from the underlying pool.
         // This method is used to account for a potential rounding error in calculateUserAccountData,

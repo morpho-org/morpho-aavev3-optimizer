@@ -8,6 +8,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
+    using SafeTransferLib for ERC20;
 
     struct WithdrawCollateralTest {
         uint256 supplied;
@@ -310,5 +311,42 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         vm.expectRevert(Errors.CollateralIsZero.selector);
         user.withdrawCollateral(market.underlying, amountToWithdraw, onBehalf, receiver);
+    }
+
+    function testShouldNotWithdrawMoreCollateralThanSuppliedWhenFlashLoanInflates(uint256 seed) public {
+        TestMarket storage market = testMarkets[_randomCollateral(seed)];
+
+        user.approve(market.underlying, 1);
+        user.supplyCollateral(market.underlying, 1);
+
+        uint256 liquidity = ERC20(market.underlying).balanceOf(market.aToken);
+        pool.flashLoanSimple(address(this), market.underlying, liquidity, "", 0);
+
+        uint256 poolSupplyIndexBefore = pool.getReserveNormalizedIncome(market.underlying);
+
+        user.approve(market.underlying, liquidity);
+        user.supplyCollateral(market.underlying, liquidity);
+
+        _forward(1);
+
+        uint256 poolSupplyIndexAfter = pool.getReserveNormalizedIncome(market.underlying);
+
+        user.withdrawCollateral(market.underlying, liquidity);
+
+        assertEq(
+            morpho.collateralBalance(market.underlying, address(user)) + liquidity,
+            liquidity.rayDiv(poolSupplyIndexBefore).rayMul(poolSupplyIndexAfter),
+            "collateral"
+        );
+    }
+
+    function executeOperation(address asset, uint256 amount, uint256 fee, address, bytes calldata)
+        external
+        returns (bool)
+    {
+        _deal(asset, address(this), amount + fee);
+        ERC20(asset).safeApprove(address(pool), amount + fee);
+
+        return true;
     }
 }
