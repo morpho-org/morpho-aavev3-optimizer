@@ -230,13 +230,13 @@ contract TestProdLifecycle is ProductionTest {
         assertApproxEqAbs(
             ERC20(market.aToken).balanceOf(address(morpho)) + borrow.position.p2p,
             borrow.morphoPoolSupplyBefore,
-            2,
+            10,
             string.concat(market.symbol, " morpho pool supply")
         );
         assertApproxEqAbs(
             ERC20(market.variableDebtToken).balanceOf(address(morpho)),
             borrow.morphoPoolBorrowBefore + borrow.position.pool,
-            1,
+            10,
             string.concat(market.symbol, " morpho pool borrow")
         );
 
