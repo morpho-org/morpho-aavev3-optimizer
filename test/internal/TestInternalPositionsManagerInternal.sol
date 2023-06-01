@@ -225,6 +225,14 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
             abi.encodeCall(IPriceOracleGetter.getAssetPrice, underlying),
             abi.encode(10 ** ERC20(underlying).decimals())
         );
+        vm.mockCall(
+            address(pool), abi.encodeCall(IPool.getReserveNormalizedIncome, underlying), abi.encode(WadRayMath.RAY)
+        );
+        vm.mockCall(
+            address(pool),
+            abi.encodeCall(IPool.getReserveNormalizedVariableDebt, underlying),
+            abi.encode(WadRayMath.RAY)
+        );
         _market[underlying].setIndexes(
             Types.Indexes256({
                 supply: Types.MarketSideIndexes256({p2pIndex: WadRayMath.RAY, poolIndex: WadRayMath.RAY}),
