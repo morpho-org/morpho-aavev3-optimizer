@@ -8,12 +8,6 @@ contract TestProdLifecycle is ProductionTest {
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
 
-    function _beforeSupplyCollateral(MarketSideTest memory collateral) internal virtual {}
-
-    function _beforeSupply(MarketSideTest memory supply) internal virtual {}
-
-    function _beforeBorrow(MarketSideTest memory borrow) internal virtual {}
-
     struct MorphoPosition {
         uint256 scaledP2P;
         uint256 scaledPool;
@@ -35,6 +29,12 @@ contract TestProdLifecycle is ProductionTest {
         //
         MorphoPosition position;
     }
+
+    function _beforeSupplyCollateral(MarketSideTest memory collateral) internal virtual {}
+
+    function _beforeSupply(MarketSideTest memory supply) internal virtual {}
+
+    function _beforeBorrow(MarketSideTest memory borrow) internal virtual {}
 
     function _initMarketSideTest(TestMarket storage market, uint256 amount)
         internal
@@ -152,13 +152,11 @@ contract TestProdLifecycle is ProductionTest {
         if (supply.market.pauseStatuses.isP2PDisabled) {
             assertEq(supply.position.scaledP2P, 0, string.concat(market.symbol, " borrow delta matched"));
         } else {
-            uint256 underlyingBorrowDelta =
+            uint256 availableBorrow =
                 supply.market.deltas.borrow.scaledDelta.rayMul(supply.updatedIndexes.borrow.poolIndex);
-            if (underlyingBorrowDelta <= supply.amount) {
+            if (availableBorrow <= supply.amount) {
                 assertGe(
-                    supply.position.p2p,
-                    underlyingBorrowDelta,
-                    string.concat(market.symbol, " borrow delta minimum match")
+                    supply.position.p2p, availableBorrow, string.concat(market.symbol, " borrow delta minimum match")
                 );
             } else {
                 assertApproxEqAbs(
@@ -210,13 +208,12 @@ contract TestProdLifecycle is ProductionTest {
         if (borrow.market.pauseStatuses.isP2PDisabled) {
             assertEq(borrow.position.scaledP2P, 0, string.concat(market.symbol, " supply delta matched"));
         } else {
-            uint256 underlyingSupplyDelta =
-                borrow.market.deltas.supply.scaledDelta.rayMul(borrow.updatedIndexes.supply.poolIndex);
-            if (underlyingSupplyDelta <= borrow.amount) {
+            uint256 availableSupply = borrow.market.deltas.supply.scaledDelta.rayMul(
+                borrow.updatedIndexes.supply.poolIndex
+            ) + borrow.market.idleSupply;
+            if (availableSupply <= borrow.amount) {
                 assertGe(
-                    borrow.position.p2p,
-                    underlyingSupplyDelta,
-                    string.concat(market.symbol, " supply delta minimum match")
+                    borrow.position.p2p, availableSupply, string.concat(market.symbol, " supply delta minimum match")
                 );
             } else {
                 assertApproxEqAbs(
@@ -311,7 +308,7 @@ contract TestProdLifecycle is ProductionTest {
             string.concat(market.symbol, " collateral after withdraw")
         );
 
-        _updateSupplyTest(collateral);
+        _updateCollateralTest(collateral);
 
         assertEq(collateral.position.p2p, 0, string.concat(market.symbol, " p2p supply after withdraw"));
         assertEq(collateral.position.pool, 0, string.concat(market.symbol, " pool supply after withdraw"));
@@ -405,6 +402,22 @@ contract TestProdLifecycle is ProductionTest {
         }
     }
 
+    function testShouldNotSupplyCollateralZeroAmount() public {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.expectRevert(Errors.AmountIsZero.selector);
+            user.supplyCollateral(allUnderlyings[i], 0, address(user));
+        }
+    }
+
+    function testShouldNotSupplyCollateralOnBehalfAddressZero(uint96 amount) public {
+        vm.assume(amount > 0);
+
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.expectRevert(Errors.AddressIsZero.selector);
+            user.supplyCollateral(allUnderlyings[i], amount, address(0));
+        }
+    }
+
     function testShouldNotBorrowZeroAmount() public {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             vm.expectRevert(Errors.AmountIsZero.selector);
@@ -426,6 +439,13 @@ contract TestProdLifecycle is ProductionTest {
         }
     }
 
+    function testShouldNotWithdrawCollateralZeroAmount() public {
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            vm.expectRevert(Errors.AmountIsZero.selector);
+            user.withdrawCollateral(allUnderlyings[i], 0);
+        }
+    }
+
     function testShouldNotSupplyWhenPaused(uint96 amount) public {
         vm.assume(amount > 0);
 
@@ -435,6 +455,18 @@ contract TestProdLifecycle is ProductionTest {
 
             vm.expectRevert(Errors.SupplyIsPaused.selector);
             user.supply(market.underlying, amount);
+        }
+    }
+
+    function testShouldNotSupplyCollateralWhenPaused(uint96 amount) public {
+        vm.assume(amount > 0);
+
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            TestMarket storage market = testMarkets[allUnderlyings[i]];
+            if (!morpho.market(market.underlying).pauseStatuses.isSupplyCollateralPaused) continue;
+
+            vm.expectRevert(Errors.SupplyCollateralIsPaused.selector);
+            user.supplyCollateral(market.underlying, amount);
         }
     }
 
@@ -471,6 +503,18 @@ contract TestProdLifecycle is ProductionTest {
 
             vm.expectRevert(Errors.WithdrawIsPaused.selector);
             user.withdraw(market.underlying, type(uint256).max);
+        }
+    }
+
+    function testShouldNotWithdrawCollateralWhenPaused(uint96 amount) public {
+        vm.assume(amount > 0);
+
+        for (uint256 i; i < allUnderlyings.length; ++i) {
+            TestMarket storage market = testMarkets[allUnderlyings[i]];
+            if (!morpho.market(market.underlying).pauseStatuses.isWithdrawCollateralPaused) continue;
+
+            vm.expectRevert(Errors.WithdrawCollateralIsPaused.selector);
+            user.withdrawCollateral(market.underlying, type(uint256).max);
         }
     }
 }

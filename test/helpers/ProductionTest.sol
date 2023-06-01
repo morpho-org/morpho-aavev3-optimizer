@@ -16,7 +16,9 @@ contract ProductionTest is IntegrationTest {
     }
 
     function _fork() internal override {
-        forkId = vm.createSelectFork(vm.rpcUrl(_rpcAlias()));
+        string memory rpcUrl = vm.rpcUrl(_rpcAlias());
+
+        forkId = vm.createSelectFork(rpcUrl);
         vm.chainId(config.getChainId());
     }
 

@@ -91,7 +91,10 @@ contract ForkTest is BaseTest, Configured {
     }
 
     function _fork() internal virtual {
-        forkId = vm.createSelectFork(vm.rpcUrl(_rpcAlias()), config.getForkBlockNumber());
+        string memory rpcUrl = vm.rpcUrl(_rpcAlias());
+        uint256 forkBlockNumber = config.getForkBlockNumber();
+
+        forkId = forkBlockNumber == 0 ? vm.createSelectFork(rpcUrl) : vm.createSelectFork(rpcUrl, forkBlockNumber);
         vm.chainId(config.getChainId());
     }
 
