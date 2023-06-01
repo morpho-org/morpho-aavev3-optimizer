@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import "test/extensions/vaults/TestSetupVaults.sol";
+import "./TestSetupVaults.sol";
 
 contract TestIntegrationSupplyVault is TestSetupVaults {
     using WadRayMath for uint256;
