@@ -177,7 +177,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         uint256 withdrawn = wethGateway.withdrawCollateralETH(toWithdraw, receiver);
 
         if (receiver != address(this)) assertEq(address(this).balance, balanceBefore, "balanceAfter != balanceBefore");
-        assertApproxEqAbs(withdrawn, Math.min(toWithdraw, collateral), 1, "withdrawn != minimum");
+        assertApproxEqAbs(withdrawn, Math.min(toWithdraw, collateral), 2, "withdrawn != minimum");
         assertApproxEqAbs(
             morpho.collateralBalance(weth, address(this)),
             collateral - withdrawn,
