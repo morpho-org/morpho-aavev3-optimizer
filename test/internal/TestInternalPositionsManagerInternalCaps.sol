@@ -103,6 +103,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         amount = bound(amount, MIN_AMOUNT, MAX_AMOUNT);
         idleSupply = bound(idleSupply, 1, MAX_AMOUNT);
 
+        market.deltas.supply.scaledP2PTotal = idleSupply.rayDiv(market.indexes.supply.p2pIndex);
         market.idleSupply = idleSupply;
 
         Types.BorrowWithdrawVars memory vars = this.accountBorrow(dai, amount, address(this), 10);
@@ -151,6 +152,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         _updateSupplierInDS(dai, address(this), 0, MAX_AMOUNT, false);
 
+        market.deltas.supply.scaledP2PTotal = MAX_AMOUNT.rayDiv(market.indexes.supply.p2pIndex);
         market.idleSupply = idleSupply;
 
         Types.BorrowWithdrawVars memory vars = this.accountWithdraw(dai, amount, address(this), 10);
@@ -170,6 +172,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
 
         _updateSupplierInDS(dai, address(this), MAX_AMOUNT, 0, false);
 
+        market.deltas.supply.scaledP2PTotal = MAX_AMOUNT.rayDiv(market.indexes.supply.p2pIndex);
         market.idleSupply = idleSupply;
 
         Types.BorrowWithdrawVars memory vars = this.accountWithdraw(dai, amount, address(this), 10);
