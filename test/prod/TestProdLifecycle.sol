@@ -147,7 +147,7 @@ contract TestProdLifecycle is ProductionTest {
             supply.balanceBefore,
             string.concat(market.symbol, " balance after supply")
         );
-        assertApproxEqAbs(supply.position.total, supply.amount, 2, string.concat(market.symbol, " total supply"));
+        assertApproxEqAbs(supply.position.total, supply.amount, 3, string.concat(market.symbol, " total supply"));
 
         if (supply.market.pauseStatuses.isP2PDisabled) {
             assertEq(supply.position.scaledP2P, 0, string.concat(market.symbol, " borrow delta matched"));

@@ -69,7 +69,8 @@ contract ProductionTest is IntegrationTest {
         market.eModeCategory = pool.getEModeCategoryData(market.eModeCategoryId);
 
         market.isInEMode = eModeCategoryId == 0 || eModeCategoryId == market.eModeCategoryId;
-        market.isCollateral = market.getLt(eModeCategoryId) > 0 && configuration.getDebtCeiling() == 0;
+        market.isCollateral =
+            market.getLt(eModeCategoryId) > 0 && configuration.getDebtCeiling() == 0 && morphoMarket.isCollateral;
         market.isBorrowable = configuration.getBorrowingEnabled() && !configuration.getSiloedBorrowing();
 
         vm.label(morphoMarket.aToken, string.concat("a", market.symbol));
