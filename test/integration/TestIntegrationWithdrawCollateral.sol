@@ -329,6 +329,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         user.approve(market.underlying, liquidity);
         user.supplyCollateral(market.underlying, liquidity);
 
+        assertEq(morpho.market(market.underlying).indexes.supply.poolIndex, poolSupplyIndexBefore);
+
         _forward(1);
 
         uint256 poolSupplyIndexAfter = pool.getReserveNormalizedIncome(market.underlying);
