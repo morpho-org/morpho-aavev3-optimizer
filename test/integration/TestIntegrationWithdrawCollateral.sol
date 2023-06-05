@@ -321,7 +321,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         user.approve(market.underlying, 1);
         user.supplyCollateral(market.underlying, 1);
 
-        uint256 liquidity = ERC20(market.underlying).balanceOf(market.aToken);
+        uint256 liquidity = market.liquidity();
         pool.flashLoanSimple(address(this), market.underlying, liquidity, "", 0);
 
         uint256 poolSupplyIndexBefore = pool.getReserveNormalizedIncome(market.underlying);
