@@ -23,6 +23,9 @@ test-integration:
 test-internal:
 	@FOUNDRY_MATCH_CONTRACT=TestInternal make test
 
+test-prod:
+	@FOUNDRY_MATCH_CONTRACT=TestProd make test
+
 test-unit:
 	@FOUNDRY_MATCH_CONTRACT=TestUnit make test
 
@@ -39,6 +42,9 @@ test-integration-%:
 test-internal-%:
 	@FOUNDRY_MATCH_TEST=$* make test-internal
 
+test-prod-%:
+	@FOUNDRY_MATCH_TEST=$* make test-prod
+
 test-unit-%:
 	@FOUNDRY_MATCH_TEST=$* make test-unit
 
@@ -54,6 +60,9 @@ test-integration/%:
 
 test-internal/%:
 	@FOUNDRY_MATCH_CONTRACT=TestInternal$* make test
+
+test-prod/%:
+	@FOUNDRY_MATCH_CONTRACT=TestProd$* make test
 
 test-unit/%:
 	@FOUNDRY_MATCH_CONTRACT=TestUnit$* make test

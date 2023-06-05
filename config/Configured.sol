@@ -10,7 +10,6 @@ contract Configured is StdChains {
 
     VmSafe private constant vm = VmSafe(address(uint160(uint256(keccak256("hevm cheat code")))));
 
-    Chain internal chain;
     Config internal config;
 
     address internal dai;
@@ -33,6 +32,10 @@ contract Configured is StdChains {
         }
     }
 
+    function _rpcAlias() internal virtual returns (string memory) {
+        return config.getRpcAlias();
+    }
+
     function _initConfig() internal returns (Config storage) {
         if (bytes(config.json).length == 0) {
             string memory root = vm.projectRoot();
@@ -45,10 +48,6 @@ contract Configured is StdChains {
     }
 
     function _loadConfig() internal virtual {
-        string memory rpcAlias = config.getRpcAlias();
-
-        chain = getChain(rpcAlias);
-
         dai = config.getAddress("DAI");
         usdc = config.getAddress("USDC");
         usdt = config.getAddress("USDT");

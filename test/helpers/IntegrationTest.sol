@@ -21,7 +21,6 @@ import {UserMock} from "test/mocks/UserMock.sol";
 import "./ForkTest.sol";
 
 contract IntegrationTest is ForkTest {
-    using stdStorage for StdStorage;
     using SafeTransferLib for ERC20;
     using Math for uint256;
     using WadRayMath for uint256;
@@ -87,7 +86,7 @@ contract IntegrationTest is ForkTest {
         vm.label(address(hacker), "Hacker");
     }
 
-    function _deploy() internal {
+    function _deploy() internal virtual {
         positionsManager = new PositionsManager();
         morphoImpl = new Morpho();
 
@@ -122,6 +121,7 @@ contract IntegrationTest is ForkTest {
 
     function _initMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor)
         internal
+        virtual
         returns (TestMarket storage market, DataTypes.ReserveData memory reserve)
     {
         market = testMarkets[underlying];
@@ -159,7 +159,7 @@ contract IntegrationTest is ForkTest {
         vm.label(reserve.stableDebtTokenAddress, string.concat("sd", market.symbol));
     }
 
-    function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
+    function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal virtual {
         (TestMarket storage market,) = _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
@@ -172,7 +172,7 @@ contract IntegrationTest is ForkTest {
         if (market.isCollateral) {
             collateralUnderlyings.push(underlying);
 
-            morpho.setAssetIsCollateral(market.underlying, true);
+            morpho.setAssetIsCollateral(underlying, true);
         }
 
         if (market.isBorrowable) {
