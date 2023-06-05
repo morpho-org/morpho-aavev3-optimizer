@@ -87,7 +87,7 @@ contract TestInternalMorphoInternal is InternalTest {
         address underlying = dai;
         Types.Market storage market = _market[underlying];
         Types.Deltas storage deltas = market.deltas;
-        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
 
         deltas.supply.scaledDelta = supplyDelta.rayDivUp(indexes.supply.p2pIndex);
         deltas.borrow.scaledDelta = borrowDelta.rayDivUp(indexes.borrow.p2pIndex);
@@ -120,7 +120,7 @@ contract TestInternalMorphoInternal is InternalTest {
         address underlying = dai;
         Types.Market storage market = _market[underlying];
         Types.Deltas storage deltas = market.deltas;
-        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
 
         deltas.supply.scaledDelta = supplyDelta.rayDivUp(indexes.supply.p2pIndex);
         deltas.borrow.scaledDelta = borrowDelta.rayDivUp(indexes.borrow.p2pIndex);
@@ -172,7 +172,7 @@ contract TestInternalMorphoInternal is InternalTest {
     function testComputeIndexes() public {
         address underlying = dai;
         Types.Indexes256 memory indexes1 = _market[underlying].getIndexes();
-        (, Types.Indexes256 memory indexes2) = _computeIndexes(underlying);
+        Types.Indexes256 memory indexes2 = _computeIndexes(underlying);
 
         assertEq(indexes1.supply.p2pIndex, indexes2.supply.p2pIndex);
         assertEq(indexes1.borrow.p2pIndex, indexes2.borrow.p2pIndex);
@@ -181,7 +181,7 @@ contract TestInternalMorphoInternal is InternalTest {
 
         vm.warp(block.timestamp + 20);
 
-        (, Types.Indexes256 memory indexes3) = _computeIndexes(underlying);
+        Types.Indexes256 memory indexes3 = _computeIndexes(underlying);
 
         assertGt(indexes3.supply.p2pIndex, indexes2.supply.p2pIndex);
         assertGt(indexes3.borrow.p2pIndex, indexes2.borrow.p2pIndex);
@@ -446,7 +446,7 @@ contract TestInternalMorphoInternal is InternalTest {
         DataTypes.EModeCategory memory eModeCategory = _pool.getEModeCategoryData(0);
         Types.LiquidityVars memory vars = Types.LiquidityVars(address(1), oracle, eModeCategory);
 
-        (, Types.Indexes256 memory indexes) = _computeIndexes(dai);
+        Types.Indexes256 memory indexes = _computeIndexes(dai);
 
         uint256 debt = _debt(dai, vars);
 

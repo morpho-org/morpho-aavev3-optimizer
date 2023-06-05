@@ -83,14 +83,14 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
 
     /// @notice Returns the total supply balance of `user` on the `underlying` market (in underlying).
     function supplyBalance(address underlying, address user) external view returns (uint256) {
-        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
 
         return _getUserSupplyBalanceFromIndexes(underlying, user, indexes);
     }
 
     /// @notice Returns the total borrow balance of `user` on the `underlying` market (in underlying).
     function borrowBalance(address underlying, address user) external view returns (uint256) {
-        (, Types.Indexes256 memory indexes) = _computeIndexes(underlying);
+        Types.Indexes256 memory indexes = _computeIndexes(underlying);
 
         return _getUserBorrowBalanceFromIndexes(underlying, user, indexes);
     }
@@ -147,7 +147,7 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
 
     /// @notice Returns the updated indexes (peer-to-peer and pool).
     function updatedIndexes(address underlying) external view returns (Types.Indexes256 memory indexes) {
-        (, indexes) = _computeIndexes(underlying);
+        indexes = _computeIndexes(underlying);
     }
 
     /// @notice Returns the liquidity data about the position of `user`.

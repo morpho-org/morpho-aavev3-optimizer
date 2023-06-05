@@ -231,7 +231,7 @@ contract IntegrationTest is ForkTest {
         internal
         bypassSupplyCap(underlying, amount)
     {
-        deal(underlying, address(this), type(uint256).max);
+        _deal(underlying, address(this), amount);
         ERC20(underlying).safeApprove(address(pool), amount);
         pool.deposit(underlying, amount, onBehalf, 0);
     }
