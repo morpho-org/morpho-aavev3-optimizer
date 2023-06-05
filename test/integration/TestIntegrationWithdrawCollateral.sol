@@ -8,6 +8,8 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using SafeTransferLib for ERC20;
 
     struct WithdrawCollateralTest {
         uint256 supplied;
@@ -310,5 +312,46 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         vm.expectRevert(Errors.CollateralIsZero.selector);
         user.withdrawCollateral(market.underlying, amountToWithdraw, onBehalf, receiver);
+    }
+
+    function testShouldNotWithdrawMoreCollateralThanSuppliedWhenFlashLoanInflates(uint256 seed) public {
+        TestMarket storage market = testMarkets[_randomCollateral(seed)];
+        vm.assume(pool.getConfiguration(market.underlying).getFlashLoanEnabled());
+
+        user.approve(market.underlying, 1);
+        user.supplyCollateral(market.underlying, 1);
+
+        uint256 liquidity = market.liquidity();
+        pool.flashLoanSimple(address(this), market.underlying, liquidity, "", 0);
+
+        uint256 poolSupplyIndexBefore = pool.getReserveNormalizedIncome(market.underlying);
+
+        user.approve(market.underlying, liquidity);
+        user.supplyCollateral(market.underlying, liquidity);
+
+        assertEq(morpho.market(market.underlying).indexes.supply.poolIndex, poolSupplyIndexBefore);
+
+        _forward(1);
+
+        uint256 poolSupplyIndexAfter = pool.getReserveNormalizedIncome(market.underlying);
+
+        user.withdrawCollateral(market.underlying, liquidity);
+
+        assertApproxEqAbs(
+            morpho.collateralBalance(market.underlying, address(user)) + liquidity,
+            liquidity.rayDiv(poolSupplyIndexBefore).rayMul(poolSupplyIndexAfter),
+            10,
+            "collateral"
+        );
+    }
+
+    function executeOperation(address asset, uint256 amount, uint256 fee, address, bytes calldata)
+        external
+        returns (bool)
+    {
+        _deal(asset, address(this), amount + fee);
+        ERC20(asset).safeApprove(address(pool), amount + fee);
+
+        return true;
     }
 }

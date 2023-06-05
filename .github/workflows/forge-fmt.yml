@@ -2,9 +2,6 @@ name: Forge format
 
 on:
   workflow_call:
-    secrets:
-      MACHINE_USER_PRIVATE_KEY:
-        required: true
 
 jobs:
   forge-fmt:
@@ -15,10 +12,9 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
-          ssh-key: ${{ secrets.MACHINE_USER_PRIVATE_KEY }}
 
       - name: Install Foundry
-        uses: onbjerg/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
 
