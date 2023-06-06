@@ -321,25 +321,29 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         user.approve(market.underlying, 1);
         user.supplyCollateral(market.underlying, 1);
 
+        uint256 poolSupplyIndexBeforeFlashLoan = pool.getReserveNormalizedIncome(market.underlying);
+
         uint256 liquidity = market.liquidity();
         flashBorrower.flashLoanSimple(market.underlying, liquidity);
 
-        uint256 poolSupplyIndexBefore = pool.getReserveNormalizedIncome(market.underlying);
+        uint256 poolSupplyIndexAfterFlashLoan = pool.getReserveNormalizedIncome(market.underlying);
+
+        assertGt(poolSupplyIndexAfterFlashLoan, poolSupplyIndexBeforeFlashLoan);
 
         user.approve(market.underlying, liquidity);
         user.supplyCollateral(market.underlying, liquidity);
 
-        assertEq(morpho.market(market.underlying).indexes.supply.poolIndex, poolSupplyIndexBefore);
+        assertEq(morpho.market(market.underlying).indexes.supply.poolIndex, poolSupplyIndexAfterFlashLoan);
 
         _forward(1);
 
-        uint256 poolSupplyIndexAfter = pool.getReserveNormalizedIncome(market.underlying);
+        uint256 poolSupplyIndexNextBlock = pool.getReserveNormalizedIncome(market.underlying);
 
         user.withdrawCollateral(market.underlying, liquidity);
 
         assertApproxEqAbs(
             morpho.collateralBalance(market.underlying, address(user)) + liquidity,
-            liquidity.rayDiv(poolSupplyIndexBefore).rayMul(poolSupplyIndexAfter),
+            liquidity.rayDiv(poolSupplyIndexAfterFlashLoan).rayMul(poolSupplyIndexNextBlock),
             10,
             "collateral"
         );
