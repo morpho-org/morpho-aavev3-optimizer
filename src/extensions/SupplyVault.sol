@@ -66,8 +66,8 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
         if (initialDeposit == 0) revert InitialDepositIsZero();
 
         _underlying = newUnderlying;
-        _recipient = newRecipient;
-        _maxIterations = newMaxIterations;
+        _setRecipient(newRecipient);
+        _setMaxIterations(newMaxIterations);
 
         ERC20(newUnderlying).safeApprove(address(_MORPHO), type(uint256).max);
 
@@ -96,14 +96,12 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
 
     /// @notice Sets the max iterations to use when this vault interacts with Morpho.
     function setMaxIterations(uint96 newMaxIterations) external onlyOwner {
-        _maxIterations = newMaxIterations;
-        emit MaxIterationsSet(newMaxIterations);
+        _setMaxIterations(newMaxIterations);
     }
 
     /// @notice Sets the recipient for the skim function.
     function setRecipient(address newRecipient) external onlyOwner {
-        _recipient = newRecipient;
-        emit RecipientSet(newRecipient);
+        _setRecipient(newRecipient);
     }
 
     /// @notice The address of the Morpho contract this vault utilizes.
@@ -149,6 +147,18 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
     {
         assets = _MORPHO.withdraw(_underlying, assets, address(this), address(this), uint256(_maxIterations));
         super._withdraw(caller, receiver, owner, assets, shares);
+    }
+
+    /// @dev Sets the max iterations to use when this vault interacts with Morpho.
+    function _setMaxIterations(uint96 newMaxIterations) internal {
+        _maxIterations = newMaxIterations;
+        emit MaxIterationsSet(newMaxIterations);
+    }
+
+    /// @dev Sets the recipient for the skim function.
+    function _setRecipient(address newRecipient) internal {
+        _recipient = newRecipient;
+        emit RecipientSet(newRecipient);
     }
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
