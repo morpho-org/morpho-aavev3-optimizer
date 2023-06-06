@@ -24,6 +24,7 @@ import {PermitHash} from "@permit2/libraries/PermitHash.sol";
 import {IAllowanceTransfer, AllowanceTransfer} from "@permit2/AllowanceTransfer.sol";
 
 import {PriceOracleSentinelMock} from "test/mocks/PriceOracleSentinelMock.sol";
+import {FlashBorrowerMock} from "test/mocks/FlashBorrowerMock.sol";
 import {AaveOracleMock} from "test/mocks/AaveOracleMock.sol";
 import {PoolAdminMock} from "test/mocks/PoolAdminMock.sol";
 import {Configured} from "config/Configured.sol";
@@ -71,6 +72,7 @@ contract ForkTest is BaseTest, Configured {
     AaveOracleMock internal oracle;
     PoolAdminMock internal poolAdmin;
     PriceOracleSentinelMock internal oracleSentinel;
+    FlashBorrowerMock internal flashBorrower;
 
     uint256 internal snapshotId = type(uint256).max;
 
@@ -78,12 +80,13 @@ contract ForkTest is BaseTest, Configured {
         _initConfig();
         _loadConfig();
 
+        deal(address(this), type(uint128).max);
+        _setBalances(address(this), type(uint96).max);
+
         _mockPoolAdmin();
         _mockOracle();
         _mockOracleSentinel();
-
-        deal(address(this), type(uint128).max);
-        _setBalances(address(this), type(uint96).max);
+        _mockFlashBorrower();
     }
 
     function setUp() public virtual {
@@ -148,6 +151,12 @@ contract ForkTest is BaseTest, Configured {
 
         vm.prank(aclAdmin);
         addressesProvider.setPriceOracleSentinel(address(oracleSentinel));
+    }
+
+    function _mockFlashBorrower() internal {
+        flashBorrower = new FlashBorrowerMock(address(pool));
+
+        _setBalances(address(flashBorrower), type(uint96).max);
     }
 
     function _setBalances(address user, uint256 balance) internal {

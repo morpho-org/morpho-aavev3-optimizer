@@ -5,6 +5,8 @@ import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationMorphoGetters is IntegrationTest {
     using WadRayMath for uint256;
+    using TestMarketLib for TestMarket;
+    using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     function testDomainSeparator() public {
         assertEq(
@@ -91,5 +93,33 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
             pool.getReserveNormalizedVariableDebt(market.underlying),
             "poolBorrowIndex != truePoolBorrowIndex"
         );
+    }
+
+    function testPoolSupplyIndexGrowthInsideBlock(uint256 seed) public {
+        TestMarket storage market = testMarkets[_randomCollateral(seed)];
+        vm.assume(pool.getConfiguration(market.underlying).getFlashLoanEnabled());
+
+        uint256 poolSupplyIndexBefore = morpho.updatedIndexes(market.underlying).supply.poolIndex;
+
+        uint256 liquidity = market.liquidity();
+        flashBorrower.flashLoanSimple(market.underlying, liquidity);
+
+        uint256 poolSupplyIndexAfter = morpho.updatedIndexes(market.underlying).supply.poolIndex;
+
+        assertGt(poolSupplyIndexAfter, poolSupplyIndexBefore);
+    }
+
+    function testP2PSupplyIndexGrowthInsideBlock(uint256 seed) public {
+        TestMarket storage market = testMarkets[_randomCollateral(seed)];
+        vm.assume(pool.getConfiguration(market.underlying).getFlashLoanEnabled());
+
+        uint256 poolSupplyIndexBefore = morpho.updatedIndexes(market.underlying).supply.p2pIndex;
+
+        uint256 liquidity = market.liquidity();
+        flashBorrower.flashLoanSimple(market.underlying, liquidity);
+
+        uint256 poolSupplyIndexAfter = morpho.updatedIndexes(market.underlying).supply.p2pIndex;
+
+        assertGt(poolSupplyIndexAfter, poolSupplyIndexBefore);
     }
 }

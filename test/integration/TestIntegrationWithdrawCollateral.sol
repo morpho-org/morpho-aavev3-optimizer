@@ -322,7 +322,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         user.supplyCollateral(market.underlying, 1);
 
         uint256 liquidity = market.liquidity();
-        pool.flashLoanSimple(address(this), market.underlying, liquidity, "", 0);
+        flashBorrower.flashLoanSimple(market.underlying, liquidity);
 
         uint256 poolSupplyIndexBefore = pool.getReserveNormalizedIncome(market.underlying);
 
@@ -343,15 +343,5 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
             10,
             "collateral"
         );
-    }
-
-    function executeOperation(address asset, uint256 amount, uint256 fee, address, bytes calldata)
-        external
-        returns (bool)
-    {
-        _deal(asset, address(this), amount + fee);
-        ERC20(asset).safeApprove(address(pool), amount + fee);
-
-        return true;
     }
 }
