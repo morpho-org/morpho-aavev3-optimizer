@@ -162,6 +162,8 @@ contract BulkerGateway is IBulkerGateway {
     function _supply(bytes calldata data) internal {
         (address asset, uint256 amount, address onBehalf, uint256 maxIterations) =
             abi.decode(data, (address, uint256, address, uint256));
+        if (onBehalf == address(this)) revert AddressIsBulker();
+
         amount = Math.min(amount, ERC20(asset).balanceOf(address(this)));
         if (amount == 0) revert AmountIsZero();
 
@@ -173,6 +175,8 @@ contract BulkerGateway is IBulkerGateway {
     /// @dev Supplies `amount` of `asset` collateral to the pool on behalf of `onBehalf`.
     function _supplyCollateral(bytes calldata data) internal {
         (address asset, uint256 amount, address onBehalf) = abi.decode(data, (address, uint256, address));
+        if (onBehalf == address(this)) revert AddressIsBulker();
+
         amount = Math.min(amount, ERC20(asset).balanceOf(address(this)));
         if (amount == 0) revert AmountIsZero();
 
@@ -193,6 +197,8 @@ contract BulkerGateway is IBulkerGateway {
     /// @dev Repays `amount` of `asset` on behalf of `onBehalf`.
     function _repay(bytes calldata data) internal {
         (address asset, uint256 amount, address onBehalf) = abi.decode(data, (address, uint256, address));
+        if (onBehalf == address(this)) revert AddressIsBulker();
+
         amount = Math.min(amount, ERC20(asset).balanceOf(address(this)));
         if (amount == 0) revert AmountIsZero();
 
@@ -231,7 +237,7 @@ contract BulkerGateway is IBulkerGateway {
     /// @dev Unwraps the given input of WETH to ETH.
     function _unwrapEth(bytes calldata data) internal {
         (uint256 amount, address receiver) = abi.decode(data, (uint256, address));
-        if (receiver == address(this)) revert TransferToSelf();
+        if (receiver == address(this)) revert AddressIsBulker();
         if (receiver == address(0)) revert AddressIsZero();
 
         amount = Math.min(amount, ERC20(_WETH).balanceOf(address(this)));
@@ -255,7 +261,7 @@ contract BulkerGateway is IBulkerGateway {
     /// @dev Unwraps the given input of wstETH to stETH.
     function _unwrapStEth(bytes calldata data) internal {
         (uint256 amount, address receiver) = abi.decode(data, (uint256, address));
-        if (receiver == address(this)) revert TransferToSelf();
+        if (receiver == address(this)) revert AddressIsBulker();
         if (receiver == address(0)) revert AddressIsZero();
 
         amount = Math.min(amount, ERC20(_WST_ETH).balanceOf(address(this)));
@@ -269,7 +275,7 @@ contract BulkerGateway is IBulkerGateway {
     /// @dev Sends any ERC20 in this contract to the receiver.
     function _skim(bytes calldata data) internal {
         (address asset, address receiver) = abi.decode(data, (address, address));
-        if (receiver == address(this)) revert TransferToSelf();
+        if (receiver == address(this)) revert AddressIsBulker();
         if (receiver == address(0)) revert AddressIsZero();
 
         uint256 balance = ERC20(asset).balanceOf(address(this));
@@ -279,6 +285,8 @@ contract BulkerGateway is IBulkerGateway {
     /// @dev Claims rewards for the given assets, on behalf of an address, sending the funds to the given address.
     function _claimRewards(bytes calldata data) internal {
         (address[] memory assets, address onBehalf) = abi.decode(data, (address[], address));
+        if (onBehalf == address(this)) revert AddressIsBulker();
+
         _MORPHO.claimRewards(assets, onBehalf);
     }
 
