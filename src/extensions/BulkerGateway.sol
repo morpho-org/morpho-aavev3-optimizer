@@ -221,6 +221,7 @@ contract BulkerGateway is IBulkerGateway {
     /// @dev Wraps the given input of ETH to WETH.
     function _wrapEth(bytes calldata data) internal {
         (uint256 amount) = abi.decode(data, (uint256));
+
         amount = Math.min(amount, address(this).balance);
         if (amount == 0) revert AmountIsZero();
 
@@ -231,6 +232,8 @@ contract BulkerGateway is IBulkerGateway {
     function _unwrapEth(bytes calldata data) internal {
         (uint256 amount, address receiver) = abi.decode(data, (uint256, address));
         if (receiver == address(this)) revert TransferToSelf();
+        if (receiver == address(0)) revert AddressIsZero();
+
         amount = Math.min(amount, ERC20(_WETH).balanceOf(address(this)));
         if (amount == 0) revert AmountIsZero();
 
@@ -242,6 +245,7 @@ contract BulkerGateway is IBulkerGateway {
     /// @dev Wraps the given input of stETH to wstETH.
     function _wrapStEth(bytes calldata data) internal {
         (uint256 amount) = abi.decode(data, (uint256));
+
         amount = Math.min(amount, ERC20(_ST_ETH).balanceOf(address(this)));
         if (amount == 0) revert AmountIsZero();
 
@@ -252,6 +256,8 @@ contract BulkerGateway is IBulkerGateway {
     function _unwrapStEth(bytes calldata data) internal {
         (uint256 amount, address receiver) = abi.decode(data, (uint256, address));
         if (receiver == address(this)) revert TransferToSelf();
+        if (receiver == address(0)) revert AddressIsZero();
+
         amount = Math.min(amount, ERC20(_WST_ETH).balanceOf(address(this)));
         if (amount == 0) revert AmountIsZero();
 
@@ -264,6 +270,8 @@ contract BulkerGateway is IBulkerGateway {
     function _skim(bytes calldata data) internal {
         (address asset, address receiver) = abi.decode(data, (address, address));
         if (receiver == address(this)) revert TransferToSelf();
+        if (receiver == address(0)) revert AddressIsZero();
+
         uint256 balance = ERC20(asset).balanceOf(address(this));
         ERC20(asset).safeTransfer(receiver, balance);
     }
