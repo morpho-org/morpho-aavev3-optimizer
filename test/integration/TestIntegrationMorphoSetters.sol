@@ -40,7 +40,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.createMarket(link, reserveFactor, p2pIndexCursor);
     }
 
-    function testCreateMarketRevertsIfZeroAddressUnderlying(uint16 reserveFactor, uint16 p2pIndexCursor) public {
+    function testCreateMarketRevertsIfAddressIsZeroUnderlying(uint16 reserveFactor, uint16 p2pIndexCursor) public {
         reserveFactor = uint16(bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR));
         p2pIndexCursor = uint16(bound(p2pIndexCursor, 0, PercentageMath.PERCENTAGE_FACTOR));
         vm.expectRevert(Errors.AddressIsZero.selector);

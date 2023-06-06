@@ -37,7 +37,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         stETH = bulker.stETH();
     }
 
-    function testShouldNotDeployWithMorphoZeroAddress() public {
+    function testShouldNotDeployWithMorphoAddressIsZero() public {
         vm.expectRevert(IBulkerGateway.AddressIsZero.selector);
         new BulkerGateway(address(0));
     }
@@ -141,7 +141,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         (actions[0], data[0]) = _getUnwrapETHData(amount, receiver);
 
         vm.prank(delegator);
-        vm.expectRevert(IBulkerGateway.TransferToSelf.selector);
+        vm.expectRevert(IBulkerGateway.AddressIsBulker.selector);
         bulker.execute(actions, data);
     }
 
@@ -198,7 +198,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
         vm.prank(delegator);
 
-        vm.expectRevert(IBulkerGateway.TransferToSelf.selector);
+        vm.expectRevert(IBulkerGateway.AddressIsBulker.selector);
         bulker.execute(actions, data);
     }
 
@@ -410,7 +410,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         (actions[0], data[0]) = _getSkimData(market.underlying, receiver);
 
         vm.prank(delegator);
-        vm.expectRevert(IBulkerGateway.TransferToSelf.selector);
+        vm.expectRevert(IBulkerGateway.AddressIsBulker.selector);
         bulker.execute(actions, data);
     }
 
