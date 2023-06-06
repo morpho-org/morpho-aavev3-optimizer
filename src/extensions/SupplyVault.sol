@@ -147,7 +147,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
         virtual
         override
     {
-        _MORPHO.withdraw(_underlying, assets, address(this), address(this), uint256(_maxIterations));
+        assets = _MORPHO.withdraw(_underlying, assets, address(this), address(this), uint256(_maxIterations));
         super._withdraw(caller, receiver, owner, assets, shares);
     }
 
