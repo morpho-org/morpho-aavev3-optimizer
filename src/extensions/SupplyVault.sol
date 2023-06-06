@@ -39,7 +39,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
     /// @dev The implementation contract disables initialization upon deployment to avoid being hijacked.
     /// @param morpho The address of the main Morpho contract.
     constructor(address morpho) {
-        if (morpho == address(0)) revert ZeroAddress();
+        if (morpho == address(0)) revert AddressIsZero();
 
         _disableInitializers();
         _MORPHO = IMorpho(morpho);
@@ -62,7 +62,8 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
         uint256 initialDeposit,
         uint96 newMaxIterations
     ) external initializer {
-        if (newUnderlying == address(0)) revert ZeroAddress();
+        if (newUnderlying == address(0)) revert AddressIsZero();
+        if (initialDeposit == 0) revert InitialDepositIsZero();
 
         _underlying = newUnderlying;
         _recipient = newRecipient;
@@ -83,7 +84,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
     ///      The vault is not intended to hold any ERC20 tokens between calls.
     function skim(address[] calldata tokens) external {
         address recipientMem = _recipient;
-        if (recipientMem == address(0)) revert ZeroAddress();
+        if (recipientMem == address(0)) revert AddressIsZero();
 
         for (uint256 i; i < tokens.length; i++) {
             address token = tokens[i];

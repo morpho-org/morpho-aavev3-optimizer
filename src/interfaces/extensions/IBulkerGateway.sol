@@ -12,13 +12,13 @@ interface IBulkerGateway {
     /// @notice Thrown when another address than WETH sends ETH to the contract.
     error OnlyWETH();
 
-    /// @notice Thrown when an address parameter is the zero address.
+    /// @notice Thrown when an address passed as parameter is the zero address.
     error AddressIsZero();
 
     /// @notice Thrown when an address parameter is the bulker's address.
     error AddressIsBulker();
 
-    /// @notice Thrown when the amount used is zero.
+    /// @notice Thrown when an amount passed as parameter is zero.
     error AmountIsZero();
 
     /// @notice Thrown when the action is unsupported.
