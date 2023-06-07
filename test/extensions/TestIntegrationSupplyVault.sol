@@ -16,12 +16,20 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
     }
 
     function testCorrectInitialisationWrappedNative() public {
-        assertEq(wrappedNativeTokenSupplyVault.owner(), address(this));
-        assertEq(wrappedNativeTokenSupplyVault.name(), "MorphoAaveWNATIVE");
-        assertEq(wrappedNativeTokenSupplyVault.symbol(), "maWNATIVE");
-        assertEq(wrappedNativeTokenSupplyVault.underlying(), wNative);
-        assertEq(wrappedNativeTokenSupplyVault.asset(), wNative);
-        assertEq(wrappedNativeTokenSupplyVault.decimals(), 18);
+        assertEq(wNativeSupplyVault.owner(), address(this));
+        assertEq(wNativeSupplyVault.name(), "MorphoAaveWNATIVE");
+        assertEq(wNativeSupplyVault.symbol(), "maWNATIVE");
+        assertEq(wNativeSupplyVault.underlying(), wNative);
+        assertEq(wNativeSupplyVault.asset(), wNative);
+        assertEq(wNativeSupplyVault.decimals(), 18);
+    }
+
+    function testShouldNotAcceptZeroInitialDeposit() public {
+        SupplyVault supplyVault =
+            SupplyVault(address(new TransparentUpgradeableProxy(address(supplyVaultImplV1), address(proxyAdmin), "")));
+
+        vm.expectRevert(ISupplyVault.InitialDepositIsZero.selector);
+        supplyVault.initialize(address(usdc), RECIPIENT, "MorphoAaveUSDC2", "maUSDC2", 0, 4);
     }
 
     function testShouldNotMintZeroShare() public {

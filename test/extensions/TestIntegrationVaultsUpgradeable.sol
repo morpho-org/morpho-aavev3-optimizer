@@ -13,8 +13,8 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
 
         vm.record();
         vm.prank(proxyAdmin.owner());
-        proxyAdmin.upgrade(wrappedNativeTokenSupplyVaultProxy, address(wethSupplyVaultImplV2));
-        (, bytes32[] memory writes) = vm.accesses(address(wrappedNativeTokenSupplyVault));
+        proxyAdmin.upgrade(wNativeSupplyVaultProxy, address(wethSupplyVaultImplV2));
+        (, bytes32[] memory writes) = vm.accesses(address(wNativeSupplyVault));
 
         // 1 write for the implemention.
         assertEq(writes.length, 1);
@@ -22,7 +22,7 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
             uint160(
                 uint256(
                     vm.load(
-                        address(wrappedNativeTokenSupplyVault),
+                        address(wNativeSupplyVault),
                         bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1) // Implementation slot.
                     )
                 )
@@ -37,10 +37,10 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
 
         vm.prank(caller);
         vm.expectRevert("Ownable: caller is not the owner");
-        proxyAdmin.upgrade(wrappedNativeTokenSupplyVaultProxy, address(supplyVaultImplV2));
+        proxyAdmin.upgrade(wNativeSupplyVaultProxy, address(supplyVaultImplV2));
 
         vm.prank(proxyAdmin.owner());
-        proxyAdmin.upgrade(wrappedNativeTokenSupplyVaultProxy, address(supplyVaultImplV2));
+        proxyAdmin.upgrade(wNativeSupplyVaultProxy, address(supplyVaultImplV2));
     }
 
     function testOnlyProxyOwnerCanUpgradeAndCallSupplyVault() public {
@@ -50,11 +50,11 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
 
         vm.prank(address(user));
         vm.expectRevert("Ownable: caller is not the owner");
-        proxyAdmin.upgradeAndCall(wrappedNativeTokenSupplyVaultProxy, payable(address(wethSupplyVaultImplV2)), "");
+        proxyAdmin.upgradeAndCall(wNativeSupplyVaultProxy, payable(address(wethSupplyVaultImplV2)), "");
 
         // Revert for wrong data not wrong caller.
         vm.expectRevert("Address: low-level delegate call failed");
-        proxyAdmin.upgradeAndCall(wrappedNativeTokenSupplyVaultProxy, payable(address(wethSupplyVaultImplV2)), "");
+        proxyAdmin.upgradeAndCall(wNativeSupplyVaultProxy, payable(address(wethSupplyVaultImplV2)), "");
     }
 
     function testSupplyVaultImplementationsShouldBeInitialized() public {
@@ -63,31 +63,31 @@ contract TestIntegrationVaultsUpgradeable is TestSetupVaults {
     }
 
     function testTransferOwnershipRevertsIfNotOwner(address newOwner, address caller) public {
-        vm.assume(caller != wrappedNativeTokenSupplyVault.owner() && caller != address(proxyAdmin));
+        vm.assume(caller != wNativeSupplyVault.owner() && caller != address(proxyAdmin));
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(caller);
-        wrappedNativeTokenSupplyVault.transferOwnership(newOwner);
+        wNativeSupplyVault.transferOwnership(newOwner);
     }
 
     function testTransferOwnership(address newOwner) public {
-        wrappedNativeTokenSupplyVault.transferOwnership(newOwner);
-        assertEq(wrappedNativeTokenSupplyVault.pendingOwner(), newOwner);
-        assertEq(wrappedNativeTokenSupplyVault.owner(), address(this));
+        wNativeSupplyVault.transferOwnership(newOwner);
+        assertEq(wNativeSupplyVault.pendingOwner(), newOwner);
+        assertEq(wNativeSupplyVault.owner(), address(this));
     }
 
     function testAcceptOwnershipFailsIfNotPendingOwner(address newOwner, address wrongOwner) public {
         vm.assume(newOwner != wrongOwner);
-        wrappedNativeTokenSupplyVault.transferOwnership(newOwner);
+        wNativeSupplyVault.transferOwnership(newOwner);
         vm.expectRevert("Ownable2Step: caller is not the new owner");
         vm.prank(wrongOwner);
-        wrappedNativeTokenSupplyVault.acceptOwnership();
+        wNativeSupplyVault.acceptOwnership();
     }
 
     function testAcceptOwnership(address newOwner) public {
-        wrappedNativeTokenSupplyVault.transferOwnership(newOwner);
+        wNativeSupplyVault.transferOwnership(newOwner);
         vm.prank(newOwner);
-        wrappedNativeTokenSupplyVault.acceptOwnership();
-        assertEq(wrappedNativeTokenSupplyVault.pendingOwner(), address(0));
-        assertEq(wrappedNativeTokenSupplyVault.owner(), newOwner);
+        wNativeSupplyVault.acceptOwnership();
+        assertEq(wNativeSupplyVault.pendingOwner(), address(0));
+        assertEq(wNativeSupplyVault.owner(), newOwner);
     }
 }

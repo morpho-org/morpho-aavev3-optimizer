@@ -12,11 +12,11 @@ contract TestSetupVaults is IntegrationTest {
     address internal constant MORPHO_DAO = 0xcBa28b38103307Ec8dA98377ffF9816C164f9AFa;
     address internal constant RECIPIENT = 0x60345417a227ad7E312eAa1B5EC5CD1Fe5E2Cdc6;
 
-    TransparentUpgradeableProxy internal wrappedNativeTokenSupplyVaultProxy;
+    TransparentUpgradeableProxy internal wNativeSupplyVaultProxy;
 
     SupplyVault internal supplyVaultImplV1;
 
-    SupplyVault internal wrappedNativeTokenSupplyVault;
+    SupplyVault internal wNativeSupplyVault;
     SupplyVault internal daiSupplyVault;
     SupplyVault internal usdcSupplyVault;
 
@@ -38,28 +38,37 @@ contract TestSetupVaults is IntegrationTest {
     function initVaultContracts() internal {
         supplyVaultImplV1 = new SupplyVault(address(morpho));
 
-        wrappedNativeTokenSupplyVaultProxy = new TransparentUpgradeableProxy(
+        wNativeSupplyVaultProxy = new TransparentUpgradeableProxy(
             address(supplyVaultImplV1),
             address(proxyAdmin),
             ""
         );
-        wrappedNativeTokenSupplyVault = SupplyVault(address(wrappedNativeTokenSupplyVaultProxy));
-        wrappedNativeTokenSupplyVault.initialize(wNative, RECIPIENT, "MorphoAaveWNATIVE", "maWNATIVE", 0, 4);
-        maWrappedNativeToken = ERC20(address(wrappedNativeTokenSupplyVault));
+        wNativeSupplyVault = SupplyVault(address(wNativeSupplyVaultProxy));
+
+        deal(wNative, address(this), 1e9);
+        ERC20(wNative).safeApprove(address(wNativeSupplyVault), 1e9);
+        wNativeSupplyVault.initialize(wNative, RECIPIENT, "MorphoAaveWNATIVE", "maWNATIVE", 1e9, 4);
+        maWrappedNativeToken = ERC20(address(wNativeSupplyVault));
 
         daiSupplyVault =
             SupplyVault(address(new TransparentUpgradeableProxy(address(supplyVaultImplV1), address(proxyAdmin), "")));
-        daiSupplyVault.initialize(address(dai), RECIPIENT, "MorphoAaveDAI", "maDAI", 0, 4);
+
+        deal(dai, address(this), 1e9);
+        ERC20(dai).safeApprove(address(daiSupplyVault), 1e9);
+        daiSupplyVault.initialize(address(dai), RECIPIENT, "MorphoAaveDAI", "maDAI", 1e9, 4);
         maDai = ERC20(address(daiSupplyVault));
 
         usdcSupplyVault =
             SupplyVault(address(new TransparentUpgradeableProxy(address(supplyVaultImplV1), address(proxyAdmin), "")));
-        usdcSupplyVault.initialize(address(usdc), RECIPIENT, "MorphoAaveUSDC", "maUSDC", 0, 4);
+
+        deal(usdc, address(this), 1e3);
+        ERC20(usdc).safeApprove(address(usdcSupplyVault), 1e3);
+        usdcSupplyVault.initialize(address(usdc), RECIPIENT, "MorphoAaveUSDC", "maUSDC", 1e3, 4);
         maUsdc = ERC20(address(usdcSupplyVault));
     }
 
     function setVaultContractsLabels() internal {
-        vm.label(address(wrappedNativeTokenSupplyVault), "SupplyVault (WNATIVE)");
+        vm.label(address(wNativeSupplyVault), "SupplyVault (WNATIVE)");
         vm.label(address(usdcSupplyVault), "SupplyVault (USDC)");
         vm.label(address(daiSupplyVault), "SupplyVault (DAI)");
     }
