@@ -33,8 +33,6 @@ interface ISupplyVault is IERC4626Upgradeable {
 
     function recipient() external view returns (address);
 
-    function underlying() external view returns (address);
-
     function maxIterations() external view returns (uint96);
 
     function skim(address[] calldata tokens) external;
