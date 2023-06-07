@@ -96,7 +96,7 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
     }
 
     function testPoolSupplyIndexGrowthInsideBlock(uint256 seed) public {
-        TestMarket storage market = testMarkets[_randomCollateral(seed)];
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
         vm.assume(pool.getConfiguration(market.underlying).getFlashLoanEnabled());
 
         uint256 poolSupplyIndexBefore = morpho.updatedIndexes(market.underlying).supply.poolIndex;
@@ -110,7 +110,7 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
     }
 
     function testP2PSupplyIndexGrowthInsideBlock(uint256 seed) public {
-        TestMarket storage market = testMarkets[_randomCollateral(seed)];
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
         vm.assume(pool.getConfiguration(market.underlying).getFlashLoanEnabled());
 
         uint256 poolSupplyIndexBefore = morpho.updatedIndexes(market.underlying).supply.p2pIndex;
