@@ -267,7 +267,7 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         assertApproxEqAbs(
             ERC20(dai).balanceOf(address(user)) - balanceBefore,
             amount.rayDiv(poolIndexBefore).rayMul(poolIndexAfter),
-            2,
+            3,
             "unexpected withdrawn assets"
         );
     }

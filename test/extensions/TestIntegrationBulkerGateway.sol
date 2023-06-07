@@ -44,12 +44,6 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         vm.assume(onBehalf != address(0) && onBehalf != address(bulker));
     }
 
-    function _assumeETHReceiver(address receiver) internal override {
-        super._assumeETHReceiver(receiver);
-
-        vm.assume(receiver != address(bulker));
-    }
-
     function testShouldNotDeployWithMorphoAddressIsZero() public {
         vm.expectRevert(IBulkerGateway.AddressIsZero.selector);
         new BulkerGateway(address(0));
@@ -125,6 +119,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
     function testBulkerShouldUnwrapETH(address delegator, uint256 amount, address receiver) public {
         _assumeTarget(delegator);
+        _assumeTarget(receiver);
         _assumeETHReceiver(receiver);
 
         amount = bound(amount, 1, type(uint160).max);
@@ -187,7 +182,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
     function testBulkerShouldUnwrapStETH(address delegator, uint256 amount, address receiver) public {
         _assumeTarget(delegator);
-        _assumeETHReceiver(receiver);
+        _assumeTarget(receiver);
 
         amount = bound(amount, 1, IWSTETH(stNative).totalSupply());
         deal(stNative, address(bulker), amount);
@@ -550,6 +545,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
     function testBulkerShouldNotUnwrapEthZero(address delegator, uint256 amount, address receiver) public {
         _assumeTarget(delegator);
+        _assumeTarget(receiver);
         _assumeETHReceiver(receiver);
 
         amount = bound(amount, 1, type(uint160).max);
@@ -613,7 +609,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
     function testBulkerShouldNotUnwrapStEthZero(address delegator, uint256 amount, address receiver) public {
         _assumeTarget(delegator);
-        _assumeETHReceiver(receiver);
+        _assumeTarget(receiver);
 
         amount = bound(amount, 1, type(uint160).max);
 
