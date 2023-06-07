@@ -40,7 +40,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         wstETH = bulker.wstETH();
     }
 
-    function _assumeTarget(address onBehalf) internal {
+    function _assumeTarget(address onBehalf) internal view {
         vm.assume(onBehalf != address(0) && onBehalf != address(bulker));
     }
 
