@@ -165,7 +165,6 @@ contract BulkerGateway is IBulkerGateway {
         if (onBehalf == address(this)) revert AddressIsBulker();
 
         amount = Math.min(amount, ERC20(asset).balanceOf(address(this)));
-        if (amount == 0) revert AmountIsZero();
 
         _approveMaxToMorpho(asset);
 
@@ -178,7 +177,6 @@ contract BulkerGateway is IBulkerGateway {
         if (onBehalf == address(this)) revert AddressIsBulker();
 
         amount = Math.min(amount, ERC20(asset).balanceOf(address(this)));
-        if (amount == 0) revert AmountIsZero();
 
         _approveMaxToMorpho(asset);
 
@@ -189,7 +187,6 @@ contract BulkerGateway is IBulkerGateway {
     function _borrow(bytes calldata data) internal {
         (address asset, uint256 amount, address receiver, uint256 maxIterations) =
             abi.decode(data, (address, uint256, address, uint256));
-        if (amount == 0) revert AmountIsZero();
 
         _MORPHO.borrow(asset, amount, msg.sender, receiver, maxIterations);
     }
@@ -200,7 +197,6 @@ contract BulkerGateway is IBulkerGateway {
         if (onBehalf == address(this)) revert AddressIsBulker();
 
         amount = Math.min(amount, ERC20(asset).balanceOf(address(this)));
-        if (amount == 0) revert AmountIsZero();
 
         _approveMaxToMorpho(asset);
 
@@ -211,7 +207,6 @@ contract BulkerGateway is IBulkerGateway {
     function _withdraw(bytes calldata data) internal {
         (address asset, uint256 amount, address receiver, uint256 maxIterations) =
             abi.decode(data, (address, uint256, address, uint256));
-        if (amount == 0) revert AmountIsZero();
 
         _MORPHO.withdraw(asset, amount, msg.sender, receiver, maxIterations);
     }
@@ -219,7 +214,6 @@ contract BulkerGateway is IBulkerGateway {
     /// @dev Withdraws `amount` of `asset` on behalf of sender. Sender must have previously approved the bulker as their manager on Morpho.
     function _withdrawCollateral(bytes calldata data) internal {
         (address asset, uint256 amount, address receiver) = abi.decode(data, (address, uint256, address));
-        if (amount == 0) revert AmountIsZero();
 
         _MORPHO.withdrawCollateral(asset, amount, msg.sender, receiver);
     }
