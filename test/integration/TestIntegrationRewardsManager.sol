@@ -465,6 +465,6 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         uint256 accruedRewardsAfter = rewardsManager.getUserRewards(aDaiArray, address(user), wNative);
 
-        assertEq(accruedRewardsAfter, accruedRewardsBefore * 3);
+        assertApproxEqAbs(accruedRewardsAfter, accruedRewardsBefore * 3, 1e5);
     }
 }

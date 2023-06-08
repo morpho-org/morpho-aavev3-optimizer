@@ -357,33 +357,52 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Updates a `user`'s position in the data structure.
-    /// @param poolToken The address of the pool token related to this market (aToken or variable debt token address).
+    /// @param underlying The address of the underlying asset.
     /// @param user The address of the user to update.
-    /// @param poolBuckets The pool buckets.
-    /// @param p2pBuckets The peer-to-peer buckets.
     /// @param onPool The new scaled balance on pool of the `user`.
     /// @param inP2P The new scaled balance in peer-to-peer of the `user`.
     /// @param demoting Whether the update is happening during a demoting process or not.
+    /// @param supply Whether the balance updated is a supply or borrow.
     /// @return The actual new scaled balance on pool and in peer-to-peer of the `user` after accounting for dust.
-    function _updateInDS(
-        address poolToken,
-        address user,
-        LogarithmicBuckets.Buckets storage poolBuckets,
-        LogarithmicBuckets.Buckets storage p2pBuckets,
-        uint256 onPool,
-        uint256 inP2P,
-        bool demoting
-    ) internal returns (uint256, uint256) {
+    function _updateInDS(address underlying, address user, uint256 onPool, uint256 inP2P, bool demoting, bool supply)
+        internal
+        returns (uint256, uint256)
+    {
         if (onPool <= Constants.DUST_THRESHOLD) onPool = 0;
         if (inP2P <= Constants.DUST_THRESHOLD) inP2P = 0;
 
+        Types.MarketBalances storage marketBalances = _marketBalances[underlying];
+
+        LogarithmicBuckets.Buckets storage poolBuckets;
+        LogarithmicBuckets.Buckets storage p2pBuckets;
+
+        if (supply) {
+            poolBuckets = marketBalances.poolSuppliers;
+            p2pBuckets = marketBalances.p2pSuppliers;
+        } else {
+            poolBuckets = marketBalances.poolBorrowers;
+            p2pBuckets = marketBalances.p2pBorrowers;
+        }
+
         uint256 formerOnPool = poolBuckets.valueOf[user];
-        uint256 formerInP2P = p2pBuckets.valueOf[user];
 
         if (onPool != formerOnPool) {
-            _updateRewards(user, poolToken, formerOnPool);
+            address poolToken;
+            uint256 totalOnPool = formerOnPool;
+
+            if (supply) {
+                poolToken = _market[underlying].aToken;
+                totalOnPool += marketBalances.scaledCollateralBalance(user);
+            } else {
+                poolToken = _market[underlying].variableDebtToken;
+            }
+
+            _updateRewards(user, poolToken, totalOnPool);
+
             poolBuckets.update(user, onPool, demoting);
         }
+
+        uint256 formerInP2P = p2pBuckets.valueOf[user];
 
         if (inP2P != formerInP2P) p2pBuckets.update(user, inP2P, true);
         return (onPool, inP2P);
@@ -400,15 +419,7 @@ abstract contract MorphoInternal is MorphoStorage {
         internal
         returns (uint256, uint256)
     {
-        return _updateInDS(
-            _market[underlying].aToken,
-            user,
-            _marketBalances[underlying].poolSuppliers,
-            _marketBalances[underlying].p2pSuppliers,
-            onPool,
-            inP2P,
-            demoting
-        );
+        return _updateInDS(underlying, user, onPool, inP2P, demoting, true);
         // No need to update the user's list of supplied assets,
         // as it cannot be used as collateral and thus there's no need to iterate over it.
     }
@@ -424,17 +435,11 @@ abstract contract MorphoInternal is MorphoStorage {
         internal
         returns (uint256, uint256)
     {
-        (onPool, inP2P) = _updateInDS(
-            _market[underlying].variableDebtToken,
-            user,
-            _marketBalances[underlying].poolBorrowers,
-            _marketBalances[underlying].p2pBorrowers,
-            onPool,
-            inP2P,
-            demoting
-        );
+        (onPool, inP2P) = _updateInDS(underlying, user, onPool, inP2P, demoting, false);
+
         if (onPool == 0 && inP2P == 0) _userBorrows[user].remove(underlying);
         else _userBorrows[user].add(underlying);
+
         return (onPool, inP2P);
     }
 
