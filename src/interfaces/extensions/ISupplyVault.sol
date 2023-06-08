@@ -3,7 +3,6 @@ pragma solidity >=0.5.0;
 
 import {IERC4626Upgradeable} from "@openzeppelin-upgradeable/interfaces/IERC4626Upgradeable.sol";
 import {IMorpho} from "src/interfaces/IMorpho.sol";
-import {ERC20} from "@solmate/utils/SafeTransferLib.sol";
 
 interface ISupplyVault is IERC4626Upgradeable {
     /* EVENTS */

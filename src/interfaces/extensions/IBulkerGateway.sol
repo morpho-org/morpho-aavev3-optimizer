@@ -4,10 +4,6 @@ pragma solidity >=0.5.0;
 interface IBulkerGateway {
     /* ERRORS */
 
-    /// @notice Thrown when an unknown address is about to be approved.
-    /// @param spender The address of the unsafe spender.
-    error UnsafeApproval(address spender);
-
     /// @notice Thrown when execution parameters don't have the same length.
     /// @param nbActions The number of input actions.
     /// @param nbData The number of data inputs.
