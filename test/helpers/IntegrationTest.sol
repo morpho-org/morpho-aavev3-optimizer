@@ -231,7 +231,7 @@ contract IntegrationTest is ForkTest {
         internal
         bypassSupplyCap(underlying, amount)
     {
-        deal(underlying, address(this), type(uint256).max);
+        _deal(underlying, address(this), amount);
         ERC20(underlying).safeApprove(address(pool), amount);
         pool.deposit(underlying, amount, onBehalf, 0);
     }
@@ -321,9 +321,21 @@ contract IntegrationTest is ForkTest {
         address onBehalf,
         address receiver,
         uint256 maxIterations
-    ) internal returns (uint256 borrowed) {
+    ) internal returns (uint256) {
         oracle.setAssetPrice(market.underlying, 0);
 
+        return _borrowPriceZero(borrower, market, amount, onBehalf, receiver, maxIterations);
+    }
+
+    /// @dev Borrows a zero-priced asset from `user` on behalf of `onBehalf`.
+    function _borrowPriceZero(
+        address borrower,
+        TestMarket storage market,
+        uint256 amount,
+        address onBehalf,
+        address receiver,
+        uint256 maxIterations
+    ) internal returns (uint256 borrowed) {
         vm.prank(borrower);
         borrowed = morpho.borrow(market.underlying, amount, onBehalf, receiver, maxIterations);
 
