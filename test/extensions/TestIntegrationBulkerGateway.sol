@@ -655,7 +655,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         bulker.execute(actions, data);
     }
 
-    function testBulkerShouldNotSupplyOnBehalfBulker(
+    function testBulkerShouldNotSupplyOnBehalfOfBulker(
         uint256 seed,
         address delegator,
         uint256 amount,
@@ -675,7 +675,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         bulker.execute(actions, data);
     }
 
-    function testBulkerShouldNotSupplyCollateralOnBehalfBulker(uint256 seed, address delegator, uint256 amount)
+    function testBulkerShouldNotSupplyCollateralOnBehalfOfBulker(uint256 seed, address delegator, uint256 amount)
         public
     {
         _assumeTarget(delegator);
@@ -692,7 +692,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         bulker.execute(actions, data);
     }
 
-    function testBulkerShouldNotRepayOnBehalfBulker(uint256 seed, address delegator, uint256 amount) public {
+    function testBulkerShouldNotRepayOnBehalfOfBulker(uint256 seed, address delegator, uint256 amount) public {
         _assumeTarget(delegator);
 
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
@@ -737,7 +737,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         bulker.execute(actions, data);
     }
 
-    function testBulkerShouldNotClaimRewardsOnBehalfBulker(address delegator) public {
+    function testBulkerShouldNotClaimRewardsOnBehalfOfBulker(address delegator) public {
         _assumeTarget(delegator);
 
         address[] memory assets = new address[](1);
