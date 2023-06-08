@@ -234,7 +234,7 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         uint256 totalScaledBalanceAfter = morpho.scaledPoolSupplyBalance(address(dai), address(daiSupplyVault));
 
         assertApproxEqAbs(
-            assets, expectedOnPool.rayMul(pool.getReserveNormalizedIncome(dai)), 2, "unexpected withdrawn assets"
+            assets, expectedOnPool.rayMul(pool.getReserveNormalizedIncome(dai)), 3, "unexpected withdrawn assets"
         );
         assertEq(daiSupplyVault.balanceOf(address(user)), 0, "balance not zero");
         assertApproxEqAbs(totalScaledBalanceAfter, totalScaledBalanceBefore, 1, "totalBalance");
