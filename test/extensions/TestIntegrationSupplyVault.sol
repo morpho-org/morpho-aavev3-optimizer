@@ -262,7 +262,7 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         address[] memory underlyings = new address[](1);
         underlyings[0] = underlying;
 
-        vm.expectRevert(ISupplyVault.ZeroAddress.selector);
+        vm.expectRevert(ISupplyVault.AddressIsZero.selector);
         daiSupplyVault.skim(underlyings);
     }
 

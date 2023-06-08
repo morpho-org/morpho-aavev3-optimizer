@@ -14,18 +14,18 @@ interface ISupplyVault is IERC4626Upgradeable {
 
     /// @notice Emitted when the recipient is set.
     /// @param recipient The recipient.
-    event RecipientSet(address recipient);
+    event RecipientSet(address indexed recipient);
 
     /// @notice Emitted when tokens are skimmed to `recipient`.
     /// @param token The token being skimmed.
     /// @param recipient The recipient.
-    /// @param amount The amount of rewards transferred.
-    event Skimmed(address token, address recipient, uint256 amount);
+    /// @param amount The amount of tokens transferred.
+    event Skimmed(address indexed token, address indexed recipient, uint256 amount);
 
     /* ERRORS */
 
-    /// @notice Thrown when the zero address is passed as input or is the recipient address when calling `transferRewards`.
-    error ZeroAddress();
+    /// @notice Thrown when an address used as parameter is the zero address.
+    error AddressIsZero();
 
     /* EXTERNAL */
 
