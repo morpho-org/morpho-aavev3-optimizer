@@ -27,6 +27,9 @@ interface ISupplyVault is IERC4626Upgradeable {
     /// @notice Thrown when the zero address is passed as input or is the recipient address when calling `transferRewards`.
     error ZeroAddress();
 
+    /// @notice Thrown when the initial deposit at initialization is zero.
+    error InitialDepositIsZero();
+
     /* EXTERNAL */
 
     function MORPHO() external view returns (IMorpho);
