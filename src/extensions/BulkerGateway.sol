@@ -69,6 +69,8 @@ contract BulkerGateway is IBulkerGateway {
     }
 
     /// @notice Executes the given batch of actions, with the given input data.
+    ///         Those actions, if not performed in the correct order, with the proper action's configuration
+    ///         and with the proper inclusion of skim final calls, could leave funds in the Bulker contract.
     /// @param actions The batch of action to execute, one after the other.
     /// @param data The array of data corresponding to each input action.
     function execute(ActionType[] calldata actions, bytes[] calldata data) external payable {
