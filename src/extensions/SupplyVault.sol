@@ -24,9 +24,6 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
 
     /* STORAGE */
 
-    /// @dev The underlying market to supply to through this vault.
-    address internal _underlying;
-
     /// @dev The max iterations to use when this vault interacts with Morpho.
     uint96 internal _maxIterations;
 
@@ -64,7 +61,6 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
     ) external initializer {
         if (newUnderlying == address(0)) revert ZeroAddress();
 
-        _underlying = newUnderlying;
         _recipient = newRecipient;
         _maxIterations = newMaxIterations;
 
@@ -115,11 +111,6 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
         return _recipient;
     }
 
-    /// @notice The address of the underlying market to supply through this vault to Morpho.
-    function underlying() external view returns (address) {
-        return _underlying;
-    }
-
     /// @notice The max iterations to use when this vault interacts with Morpho.
     function maxIterations() external view returns (uint96) {
         return _maxIterations;
@@ -129,7 +120,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
 
     /// @notice The amount of assets in the vault.
     function totalAssets() public view virtual override(IERC4626Upgradeable, ERC4626Upgradeable) returns (uint256) {
-        return _MORPHO.supplyBalance(_underlying, address(this));
+        return _MORPHO.supplyBalance(asset(), address(this));
     }
 
     /* INTERNAL */
@@ -137,7 +128,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
     /// @dev Used in mint or deposit to deposit the underlying asset to Morpho.
     function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal virtual override {
         super._deposit(caller, receiver, assets, shares);
-        _MORPHO.supply(_underlying, assets, address(this), uint256(_maxIterations));
+        _MORPHO.supply(asset(), assets, address(this), uint256(_maxIterations));
     }
 
     /// @dev Used in redeem or withdraw to withdraw the underlying asset from Morpho.
@@ -146,7 +137,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
         virtual
         override
     {
-        _MORPHO.withdraw(_underlying, assets, address(this), address(this), uint256(_maxIterations));
+        _MORPHO.withdraw(asset(), assets, address(this), address(this), uint256(_maxIterations));
         super._withdraw(caller, receiver, owner, assets, shares);
     }
 

@@ -10,7 +10,6 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         assertEq(daiSupplyVault.owner(), address(this));
         assertEq(daiSupplyVault.name(), "MorphoAaveDAI");
         assertEq(daiSupplyVault.symbol(), "maDAI");
-        assertEq(daiSupplyVault.underlying(), dai);
         assertEq(daiSupplyVault.asset(), dai);
         assertEq(daiSupplyVault.decimals(), 18);
     }
@@ -19,7 +18,6 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         assertEq(wrappedNativeTokenSupplyVault.owner(), address(this));
         assertEq(wrappedNativeTokenSupplyVault.name(), "MorphoAaveWNATIVE");
         assertEq(wrappedNativeTokenSupplyVault.symbol(), "maWNATIVE");
-        assertEq(wrappedNativeTokenSupplyVault.underlying(), wNative);
         assertEq(wrappedNativeTokenSupplyVault.asset(), wNative);
         assertEq(wrappedNativeTokenSupplyVault.decimals(), 18);
     }
