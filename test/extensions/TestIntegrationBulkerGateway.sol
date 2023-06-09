@@ -24,7 +24,9 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
     SigUtils internal sigUtils;
     IBulkerGateway internal bulker;
+
     address stETH;
+    address wstETH;
 
     event Accrued(
         address indexed asset, address indexed reward, address indexed user, uint256 assetIndex, uint256 rewardsAccrued
@@ -35,9 +37,14 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         bulker = new BulkerGateway(address(morpho));
         sigUtils = new SigUtils(morpho.DOMAIN_SEPARATOR());
         stETH = bulker.stETH();
+        wstETH = bulker.wstETH();
     }
 
-    function testShouldNotDeployWithMorphoZeroAddress() public {
+    function _assumeTarget(address onBehalf) internal view {
+        vm.assume(onBehalf != address(0) && onBehalf != address(bulker));
+    }
+
+    function testShouldNotDeployWithMorphoAddressIsZero() public {
         vm.expectRevert(IBulkerGateway.AddressIsZero.selector);
         new BulkerGateway(address(0));
     }
@@ -95,8 +102,10 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerShouldWrapETH(address delegator, uint256 amount) public {
+        _assumeTarget(delegator);
+
         amount = bound(amount, 1, type(uint160).max);
-        deal(delegator, type(uint256).max);
+        deal(delegator, amount);
 
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
         bytes[] memory data = new bytes[](1);
@@ -109,8 +118,10 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerShouldUnwrapETH(address delegator, uint256 amount, address receiver) public {
-        vm.assume(!Address.isContract(receiver));
-        vm.assume(receiver != address(bulker));
+        _assumeTarget(delegator);
+        _assumeTarget(receiver);
+        _assumeETHReceiver(receiver);
+
         amount = bound(amount, 1, type(uint160).max);
         deal(wNative, amount);
         deal(wNative, address(bulker), amount);
@@ -130,6 +141,8 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerUnwrapETHShouldRevertIfReceiverIsZero(address delegator, uint256 amount) public {
+        _assumeTarget(delegator);
+
         address receiver = address(bulker);
         amount = bound(amount, 1, type(uint160).max);
         deal(wNative, amount);
@@ -141,12 +154,13 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         (actions[0], data[0]) = _getUnwrapETHData(amount, receiver);
 
         vm.prank(delegator);
-        vm.expectRevert(IBulkerGateway.TransferToSelf.selector);
+        vm.expectRevert(IBulkerGateway.AddressIsBulker.selector);
         bulker.execute(actions, data);
     }
 
     function testBulkerShouldWrapStETH(address delegator, uint256 amount) public {
-        vm.assume(delegator != address(0));
+        _assumeTarget(delegator);
+
         amount = bound(amount, 2, ILido(stETH).getCurrentStakeLimit());
         deal(delegator, type(uint256).max);
 
@@ -167,7 +181,9 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerShouldUnwrapStETH(address delegator, uint256 amount, address receiver) public {
-        vm.assume(delegator != address(0) && receiver != address(0) && receiver != address(bulker));
+        _assumeTarget(delegator);
+        _assumeTarget(receiver);
+
         amount = bound(amount, 1, IWSTETH(stNative).totalSupply());
         deal(stNative, address(bulker), amount);
 
@@ -186,7 +202,8 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerShouldRevertIfReceiverIsBulkerUnwrapStETH(address delegator, uint256 amount) public {
-        vm.assume(delegator != address(0));
+        _assumeTarget(delegator);
+
         address receiver = address(bulker);
         amount = bound(amount, 1, IWSTETH(stNative).totalSupply());
         deal(stNative, address(bulker), amount);
@@ -198,7 +215,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
         vm.prank(delegator);
 
-        vm.expectRevert(IBulkerGateway.TransferToSelf.selector);
+        vm.expectRevert(IBulkerGateway.AddressIsBulker.selector);
         bulker.execute(actions, data);
     }
 
@@ -209,7 +226,9 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         address onBehalf,
         uint256 maxIterations
     ) public {
-        vm.assume(onBehalf != address(0));
+        _assumeTarget(delegator);
+        _assumeTarget(onBehalf);
+
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
         maxIterations = bound(maxIterations, 1, 10);
         amount = _boundSupply(market, amount);
@@ -235,7 +254,9 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         address onBehalf,
         uint256 maxIterations
     ) public {
-        vm.assume(onBehalf != address(0));
+        _assumeTarget(delegator);
+        _assumeTarget(onBehalf);
+
         TestMarket storage market = testMarkets[_randomCollateral(seed)];
         maxIterations = bound(maxIterations, 1, 10);
         amount = _boundSupply(market, amount);
@@ -261,8 +282,9 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         address receiver,
         uint256 maxIterations
     ) public {
-        // Receiver being fuzzed as this address results in overflow balance.
-        vm.assume(delegator != address(0) && receiver != address(0) && receiver != address(this));
+        _assumeTarget(delegator);
+        _assumeTarget(receiver);
+
         TestMarket storage collateralMarket = testMarkets[_randomCollateral(seed)];
         TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(seed)];
         maxIterations = bound(maxIterations, 1, 10);
@@ -300,7 +322,9 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         address onBehalf,
         uint256 maxIterations
     ) public {
-        vm.assume(delegator != address(0) && onBehalf != address(0));
+        _assumeTarget(delegator);
+        _assumeTarget(onBehalf);
+
         TestMarket storage borrowedMarket = testMarkets[_randomBorrowableInEMode(seed)];
         maxIterations = bound(maxIterations, 1, 10);
         amount = _boundBorrow(borrowedMarket, amount);
@@ -325,7 +349,9 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         address receiver,
         uint256 maxIterations
     ) public {
-        vm.assume(delegator != address(0) && receiver != address(0));
+        _assumeTarget(delegator);
+        _assumeTarget(receiver);
+
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
         maxIterations = bound(maxIterations, 1, 10);
         amount = _boundSupply(market, amount);
@@ -355,7 +381,9 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     function testBulkerShouldWithdrawCollateral(uint256 seed, address delegator, uint256 amount, address receiver)
         public
     {
-        vm.assume(delegator != address(0) && receiver != address(0));
+        _assumeTarget(delegator);
+        _assumeTarget(receiver);
+
         TestMarket storage market = testMarkets[_randomCollateral(seed)];
         amount = _boundSupply(market, amount);
 
@@ -379,7 +407,9 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerShouldSkim(uint256 seed, address delegator, uint256 amount, address receiver) public {
-        vm.assume(delegator != address(0) && receiver != address(0) && receiver != address(bulker));
+        _assumeTarget(delegator);
+        _assumeTarget(receiver);
+
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
         deal(market.underlying, address(bulker), amount);
@@ -398,7 +428,8 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerSkimShouldRevertIfReceiverIsBulker(uint256 seed, address delegator, uint256 amount) public {
-        vm.assume(delegator != address(0));
+        _assumeTarget(delegator);
+
         address receiver = address(bulker);
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
@@ -410,7 +441,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         (actions[0], data[0]) = _getSkimData(market.underlying, receiver);
 
         vm.prank(delegator);
-        vm.expectRevert(IBulkerGateway.TransferToSelf.selector);
+        vm.expectRevert(IBulkerGateway.AddressIsBulker.selector);
         bulker.execute(actions, data);
     }
 
@@ -426,7 +457,8 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerClaimRewardsShouldRevertIfRewardsManagerNotSet(address delegator, address onBehalf) public {
-        vm.assume(delegator != address(0) && onBehalf != address(0));
+        _assumeTarget(delegator);
+        _assumeTarget(onBehalf);
 
         address[] memory assets = new address[](1);
         assets[0] = testMarkets[dai].aToken;
@@ -444,7 +476,8 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerClaimRewards(address delegator, address onBehalf) public {
-        vm.assume(delegator != address(0) && onBehalf != address(0));
+        _assumeTarget(delegator);
+        _assumeTarget(onBehalf);
 
         rewardsManager = IRewardsManager(new RewardsManagerMock(address(morpho)));
         morpho.setRewardsManager(address(rewardsManager));
@@ -468,6 +501,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     function testMultipleActions(uint256 privateKey, uint256 seed, uint256 amount, uint256 maxIterations) public {
         privateKey = bound(privateKey, 1, type(uint160).max);
         maxIterations = bound(maxIterations, 1, 10);
+
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
         address delegator = vm.addr(privateKey);
 
@@ -491,6 +525,232 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         assertEq(ERC20(market.underlying).balanceOf(address(bulker)), 0, "bulker balance");
         assertEq(ERC20(market.underlying).balanceOf(address(delegator)), 0, "delegator balance");
         assertApproxEqAbs(morpho.supplyBalance(market.underlying, delegator), amount, 2, "delegator supply");
+    }
+
+    function testBulkerShouldNotWrapEthZero(address delegator, uint256 amount) public {
+        _assumeTarget(delegator);
+
+        amount = bound(amount, 1, type(uint160).max);
+        deal(delegator, amount);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getWrapETHData(amount);
+
+        vm.prank(delegator);
+        vm.expectRevert(IBulkerGateway.AmountIsZero.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerShouldNotUnwrapEthZero(address delegator, uint256 amount, address receiver) public {
+        _assumeTarget(delegator);
+        _assumeTarget(receiver);
+        _assumeETHReceiver(receiver);
+
+        amount = bound(amount, 1, type(uint160).max);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getUnwrapETHData(amount, receiver);
+
+        vm.prank(delegator);
+        vm.expectRevert(IBulkerGateway.AmountIsZero.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerShouldNotUnwrapEthToBulker(address delegator, uint256 amount) public {
+        _assumeTarget(delegator);
+
+        amount = bound(amount, 1, wNative.balance);
+        deal(wNative, address(bulker), amount);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getUnwrapETHData(amount, address(bulker));
+
+        vm.prank(delegator);
+        vm.expectRevert(IBulkerGateway.AddressIsBulker.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerShouldNotUnwrapEthToZeroAddress(address delegator, uint256 amount) public {
+        _assumeTarget(delegator);
+
+        amount = bound(amount, 1, wNative.balance);
+        deal(wNative, address(bulker), amount);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getUnwrapETHData(amount, address(0));
+
+        vm.prank(delegator);
+        vm.expectRevert(IBulkerGateway.AddressIsZero.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerShouldNotWrapStEthZero(address delegator, uint256 amount) public {
+        _assumeTarget(delegator);
+
+        amount = bound(amount, 1, type(uint160).max);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getWrapStETHData(amount);
+
+        vm.prank(delegator);
+        vm.expectRevert(IBulkerGateway.AmountIsZero.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerShouldNotUnwrapStEthZero(address delegator, uint256 amount, address receiver) public {
+        _assumeTarget(delegator);
+        _assumeTarget(receiver);
+
+        amount = bound(amount, 1, type(uint160).max);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getUnwrapStETHData(amount, receiver);
+
+        vm.prank(delegator);
+        vm.expectRevert(IBulkerGateway.AmountIsZero.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerShouldNotUnwrapStEthToBulker(address delegator, uint256 amount) public {
+        _assumeTarget(delegator);
+
+        amount = bound(amount, 1, ERC20(stETH).balanceOf(wstETH));
+        deal(wstETH, address(bulker), amount);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getUnwrapStETHData(amount, address(bulker));
+
+        vm.prank(delegator);
+        vm.expectRevert(IBulkerGateway.AddressIsBulker.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerShouldNotUnwrapStEthToZeroAddress(address delegator, uint256 amount) public {
+        _assumeTarget(delegator);
+
+        amount = bound(amount, 1, ERC20(stETH).balanceOf(wstETH));
+        deal(wstETH, address(bulker), amount);
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getUnwrapStETHData(amount, address(0));
+
+        vm.prank(delegator);
+        vm.expectRevert(IBulkerGateway.AddressIsZero.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerShouldNotSupplyOnBehalfOfBulker(
+        uint256 seed,
+        address delegator,
+        uint256 amount,
+        uint256 maxIterations
+    ) public {
+        _assumeTarget(delegator);
+
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getSupplyData(market.underlying, amount, address(bulker), maxIterations);
+
+        vm.startPrank(delegator);
+        vm.expectRevert(IBulkerGateway.AddressIsBulker.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerShouldNotSupplyCollateralOnBehalfOfBulker(uint256 seed, address delegator, uint256 amount)
+        public
+    {
+        _assumeTarget(delegator);
+
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getSupplyCollateralData(market.underlying, amount, address(bulker));
+
+        vm.startPrank(delegator);
+        vm.expectRevert(IBulkerGateway.AddressIsBulker.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerShouldNotRepayOnBehalfOfBulker(uint256 seed, address delegator, uint256 amount) public {
+        _assumeTarget(delegator);
+
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getRepayData(market.underlying, amount, address(bulker));
+
+        vm.startPrank(delegator);
+        vm.expectRevert(IBulkerGateway.AddressIsBulker.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerShouldNotSkimToBulker(uint256 seed, address delegator) public {
+        _assumeTarget(delegator);
+
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getSkimData(market.underlying, address(bulker));
+
+        vm.startPrank(delegator);
+        vm.expectRevert(IBulkerGateway.AddressIsBulker.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerShouldNotSkimToZeroAddress(uint256 seed, address delegator) public {
+        _assumeTarget(delegator);
+
+        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getSkimData(market.underlying, address(0));
+
+        vm.startPrank(delegator);
+        vm.expectRevert(IBulkerGateway.AddressIsZero.selector);
+        bulker.execute(actions, data);
+    }
+
+    function testBulkerShouldNotClaimRewardsOnBehalfOfBulker(address delegator) public {
+        _assumeTarget(delegator);
+
+        address[] memory assets = new address[](1);
+        assets[0] = testMarkets[dai].aToken;
+
+        IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
+        bytes[] memory data = new bytes[](1);
+
+        (actions[0], data[0]) = _getClaimRewardsData(assets, address(bulker));
+
+        vm.prank(delegator);
+        vm.expectRevert(IBulkerGateway.AddressIsBulker.selector);
+        bulker.execute(actions, data);
     }
 
     function _getApproveData(
