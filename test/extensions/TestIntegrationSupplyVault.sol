@@ -15,11 +15,19 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
     }
 
     function testCorrectInitialisationWrappedNative() public {
-        assertEq(wrappedNativeTokenSupplyVault.owner(), address(this));
-        assertEq(wrappedNativeTokenSupplyVault.name(), "MorphoAaveWNATIVE");
-        assertEq(wrappedNativeTokenSupplyVault.symbol(), "maWNATIVE");
-        assertEq(wrappedNativeTokenSupplyVault.asset(), wNative);
-        assertEq(wrappedNativeTokenSupplyVault.decimals(), 18);
+        assertEq(wNativeSupplyVault.owner(), address(this));
+        assertEq(wNativeSupplyVault.name(), "MorphoAaveWNATIVE");
+        assertEq(wNativeSupplyVault.symbol(), "maWNATIVE");
+        assertEq(wNativeSupplyVault.asset(), wNative);
+        assertEq(wNativeSupplyVault.decimals(), 18);
+    }
+
+    function testShouldNotAcceptZeroInitialDeposit() public {
+        SupplyVault supplyVault =
+            SupplyVault(address(new TransparentUpgradeableProxy(address(supplyVaultImplV1), address(proxyAdmin), "")));
+
+        vm.expectRevert(ISupplyVault.InitialDepositIsZero.selector);
+        supplyVault.initialize(address(usdc), RECIPIENT, "MorphoAaveUSDC2", "maUSDC2", 0, 4);
     }
 
     function testShouldNotMintZeroShare() public {
@@ -31,13 +39,15 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         amount = _boundSupply(testMarkets[dai], amount);
         uint256 shares = daiSupplyVault.convertToShares(amount);
 
+        uint256 totalBalanceBefore = morpho.supplyBalance(dai, address(daiSupplyVault));
+
         user.mintVault(daiSupplyVault, shares);
 
-        uint256 totalBalance = morpho.supplyBalance(dai, address(daiSupplyVault));
+        uint256 totalBalanceAfter = morpho.supplyBalance(dai, address(daiSupplyVault));
 
         assertEq(daiSupplyVault.balanceOf(address(user)), shares, "maDAI balance");
         assertGt(shares, 0, "shares is zero");
-        assertApproxEqAbs(totalBalance, amount, 2, "totalBalance");
+        assertApproxEqAbs(totalBalanceAfter, totalBalanceBefore + amount, 2, "totalBalance");
     }
 
     function testShouldNotDepositZero() public {
@@ -48,12 +58,14 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
     function testShouldDepositAmount(uint256 amount) public {
         amount = _boundSupply(testMarkets[dai], amount);
 
+        uint256 totalBalanceBefore = morpho.supplyBalance(dai, address(daiSupplyVault));
+
         user.depositVault(daiSupplyVault, amount);
 
-        (uint256 totalBalance) = morpho.supplyBalance(dai, address(daiSupplyVault));
+        uint256 totalBalanceAfter = morpho.supplyBalance(dai, address(daiSupplyVault));
 
         assertGt(daiSupplyVault.balanceOf(address(user)), 0, "maDAI balance is zero");
-        assertApproxEqAbs(totalBalance, amount, 2, "totalBalance");
+        assertApproxEqAbs(totalBalanceAfter, totalBalanceBefore + amount, 2, "totalBalance");
     }
 
     function testShouldNotRedeemMoreShares(uint256 amount) public {
@@ -69,33 +81,36 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         amount = _boundSupply(testMarkets[dai], amount);
 
         uint256 balanceBefore = ERC20(dai).balanceOf(address(user));
+        uint256 totalBalanceBefore = morpho.supplyBalance(dai, address(daiSupplyVault));
 
         user.depositVault(daiSupplyVault, amount);
         user.withdrawVault(daiSupplyVault, daiSupplyVault.maxWithdraw(address(user)));
 
-        uint256 totalBalance = morpho.supplyBalance(dai, address(daiSupplyVault));
+        uint256 totalBalanceAfter = morpho.supplyBalance(dai, address(daiSupplyVault));
 
         assertApproxEqAbs(daiSupplyVault.balanceOf(address(user)), 0, 1, "maDAI balance not zero");
         assertApproxEqAbs(ERC20(dai).balanceOf(address(user)), balanceBefore, 5, "amount withdrawn != amount deposited");
-        assertEq(totalBalance, 0, "totalBalance not zero");
+        assertApproxEqAbs(totalBalanceAfter, totalBalanceBefore, 1, "totalBalance");
     }
 
     function testShouldWithdrawAllUsdcAmount(uint256 amount) public {
         amount = _boundSupply(testMarkets[usdc], amount);
 
         uint256 balanceBeforeDeposit = ERC20(usdc).balanceOf(address(user));
+        uint256 totalBalanceBefore = morpho.supplyBalance(address(usdc), address(usdcSupplyVault));
+
         user.depositVault(usdcSupplyVault, amount);
 
         uint256 balanceBeforeWithdraw = ERC20(usdc).balanceOf(address(user));
         user.withdrawVault(usdcSupplyVault, usdcSupplyVault.maxWithdraw(address(user)));
 
-        uint256 totalBalance = morpho.supplyBalance(address(usdc), address(usdcSupplyVault));
+        uint256 totalBalanceAfter = morpho.supplyBalance(address(usdc), address(usdcSupplyVault));
 
         assertApproxEqAbs(usdcSupplyVault.balanceOf(address(user)), 0, 1, "maUSDC balance not zero");
         assertApproxEqAbs(
             ERC20(usdc).balanceOf(address(user)), balanceBeforeDeposit, 5, "amount withdrawn != amount deposited"
         );
-        assertEq(totalBalance, 0, "totalBalance not zero");
+        assertApproxEqAbs(totalBalanceAfter, totalBalanceBefore, 1, "totalBalance");
         assertApproxEqAbs(ERC20(usdc).balanceOf(address(user)) - balanceBeforeWithdraw, amount, 2, "expectedWithdraw");
     }
 
@@ -103,14 +118,16 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         amount = _boundSupply(testMarkets[dai], amount);
 
         uint256 balanceBefore = ERC20(dai).balanceOf(address(user));
+        uint256 totalBalanceBefore = morpho.supplyBalance(address(dai), address(daiSupplyVault));
+
         uint256 shares = user.depositVault(daiSupplyVault, amount);
         user.redeemVault(daiSupplyVault, shares);
 
-        uint256 totalBalance = morpho.supplyBalance(dai, address(daiSupplyVault));
+        uint256 totalBalanceAfter = morpho.supplyBalance(address(dai), address(daiSupplyVault));
 
         assertApproxEqAbs(ERC20(dai).balanceOf(address(user)), balanceBefore, 5, "amount withdrawn != amount deposited");
         assertEq(daiSupplyVault.balanceOf(address(user)), 0, "maDAI balance not zero");
-        assertEq(totalBalance, 0, "totalBalance not zero");
+        assertApproxEqAbs(totalBalanceAfter, totalBalanceBefore, 1, "totalBalance");
     }
 
     function testShouldNotRedeemWhenNotDeposited(uint256 amount) public {
@@ -206,6 +223,7 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         timePassed = bound(timePassed, 1, 10 days);
 
         uint256 expectedOnPool = amount.rayDiv(pool.getReserveNormalizedIncome(dai));
+        uint256 totalScaledBalanceBefore = morpho.scaledPoolSupplyBalance(address(dai), address(daiSupplyVault));
 
         uint256 shares = user.depositVault(daiSupplyVault, amount);
 
@@ -213,13 +231,13 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         vm.warp(block.timestamp + timePassed);
 
         uint256 assets = user.redeemVault(daiSupplyVault, shares);
-        uint256 totalBalance = morpho.supplyBalance(address(dai), address(daiSupplyVault));
+        uint256 totalScaledBalanceAfter = morpho.scaledPoolSupplyBalance(address(dai), address(daiSupplyVault));
 
         assertApproxEqAbs(
-            assets, expectedOnPool.rayMul(pool.getReserveNormalizedIncome(dai)), 2, "unexpected withdrawn assets"
+            assets, expectedOnPool.rayMul(pool.getReserveNormalizedIncome(dai)), 3, "unexpected withdrawn assets"
         );
         assertEq(daiSupplyVault.balanceOf(address(user)), 0, "balance not zero");
-        assertEq(totalBalance, 0, "totalBalance not zero");
+        assertApproxEqAbs(totalScaledBalanceAfter, totalScaledBalanceBefore, 1, "totalBalance");
     }
 
     function testShouldWithdrawAllAmountWhenMorphoPoolIndexesOutdated(uint256 amount, uint256 timePassed) public {
@@ -227,6 +245,7 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         timePassed = bound(timePassed, 1, 10 days);
 
         uint256 poolIndexBefore = pool.getReserveNormalizedIncome(dai);
+        uint256 totalScaledBalanceBefore = morpho.scaledPoolSupplyBalance(address(dai), address(daiSupplyVault));
 
         user.depositVault(daiSupplyVault, amount);
 
@@ -238,14 +257,14 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
 
         user.withdrawVault(daiSupplyVault, daiSupplyVault.maxWithdraw(address(user)));
 
-        uint256 totalBalance = morpho.supplyBalance(address(dai), address(daiSupplyVault));
+        uint256 totalScaledBalanceAfter = morpho.scaledPoolSupplyBalance(address(dai), address(daiSupplyVault));
 
         assertEq(daiSupplyVault.balanceOf(address(user)), 0, "balance not zero");
-        assertEq(totalBalance, 0, "totalBalance not zero");
+        assertApproxEqAbs(totalScaledBalanceAfter, totalScaledBalanceBefore, 1, "totalBalance");
         assertApproxEqAbs(
             ERC20(dai).balanceOf(address(user)) - balanceBefore,
             amount.rayDiv(poolIndexBefore).rayMul(poolIndexAfter),
-            2,
+            3,
             "unexpected withdrawn assets"
         );
     }
