@@ -216,7 +216,6 @@ contract BulkerGateway is IBulkerGateway {
     /// @dev Withdraws `amount` of `asset` on behalf of sender. Sender must have previously approved the bulker as their manager on Morpho.
     function _withdrawCollateral(bytes calldata data) internal {
         (address asset, uint256 amount, address receiver) = abi.decode(data, (address, uint256, address));
-        if (amount == 0) revert AmountIsZero();
 
         _MORPHO.withdrawCollateral(asset, amount, msg.sender, receiver);
     }
