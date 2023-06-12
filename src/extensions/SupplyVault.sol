@@ -69,7 +69,7 @@ contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgrad
         __Ownable_init_unchained(); // Equivalent to __Ownable2Step_init
         __ERC20_init_unchained(name, symbol);
         __ERC4626_init_unchained(ERC20Upgradeable(newUnderlying));
-        __ERC4626UpgradeableSafe_init_unchained(initialDeposit, address(0));
+        __ERC4626UpgradeableSafe_init_unchained(initialDeposit, address(0xdead));
     }
 
     /* EXTERNAL */
