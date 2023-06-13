@@ -459,7 +459,7 @@ abstract contract MorphoInternal is MorphoStorage {
         _market[underlying].setIndexes(indexes);
     }
 
-    /// @dev Computes the updated indexes of the `underlying` market (if not already updated) and returns them.
+    /// @dev Computes the updated indexes of the `underlying` market and returns them.
     function _computeIndexes(address underlying) internal view returns (Types.Indexes256 memory indexes) {
         Types.Market storage market = _market[underlying];
         Types.Indexes256 memory lastIndexes = market.getIndexes();
