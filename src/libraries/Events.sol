@@ -159,11 +159,11 @@ library Events {
 
     /// @notice Emitted when a rewards are claimed.
     /// @param claimer The address of the user claiming the rewards.
-    /// @param onBehalf The address of the user on behalf of which the rewards are claimed.
+    /// @param receiver The address of the user receiving rewards.
     /// @param rewardToken The address of the reward token claimed.
     /// @param amountClaimed The amount of `rewardToken` claimed.
     event RewardsClaimed(
-        address indexed claimer, address indexed onBehalf, address indexed rewardToken, uint256 amountClaimed
+        address indexed claimer, address indexed receiver, address indexed rewardToken, uint256 amountClaimed
     );
 
     /// @notice Emitted when the collateral status of the `underlying` market is set to `isCollateral`.

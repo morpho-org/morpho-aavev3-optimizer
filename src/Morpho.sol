@@ -258,25 +258,25 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
 
     /// @notice Claims rewards for the given assets.
     /// @param assets The assets to claim rewards from (aToken or variable debt token).
-    /// @param onBehalf The address for which rewards are claimed and sent to.
+    /// @param receiver The address of the user receiving rewards.
     /// @return rewardTokens The addresses of each reward token.
     /// @return claimedAmounts The amount of rewards claimed (in reward tokens).
-    function claimRewards(address[] calldata assets, address onBehalf)
+    function claimRewards(address[] calldata assets, address receiver)
         external
         returns (address[] memory rewardTokens, uint256[] memory claimedAmounts)
     {
         if (address(_rewardsManager) == address(0)) revert Errors.AddressIsZero();
         if (_isClaimRewardsPaused) revert Errors.ClaimRewardsPaused();
 
-        (rewardTokens, claimedAmounts) = _rewardsManager.claimRewards(assets, onBehalf);
+        (rewardTokens, claimedAmounts) = _rewardsManager.claimRewards(assets, msg.sender);
         IRewardsController(_rewardsManager.REWARDS_CONTROLLER()).claimAllRewardsToSelf(assets);
 
         for (uint256 i; i < rewardTokens.length; ++i) {
             uint256 claimedAmount = claimedAmounts[i];
 
             if (claimedAmount > 0) {
-                ERC20(rewardTokens[i]).safeTransfer(onBehalf, claimedAmount);
-                emit Events.RewardsClaimed(msg.sender, onBehalf, rewardTokens[i], claimedAmount);
+                ERC20(rewardTokens[i]).safeTransfer(receiver, claimedAmount);
+                emit Events.RewardsClaimed(msg.sender, receiver, rewardTokens[i], claimedAmount);
             }
         }
     }
