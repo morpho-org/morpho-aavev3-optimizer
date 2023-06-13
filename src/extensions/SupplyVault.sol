@@ -14,6 +14,8 @@ import {ERC4626UpgradeableSafe, ERC4626Upgradeable, ERC20Upgradeable} from "@mor
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
 /// @notice ERC4626-upgradeable Tokenized Vault implementation for Morpho-Aave V3.
+/// This vault is not fully compliant to EIP #4626 because `maxDeposit` & `maxMint` do not take into account the underlying market's pause status and AaveV3's supply cap.
+/// Symmetrically, `maxWithdraw` & `maxRedeem` do not take into account the underlying market's pause status and liquidity.
 contract SupplyVault is ISupplyVault, ERC4626UpgradeableSafe, Ownable2StepUpgradeable {
     using SafeTransferLib for ERC20;
 
