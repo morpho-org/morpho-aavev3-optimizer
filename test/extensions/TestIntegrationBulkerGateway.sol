@@ -401,9 +401,12 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
         (actions[0], data[0]) = _getWithdrawCollateralData(market.underlying, amount, receiver);
 
+        uint256 balanceBefore = ERC20(market.underlying).balanceOf(address(receiver));
         bulker.execute(actions, data);
 
-        assertApproxEqAbs(ERC20(market.underlying).balanceOf(address(receiver)), amount, 2, "receiver balance");
+        assertApproxEqAbs(
+            ERC20(market.underlying).balanceOf(address(receiver)), amount + balanceBefore, 2, "receiver balance"
+        );
     }
 
     function testBulkerShouldSkim(uint256 seed, address delegator, uint256 amount, address receiver) public {
