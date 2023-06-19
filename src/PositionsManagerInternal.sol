@@ -437,7 +437,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         collateralBalance = marketBalances.collateral[onBehalf];
 
         _updateRewards(
-            onBehalf, _market[underlying].aToken, collateralBalance + marketBalances.poolSuppliers.valueOf[onBehalf]
+            onBehalf, _market[underlying].aToken, collateralBalance + marketBalances.scaledPoolSupplyBalance(onBehalf)
         );
 
         collateralBalance = collateralBalance.zeroFloorSub(amount.rayDivUp(poolSupplyIndex));
