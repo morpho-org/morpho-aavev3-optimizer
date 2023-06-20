@@ -463,22 +463,23 @@ contract IntegrationTest is ForkTest {
         return amount;
     }
 
-    function _boundAddressNotZero(address input) internal view virtual override returns (address) {
-        input = super._boundAddressNotZero(input);
+    function _boundAddressNotInvalid(address input) internal view virtual override returns (address) {
+        input = super._boundAddressNotInvalid(input);
 
         vm.assume(input != address(proxyAdmin)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target.
+        vm.assume(input != 0x807a96288A1A408dBC13DE2b1d087d10356395d2); // Proxy admin for USDC.
 
         return input;
     }
 
     function _boundOnBehalf(address onBehalf) internal view returns (address) {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundAddressNotInvalid(onBehalf);
 
         return onBehalf;
     }
 
     function _boundReceiver(address input) internal view returns (address output) {
-        output = _boundAddressNotZero(input);
+        output = _boundAddressNotInvalid(input);
 
         vm.assume(output != address(this));
 

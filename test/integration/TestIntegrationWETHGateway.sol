@@ -52,7 +52,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testCannotSupplyETHWhenAmountIsZero(address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundAddressNotInvalid(onBehalf);
         assertEq(morpho.supplyBalance(weth, onBehalf), 0);
 
         vm.expectRevert(Errors.AmountIsZero.selector);
@@ -60,7 +60,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testSupplyETH(uint256 amount, address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundAddressNotInvalid(onBehalf);
         assertEq(morpho.supplyBalance(weth, onBehalf), 0);
 
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
@@ -76,7 +76,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testCannotSupplyCollateralETHWhenAmountIsZero(address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundAddressNotInvalid(onBehalf);
         assertEq(morpho.collateralBalance(weth, onBehalf), 0);
 
         vm.expectRevert(Errors.AmountIsZero.selector);
@@ -84,7 +84,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testSupplyCollateralETH(uint256 amount, address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundAddressNotInvalid(onBehalf);
         assertEq(morpho.collateralBalance(weth, onBehalf), 0);
 
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
