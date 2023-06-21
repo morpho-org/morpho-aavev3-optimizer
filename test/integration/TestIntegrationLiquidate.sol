@@ -51,6 +51,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         uint256 toRepay,
         uint256 healthFactor
     ) public {
+        borrower = _boundAddressNotZero(borrower);
         vm.assume(collateralSeed > collateralUnderlyings.length);
         collateralSeedShift = bound(collateralSeedShift, 1, collateralUnderlyings.length - 1);
         borrower = _boundReceiver(borrower);
