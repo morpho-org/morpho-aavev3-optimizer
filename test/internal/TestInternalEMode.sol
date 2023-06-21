@@ -149,7 +149,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         uint8 eModeCategoryId
     ) public {
         eModeCategoryId = uint8(bound(eModeCategoryId, 1, type(uint8).max));
-        priceSourceEMode = _boundAddressNotZero(priceSourceEMode);
+        priceSourceEMode = _boundAddressNotInvalid(priceSourceEMode);
         vm.assume(underlying != priceSourceEMode);
         underlyingPriceEMode = bound(underlyingPriceEMode, 1, type(uint256).max);
         underlyingPrice = bound(underlyingPrice, 0, type(uint256).max);
@@ -177,7 +177,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         uint8 eModeCategoryId
     ) public {
         eModeCategoryId = uint8(bound(eModeCategoryId, 1, type(uint8).max));
-        underlying = _boundAddressNotZero(underlying);
+        underlying = _boundAddressNotInvalid(underlying);
         underlyingPriceEMode = bound(underlyingPriceEMode, 1, type(uint256).max);
         underlyingPrice = bound(underlyingPrice, 0, type(uint256).max);
 
@@ -203,7 +203,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         uint256 underlyingPrice,
         uint8 eModeCategoryId
     ) public {
-        priceSourceEMode = _boundAddressNotZero(priceSourceEMode);
+        priceSourceEMode = _boundAddressNotInvalid(priceSourceEMode);
         vm.assume(underlying != priceSourceEMode);
         underlyingPriceEMode = bound(underlyingPriceEMode, 1, type(uint256).max);
         underlyingPrice = bound(underlyingPrice, 0, type(uint256).max);
@@ -229,7 +229,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         uint8 eModeCategoryId
     ) public {
         eModeCategoryId = uint8(bound(eModeCategoryId, 1, type(uint8).max));
-        priceSourceEMode = _boundAddressNotZero(priceSourceEMode);
+        priceSourceEMode = _boundAddressNotInvalid(priceSourceEMode);
         vm.assume(underlying != priceSourceEMode);
         underlyingPrice = bound(underlyingPrice, 0, type(uint256).max);
 
