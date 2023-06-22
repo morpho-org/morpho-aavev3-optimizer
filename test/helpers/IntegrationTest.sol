@@ -463,7 +463,7 @@ contract IntegrationTest is ForkTest {
         return amount;
     }
 
-    function _boundAddressNotInvalid(address input) internal view virtual returns (address) {
+    function _boundAddressValid(address input) internal view virtual returns (address) {
         input = _boundAddressNotZero(input);
 
         vm.assume(input != address(proxyAdmin)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target.
@@ -473,13 +473,13 @@ contract IntegrationTest is ForkTest {
     }
 
     function _boundOnBehalf(address onBehalf) internal view returns (address) {
-        onBehalf = _boundAddressNotInvalid(onBehalf);
+        onBehalf = _boundAddressValid(onBehalf);
 
         return onBehalf;
     }
 
     function _boundReceiver(address input) internal view returns (address output) {
-        output = _boundAddressNotInvalid(input);
+        output = _boundAddressValid(input);
 
         vm.assume(output != address(this));
 
