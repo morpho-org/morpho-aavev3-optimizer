@@ -22,7 +22,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
     }
 
     function testShouldNotClaimToTreasuryIfMarketNotCreated(address treasuryVault, uint8 nbUnderlyings) public {
-        treasuryVault = _boundAddressNotInvalid(treasuryVault);
+        treasuryVault = _boundAddressValid(treasuryVault);
         vm.assume(treasuryVault != address(morpho));
 
         address[] memory claimedUnderlyings = new address[](nbUnderlyings);

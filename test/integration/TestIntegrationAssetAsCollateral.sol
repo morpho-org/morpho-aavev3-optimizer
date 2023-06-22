@@ -43,6 +43,7 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
     }
 
     function testSetAssetIsCollateralShouldRevertWhenMarketNotCreated(address underlying) public {
+        _assumeNotUnderlying(underlying);
         vm.expectRevert(Errors.MarketNotCreated.selector);
         morpho.setAssetIsCollateral(underlying, true);
     }
