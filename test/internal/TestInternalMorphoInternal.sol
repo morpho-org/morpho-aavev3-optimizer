@@ -228,7 +228,7 @@ contract TestInternalMorphoInternal is InternalTest {
     }
 
     function testUpdateInDSWithSuppliers(address user, uint256 onPool, uint256 inP2P, bool head) public {
-        user = _boundAddressNotInvalid(user);
+        user = _boundAddressNotZero(user);
         onPool = bound(onPool, Constants.DUST_THRESHOLD + 1, type(uint96).max);
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
@@ -242,7 +242,7 @@ contract TestInternalMorphoInternal is InternalTest {
     }
 
     function testUpdateInDSWithBorrowers(address user, uint256 onPool, uint256 inP2P, bool head) public {
-        user = _boundAddressNotInvalid(user);
+        user = _boundAddressNotZero(user);
         onPool = bound(onPool, Constants.DUST_THRESHOLD + 1, type(uint96).max);
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
@@ -256,7 +256,7 @@ contract TestInternalMorphoInternal is InternalTest {
     }
 
     function testUpdateInDSWithDust(address user, uint256 onPool, uint256 inP2P, bool head) public {
-        user = _boundAddressNotInvalid(user);
+        user = _boundAddressNotZero(user);
         onPool = bound(onPool, 0, Constants.DUST_THRESHOLD);
         inP2P = bound(inP2P, 0, Constants.DUST_THRESHOLD);
 
@@ -277,7 +277,7 @@ contract TestInternalMorphoInternal is InternalTest {
     }
 
     function testUpdateSupplierInDS(address user, uint256 onPool, uint256 inP2P, bool head) public {
-        user = _boundAddressNotInvalid(user);
+        user = _boundAddressNotZero(user);
         onPool = bound(onPool, Constants.DUST_THRESHOLD + 1, type(uint96).max);
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
@@ -289,7 +289,7 @@ contract TestInternalMorphoInternal is InternalTest {
     }
 
     function testUpdateSupplierInDSWithDust(address user, uint256 onPool, uint256 inP2P, bool head) public {
-        user = _boundAddressNotInvalid(user);
+        user = _boundAddressNotZero(user);
         onPool = bound(onPool, 0, Constants.DUST_THRESHOLD);
         inP2P = bound(inP2P, 0, Constants.DUST_THRESHOLD);
 
@@ -301,7 +301,7 @@ contract TestInternalMorphoInternal is InternalTest {
     }
 
     function testUpdateBorrowerInDS(address user, uint256 onPool, uint256 inP2P, bool head) public {
-        user = _boundAddressNotInvalid(user);
+        user = _boundAddressNotZero(user);
         onPool = bound(onPool, Constants.DUST_THRESHOLD + 1, type(uint96).max);
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
 
@@ -314,7 +314,7 @@ contract TestInternalMorphoInternal is InternalTest {
     }
 
     function testUpdateBorrowerInDSWithDust(address user, uint256 onPool, uint256 inP2P, bool head) public {
-        user = _boundAddressNotInvalid(user);
+        user = _boundAddressNotZero(user);
         onPool = bound(onPool, 0, Constants.DUST_THRESHOLD);
         inP2P = bound(inP2P, 0, Constants.DUST_THRESHOLD);
 
@@ -334,7 +334,7 @@ contract TestInternalMorphoInternal is InternalTest {
         uint256 p2pSupplyIndex,
         bool head
     ) public {
-        user = _boundAddressNotInvalid(user);
+        user = _boundAddressNotZero(user);
         onPool = bound(onPool, Constants.DUST_THRESHOLD + 1, type(uint96).max);
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
         poolSupplyIndex = bound(poolSupplyIndex, MIN_INDEX, MAX_INDEX);
@@ -360,7 +360,7 @@ contract TestInternalMorphoInternal is InternalTest {
         uint256 p2pBorrowIndex,
         bool head
     ) public {
-        user = _boundAddressNotInvalid(user);
+        user = _boundAddressNotZero(user);
         onPool = bound(onPool, Constants.DUST_THRESHOLD + 1, type(uint96).max);
         inP2P = bound(inP2P, Constants.DUST_THRESHOLD + 1, type(uint96).max);
         poolBorrowIndex = bound(poolBorrowIndex, MIN_INDEX, MAX_INDEX);

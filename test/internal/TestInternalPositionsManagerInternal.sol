@@ -251,7 +251,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testAuthorizeLiquidateShouldRevertIfSentinelDisallows(address borrower, uint256 healthFactor) public {
         _market[dai].isCollateral = true;
-        borrower = _boundAddressNotInvalid(borrower);
+        borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(
             healthFactor,
             Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
@@ -268,7 +268,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
     function testAuthorizeLiquidateShouldRevertIfBorrowerHealthy(address borrower, uint256 healthFactor) public {
         _market[dai].isCollateral = true;
-        borrower = _boundAddressNotInvalid(borrower);
+        borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF.percentAdd(1), type(uint128).max);
 
         _setHealthFactor(borrower, dai, healthFactor);
@@ -281,7 +281,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         public
     {
         _market[dai].isCollateral = true;
-        borrower = _boundAddressNotInvalid(borrower);
+        borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(healthFactor, 0, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(1));
 
         _setHealthFactor(borrower, dai, healthFactor);
@@ -295,7 +295,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         uint256 healthFactor
     ) public {
         _market[dai].isCollateral = true;
-        borrower = _boundAddressNotInvalid(borrower);
+        borrower = _boundAddressNotZero(borrower);
         healthFactor = bound(
             healthFactor,
             Constants.DEFAULT_LIQUIDATION_MIN_HF.percentAdd(1),
