@@ -17,7 +17,7 @@ contract PullRewardsTransferStrategyMock is IPullRewardsTransferStrategy {
     function emergencyWithdrawal(address token, address to, uint256 amount) external {}
 
     function performTransfer(address to, address reward, uint256 amount) external returns (bool) {
-        ERC20(reward).safeTransferFrom(address(this), to, amount);
+        ERC20(reward).safeTransfer(to, amount);
 
         return true;
     }

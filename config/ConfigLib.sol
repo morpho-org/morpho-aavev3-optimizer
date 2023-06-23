@@ -10,6 +10,7 @@ struct Config {
 library ConfigLib {
     using stdJson for string;
 
+    string internal constant CHAIN_ID_PATH = "$.chainId";
     string internal constant RPC_ALIAS_PATH = "$.rpcAlias";
     string internal constant FORK_BLOCK_NUMBER_PATH = "$.forkBlockNumber";
     string internal constant ADDRESSES_PROVIDER_PATH = "$.addressesProvider";
@@ -17,6 +18,7 @@ library ConfigLib {
     string internal constant LSD_NATIVES_PATH = "$.lsdNatives";
     string internal constant MARKETS_PATH = "$.markets";
     string internal constant MORPHO_DAO_PATH = "$.morphoDao";
+    string internal constant MORPHO_ETH_PATH = "$.morphoEth";
 
     function getAddress(Config storage config, string memory key) internal returns (address) {
         return config.json.readAddress(string.concat("$.", key));
@@ -33,6 +35,10 @@ library ConfigLib {
         }
     }
 
+    function getChainId(Config storage config) internal returns (uint256) {
+        return config.json.readUint(CHAIN_ID_PATH);
+    }
+
     function getRpcAlias(Config storage config) internal returns (string memory) {
         return config.json.readString(RPC_ALIAS_PATH);
     }
@@ -47,6 +53,10 @@ library ConfigLib {
 
     function getMorphoDao(Config storage config) internal returns (address) {
         return config.json.readAddress(MORPHO_DAO_PATH);
+    }
+
+    function getMorphoEth(Config storage config) internal returns (address) {
+        return config.json.readAddress(MORPHO_ETH_PATH);
     }
 
     function getWrappedNative(Config storage config) internal returns (address) {

@@ -11,6 +11,9 @@ import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transpa
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/access/Ownable2StepUpgradeable.sol";
 
+import {PermitHash} from "@permit2/libraries/PermitHash.sol";
+import {IAllowanceTransfer, AllowanceTransfer} from "@permit2/AllowanceTransfer.sol";
+
 import {Morpho} from "src/Morpho.sol";
 import {PositionsManager} from "src/PositionsManager.sol";
 import {RewardsManager} from "src/RewardsManager.sol";
@@ -18,7 +21,6 @@ import {UserMock} from "test/mocks/UserMock.sol";
 import "./ForkTest.sol";
 
 contract IntegrationTest is ForkTest {
-    using stdStorage for StdStorage;
     using SafeTransferLib for ERC20;
     using Math for uint256;
     using WadRayMath for uint256;
@@ -84,7 +86,7 @@ contract IntegrationTest is ForkTest {
         vm.label(address(hacker), "Hacker");
     }
 
-    function _deploy() internal {
+    function _deploy() internal virtual {
         positionsManager = new PositionsManager();
         morphoImpl = new Morpho();
 
@@ -119,6 +121,7 @@ contract IntegrationTest is ForkTest {
 
     function _initMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor)
         internal
+        virtual
         returns (TestMarket storage market, DataTypes.ReserveData memory reserve)
     {
         market = testMarkets[underlying];
@@ -156,7 +159,7 @@ contract IntegrationTest is ForkTest {
         vm.label(reserve.stableDebtTokenAddress, string.concat("sd", market.symbol));
     }
 
-    function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
+    function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal virtual {
         (TestMarket storage market,) = _initMarket(underlying, reserveFactor, p2pIndexCursor);
 
         morpho.createMarket(market.underlying, market.reserveFactor, market.p2pIndexCursor);
@@ -169,7 +172,7 @@ contract IntegrationTest is ForkTest {
         if (market.isCollateral) {
             collateralUnderlyings.push(underlying);
 
-            morpho.setAssetIsCollateral(market.underlying, true);
+            morpho.setAssetIsCollateral(underlying, true);
         }
 
         if (market.isBorrowable) {
@@ -460,22 +463,23 @@ contract IntegrationTest is ForkTest {
         return amount;
     }
 
-    function _boundAddressNotZero(address input) internal view virtual override returns (address) {
-        input = super._boundAddressNotZero(input);
+    function _boundAddressValid(address input) internal view virtual returns (address) {
+        input = _boundAddressNotZero(input);
 
         vm.assume(input != address(proxyAdmin)); // TransparentUpgradeableProxy: admin cannot fallback to proxy target.
+        vm.assume(input != 0x807a96288A1A408dBC13DE2b1d087d10356395d2); // Proxy admin for USDC.
 
         return input;
     }
 
     function _boundOnBehalf(address onBehalf) internal view returns (address) {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundAddressValid(onBehalf);
 
         return onBehalf;
     }
 
     function _boundReceiver(address input) internal view returns (address output) {
-        output = _boundAddressNotZero(input);
+        output = _boundAddressValid(input);
 
         vm.assume(output != address(this));
 

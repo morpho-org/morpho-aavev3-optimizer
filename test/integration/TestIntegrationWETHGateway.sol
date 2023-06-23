@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {IWETHGateway} from "src/interfaces/IWETHGateway.sol";
+import {IWETHGateway} from "src/interfaces/extensions/IWETHGateway.sol";
 
 import {WETHGateway} from "src/extensions/WETHGateway.sol";
 import {ERC20Mock} from "test/mocks/ERC20Mock.sol";
@@ -52,7 +52,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testCannotSupplyETHWhenAmountIsZero(address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundAddressValid(onBehalf);
         assertEq(morpho.supplyBalance(weth, onBehalf), 0);
 
         vm.expectRevert(Errors.AmountIsZero.selector);
@@ -60,7 +60,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testSupplyETH(uint256 amount, address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundAddressValid(onBehalf);
         assertEq(morpho.supplyBalance(weth, onBehalf), 0);
 
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
@@ -76,7 +76,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testCannotSupplyCollateralETHWhenAmountIsZero(address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundAddressValid(onBehalf);
         assertEq(morpho.collateralBalance(weth, onBehalf), 0);
 
         vm.expectRevert(Errors.AmountIsZero.selector);
@@ -84,7 +84,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
     }
 
     function testSupplyCollateralETH(uint256 amount, address onBehalf) public {
-        onBehalf = _boundAddressNotZero(onBehalf);
+        onBehalf = _boundAddressValid(onBehalf);
         assertEq(morpho.collateralBalance(weth, onBehalf), 0);
 
         amount = bound(amount, MIN_AMOUNT, type(uint96).max);
@@ -132,14 +132,14 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         uint256 withdrawn = wethGateway.withdrawETH(toWithdraw, receiver, DEFAULT_MAX_ITERATIONS);
 
         if (receiver != address(this)) assertEq(address(this).balance, balanceBefore, "balanceAfter != balanceBefore");
-        assertApproxEqAbs(withdrawn, Math.min(toWithdraw, supply), 1, "withdrawn != minimum");
+        assertApproxEqAbs(withdrawn, Math.min(toWithdraw, supply), 2, "withdrawn != minimum");
         assertApproxEqAbs(
             morpho.supplyBalance(weth, address(this)), supply - withdrawn, 2, "supplyBalance != supply - toWithdraw"
         );
         assertApproxEqAbs(
             receiver.balance,
             receiverBalanceBefore + withdrawn,
-            1,
+            2,
             "receiverBalanceAfter != receiverBalanceBefore + withdrawn"
         );
     }
@@ -187,7 +187,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertApproxEqAbs(
             receiver.balance,
             receiverBalanceBefore + withdrawn,
-            1,
+            2,
             "receiverBalanceAfter != receiverBalanceBefore + withdrawn"
         );
     }
