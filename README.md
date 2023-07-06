@@ -55,8 +55,8 @@ You can also send an email to [security@morpho.xyz](mailto:security@morpho.xyz) 
 ### Morpho-Aave-V3 (Ethereum)
 
 - Morpho Proxy: [0x33333aea097c193e66081e930c33020272b33333](https://etherscan.io/address/0x33333aea097c193e66081e930c33020272b33333)
-- Morpho Implementation: [0xcb5309bdda3463ece2d020c9d0564a95c5a90b53](https://etherscan.io/address/0xcb5309bdda3463ece2d020c9d0564a95c5a90b53)
-- PositionsManager: [0x4592e45e0c5DbEe94a135720cCfF2e4353dAc6De](https://etherscan.io/address/0x4592e45e0c5DbEe94a135720cCfF2e4353dAc6De)
+- Morpho Implementation: [0xf835456cb1de3e39ab50a8a9fbb07ebec3a8ff67](https://etherscan.io/address/0xf835456cb1de3e39ab50a8a9fbb07ebec3a8ff67)
+- PositionsManager: [0xcecc755730904b3a6c20ce9aaba181aa4593f869](https://etherscan.io/address/0xcecc755730904b3a6c20ce9aaba181aa4593f869)
 
 ### Common (Ethereum)
 
