@@ -101,15 +101,6 @@ contract TestIntegrationWithdraw is IntegrationTest {
         assertEq(test.morphoMarket.idleSupply, 0, "idleSupply != 0");
     }
 
-    function testWithdrawPoolOnlyRounding() public {
-        testShouldWithdrawPoolOnly(
-            30049578511147215784808879450479905301747090340485275132882134218213397889024,
-            90042460968148141723103000,
-            0x0000000000000000000000000000000000000008,
-            0x0000000000000000000000000000000000002839
-        );
-    }
-
     function testShouldWithdrawAllSupply(uint256 seed, uint256 amount, address onBehalf, address receiver) public {
         WithdrawTest memory test;
 

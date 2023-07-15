@@ -3,7 +3,6 @@ names = true
 sizes = true
 libs = ["node_modules", "lib"]
 fs_permissions = [{ access = "read", path = "./config/"}]
-# block_number = 17623462
 
 [fuzz]
 runs = 32
@@ -14,7 +13,6 @@ depth = 64
 
 [rpc_endpoints]
 mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"
-# mainnet = "http://192.168.1.83:8545"
 avalanche = "https://rpc.ankr.com/avalanche"
 tenderly = "https://rpc.tenderly.co/fork/${TENDERLY_FORK_ID}"
 
