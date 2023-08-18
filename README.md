@@ -7,9 +7,9 @@
 
 ---
 
-## What is Morpho Optimizers?
+## What is Morpho Optimizer?
 
-Morpho Optimizers improves the capital efficiency of positions on existing lending pools by seamlessly matching users peer-to-peer.
+Morpho Optimizer improves the capital efficiency of positions on existing lending pools by seamlessly matching users peer-to-peer.
 
 - Morpho's rates stay between the supply rate and the borrow rate of the pool, reducing the interest paid by the borrowers while increasing the interest earned by the suppliers. It means that you are getting boosted peer-to-peer rates or, in the worst-case scenario, the APY of the pool.
 - Morpho also preserves the same experience, the same liquidity, and the same parameters (collateral factors, oracles, …) as the underlying pool.
