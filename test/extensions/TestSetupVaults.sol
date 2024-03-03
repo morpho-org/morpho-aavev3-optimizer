@@ -38,11 +38,7 @@ contract TestSetupVaults is IntegrationTest {
     function initVaultContracts() internal {
         supplyVaultImplV1 = new SupplyVault(address(morpho));
 
-        wNativeSupplyVaultProxy = new TransparentUpgradeableProxy(
-            address(supplyVaultImplV1),
-            address(proxyAdmin),
-            ""
-        );
+        wNativeSupplyVaultProxy = new TransparentUpgradeableProxy(address(supplyVaultImplV1), address(proxyAdmin), "");
         wNativeSupplyVault = SupplyVault(address(wNativeSupplyVaultProxy));
 
         deal(wNative, address(this), 1e9);
