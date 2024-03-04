@@ -32,8 +32,7 @@ It also interacts with [`RewardsManager`](./src/RewardsManager.sol), which manag
 
 - [White Paper](https://whitepaper.morpho.org)
 - [Yellow Paper](https://yellowpaper.morpho.org/)
-- [Morpho Documentation](https://docs.morpho.org)
-- [Morpho Developers Documentation](https://developers.morpho.org)
+- [Morpho Documentation](https://docs.morpho.org/concepts/morpho-optimizers)
 
 ---
 
