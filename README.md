@@ -32,8 +32,7 @@ It also interacts with [`RewardsManager`](./src/RewardsManager.sol), which manag
 
 - [White Paper](https://whitepaper.morpho.org)
 - [Yellow Paper](https://yellowpaper.morpho.org/)
-- [Morpho Documentation](https://docs.morpho.org)
-- [Morpho Developers Documentation](https://developers.morpho.org)
+- [Morpho Documentation](https://docs.morpho.org/concepts/morpho-optimizers)
 
 ---
 
@@ -165,7 +164,7 @@ The report is then usable either:
 
 ## Questions & Feedback
 
-For any questions or feedback, you can send an email to [merlin@morpho.org](mailto:merlin@morpho.org).
+For any questions or feedback, you can send an email to [contact@morpho.org](mailto:contact@morpho.org).
 
 ---
 
