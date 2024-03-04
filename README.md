@@ -164,7 +164,7 @@ The report is then usable either:
 
 ## Questions & Feedback
 
-For any questions or feedback, you can send an email to [merlin@morpho.org](mailto:merlin@morpho.org).
+For any questions or feedback, you can send an email to [contact@morpho.org](mailto:contact@morpho.org).
 
 ---
 
