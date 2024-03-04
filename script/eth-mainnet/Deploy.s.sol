@@ -61,9 +61,12 @@ contract Deploy is Script, Configured {
             address(proxyAdmin),
             abi.encodeWithSelector(
                 morphoImpl.initialize.selector,
-                address(addressesProvider), E_MODE_CATEGORY_ID,
+                address(addressesProvider),
+                E_MODE_CATEGORY_ID,
                 address(positionsManager),
-                Types.Iterations({repay: 10, withdraw: 10})));
+                Types.Iterations({repay: 10, withdraw: 10})
+            )
+        );
         morpho = Morpho(payable(address(morphoProxy)));
     }
 }
