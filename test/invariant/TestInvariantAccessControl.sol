@@ -50,7 +50,7 @@ contract TestInvariantAccessControl is InvariantTest {
         onBehalf = _randomSender(onBehalf);
         maxIterations = _boundMaxIterations(maxIterations);
 
-        _deal(market.underlying, msg.sender, amount);
+        deal(market.underlying, msg.sender, amount);
 
         vm.prank(msg.sender); // Cannot startPrank because `morpho.supply` may revert and not call stopPrank.
         ERC20(market.underlying).safeApprove(address(morpho), amount);
@@ -64,7 +64,7 @@ contract TestInvariantAccessControl is InvariantTest {
         amount = _boundSupply(market, amount);
         onBehalf = _randomSender(onBehalf);
 
-        _deal(market.underlying, msg.sender, amount);
+        deal(market.underlying, msg.sender, amount);
 
         vm.prank(msg.sender); // Cannot startPrank because `morpho.supplyCollateral` may revert and not call stopPrank.
         ERC20(market.underlying).safeApprove(address(morpho), amount);

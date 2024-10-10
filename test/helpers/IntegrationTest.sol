@@ -234,7 +234,7 @@ contract IntegrationTest is ForkTest {
         internal
         bypassSupplyCap(underlying, amount)
     {
-        _deal(underlying, address(this), amount);
+        deal(underlying, address(this), amount);
         ERC20(underlying).safeApprove(address(pool), amount);
         pool.deposit(underlying, amount, onBehalf, 0);
     }
@@ -307,7 +307,7 @@ contract IntegrationTest is ForkTest {
         uint256 maxIterations
     ) internal returns (uint256 collateral, uint256 borrowed) {
         collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount, eModeCategoryId);
-        _deal(collateralMarket.underlying, borrower, collateral);
+        deal(collateralMarket.underlying, borrower, collateral);
 
         vm.startPrank(borrower);
         ERC20(collateralMarket.underlying).safeApprove(address(morpho), collateral);
