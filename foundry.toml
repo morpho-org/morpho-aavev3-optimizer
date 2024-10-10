@@ -3,9 +3,10 @@ names = true
 sizes = true
 libs = ["node_modules", "lib"]
 fs_permissions = [{ access = "read", path = "./config/"}]
+gas_limit = "18446744073709551615" # 2^64 - 1, to remove the gas limit
 
 [fuzz]
-runs = 32
+runs = 1_000
 
 [invariant]
 runs = 4

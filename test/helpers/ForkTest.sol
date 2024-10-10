@@ -202,8 +202,8 @@ contract ForkTest is BaseTest, Configured {
 
     /// @dev Reverts the fork to its initial fork state.
     function _revert() internal {
-        if (snapshotId < type(uint256).max) vm.revertTo(snapshotId);
-        snapshotId = vm.snapshot();
+        if (snapshotId < type(uint256).max) vm.revertToState(snapshotId);
+        snapshotId = vm.snapshotState();
     }
 
     /// @dev Returns the total supply used towards the supply cap.

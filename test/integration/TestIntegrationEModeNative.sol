@@ -44,7 +44,7 @@ contract TestIntegrationEModeNative is IntegrationTest {
 
         user.withdrawCollateral(
             lsdNative,
-            wNativeMarket.collateralized(lsdNativeMarket, rawCollateral, eModeCategoryId) - borrowed,
+            (rawCollateral - lsdNativeMarket.minCollateral(wNativeMarket, borrowed, eModeCategoryId)) / 2,
             onBehalf,
             receiver
         );
