@@ -167,6 +167,6 @@ library TestMarketLib {
     ) internal view returns (uint256) {
         uint256 lt = getLt(collateralMarket, eModeCategoryId);
 
-        return rawCollateralValue(quote(collateralMarket, borrowedMarket, amount).percentDiv(lt));
+        return rawCollateralValue(quote(collateralMarket, borrowedMarket, amount).percentDivUp(lt));
     }
 }
