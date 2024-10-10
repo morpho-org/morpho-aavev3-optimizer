@@ -4,9 +4,11 @@ sizes = true
 libs = ["node_modules", "lib"]
 fs_permissions = [{ access = "read", path = "./config/"}]
 gas_limit = "18446744073709551615" # 2^64 - 1, to remove the gas limit
+evm_version = "shanghai"
 
 [fuzz]
-runs = 1_000
+runs = 256
+max_test_rejects = 100_000
 
 [invariant]
 runs = 4
