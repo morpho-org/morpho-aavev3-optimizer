@@ -5,7 +5,7 @@ import {IAToken} from "src/interfaces/aave/IAToken.sol";
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
 import {IACLManager} from "@aave-v3-core/interfaces/IACLManager.sol";
-import {IPoolConfigurator} from "@aave-v3-core/interfaces/IPoolConfigurator.sol";
+import {IPoolConfigurator} from "src/interfaces/aave/IPoolConfigurator.sol";
 import {IPoolDataProvider} from "@aave-v3-core/interfaces/IPoolDataProvider.sol";
 import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 import {IStableDebtToken} from "@aave-v3-core/interfaces/IStableDebtToken.sol";
@@ -99,6 +99,7 @@ contract ForkTest is BaseTest, Configured {
 
         forkId = forkBlockNumber == 0 ? vm.createSelectFork(rpcUrl) : vm.createSelectFork(rpcUrl, forkBlockNumber);
         vm.chainId(config.getChainId());
+        console.log("fork block number", block.number);
     }
 
     function _loadConfig() internal virtual override {
@@ -251,14 +252,10 @@ contract ForkTest is BaseTest, Configured {
         uint8 eModeCategoryId
     ) internal {
         poolAdmin.setEModeCategory(
-            eModeCategoryId,
-            eModeCategory.ltv,
-            eModeCategory.liquidationThreshold,
-            eModeCategory.liquidationBonus,
-            address(1),
-            ""
+            eModeCategoryId, eModeCategory.ltv, eModeCategory.liquidationThreshold, eModeCategory.liquidationBonus, ""
         );
-        poolAdmin.setAssetEModeCategory(underlying, eModeCategoryId);
+        poolAdmin.setAssetBorrowableInEMode(underlying, eModeCategoryId, true);
+        poolAdmin.setAssetCollateralInEMode(underlying, eModeCategoryId, true);
     }
 
     function _assumeNotUnderlying(address input) internal view {
