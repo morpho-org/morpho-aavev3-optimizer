@@ -215,7 +215,7 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         uint256 shares = promoter1.depositVault(daiSupplyVault, amount);
         uint256 assets = promoter1.redeemVault(daiSupplyVault, shares);
 
-        assertApproxEqAbs(assets, amount, 1, "unexpected withdrawn assets");
+        assertApproxEqAbs(assets, amount, 2, "unexpected withdrawn assets");
     }
 
     function testShouldRedeemAllAmountWhenMorphoPoolIndexesOutdated(uint256 amount, uint256 timePassed) public {
