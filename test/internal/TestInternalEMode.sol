@@ -44,8 +44,6 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         _createMarket(usdc, 0, 3_333);
         _createMarket(wNative, 0, 3_333);
 
-        _setBalances(address(this), type(uint256).max);
-
         ERC20(dai).approve(address(_pool), type(uint256).max);
         ERC20(wbtc).approve(address(_pool), type(uint256).max);
         ERC20(usdc).approve(address(_pool), type(uint256).max);

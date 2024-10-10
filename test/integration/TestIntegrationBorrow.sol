@@ -542,7 +542,6 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
-        poolAdmin.setReserveStableRateBorrowing(market.underlying, false);
         poolAdmin.setReserveBorrowing(market.underlying, false);
 
         vm.expectRevert(Errors.BorrowNotEnabled.selector);

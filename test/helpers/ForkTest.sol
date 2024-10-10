@@ -5,7 +5,7 @@ import {IAToken} from "src/interfaces/aave/IAToken.sol";
 import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
 import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
 import {IACLManager} from "@aave-v3-core/interfaces/IACLManager.sol";
-import {IPoolConfigurator} from "@aave-v3-core/interfaces/IPoolConfigurator.sol";
+import {IPoolConfigurator} from "src/interfaces/aave/IPoolConfigurator.sol";
 import {IPoolDataProvider} from "@aave-v3-core/interfaces/IPoolDataProvider.sol";
 import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
 import {IStableDebtToken} from "@aave-v3-core/interfaces/IStableDebtToken.sol";
@@ -99,6 +99,7 @@ contract ForkTest is BaseTest, Configured {
 
         forkId = forkBlockNumber == 0 ? vm.createSelectFork(rpcUrl) : vm.createSelectFork(rpcUrl, forkBlockNumber);
         vm.chainId(config.getChainId());
+        console.log("fork block number", block.number);
     }
 
     function _loadConfig() internal virtual override {
@@ -180,24 +181,31 @@ contract ForkTest is BaseTest, Configured {
     }
 
     /// @dev Avoids to revert because of AAVE token snapshots: https://github.com/aave/aave-token-v2/blob/master/contracts/token/base/GovernancePowerDelegationERC20.sol#L174
-    function _deal(address underlying, address user, uint256 amount) internal {
+    function deal(address underlying, address user, uint256 amount) internal override {
         if (amount == 0) return;
 
-        if (underlying == weth) deal(weth, weth.balance + amount); // Refill wrapped Ether.
-
+        // Needed because AAVE packs the balance struct.
         if (underlying == aave) {
-            uint256 balance = ERC20(underlying).balanceOf(user);
+            // The slot of the balance struct "_balances" is 0.
+            bytes32 balanceSlot = keccak256(abi.encode(user, uint256(0)));
+            bytes32 initialValue = vm.load(aave, balanceSlot);
+            // The balance is stored in the first 104 bits.
+            bytes32 finalValue = ((initialValue >> 104) << 104) | bytes32(uint256(amount));
+            vm.store(aave, balanceSlot, finalValue);
+            require(ERC20(aave).balanceOf(user) == uint256(amount));
 
-            if (amount > balance) ERC20(underlying).safeTransfer(user, amount - balance);
-            if (amount < balance) {
-                vm.prank(user);
-                ERC20(underlying).safeTransfer(address(this), balance - amount);
-            }
+            uint256 totalSupplyBefore = ERC20(aave).totalSupply();
+            // The slot of the balance struct "totalSupply" is 2.
+            bytes32 totalSupplySlot = bytes32(uint256(2));
+            vm.store(aave, totalSupplySlot, bytes32(totalSupplyBefore + amount));
+            require(ERC20(aave).totalSupply() == totalSupplyBefore + amount);
 
             return;
         }
 
-        deal(underlying, user, amount);
+        if (underlying == weth) super.deal(weth, weth.balance + amount); // Refill wrapped Ether.
+
+        super.deal(underlying, user, amount);
     }
 
     /// @dev Reverts the fork to its initial fork state.
@@ -244,14 +252,10 @@ contract ForkTest is BaseTest, Configured {
         uint8 eModeCategoryId
     ) internal {
         poolAdmin.setEModeCategory(
-            eModeCategoryId,
-            eModeCategory.ltv,
-            eModeCategory.liquidationThreshold,
-            eModeCategory.liquidationBonus,
-            address(1),
-            ""
+            eModeCategoryId, eModeCategory.ltv, eModeCategory.liquidationThreshold, eModeCategory.liquidationBonus, ""
         );
-        poolAdmin.setAssetEModeCategory(underlying, eModeCategoryId);
+        poolAdmin.setAssetBorrowableInEMode(underlying, eModeCategoryId, true);
+        poolAdmin.setAssetCollateralInEMode(underlying, eModeCategoryId, true);
     }
 
     function _assumeNotUnderlying(address input) internal view {
