@@ -34,7 +34,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         _createMarket(usdc, 0, 3_333);
         _createMarket(wNative, 0, 3_333);
 
-        _setBalances(address(this), type(uint256).max);
+        _setBalances(address(this), MAX_AMOUNT);
 
         _pool.supplyToPool(dai, 100 ether, _pool.getReserveNormalizedIncome(dai));
         _pool.supplyToPool(wbtc, 1e8, _pool.getReserveNormalizedIncome(wbtc));
