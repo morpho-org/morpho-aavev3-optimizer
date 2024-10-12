@@ -186,19 +186,24 @@ contract ForkTest is BaseTest, Configured {
 
         // Needed because AAVE packs the balance struct.
         if (underlying == aave) {
+            uint256 initialBalance = ERC20(aave).balanceOf(user);
+            require(amount <= type(uint104).max - initialBalance, "deal: amount exceeds AAVE balance limit");
             // The slot of the balance struct "_balances" is 0.
             bytes32 balanceSlot = keccak256(abi.encode(user, uint256(0)));
             bytes32 initialValue = vm.load(aave, balanceSlot);
             // The balance is stored in the first 104 bits.
-            bytes32 finalValue = ((initialValue >> 104) << 104) | bytes32(uint256(amount));
+            bytes32 finalValue = ((initialValue >> 104) << 104) | bytes32(uint256(amount + initialBalance));
             vm.store(aave, balanceSlot, finalValue);
-            require(ERC20(aave).balanceOf(user) == uint256(amount));
+            console.log("amount         ", amount);
+            console.log("initial balance", initialBalance);
+            console.log("final value    ", ERC20(aave).balanceOf(user));
+            require(ERC20(aave).balanceOf(user) == uint256(amount + initialBalance), "deal: AAVE balance mismatch");
 
             uint256 totalSupplyBefore = ERC20(aave).totalSupply();
             // The slot of the balance struct "totalSupply" is 2.
             bytes32 totalSupplySlot = bytes32(uint256(2));
             vm.store(aave, totalSupplySlot, bytes32(totalSupplyBefore + amount));
-            require(ERC20(aave).totalSupply() == totalSupplyBefore + amount);
+            require(ERC20(aave).totalSupply() == totalSupplyBefore + amount, "deal: AAVE total supply mismatch");
 
             return;
         }

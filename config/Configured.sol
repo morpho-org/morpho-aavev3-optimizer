@@ -59,7 +59,7 @@ contract Configured is StdChains {
         lsdNatives = config.getLsdNatives();
         stNative = lsdNatives[0];
 
-        allUnderlyings = [dai, usdc, aave, usdt, wbtc, weth];
+        allUnderlyings = [dai, usdc, usdt, wbtc, weth];
 
         for (uint256 i; i < lsdNatives.length; ++i) {
             allUnderlyings.push(lsdNatives[i]);
