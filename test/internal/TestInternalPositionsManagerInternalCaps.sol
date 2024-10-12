@@ -69,7 +69,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         Types.Market storage market = _market[dai];
         Types.Indexes256 memory indexes = _computeIndexes(dai);
 
-        uint256 poolDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
+        uint256 poolDebt = ERC20(market.variableDebtToken).totalSupply();
 
         // Borrow cap should be exceeded.
         borrowCap = bound(

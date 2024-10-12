@@ -53,7 +53,6 @@ contract TestIntegrationSupply is IntegrationTest {
             1,
             "morphoSupply != morphoSupplyBefore + amount"
         );
-        assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert user's underlying balance.
         assertApproxEqAbs(
@@ -104,7 +103,6 @@ contract TestIntegrationSupply is IntegrationTest {
             market.supplyOf(address(morpho)), test.morphoSupplyBefore, 2, "morphoSupplyAfter != morphoSupplyBefore"
         );
         assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 1, "morphoVariableBorrow != 0");
-        assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert user's underlying balance.
         assertApproxEqAbs(

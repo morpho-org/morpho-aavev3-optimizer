@@ -53,19 +53,14 @@ library TestMarketLib {
         return ERC20(market.aToken).totalSupply();
     }
 
-    /// @dev Returns the quantity currently borrowed (with variable & stable rates) on the market on AaveV3.
+    /// @dev Returns the quantity currently borrowed (with variable only, stable being deprecated) on the market on AaveV3.
     function totalBorrow(TestMarket storage market) internal view returns (uint256) {
-        return totalVariableBorrow(market) + totalStableBorrow(market);
+        return totalVariableBorrow(market);
     }
 
     /// @dev Returns the quantity currently borrowed with variable rate from the market on AaveV3.
     function totalVariableBorrow(TestMarket storage market) internal view returns (uint256) {
         return ERC20(market.variableDebtToken).totalSupply();
-    }
-
-    /// @dev Returns the quantity currently borrowed with stable rate from the market on AaveV3.
-    function totalStableBorrow(TestMarket storage market) internal view returns (uint256) {
-        return ERC20(market.stableDebtToken).totalSupply();
     }
 
     /// @dev Returns the quantity currently supplied on behalf of the user, on the market on AaveV3.
@@ -76,11 +71,6 @@ library TestMarketLib {
     /// @dev Returns the quantity currently borrowed on behalf of the user, with variable rate, on the market on AaveV3.
     function variableBorrowOf(TestMarket storage market, address user) internal view returns (uint256) {
         return ERC20(market.variableDebtToken).balanceOf(user);
-    }
-
-    /// @dev Returns the quantity currently borrowed on behalf of the user, with stable rate, on the market on AaveV3.
-    function stableBorrowOf(TestMarket storage market, address user) internal view returns (uint256) {
-        return ERC20(market.stableDebtToken).balanceOf(user);
     }
 
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the borrow cap.
