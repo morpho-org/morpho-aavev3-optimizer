@@ -45,7 +45,7 @@ library TestMarketLib {
 
     /// @dev Returns the quantity that can be borrowed/withdrawn from the market.
     function liquidity(TestMarket storage market) internal view returns (uint256) {
-        return ERC20(market.underlying).balanceOf(market.aToken);
+        return ERC20(market.underlying).balanceOf(market.aToken) * 99 / 100; // prevent an underflow in Aave's IRM
     }
 
     /// @dev Returns the quantity currently supplied on the market on AaveV3.

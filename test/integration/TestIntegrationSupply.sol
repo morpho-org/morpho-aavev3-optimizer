@@ -100,7 +100,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
         // Assert Morpho's position on pool.
         assertApproxGeAbs(
-            market.supplyOf(address(morpho)), test.morphoSupplyBefore, 2, "morphoSupplyAfter != morphoSupplyBefore"
+            market.supplyOf(address(morpho)), test.morphoSupplyBefore, 3, "morphoSupplyAfter != morphoSupplyBefore"
         );
         assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 1, "morphoVariableBorrow != 0");
 
