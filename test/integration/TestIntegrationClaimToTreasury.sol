@@ -59,7 +59,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
 
     function testClaimToTreasuryShouldPassIfZeroUnderlyings(
         uint256[] calldata claimedAmounts,
-        uint256[] calldata balanceAmounts
+        uint104[] calldata balanceAmounts
     ) public {
         address[] memory claimedUnderlyings;
         uint256[] memory beforeBalanceTreasury = new uint256[](allUnderlyings.length);
@@ -86,7 +86,7 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
         }
     }
 
-    function testClaimToTreasuryShouldPassIfAmountsClaimedEqualZero(uint256[] calldata balanceAmounts) public {
+    function testClaimToTreasuryShouldPassIfAmountsClaimedEqualZero(uint104[] calldata balanceAmounts) public {
         uint256[] memory claimedAmounts = new uint256[](balanceAmounts.length);
         address[] memory claimedUnderlyings = allUnderlyings;
         address treasuryVault = address(1);
