@@ -292,7 +292,7 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Bounds the fuzzing input to an arbitrary reasonable amount of iterations.
-    function _boundMaxIterations(uint256 maxIterations) internal view returns (uint256) {
+    function _boundMaxIterations(uint256 maxIterations) internal pure returns (uint256) {
         return bound(maxIterations, 0, 32);
     }
 
@@ -500,7 +500,10 @@ contract IntegrationTest is ForkTest {
         }
     }
 
-    function _assertMarketUpdatedIndexes(Types.Market memory market, Types.Indexes256 memory futureIndexes) internal {
+    function _assertMarketUpdatedIndexes(Types.Market memory market, Types.Indexes256 memory futureIndexes)
+        internal
+        view
+    {
         assertEq(market.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
         assertEq(
             market.indexes.supply.poolIndex, futureIndexes.supply.poolIndex, "poolSupplyIndex != futurePoolSupplyIndex"
@@ -516,7 +519,7 @@ contract IntegrationTest is ForkTest {
         );
     }
 
-    function _assertMarketAccountingZero(Types.Market memory market) internal {
+    function _assertMarketAccountingZero(Types.Market memory market) internal pure {
         assertEq(market.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
         assertEq(market.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != 0");
         assertEq(market.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");

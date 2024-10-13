@@ -26,18 +26,18 @@ contract BaseTest is Test {
     uint256 private constant MAX_AMOUNT = 1e20 ether;
 
     /// @dev Asserts a is approximately equal to b, with a maximum absolute difference of DUST_THRESHOLD.
-    function assertApproxEqDust(uint256 a, uint256 b, string memory err) internal {
+    function assertApproxEqDust(uint256 a, uint256 b, string memory err) internal pure {
         assertApproxEqAbs(a, b, Constants.DUST_THRESHOLD, err);
     }
 
     /// @dev Asserts a is approximately less than or equal to b, with a maximum absolute difference of maxDelta.
-    function assertApproxLeAbs(uint256 a, uint256 b, uint256 maxDelta, string memory err) internal {
+    function assertApproxLeAbs(uint256 a, uint256 b, uint256 maxDelta, string memory err) internal pure {
         assertLe(a, b, err);
         assertApproxEqAbs(a, b, maxDelta, err);
     }
 
     /// @dev Asserts a is approximately greater than or equal to b, with a maximum absolute difference of maxDelta.
-    function assertApproxGeAbs(uint256 a, uint256 b, uint256 maxDelta, string memory err) internal {
+    function assertApproxGeAbs(uint256 a, uint256 b, uint256 maxDelta, string memory err) internal pure {
         assertGe(a, b, err);
         assertApproxEqAbs(a, b, maxDelta, err);
     }
@@ -49,12 +49,12 @@ contract BaseTest is Test {
     }
 
     /// @dev Bounds the fuzzing input to a realistic number of blocks.
-    function _boundBlocks(uint256 blocks) internal view returns (uint256) {
+    function _boundBlocks(uint256 blocks) internal pure returns (uint256) {
         return bound(blocks, 1, type(uint24).max);
     }
 
     /// @dev Bounds the fuzzing input to a realistic index.
-    function _boundIndex(uint256 index) internal view returns (uint256) {
+    function _boundIndex(uint256 index) internal pure returns (uint256) {
         return bound(index, WadRayMath.RAY, 20 * WadRayMath.RAY);
     }
 
