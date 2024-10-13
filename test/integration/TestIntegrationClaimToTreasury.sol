@@ -163,17 +163,11 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
         }
     }
 
-    // This test wasn't passing with the Aave token, so I removed the token for now.
     function testDeal(uint104 amount) public {
         for (uint256 i; i < allUnderlyings.length; ++i) {
-            uint256 balanceBefore = ERC20(allUnderlyings[i]).balanceOf(address(this));
-            deal(
-                allUnderlyings[i],
-                address(this),
-                Math.min(type(uint104).max - ERC20(allUnderlyings[i]).balanceOf(address(this)), amount)
-            );
+            deal(allUnderlyings[i], address(this), amount);
             uint256 balanceAfter = ERC20(allUnderlyings[i]).balanceOf(address(this));
-            assertEq(balanceAfter - balanceBefore, amount);
+            assertEq(balanceAfter, amount);
         }
     }
 }
