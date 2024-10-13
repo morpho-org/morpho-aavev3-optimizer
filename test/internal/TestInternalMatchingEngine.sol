@@ -40,7 +40,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
         uint256 poolIndex,
         uint256 p2pIndex,
         uint256 remaining
-    ) public {
+    ) public pure {
         poolBalance = bound(poolBalance, 0, type(uint96).max);
         p2pBalance = bound(p2pBalance, 0, type(uint96).max);
         poolIndex = bound(poolIndex, WadRayMath.RAY, WadRayMath.RAY * 1_000);
@@ -59,6 +59,7 @@ contract TestInternalMatchingEngine is InternalTest, MatchingEngine {
 
     function testDemote(uint256 poolBalance, uint256 p2pBalance, uint256 poolIndex, uint256 p2pIndex, uint256 remaining)
         public
+        pure
     {
         poolBalance = bound(poolBalance, 0, type(uint96).max);
         p2pBalance = bound(p2pBalance, 0, type(uint96).max);

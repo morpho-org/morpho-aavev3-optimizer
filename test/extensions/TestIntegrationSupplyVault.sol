@@ -6,7 +6,7 @@ import "./TestSetupVaults.sol";
 contract TestIntegrationSupplyVault is TestSetupVaults {
     using WadRayMath for uint256;
 
-    function testCorrectInitialisationDai() public {
+    function testCorrectInitialisationDai() public view {
         assertEq(daiSupplyVault.owner(), address(this));
         assertEq(daiSupplyVault.name(), "MorphoAaveDAI");
         assertEq(daiSupplyVault.symbol(), "maDAI");
@@ -14,7 +14,7 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         assertEq(daiSupplyVault.decimals(), 18);
     }
 
-    function testCorrectInitialisationWrappedNative() public {
+    function testCorrectInitialisationWrappedNative() public view {
         assertEq(wNativeSupplyVault.owner(), address(this));
         assertEq(wNativeSupplyVault.name(), "MorphoAaveWNATIVE");
         assertEq(wNativeSupplyVault.symbol(), "maWNATIVE");

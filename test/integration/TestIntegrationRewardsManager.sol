@@ -86,7 +86,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         uint256[] memory rewardBalancesBefore,
         uint256[NB_REWARDS] memory expectedAccruedRewards,
         string memory suffix
-    ) internal {
+    ) internal view {
         assertEq(rewardTokens.length, NB_REWARDS, string.concat("rewardTokens length", " ", suffix));
         assertEq(amounts.length, NB_REWARDS, string.concat("amounts length", " ", suffix));
 
@@ -106,11 +106,11 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         }
     }
 
-    function testGetMorpho() public {
+    function testGetMorpho() public view {
         assertEq(rewardsManager.MORPHO(), address(morpho));
     }
 
-    function testGetRewardsController() public {
+    function testGetRewardsController() public view {
         assertEq(rewardsManager.REWARDS_CONTROLLER(), address(rewardsController));
     }
 

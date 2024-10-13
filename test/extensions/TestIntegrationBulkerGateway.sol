@@ -49,14 +49,14 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         new BulkerGateway(address(0));
     }
 
-    function testGetters() public {
+    function testGetters() public view {
         assertEq(bulker.MORPHO(), address(morpho));
         assertEq(bulker.WETH(), 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
         assertEq(bulker.stETH(), 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84);
         assertEq(bulker.wstETH(), 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0);
     }
 
-    function testShouldApproveAfterDeploy() public {
+    function testShouldApproveAfterDeploy() public view {
         assertEq(ERC20(bulker.WETH()).allowance(address(bulker), address(morpho)), type(uint256).max);
         assertEq(ERC20(bulker.stETH()).allowance(address(bulker), bulker.wstETH()), type(uint256).max);
         assertEq(ERC20(bulker.wstETH()).allowance(address(bulker), address(morpho)), type(uint256).max);

@@ -9,7 +9,7 @@ contract TestIntegrationFee is IntegrationTest {
     using WadRayMath for uint256;
     using PercentageMath for uint256;
 
-    function _assertFee(Types.Market memory marketBefore) internal {
+    function _assertFee(Types.Market memory marketBefore) internal view {
         Types.Market memory marketAfter = morpho.market(marketBefore.underlying);
 
         uint256 p2pBorrow = marketBefore.deltas.borrow.scaledP2PTotal.rayMul(marketBefore.indexes.borrow.p2pIndex)

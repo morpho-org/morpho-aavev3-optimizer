@@ -115,7 +115,7 @@ contract TestInvariantAccessControl is InvariantTest {
 
     /* INVARIANTS */
 
-    function invariantInitialized() public {
+    function invariantInitialized() public view {
         assertEq(initialized, 0, "initialized");
     }
 

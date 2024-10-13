@@ -25,7 +25,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         address onBehalf,
         address receiver,
         BorrowTest memory test
-    ) internal returns (BorrowTest memory) {
+    ) internal view returns (BorrowTest memory) {
         test.morphoMarket = morpho.market(market.underlying);
         test.indexes = morpho.updatedIndexes(market.underlying);
         test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
@@ -64,7 +64,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         address onBehalf,
         address receiver,
         BorrowTest memory test
-    ) internal returns (BorrowTest memory) {
+    ) internal view returns (BorrowTest memory) {
         test.morphoMarket = morpho.market(market.underlying);
         test.indexes = morpho.updatedIndexes(market.underlying);
         test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);

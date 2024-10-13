@@ -308,7 +308,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         assertEq(closeFactor, Constants.DEFAULT_CLOSE_FACTOR);
     }
 
-    function testAddToPool(uint256 amount, uint256 onPool, uint256 poolIndex) public {
+    function testAddToPool(uint256 amount, uint256 onPool, uint256 poolIndex) public pure {
         amount = bound(amount, 0, MAX_AMOUNT);
         onPool = bound(onPool, 0, MAX_AMOUNT);
         poolIndex = bound(poolIndex, WadRayMath.RAY, WadRayMath.RAY * 10);
@@ -318,7 +318,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         assertEq(newOnPool, onPool + amount.rayDivDown(poolIndex));
     }
 
-    function testSubFromPool(uint256 amount, uint256 onPool, uint256 poolIndex) public {
+    function testSubFromPool(uint256 amount, uint256 onPool, uint256 poolIndex) public pure {
         amount = bound(amount, 0, MAX_AMOUNT);
         onPool = bound(onPool, 0, MAX_AMOUNT);
         poolIndex = bound(poolIndex, WadRayMath.RAY, WadRayMath.RAY * 10);
