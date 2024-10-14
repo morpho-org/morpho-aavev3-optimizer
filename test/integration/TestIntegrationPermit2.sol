@@ -60,7 +60,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
-        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint32).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
         deal(market.underlying, delegator, amount);
