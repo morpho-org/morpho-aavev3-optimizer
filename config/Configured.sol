@@ -18,6 +18,9 @@ contract Configured is StdChains {
     address internal aave;
     address internal link;
     address internal wbtc;
+    address internal sd;
+    address internal aweth;
+    address internal ausds;
     address internal weth;
     address internal wNative;
     address internal stNative;
@@ -54,6 +57,9 @@ contract Configured is StdChains {
         aave = config.getAddress("AAVE");
         link = config.getAddress("LINK");
         wbtc = config.getAddress("WBTC");
+        sd = config.getAddress("SD");
+        aweth = config.getAddress("aEthLidoWETH");
+        ausds = config.getAddress("aUSDS");
         weth = config.getAddress("WETH");
         wNative = config.getWrappedNative();
         lsdNatives = config.getLsdNatives();
