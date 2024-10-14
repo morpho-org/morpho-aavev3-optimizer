@@ -483,6 +483,9 @@ contract IntegrationTest is ForkTest {
 
         vm.assume(output != address(this));
         vm.assume(output != address(morpho));
+        // The following addresses are blacklisted on USDT.
+        vm.assume(output != address(0));
+        vm.assume(output != address(1));
 
         for (uint256 i; i < allUnderlyings.length; ++i) {
             TestMarket storage market = testMarkets[allUnderlyings[i]];
