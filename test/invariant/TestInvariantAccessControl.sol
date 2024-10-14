@@ -131,13 +131,14 @@ contract TestInvariantAccessControl is InvariantTest {
             for (uint256 j; j < borrowableInEModeUnderlyings.length; ++j) {
                 TestMarket storage market = testMarkets[borrowableInEModeUnderlyings[j]];
 
-                uint256 borrowable = (liquidityData.borrowable * 1 ether * 10 ** market.decimals).percentAdd(5) // Inflate borrowable because of WBTC decimals precision.
-                    / (market.price * 1 ether);
-                if (borrowable == 0 || borrowable > market.liquidity()) continue;
+                // Inflate borrowable because of WBTC decimals precision.
+                uint256 borrowableInUnderlying =
+                    (liquidityData.borrowable * 10 ** market.decimals).divUp(market.price).percentAdd(10);
+                if (borrowableInUnderlying == 0 || borrowableInUnderlying > market.liquidity()) continue;
 
                 vm.prank(sender);
                 vm.expectRevert(Errors.UnauthorizedBorrow.selector);
-                morpho.borrow(market.underlying, borrowable, sender, sender, 0);
+                morpho.borrow(market.underlying, borrowableInUnderlying, sender, sender, 0);
             }
         }
     }
