@@ -80,7 +80,7 @@ lcov-html:
 	genhtml lcov.info -o coverage
 
 gas-report:
-	forge test --match-contract TestIntegration --gas-report
+	@FORGE_GAS_REPORT=true make test-invariant
 
 deploy-emode-%:
 	FOUNDRY_TEST=/dev/null forge script script/$*/EthEModeDeploy.s.sol:EthEModeDeploy --via-ir --broadcast --slow -vvvvv --rpc-url mainnet --ledger
