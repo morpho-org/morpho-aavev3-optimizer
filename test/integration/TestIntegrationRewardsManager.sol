@@ -474,26 +474,29 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         (address[] memory rewardsList, uint256[] memory unclaimed) =
             rewardsManager.getAllUserRewards(assets, address(user));
 
-        assertEq(rewardsList[0], wNative, "rewardsList[0]");
-        assertEq(rewardsList[1], link, "rewardsList[1]");
-        assertGt(unclaimed[0], 0, "unclaimed[0] > 0");
-        assertGt(unclaimed[1], 0, "unclaimed[1] > 0");
+        assertEq(rewardsList.length, NB_REWARDS, "rewardsList length");
+        for (uint256 i; i < NB_REWARDS; i++) {
+            string memory errorString = string.concat("rewardsList[", vm.toString(i), "]");
+            assertEq(rewardsList[i], expectedRewardTokens[i], errorString);
+        }
+        assertGt(unclaimed[4], 0, "unclaimed[4] > 0");
+        assertGt(unclaimed[5], 0, "unclaimed[5] > 0");
 
         uint256[NB_REWARDS] memory rewardBalancesBefore = _rewardBalances();
 
         vm.expectEmit(true, true, true, true);
-        emit Accrued(vDai, wNative, address(user), rewardsManager.getAssetIndex(vDai, wNative), unclaimed[0]);
+        emit Accrued(vDai, wNative, address(user), rewardsManager.getAssetIndex(vDai, wNative), unclaimed[4]);
         vm.expectEmit(true, true, true, true);
-        emit Accrued(aUsdc, link, address(user), rewardsManager.getAssetIndex(aUsdc, link), unclaimed[1]);
+        emit Accrued(aUsdc, link, address(user), rewardsManager.getAssetIndex(aUsdc, link), unclaimed[5]);
         vm.expectEmit(true, true, true, true);
-        emit Events.RewardsClaimed(address(this), address(user), wNative, unclaimed[0]);
+        emit Events.RewardsClaimed(address(this), address(user), wNative, unclaimed[4]);
         vm.expectEmit(true, true, true, true);
-        emit Events.RewardsClaimed(address(this), address(user), link, unclaimed[1]);
+        emit Events.RewardsClaimed(address(this), address(user), link, unclaimed[5]);
 
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
 
         _assertClaimRewards(
-            rewardTokens, amounts, rewardBalancesBefore, [0, 0, 0, 0, unclaimed[0], unclaimed[1]], "(1)"
+            rewardTokens, amounts, rewardBalancesBefore, [0, 0, 0, 0, unclaimed[4], unclaimed[5]], "(1)"
         );
 
         user.approve(dai, type(uint256).max);
@@ -504,8 +507,10 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         (rewardsList, unclaimed) = rewardsManager.getAllUserRewards(assets, address(user));
 
-        assertEq(unclaimed[0], 0, "unclaimed[0] == 0");
-        assertEq(unclaimed[1], 0, "unclaimed[1] == 0");
+        for (uint256 i; i < NB_REWARDS; i++) {
+            string memory errorString = string.concat("unclaimed[", vm.toString(i), "] > 0");
+            assertEq(unclaimed[i], 0, errorString);
+        }
 
         rewardBalancesBefore = _rewardBalances();
 
