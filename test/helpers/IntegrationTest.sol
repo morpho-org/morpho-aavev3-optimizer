@@ -482,6 +482,7 @@ contract IntegrationTest is ForkTest {
         output = _boundAddressValid(input);
 
         vm.assume(output != address(this));
+        vm.assume(output != address(morpho));
 
         for (uint256 i; i < allUnderlyings.length; ++i) {
             TestMarket storage market = testMarkets[allUnderlyings[i]];
