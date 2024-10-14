@@ -122,6 +122,7 @@ contract ForkTest is BaseTest, Configured {
     function _label() internal virtual {
         vm.label(address(pool), "Pool");
         vm.label(address(oracle), "PriceOracle");
+        vm.label(address(rewardsController), "RewardsController");
         vm.label(address(addressesProvider), "AddressesProvider");
 
         vm.label(aclAdmin, "ACLAdmin");

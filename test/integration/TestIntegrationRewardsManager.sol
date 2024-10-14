@@ -12,6 +12,7 @@ import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationRewardsManager is IntegrationTest {
     using ConfigLib for Config;
+    using Math for uint256;
 
     // From the rewards manager
     event Accrued(
@@ -303,7 +304,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         currentTimestamp = block.timestamp;
 
         currentTimestamp = currentTimestamp > distributionEnd ? distributionEnd : currentTimestamp;
-        totalEmitted = emissionPerSecond * (currentTimestamp - lastUpdateTimestamp) * assetUnit
+        totalEmitted = emissionPerSecond * currentTimestamp.zeroFloorSub(lastUpdateTimestamp) * assetUnit
             / IScaledBalanceToken(aDai).scaledTotalSupply();
 
         assertEq(rewardsManager.getAssetIndex(aDai, wNative), rewardIndex + totalEmitted, "index 2");
