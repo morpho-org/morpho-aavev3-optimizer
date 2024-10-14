@@ -50,7 +50,7 @@ contract BaseTest is Test {
 
     /// @dev Bounds the fuzzing input to a realistic number of blocks.
     function _boundBlocks(uint256 blocks) internal pure returns (uint256) {
-        return bound(blocks, 1, type(uint24).max);
+        return bound(blocks, 1, 365 days / BLOCK_TIME);
     }
 
     /// @dev Bounds the fuzzing input to a realistic index.
