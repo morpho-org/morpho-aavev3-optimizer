@@ -11,7 +11,7 @@ config/=config/
 @openzeppelin/=lib/morpho-utils/lib/openzeppelin-contracts/
 @openzeppelin-upgradeable/=lib/morpho-utils/lib/openzeppelin-contracts-upgradeable/contracts/
 
-@aave-v3-origin/=lib/aave-v3-core/src/contracts/
+@aave-v3-origin/=lib/aave-v3-origin/src/contracts/
 @aave-v3-periphery/=lib/aave-v3-periphery/contracts/
 
 @solmate/=lib/solmate/src/

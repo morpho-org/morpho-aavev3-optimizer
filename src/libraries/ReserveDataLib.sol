@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IStableDebtToken} from "@aave-v3-origin/interfaces/IStableDebtToken.sol";
 import {IVariableDebtToken} from "@aave-v3-origin/interfaces/IVariableDebtToken.sol";
 
 import {Types} from "./Types.sol";
@@ -28,7 +27,7 @@ library ReserveDataLib {
     /// @param reserve The reserve data of a given market.
     /// @param indexes The updated pool & peer-to-peer indexes of the associated market.
     /// @return The reserve's dedicated treasury, in pool unit.
-    function getAccruedToTreasury(DataTypes.ReserveData memory reserve, Types.Indexes256 memory indexes)
+    function getAccruedToTreasury(DataTypes.ReserveDataLegacy memory reserve, Types.Indexes256 memory indexes)
         internal
         view
         returns (uint256)

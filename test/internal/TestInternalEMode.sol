@@ -27,6 +27,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     using ConfigLib for Config;
     using SafeTransferLib for ERC20;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
 
     struct AssetData {
         uint256 underlyingPrice;
@@ -68,7 +69,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         vm.assume(uint256(assetData.ltEMode).percentMul(uint256(liquidationBonus)) <= PercentageMath.PERCENTAGE_FACTOR);
         vm.assume(assetData.underlyingPrice != assetData.underlyingPriceEMode);
 
-        DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
+        DataTypes.EModeCategoryLegacy memory eModeCategory = DataTypes.EModeCategoryLegacy({
             ltv: assetData.ltvEMode,
             liquidationThreshold: assetData.ltEMode,
             liquidationBonus: liquidationBonus,
@@ -121,7 +122,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         liquidationBonus = uint16(bound(liquidationBonus, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max));
         vm.assume(uint256(lt).percentMul(liquidationBonus) <= PercentageMath.PERCENTAGE_FACTOR);
 
-        DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
+        DataTypes.EModeCategoryLegacy memory eModeCategory = DataTypes.EModeCategoryLegacy({
             ltv: ltv,
             liquidationThreshold: lt,
             liquidationBonus: liquidationBonus,
@@ -250,7 +251,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     function testShouldNotAuthorizeBorrowInconsistentEmode(
         uint8 eModeCategoryId,
         Types.Indexes256 memory indexes,
-        DataTypes.EModeCategory memory eModeCategory
+        DataTypes.EModeCategoryLegacy memory eModeCategory
     ) public {
         eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
         (uint256 ltvBound, uint256 ltBound,,) = _getLtvLt(dai, eModeCategoryId);

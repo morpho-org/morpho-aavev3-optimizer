@@ -32,7 +32,7 @@ struct TestMarket {
     uint256 maxAmount;
     //
     uint8 eModeCategoryId;
-    DataTypes.EModeCategory eModeCategory;
+    DataTypes.EModeCategoryLegacy eModeCategory;
     //
     bool isInEMode;
     bool isCollateral;

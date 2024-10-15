@@ -27,6 +27,7 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
 import {UserConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/UserConfiguration.sol";
 import {ReserveConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/ReserveConfiguration.sol";
+import {ReserveConfigurationLegacy} from "./libraries/ReserveConfigurationLegacy.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 
@@ -51,6 +52,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
     using UserConfiguration for DataTypes.UserConfigurationMap;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
 
     /* INTERNAL */
 
@@ -71,7 +73,7 @@ abstract contract MorphoInternal is MorphoStorage {
     function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         if (underlying == address(0)) revert Errors.AddressIsZero();
 
-        DataTypes.ReserveData memory reserve = _pool.getReserveData(underlying);
+        DataTypes.ReserveDataLegacy memory reserve = _pool.getReserveData(underlying);
         if (!reserve.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
         if (reserve.configuration.getSiloedBorrowing()) revert Errors.SiloedBorrowMarket();
 

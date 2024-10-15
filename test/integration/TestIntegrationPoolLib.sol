@@ -20,7 +20,7 @@ contract TestIntegrationPoolLib is ForkTest {
     constructor() {
         ERC20(dai).approve(address(pool), type(uint256).max);
 
-        DataTypes.ReserveData memory reserveData = pool.getReserveData(dai);
+        DataTypes.ReserveDataLegacy memory reserveData = pool.getReserveData(dai);
         aDai = reserveData.aTokenAddress;
         vDai = reserveData.variableDebtTokenAddress;
     }

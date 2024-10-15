@@ -19,46 +19,45 @@ library ReserveDataTestLib {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
     /// @dev Returns the quantity currently supplied on the market on AaveV3.
-    function totalSupply(DataTypes.ReserveData memory reserve) internal view returns (uint256) {
+    function totalSupply(DataTypes.ReserveDataLegacy memory reserve) internal view returns (uint256) {
         return ERC20(reserve.aTokenAddress).totalSupply();
     }
 
-    /// @dev Returns the quantity currently borrowed (with variable & stable rates) on the market on AaveV3.
-    function totalBorrow(DataTypes.ReserveData memory reserve) internal view returns (uint256) {
-        return totalVariableBorrow(reserve) + totalStableBorrow(reserve);
+    /// @dev Returns the quantity currently borrowed (with variable only, stable being deprecated) on the market on AaveV3.
+    function totalBorrow(DataTypes.ReserveDataLegacy memory reserve) internal view returns (uint256) {
+        return totalVariableBorrow(reserve);
     }
 
     /// @dev Returns the quantity currently borrowed with variable rate from the market on AaveV3.
-    function totalVariableBorrow(DataTypes.ReserveData memory reserve) internal view returns (uint256) {
+    function totalVariableBorrow(DataTypes.ReserveDataLegacy memory reserve) internal view returns (uint256) {
         return ERC20(reserve.variableDebtTokenAddress).totalSupply();
     }
 
-    /// @dev Returns the quantity currently borrowed with stable rate from the market on AaveV3.
-    function totalStableBorrow(DataTypes.ReserveData memory reserve) internal view returns (uint256) {
-        return ERC20(reserve.stableDebtTokenAddress).totalSupply();
-    }
-
     /// @dev Returns the quantity currently supplied on behalf of the user, on the market on AaveV3.
-    function supplyOf(DataTypes.ReserveData memory reserve, address user) internal view returns (uint256) {
+    function supplyOf(DataTypes.ReserveDataLegacy memory reserve, address user) internal view returns (uint256) {
         return ERC20(reserve.aTokenAddress).balanceOf(user);
     }
 
     /// @dev Returns the quantity currently borrowed on behalf of the user, with variable rate, on the market on AaveV3.
-    function variableBorrowOf(DataTypes.ReserveData memory reserve, address user) internal view returns (uint256) {
-        return ERC20(reserve.variableDebtTokenAddress).balanceOf(user);
-    }
-
-    /// @dev Returns the quantity currently borrowed on behalf of the user, with stable rate, on the market on AaveV3.
-    function stableBorrowOf(DataTypes.ReserveData memory reserve, address user) internal view returns (uint256) {
-        return ERC20(reserve.stableDebtTokenAddress).balanceOf(user);
-    }
-
-    /// @dev Returns the total supply used towards the supply cap.
-    function totalSupplyToCap(DataTypes.ReserveData memory reserve, uint256 poolSupplyIndex, uint256 poolBorrowIndex)
+    function variableBorrowOf(DataTypes.ReserveDataLegacy memory reserve, address user)
         internal
         view
         returns (uint256)
     {
+        return ERC20(reserve.variableDebtTokenAddress).balanceOf(user);
+    }
+
+    /// @dev Returns the quantity currently borrowed on behalf of the user, with stable rate, on the market on AaveV3.
+    function stableBorrowOf(DataTypes.ReserveDataLegacy memory reserve, address user) internal view returns (uint256) {
+        return ERC20(reserve.stableDebtTokenAddress).balanceOf(user);
+    }
+
+    /// @dev Returns the total supply used towards the supply cap.
+    function totalSupplyToCap(
+        DataTypes.ReserveDataLegacy memory reserve,
+        uint256 poolSupplyIndex,
+        uint256 poolBorrowIndex
+    ) internal view returns (uint256) {
         return (
             IAToken(reserve.aTokenAddress).scaledTotalSupply()
                 + ReserveDataLib.getAccruedToTreasury(
@@ -72,7 +71,7 @@ library ReserveDataTestLib {
     }
 
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
-    function supplyGap(DataTypes.ReserveData memory reserve, uint256 poolSupplyIndex, uint256 poolBorrowIndex)
+    function supplyGap(DataTypes.ReserveDataLegacy memory reserve, uint256 poolSupplyIndex, uint256 poolBorrowIndex)
         internal
         view
         returns (uint256)
@@ -83,7 +82,7 @@ library ReserveDataTestLib {
     }
 
     /// @dev Calculates the underlying amount that can be borrowed on the given market on AaveV3, reaching the borrow cap.
-    function borrowGap(DataTypes.ReserveData memory reserve) internal view returns (uint256) {
+    function borrowGap(DataTypes.ReserveDataLegacy memory reserve) internal view returns (uint256) {
         return (reserve.configuration.getBorrowCap() * 10 ** reserve.configuration.getDecimals()).zeroFloorSub(
             totalBorrow(reserve)
         );

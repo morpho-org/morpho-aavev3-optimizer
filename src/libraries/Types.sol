@@ -169,7 +169,7 @@ library Types {
     struct LiquidityVars {
         address user; // The user address.
         IAaveOracle oracle; // The oracle used by Aave.
-        DataTypes.EModeCategory eModeCategory; // The data related to the eMode category (could be empty if not in any e-mode).
+        DataTypes.EModeCategoryLegacy eModeCategory; // The data related to the eMode category (could be empty if not in any e-mode).
     }
 
     /// @notice Variables used during a borrow or withdraw.

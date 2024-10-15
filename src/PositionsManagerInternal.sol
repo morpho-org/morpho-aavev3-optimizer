@@ -23,6 +23,7 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
 import {UserConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/UserConfiguration.sol";
 import {ReserveConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/ReserveConfiguration.sol";
+import {ReserveConfigurationLegacy} from "./libraries/ReserveConfigurationLegacy.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
@@ -47,6 +48,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
     using UserConfiguration for DataTypes.UserConfigurationMap;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
 
     /// @dev Validates the manager's permission.
     function _validatePermission(address delegator, address manager) internal view {
@@ -596,7 +598,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
     ) internal view returns (uint256 amountToRepay, uint256 amountToSeize) {
         Types.AmountToSeizeVars memory vars;
 
-        DataTypes.EModeCategory memory eModeCategory;
+        DataTypes.EModeCategoryLegacy memory eModeCategory;
         if (_eModeCategoryId != 0) eModeCategory = _pool.getEModeCategoryData(_eModeCategoryId);
 
         bool collateralIsInEMode;
