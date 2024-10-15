@@ -2,23 +2,23 @@
 pragma solidity ^0.8.0;
 
 import {IAToken} from "src/interfaces/aave/IAToken.sol";
-import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
-import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
-import {IACLManager} from "@aave-v3-core/interfaces/IACLManager.sol";
+import {IAaveOracle} from "@aave-v3-origin/interfaces/IAaveOracle.sol";
+import {IPriceOracleGetter} from "@aave-v3-origin/interfaces/IPriceOracleGetter.sol";
+import {IACLManager} from "@aave-v3-origin/interfaces/IACLManager.sol";
 import {IPoolConfigurator} from "test/helpers/IPoolConfigurator.sol";
-import {IPoolDataProvider} from "@aave-v3-core/interfaces/IPoolDataProvider.sol";
-import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
-import {IStableDebtToken} from "@aave-v3-core/interfaces/IStableDebtToken.sol";
-import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
+import {IPoolDataProvider} from "@aave-v3-origin/interfaces/IPoolDataProvider.sol";
+import {IPool, IPoolAddressesProvider} from "@aave-v3-origin/interfaces/IPool.sol";
+import {IStableDebtToken} from "@aave-v3-origin/interfaces/IStableDebtToken.sol";
+import {IVariableDebtToken} from "@aave-v3-origin/interfaces/IVariableDebtToken.sol";
 import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewardsController.sol";
 
 import {ReserveDataLib} from "src/libraries/ReserveDataLib.sol";
 import {ReserveDataTestLib} from "test/helpers/ReserveDataTestLib.sol";
 import {Config, ConfigLib} from "config/ConfigLib.sol";
-import {MathUtils} from "@aave-v3-core/protocol/libraries/math/MathUtils.sol";
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
-import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";
-import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
+import {MathUtils} from "@aave-v3-origin/protocol/libraries/math/MathUtils.sol";
+import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
+import {Errors as AaveErrors} from "@aave-v3-origin/protocol/libraries/helpers/Errors.sol";
+import {ReserveConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {PermitHash} from "@permit2/libraries/PermitHash.sol";
 import {IAllowanceTransfer, AllowanceTransfer} from "@permit2/AllowanceTransfer.sol";

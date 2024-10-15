@@ -5,8 +5,8 @@ import {IAToken} from "src/interfaces/aave/IAToken.sol";
 
 import {Types} from "src/libraries/Types.sol";
 import {ReserveDataLib} from "src/libraries/ReserveDataLib.sol";
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
-import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
+import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
+import {ReserveConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/ReserveConfiguration.sol";
 import {WadRayMath} from "@morpho-utils/math/WadRayMath.sol";
 import {Math} from "@morpho-utils/math/Math.sol";
 
