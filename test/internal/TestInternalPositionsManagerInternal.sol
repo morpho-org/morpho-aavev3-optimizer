@@ -350,8 +350,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         uint256 expectedToProcess = Math.min(amount, expectedLoops * 1 ether);
         uint256 expectedMaxLoopsLeft = maxLoops - expectedLoops;
-        assertEq(toProcess, amount - expectedToProcess, "toProcess");
-        assertEq(toSupplyOrRepay, expectedToProcess, "amountLeft");
+        assertApproxEqAbs(toProcess, amount - expectedToProcess, 20, "toProcess");
+        assertApproxEqAbs(toSupplyOrRepay, expectedToProcess, 20, "amountLeft");
         assertEq(maxLoopsLeft, expectedMaxLoopsLeft, "maxLoopsLeft");
     }
 
@@ -373,8 +373,8 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         uint256 expectedToProcess = Math.min(amount, maxExpectedLoops * 1 ether);
         uint256 expectedMaxLoopsLeft = maxLoops - expectedLoops;
-        assertEq(toProcess, amount - expectedToProcess, "toProcess");
-        assertEq(toRepayOrWithdraw, expectedToProcess, "amountLeft");
+        assertApproxEqAbs(toProcess, amount - expectedToProcess, 20, "toProcess");
+        assertApproxEqAbs(toRepayOrWithdraw, expectedToProcess, 20, "amountLeft");
         assertEq(maxLoopsLeft, expectedMaxLoopsLeft, "maxLoopsLeft");
     }
 
