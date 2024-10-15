@@ -39,7 +39,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         aUsdc = testMarkets[usdc].aToken;
         vUsdc = testMarkets[usdc].variableDebtToken;
         assets = [aDai, vDai, aUsdc, vUsdc];
-        expectedRewardTokens = [sd, aweth, stNative, ausds, wNative, link];
+        expectedRewardTokens = [sd, aEthLidoWeth, stNative, ausds, wNative, link];
 
         _setUpRewardsConfig();
     }

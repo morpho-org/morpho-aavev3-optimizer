@@ -58,7 +58,7 @@ contract Configured is StdChains {
         link = config.getAddress("LINK");
         wbtc = config.getAddress("WBTC");
         sd = config.getAddress("SD");
-        aweth = config.getAddress("aEthLidoWETH");
+        aEthLidoWeth = config.getAddress("aEthLidoWETH");
         ausds = config.getAddress("aUSDS");
         weth = config.getAddress("WETH");
         wNative = config.getWrappedNative();
