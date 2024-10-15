@@ -27,7 +27,6 @@ contract IntegrationTest is ForkTest {
     using PercentageMath for uint256;
     using ReserveDataTestLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
     using TestMarketLib for TestMarket;
 
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
@@ -131,7 +130,6 @@ contract IntegrationTest is ForkTest {
         market.underlying = underlying;
         market.aToken = reserve.aTokenAddress;
         market.variableDebtToken = reserve.variableDebtTokenAddress;
-        market.stableDebtToken = reserve.stableDebtTokenAddress;
         market.symbol = ERC20(underlying).symbol();
         market.reserveFactor = reserveFactor;
         market.p2pIndexCursor = p2pIndexCursor;
@@ -148,8 +146,7 @@ contract IntegrationTest is ForkTest {
         market.supplyCap = type(uint256).max;
         market.borrowCap = type(uint256).max;
 
-        market.eModeCategoryId = uint8(reserve.configuration.getEModeCategory());
-        market.eModeCategory = pool.getEModeCategoryData(market.eModeCategoryId);
+        market.eModeCollateralConfig = pool.getEModeCategoryCollateralConfig(market.eModeCategoryId);
 
         market.isInEMode = eModeCategoryId == 0 || eModeCategoryId == market.eModeCategoryId;
         market.isCollateral = market.getLt(eModeCategoryId) > 0 && reserve.configuration.getDebtCeiling() == 0;

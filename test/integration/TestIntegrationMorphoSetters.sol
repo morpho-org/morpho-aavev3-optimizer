@@ -94,7 +94,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.createMarket(link, reserveFactor, p2pIndexCursor);
 
         Types.Market memory market = morpho.market(link);
-        DataTypes.ReserveDataLegacy memory reserveData = pool.getReserveData(link);
+        DataTypes.ReserveData memory reserveData = pool.getReserveData(link);
 
         assertEq(market.indexes.supply.poolIndex, expectedPoolSupplyIndex, "supply pool index");
         assertEq(market.indexes.supply.p2pIndex, WadRayMath.RAY, "supply p2p index");

@@ -27,7 +27,7 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
 import {UserConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/UserConfiguration.sol";
 import {ReserveConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/ReserveConfiguration.sol";
-import {ReserveConfigurationLegacy} from "./libraries/ReserveConfigurationLegacy.sol";
+import {EModeConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/EModeConfiguration.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 
@@ -52,7 +52,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
     using UserConfiguration for DataTypes.UserConfigurationMap;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
+    using EModeConfiguration for uint128;
 
     /* INTERNAL */
 
@@ -92,7 +92,6 @@ abstract contract MorphoInternal is MorphoStorage {
         market.underlying = underlying;
         market.aToken = reserve.aTokenAddress;
         market.variableDebtToken = reserve.variableDebtTokenAddress;
-        market.stableDebtToken = reserve.stableDebtTokenAddress;
 
         _marketsCreated.push(underlying);
 
@@ -231,7 +230,9 @@ abstract contract MorphoInternal is MorphoStorage {
     function _liquidityData(address user) internal view returns (Types.LiquidityData memory liquidityData) {
         Types.LiquidityVars memory vars;
 
-        if (_eModeCategoryId != 0) vars.eModeCategory = _pool.getEModeCategoryData(_eModeCategoryId);
+        if (_eModeCategoryId != 0) {
+            vars.eModeCollateralConfig = _pool.getEModeCategoryCollateralConfig(_eModeCategoryId);
+        }
         vars.oracle = IAaveOracle(_addressesProvider.getPriceOracle());
         vars.user = user;
 
@@ -307,8 +308,7 @@ abstract contract MorphoInternal is MorphoStorage {
     /// @return debtValue The debt value of `vars.user` on the `underlying` market.
     function _debt(address underlying, Types.LiquidityVars memory vars) internal view returns (uint256 debtValue) {
         DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
-        (, uint256 underlyingPrice, uint256 underlyingUnit) =
-            _assetData(underlying, vars.oracle, config, vars.eModeCategory.priceSource);
+        (uint256 underlyingPrice, uint256 underlyingUnit) = _assetData(underlying, vars.oracle, config);
 
         Types.Indexes256 memory indexes = _computeIndexes(underlying);
         debtValue =
@@ -329,18 +329,16 @@ abstract contract MorphoInternal is MorphoStorage {
     {
         DataTypes.ReserveConfigurationMap memory config = _pool.getConfiguration(underlying);
 
-        bool isInEMode;
-        (isInEMode, underlyingPrice, underlyingUnit) =
-            _assetData(underlying, vars.oracle, config, vars.eModeCategory.priceSource);
+        (underlyingPrice, underlyingUnit) = _assetData(underlying, vars.oracle, config);
 
         // If the LTV is 0 on Aave V3, the asset cannot be used as collateral to borrow upon a breaking withdraw.
         // In response, Morpho disables the asset as collateral and sets its liquidation threshold
         // to 0 and the governance should warn users to repay their debt.
         if (config.getLtv() == 0) return (underlyingPrice, 0, 0, underlyingUnit);
 
-        if (isInEMode) {
-            ltv = vars.eModeCategory.ltv;
-            liquidationThreshold = vars.eModeCategory.liquidationThreshold;
+        if (_isCollateralInEMode(underlying)) {
+            ltv = vars.eModeCollateralConfig.ltv;
+            liquidationThreshold = vars.eModeCollateralConfig.liquidationThreshold;
         } else {
             ltv = config.getLtv();
             liquidationThreshold = config.getLiquidationThreshold();
@@ -489,33 +487,37 @@ abstract contract MorphoInternal is MorphoStorage {
         return liquidityData.debt > 0 ? liquidityData.maxDebt.wadDiv(liquidityData.debt) : type(uint256).max;
     }
 
-    /// @dev Returns data relative to the given asset and its configuration, according to a given oracle.
-    /// @return Whether the given asset is part of Morpho's e-mode category.
-    /// @return The asset's price or the price of the given e-mode price source if the asset is in the e-mode category, according to the given oracle.
+    /// @dev Returns data relative to the given asset, according to a given oracle.
+    /// @return The asset's price according to the given oracle.
     /// @return The asset's unit.
-    function _assetData(
-        address asset,
-        IAaveOracle oracle,
-        DataTypes.ReserveConfigurationMap memory config,
-        address priceSource
-    ) internal view returns (bool, uint256, uint256) {
+    function _assetData(address asset, IAaveOracle oracle, DataTypes.ReserveConfigurationMap memory config)
+        internal
+        view
+        returns (uint256, uint256)
+    {
         uint256 assetUnit;
         unchecked {
             assetUnit = 10 ** config.getDecimals();
         }
 
-        bool isInEMode = _isInEModeCategory(config);
-        if (isInEMode && priceSource != address(0)) {
-            uint256 eModePrice = oracle.getAssetPrice(priceSource);
-
-            if (eModePrice != 0) return (isInEMode, eModePrice, assetUnit);
-        }
-
-        return (isInEMode, oracle.getAssetPrice(asset), assetUnit);
+        return (oracle.getAssetPrice(asset), assetUnit);
     }
 
-    /// @dev Returns whether Morpho is in an e-mode category and the given asset configuration is in the same e-mode category.
-    function _isInEModeCategory(DataTypes.ReserveConfigurationMap memory config) internal view returns (bool) {
-        return _eModeCategoryId != 0 && config.getEModeCategory() == _eModeCategoryId;
+    /// @dev Returns whether Morpho is in an e-mode category and the given asset is enabled as collateral in that e-mode category.
+    function _isCollateralInEMode(address underlying) internal view returns (bool) {
+        if (_eModeCategoryId == 0) return false;
+
+        uint256 reserveIndex = _pool.getReserveData(underlying).id;
+        uint128 bitmap = _pool.getEModeCategoryCollateralBitmap(_eModeCategoryId);
+        return bitmap.isReserveEnabledOnBitmap(reserveIndex);
+    }
+
+    /// @dev Returns whether Morpho is in an e-mode category and the given asset is enabled as borrowable in that e-mode category.
+    function _isBorrowableInEMode(address underlying) internal view returns (bool) {
+        if (_eModeCategoryId == 0) return true;
+
+        uint256 reserveIndex = _pool.getReserveData(underlying).id;
+        uint128 bitmap = _pool.getEModeCategoryBorrowableBitmap(_eModeCategoryId);
+        return bitmap.isReserveEnabledOnBitmap(reserveIndex);
     }
 }

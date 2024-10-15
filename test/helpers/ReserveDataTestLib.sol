@@ -47,11 +47,6 @@ library ReserveDataTestLib {
         return ERC20(reserve.variableDebtTokenAddress).balanceOf(user);
     }
 
-    /// @dev Returns the quantity currently borrowed on behalf of the user, with stable rate, on the market on AaveV3.
-    function stableBorrowOf(DataTypes.ReserveDataLegacy memory reserve, address user) internal view returns (uint256) {
-        return ERC20(reserve.stableDebtTokenAddress).balanceOf(user);
-    }
-
     /// @dev Returns the total supply used towards the supply cap.
     function totalSupplyToCap(
         DataTypes.ReserveDataLegacy memory reserve,

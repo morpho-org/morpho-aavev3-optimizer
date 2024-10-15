@@ -13,7 +13,6 @@ import {ERC20} from "@solmate/tokens/ERC20.sol";
 struct TestMarket {
     address aToken;
     address variableDebtToken;
-    address stableDebtToken;
     address underlying;
     string symbol;
     uint256 decimals;
@@ -31,8 +30,7 @@ struct TestMarket {
     uint256 minAmount;
     uint256 maxAmount;
     //
-    uint8 eModeCategoryId;
-    DataTypes.EModeCategoryLegacy eModeCategory;
+    DataTypes.CollateralConfig eModeCollateralConfig;
     //
     bool isInEMode;
     bool isCollateral;
@@ -88,10 +86,22 @@ library TestMarketLib {
             (amount * baseMarket.price * 10 ** quoteMarket.decimals) / (quoteMarket.price * 10 ** baseMarket.decimals);
     }
 
+    function isCollateralInEMode(TestMarket storage collateralMarket, uint8 eModeCategoryId)
+        internal
+        view
+        returns (bool)
+    {
+        if (eModeCategoryId == 0) return false;
+
+        uint256 reserveIndex = pool.getReserveData(underlying).id;
+        uint128 bitmap = pool.getEModeCategoryCollateralBitmap(eModeCategoryId);
+        return bitmap.isReserveEnabledOnBitmap(reserveIndex);
+    }
+
     function getLtv(TestMarket storage collateralMarket, uint8 eModeCategoryId) internal view returns (uint256) {
-        return eModeCategoryId != 0 && eModeCategoryId == collateralMarket.eModeCategoryId
-            ? collateralMarket.eModeCategory.ltv
-            : collateralMarket.ltv;
+        bool isInEMode = isCollateralInEMode(collateralMarket, eModeCategoryId);
+
+        return isInEMode ? collateralMarket.collateralConfig.ltv : collateralMarket.ltv;
     }
 
     function getLt(TestMarket storage collateralMarket, uint8 eModeCategoryId) internal view returns (uint256) {

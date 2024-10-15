@@ -6,8 +6,8 @@ import {MarketLib} from "src/libraries/MarketLib.sol";
 import "test/helpers/ForkTest.sol";
 
 contract TestUnitMarketLibIdle is ForkTest {
-    using ReserveDataLib for DataTypes.ReserveDataLegacy;
-    using ReserveDataTestLib for DataTypes.ReserveDataLegacy;
+    using ReserveDataLib for DataTypes.ReserveData;
+    using ReserveDataTestLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using MarketLib for Types.Market;
     using Math for uint256;

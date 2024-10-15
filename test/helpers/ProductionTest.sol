@@ -5,7 +5,6 @@ import "./IntegrationTest.sol";
 
 contract ProductionTest is IntegrationTest {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
     using TestMarketLib for TestMarket;
     using ConfigLib for Config;
 

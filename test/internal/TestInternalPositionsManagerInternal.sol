@@ -393,7 +393,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
 
         DataTypes.ReserveConfigurationMap memory borrowConfig = _pool.getConfiguration(wbtc);
         DataTypes.ReserveConfigurationMap memory collateralConfig = _pool.getConfiguration(dai);
-        DataTypes.EModeCategoryLegacy memory eModeCategory = _pool.getEModeCategoryData(_eModeCategoryId);
+        DataTypes.EModeCategory memory eModeCategory = _pool.getEModeCategoryData(_eModeCategoryId);
 
         (,,, vars.borrowedTokenUnit,) = borrowConfig.getParams();
         (,, vars.liquidationBonus, vars.collateralTokenUnit,) = collateralConfig.getParams();
