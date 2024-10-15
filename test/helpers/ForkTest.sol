@@ -5,7 +5,7 @@ import {IAToken} from "src/interfaces/aave/IAToken.sol";
 import {IAaveOracle} from "@aave-v3-origin/interfaces/IAaveOracle.sol";
 import {IPriceOracleGetter} from "@aave-v3-origin/interfaces/IPriceOracleGetter.sol";
 import {IACLManager} from "@aave-v3-origin/interfaces/IACLManager.sol";
-import {IPoolConfigurator} from "test/helpers/IPoolConfigurator.sol";
+import {IPoolConfigurator} from "@aave-v3-origin/interfaces/IPoolConfigurator.sol";
 import {IPoolDataProvider} from "@aave-v3-origin/interfaces/IPoolDataProvider.sol";
 import {IPool, IPoolAddressesProvider} from "@aave-v3-origin/interfaces/IPool.sol";
 import {IVariableDebtToken} from "@aave-v3-origin/interfaces/IVariableDebtToken.sol";
