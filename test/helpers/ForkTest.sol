@@ -18,7 +18,6 @@ import {MathUtils} from "@aave-v3-origin/protocol/libraries/math/MathUtils.sol";
 import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
 import {Errors as AaveErrors} from "@aave-v3-origin/protocol/libraries/helpers/Errors.sol";
 import {ReserveConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/ReserveConfiguration.sol";
-import {ReserveConfigurationLegacy} from "src/libraries/ReserveConfigurationLegacy.sol";
 
 import {PermitHash} from "@permit2/libraries/PermitHash.sol";
 import {IAllowanceTransfer, AllowanceTransfer} from "@permit2/AllowanceTransfer.sol";
@@ -38,7 +37,6 @@ contract ForkTest is BaseTest, Configured {
     using ReserveDataLib for DataTypes.ReserveDataLegacy;
     using ReserveDataTestLib for DataTypes.ReserveDataLegacy;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
 
     /* STRUCTS */
 

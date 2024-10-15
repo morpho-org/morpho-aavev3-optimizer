@@ -23,7 +23,6 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
 import {UserConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/UserConfiguration.sol";
 import {ReserveConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/ReserveConfiguration.sol";
-import {ReserveConfigurationLegacy} from "./libraries/ReserveConfigurationLegacy.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
 
@@ -48,7 +47,6 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
     using UserConfiguration for DataTypes.UserConfigurationMap;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
 
     /// @dev Validates the manager's permission.
     function _validatePermission(address delegator, address manager) internal view {
@@ -118,7 +116,10 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             revert Errors.SentinelBorrowNotEnabled();
         }
 
-        if (_eModeCategoryId != 0 && _eModeCategoryId != config.getEModeCategory()) {
+        if (
+            _eModeCategoryId != 0
+                && _pool.getEModeCategoryBorrowableBitmap(_eModeCategoryId) >> _pool.getReserveData(underlying).id & 1 == 0
+        ) {
             revert Errors.InconsistentEMode();
         }
 

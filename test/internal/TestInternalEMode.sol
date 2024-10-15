@@ -27,7 +27,6 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     using ConfigLib for Config;
     using SafeTransferLib for ERC20;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
 
     struct AssetData {
         uint256 underlyingPrice;

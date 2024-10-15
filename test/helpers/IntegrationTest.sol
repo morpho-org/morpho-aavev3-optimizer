@@ -27,7 +27,6 @@ contract IntegrationTest is ForkTest {
     using PercentageMath for uint256;
     using ReserveDataTestLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
     using TestMarketLib for TestMarket;
 
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
