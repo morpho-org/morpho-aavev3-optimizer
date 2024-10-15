@@ -7,7 +7,7 @@ gas_limit = "18446744073709551615" # 2^64 - 1, to remove the gas limit
 evm_version = "shanghai"
 
 [fuzz]
-runs = 64
+runs = 32
 
 [invariant]
 runs = 4

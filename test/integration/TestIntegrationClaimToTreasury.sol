@@ -130,9 +130,6 @@ contract TestIntegrationClaimToTreasury is IntegrationTest {
             deal(claimedUnderlyings[i], address(morpho), balanceAmounts[i]);
         }
 
-        // 79228162514264337593543950335
-        // 79228162514264337594543950335
-
         morpho.setTreasuryVault(treasuryVault);
 
         for (uint256 i = 0; i < claimedUnderlyings.length; ++i) {
