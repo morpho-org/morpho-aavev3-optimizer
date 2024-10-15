@@ -87,7 +87,7 @@ jobs:
           path: |
             cache
             out
-          key: forge-${{ github.ref_name }}
+          key: forge-${{ github.ref_name }}-${{ github.run_id }}
 
   storage-check:
     needs: build-no-ir
