@@ -94,7 +94,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.createMarket(link, reserveFactor, p2pIndexCursor);
 
         Types.Market memory market = morpho.market(link);
-        DataTypes.ReserveData memory reserveData = pool.getReserveData(link);
+        DataTypes.ReserveDataLegacy memory reserveData = pool.getReserveData(link);
 
         assertEq(market.indexes.supply.poolIndex, expectedPoolSupplyIndex, "supply pool index");
         assertEq(market.indexes.supply.p2pIndex, WadRayMath.RAY, "supply p2p index");
@@ -120,7 +120,6 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(market.reserveFactor, reserveFactor, "reserve factor");
         assertEq(market.p2pIndexCursor, p2pIndexCursor, "p2p index cursor");
         assertEq(market.aToken, reserveData.aTokenAddress, "aToken");
-        assertEq(market.stableDebtToken, reserveData.stableDebtTokenAddress, "stable debt token");
         assertEq(market.idleSupply, 0, "idle supply");
 
         assertEq(ERC20(link).allowance(address(morpho), address(pool)), type(uint256).max);
