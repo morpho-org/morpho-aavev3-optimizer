@@ -53,11 +53,9 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         _pool.supplyToPool(wNative, 1 ether, _pool.getReserveNormalizedIncome(wNative));
     }
 
-    function testLtvLiquidationThresholdPriceSourceEMode(
-        uint256 seed,
-        uint256 underlyingPrice,
-        AssetData memory assetData
-    ) public {
+    function testLtvLiquidationThresholdEMode(uint256 seed, uint256 underlyingPrice, AssetData memory assetData)
+        public
+    {
         address underlying = _randomUnderlying(seed);
         (uint256 ltvConfig, uint256 ltConfig) = _getLtvLt(underlying);
 

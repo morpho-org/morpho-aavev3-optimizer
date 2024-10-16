@@ -17,7 +17,7 @@ contract TestIntegrationEModeNative is IntegrationTest {
     function setUp() public virtual override {
         uint256 lsdNativeIndex = pool.getReserveData(stNative).id;
 
-        // Guess the eModeCategory for LSD to be 1;
+        // Guess the eModeCategoryId for LSD to be 1.
         eModeCategoryId = 1;
 
         DataTypes.CollateralConfig memory collateralConfig = pool.getEModeCategoryCollateralConfig(eModeCategoryId);

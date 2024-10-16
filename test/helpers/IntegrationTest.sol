@@ -128,6 +128,7 @@ contract IntegrationTest is ForkTest {
         reserve = pool.getReserveData(underlying);
 
         market.underlying = underlying;
+        market.reserveIndex = reserve.id;
         market.aToken = reserve.aTokenAddress;
         market.variableDebtToken = reserve.variableDebtTokenAddress;
         market.symbol = ERC20(underlying).symbol();
