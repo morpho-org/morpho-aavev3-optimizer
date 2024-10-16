@@ -19,7 +19,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         address indexed asset, address indexed reward, address indexed user, uint256 assetIndex, uint256 rewardsAccrued
     );
 
-    uint256 internal constant NB_REWARDS = 6;
+    uint256 internal constant NB_REWARDS = 2;
 
     address internal aDai;
     address internal vDai;
@@ -28,7 +28,8 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
     address[] internal assets;
     address[NB_REWARDS] internal expectedRewardTokens;
-    uint256[NB_REWARDS] internal noAccruedRewards = [0, 0, 0, 0, 0, 0];
+    mapping(address => uint256) expectedRewardTokenRank;
+    uint256[NB_REWARDS] internal noAccruedRewards = [0, 0];
     RewardsDataTypes.RewardsConfigInput[] rewardsConfig;
 
     function setUp() public virtual override {
@@ -39,7 +40,9 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         aUsdc = testMarkets[usdc].aToken;
         vUsdc = testMarkets[usdc].variableDebtToken;
         assets = [aDai, vDai, aUsdc, vUsdc];
-        expectedRewardTokens = [sd, aweth, stNative, ausds, wNative, link];
+        expectedRewardTokens = [wNative, link];
+        expectedRewardTokenRank[wNative] = 1;
+        expectedRewardTokenRank[link] = 2;
 
         _setUpRewardsConfig();
     }
@@ -50,10 +53,8 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         uint256 endRewards = block.timestamp + 365 days;
         require(endRewards <= type(uint32).max, "rewards end too far in the future");
 
-        address[2] memory rewardTokensForTests = [wNative, link];
-
-        for (uint256 i; i < rewardTokensForTests.length; ++i) {
-            address rewardToken = rewardTokensForTests[i];
+        for (uint256 i; i < expectedRewardTokens.length; ++i) {
+            address rewardToken = expectedRewardTokens[i];
 
             deal(rewardToken, address(transferStrategy), type(uint96).max);
 
@@ -94,21 +95,25 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         uint256[NB_REWARDS] memory expectedAccruedRewards,
         string memory suffix
     ) internal view {
-        assertEq(rewardTokens.length, NB_REWARDS, string.concat("rewardTokens length", " ", suffix));
-        assertEq(amounts.length, NB_REWARDS, string.concat("amounts length", " ", suffix));
+        assertEq(
+            amounts.length, rewardTokens.length, string.concat("rewardTokens.length <>  amount.length", " ", suffix)
+        );
 
-        for (uint256 i; i < NB_REWARDS; ++i) {
-            address rewardToken = expectedRewardTokens[i];
-            uint256 accruedRewards = expectedAccruedRewards[i];
+        for (uint256 i; i < rewardTokens.length; ++i) {
+            if (amounts[i] == 0) continue;
 
-            string memory index = string.concat("[", vm.toString(i), "]");
+            address rewardToken = rewardTokens[i];
+            string memory str = string.concat("(", vm.toString(rewardToken), ")");
 
-            assertEq(rewardTokens[i], rewardToken, string.concat("rewardTokens", index, " ", suffix));
-            assertEq(amounts[i], accruedRewards, string.concat("amounts", index, " ", suffix));
+            uint256 rankReward = expectedRewardTokenRank[rewardToken];
+            assertTrue(rankReward != 0, string.concat("unexpected reward token", str, " ", suffix));
+
+            uint256 accruedRewards = expectedAccruedRewards[rankReward - 1];
+            assertEq(amounts[i], accruedRewards, string.concat("amounts", str, " ", suffix));
             assertEq(
                 ERC20(rewardToken).balanceOf(address(user)),
-                rewardBalancesBefore[i] + accruedRewards,
-                string.concat("balance", index, " ", suffix)
+                rewardBalancesBefore[rankReward - 1] + accruedRewards,
+                string.concat("balance", str, " ", suffix)
             );
         }
     }
@@ -360,7 +365,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
 
-        _assertClaimRewards(rewardTokens, amounts, rewardBalancesBefore, [0, 0, 0, 0, accruedRewards, 0], "(1)");
+        _assertClaimRewards(rewardTokens, amounts, rewardBalancesBefore, [accruedRewards, 0], "(1)");
 
         user.withdraw(dai, type(uint256).max);
 
@@ -399,7 +404,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
 
-        _assertClaimRewards(rewardTokens, amounts, rewardBalancesBefore, [0, 0, 0, 0, accruedRewards, 0], "(1)");
+        _assertClaimRewards(rewardTokens, amounts, rewardBalancesBefore, [accruedRewards, 0], "(1)");
 
         user.withdrawCollateral(dai, type(uint256).max);
 
@@ -439,7 +444,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
 
-        _assertClaimRewards(rewardTokens, amounts, rewardBalancesBefore, [0, 0, 0, 0, accruedRewards, 0], "(1)");
+        _assertClaimRewards(rewardTokens, amounts, rewardBalancesBefore, [accruedRewards, 0], "(1)");
 
         user.approve(dai, type(uint256).max);
         user.repay(dai, type(uint256).max);
@@ -474,30 +479,26 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         (address[] memory rewardsList, uint256[] memory unclaimed) =
             rewardsManager.getAllUserRewards(assets, address(user));
 
-        assertEq(rewardsList.length, NB_REWARDS, "rewardsList length");
-        for (uint256 i; i < NB_REWARDS; i++) {
-            string memory errorString = string.concat("rewardsList[", vm.toString(i), "]");
-            assertEq(rewardsList[i], expectedRewardTokens[i], errorString);
-        }
-        assertGt(unclaimed[4], 0, "unclaimed[4] > 0");
-        assertGt(unclaimed[5], 0, "unclaimed[5] > 0");
+        uint256 unclaimedWNative = unclaimed[unclaimed.length - 2];
+        uint256 unclaimedLink = unclaimed[unclaimed.length - 1];
+
+        assertGt(unclaimedWNative, 0, "unclaimedWNative > 0");
+        assertGt(unclaimedLink, 0, "unclaimedLink > 0");
 
         uint256[NB_REWARDS] memory rewardBalancesBefore = _rewardBalances();
 
         vm.expectEmit(true, true, true, true);
-        emit Accrued(vDai, wNative, address(user), rewardsManager.getAssetIndex(vDai, wNative), unclaimed[4]);
+        emit Accrued(vDai, wNative, address(user), rewardsManager.getAssetIndex(vDai, wNative), unclaimedWNative);
         vm.expectEmit(true, true, true, true);
-        emit Accrued(aUsdc, link, address(user), rewardsManager.getAssetIndex(aUsdc, link), unclaimed[5]);
+        emit Accrued(aUsdc, link, address(user), rewardsManager.getAssetIndex(aUsdc, link), unclaimedLink);
         vm.expectEmit(true, true, true, true);
-        emit Events.RewardsClaimed(address(this), address(user), wNative, unclaimed[4]);
+        emit Events.RewardsClaimed(address(this), address(user), wNative, unclaimedWNative);
         vm.expectEmit(true, true, true, true);
-        emit Events.RewardsClaimed(address(this), address(user), link, unclaimed[5]);
+        emit Events.RewardsClaimed(address(this), address(user), link, unclaimedLink);
 
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
 
-        _assertClaimRewards(
-            rewardTokens, amounts, rewardBalancesBefore, [0, 0, 0, 0, unclaimed[4], unclaimed[5]], "(1)"
-        );
+        _assertClaimRewards(rewardTokens, amounts, rewardBalancesBefore, [unclaimedWNative, unclaimedLink], "(1)");
 
         user.approve(dai, type(uint256).max);
         user.repay(dai, type(uint256).max);
@@ -507,7 +508,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         (rewardsList, unclaimed) = rewardsManager.getAllUserRewards(assets, address(user));
 
-        for (uint256 i; i < NB_REWARDS; i++) {
+        for (uint256 i; i < unclaimed.length; i++) {
             string memory errorString = string.concat("unclaimed[", vm.toString(i), "] > 0");
             assertEq(unclaimed[i], 0, errorString);
         }
@@ -557,6 +558,6 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
 
-        _assertClaimRewards(rewardTokens, amounts, rewardBalancesBefore, [0, 0, 0, 0, rewardsAfter, 0], "");
+        _assertClaimRewards(rewardTokens, amounts, rewardBalancesBefore, [rewardsAfter, 0], "");
     }
 }
