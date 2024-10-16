@@ -156,7 +156,6 @@ contract IntegrationTest is ForkTest {
 
         vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
         vm.label(reserve.variableDebtTokenAddress, string.concat("vd", market.symbol));
-        vm.label(reserve.stableDebtTokenAddress, string.concat("sd", market.symbol));
     }
 
     function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal virtual {
