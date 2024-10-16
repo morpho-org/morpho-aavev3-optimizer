@@ -116,7 +116,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             revert Errors.SentinelBorrowNotEnabled();
         }
 
-        if (_eModeCategoryId != 0 && !_isBorrowableInEMode(underlying)) {
+        if (!_isBorrowableInEMode(underlying)) {
             revert Errors.InconsistentEMode();
         }
 

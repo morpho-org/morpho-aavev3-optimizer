@@ -503,7 +503,7 @@ abstract contract MorphoInternal is MorphoStorage {
         return (oracle.getAssetPrice(asset), assetUnit);
     }
 
-    /// @dev Returns whether Morpho is in an e-mode category and the given asset is enabled as collateral in that e-mode category.
+    /// @dev Returns whether the underlying asset is enabled as an e-mode collateral on the specific Morpho e-mode.
     function _isCollateralInEMode(address underlying) internal view returns (bool) {
         if (_eModeCategoryId == 0) return false;
 
@@ -512,7 +512,7 @@ abstract contract MorphoInternal is MorphoStorage {
         return bitmap.isReserveEnabledOnBitmap(reserveIndex);
     }
 
-    /// @dev Returns whether Morpho is in an e-mode category and the given asset is enabled as borrowable in that e-mode category.
+    /// @dev Returns whether the underlying asset is borrowable in the specific Morpho e-mode.
     function _isBorrowableInEMode(address underlying) internal view returns (bool) {
         if (_eModeCategoryId == 0) return true;
 

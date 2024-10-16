@@ -146,9 +146,10 @@ contract IntegrationTest is ForkTest {
         market.supplyCap = type(uint256).max;
         market.borrowCap = type(uint256).max;
 
-        market.eModeCollateralConfig = pool.getEModeCategoryCollateralConfig(market.eModeCategoryId);
+        market.eModeCollateralConfig = pool.getEModeCategoryCollateralConfig(eModeCategoryId);
+        market.eModeCollateralBitmap = pool.getEModeCategoryCollateralBitmap(eModeCategoryId);
+        market.eModeBorrowableBitmap = pool.getEModeCategoryBorrowableBitmap(eModeCategoryId);
 
-        market.isInEMode = eModeCategoryId == 0 || eModeCategoryId == market.eModeCategoryId;
         market.isCollateral = market.getLt(eModeCategoryId) > 0 && reserve.configuration.getDebtCeiling() == 0;
         market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing();
 
@@ -174,7 +175,7 @@ contract IntegrationTest is ForkTest {
         }
 
         if (market.isBorrowable) {
-            if (market.isInEMode) borrowableInEModeUnderlyings.push(underlying);
+            if (market.getIsBorrowableInEMode(eModeCategoryId)) borrowableInEModeUnderlyings.push(underlying);
             else borrowableNotInEModeUnderlyings.push(underlying);
         }
     }
@@ -491,7 +492,6 @@ contract IntegrationTest is ForkTest {
             vm.assume(output != market.underlying);
             vm.assume(output != market.aToken);
             vm.assume(output != market.variableDebtToken);
-            vm.assume(output != market.stableDebtToken);
         }
     }
 
