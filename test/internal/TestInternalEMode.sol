@@ -106,8 +106,8 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
 
         eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
 
-        ltv = uint16(bound(ltv, 0, PercentageMath.PERCENTAGE_FACTOR - 1));
-        lt = uint16(bound(lt, ltv + 1, PercentageMath.PERCENTAGE_FACTOR));
+        ltv = uint16(bound(ltv, 1, PercentageMath.PERCENTAGE_FACTOR - 1));
+        lt = uint16(bound(lt, ltv, PercentageMath.PERCENTAGE_FACTOR));
         liquidationBonus = uint16(bound(liquidationBonus, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max));
         vm.assume(uint256(lt).percentMul(liquidationBonus) <= PercentageMath.PERCENTAGE_FACTOR);
 
@@ -139,12 +139,10 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         DataTypes.CollateralConfig memory eModeCollateralConfig
     ) public {
         eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
-        eModeCollateralConfig.ltv = uint16(bound(eModeCollateralConfig.ltv, 0, PercentageMath.PERCENTAGE_FACTOR - 1));
+        eModeCollateralConfig.ltv = uint16(bound(eModeCollateralConfig.ltv, 1, PercentageMath.PERCENTAGE_FACTOR - 1));
         eModeCollateralConfig.liquidationThreshold = uint16(
             bound(
-                eModeCollateralConfig.liquidationThreshold,
-                eModeCollateralConfig.ltv + 1,
-                PercentageMath.PERCENTAGE_FACTOR
+                eModeCollateralConfig.liquidationThreshold, eModeCollateralConfig.ltv, PercentageMath.PERCENTAGE_FACTOR
             )
         );
 
