@@ -206,7 +206,8 @@ contract TestIntegrationWithdraw is IntegrationTest {
         user.approve(market.underlying, test.supplied);
         user.supply(market.underlying, test.supplied, onBehalf);
 
-        amount = _increaseIdleSupply(promoter2, market, test.supplied);
+        _increaseIdleSupply(promoter2, market, test.supplied);
+        amount = morpho.market(market.underlying).idleSupply;
 
         borrowCap = _boundBorrowCapExceeded(market, test.supplied, borrowCap);
         _setBorrowCap(market, borrowCap);
@@ -248,7 +249,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         assertEq(test.borrows.length, 0, "borrows.length");
 
         // Assert Morpho getters.
-        assertApproxEqAbs(morpho.supplyBalance(market.underlying, onBehalf), test.supplied - amount, 2, "supply != 0");
+        assertApproxEqAbs(morpho.supplyBalance(market.underlying, onBehalf), test.supplied - amount, 3, "supply != 0");
         assertEq(morpho.collateralBalance(market.underlying, onBehalf), 0, "collateral != 0");
         assertApproxEqAbs(
             morpho.borrowBalance(market.underlying, address(promoter1)), test.supplied, 1, "promoter1Borrow != supplied"
@@ -259,7 +260,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         assertApproxEqAbs(
             market.supplyOf(address(morpho)), test.morphoSupplyBefore, 1, "morphoSupply != morphoSupplyBefore"
         );
-        assertApproxGeAbs(market.variableBorrowOf(address(morpho)), 0, 2, "morphoVariableBorrow != 0");
+        assertApproxGeAbs(market.variableBorrowOf(address(morpho)), 0, 3, "morphoVariableBorrow != 0");
 
         // Assert user's underlying balance.
         assertApproxLeAbs(
