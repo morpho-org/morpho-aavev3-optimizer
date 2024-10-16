@@ -12,6 +12,8 @@ import {MathUtils} from "@aave-v3-origin/protocol/libraries/math/MathUtils.sol";
 import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
 import {ReserveConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/ReserveConfiguration.sol";
 
+import {IStableDebtTokenLegacy} from "src/interfaces/aave/IStableDebtTokenLegacy.sol";
+
 /// @title ReserveDataLib
 /// @author Morpho Labs
 /// @custom:contact security@morpho.xyz
@@ -40,7 +42,7 @@ library ReserveDataLib {
             uint256 currTotalStableDebt,
             uint256 currAvgStableBorrowRate,
             uint40 stableDebtLastUpdateTimestamp
-        ) = IStableDebtToken(reserve.stableDebtTokenAddress).getSupplyData();
+        ) = IStableDebtTokenLegacy(reserve.stableDebtTokenAddress).getSupplyData();
         uint256 scaledTotalVariableDebt = IVariableDebtToken(reserve.variableDebtTokenAddress).scaledTotalSupply();
 
         uint256 currTotalVariableDebt = scaledTotalVariableDebt.rayMul(indexes.borrow.poolIndex);
