@@ -19,7 +19,7 @@ contract Configured is StdChains {
     address internal link;
     address internal wbtc;
     address internal sd;
-    address internal aweth;
+    address internal aEthLidoWeth;
     address internal ausds;
     address internal weth;
     address internal wNative;
