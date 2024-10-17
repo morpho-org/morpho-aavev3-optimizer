@@ -207,7 +207,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         user.supply(market.underlying, test.supplied, onBehalf);
 
         _increaseIdleSupply(promoter2, market, test.supplied);
-        amount = morpho.market(market.underlying).idleSupply;
+        amount = bound(amount, 1, morpho.market(market.underlying).idleSupply);
 
         borrowCap = _boundBorrowCapExceeded(market, test.supplied, borrowCap);
         _setBorrowCap(market, borrowCap);
