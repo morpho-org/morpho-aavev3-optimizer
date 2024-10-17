@@ -59,7 +59,7 @@ contract PauseFlags is Script, Test, Configured {
         MORPHO.setIsP2PDisabled(wbtc, true);
     }
 
-    function _checkAssertions() internal {
+    function _checkAssertions() internal view {
         assertTrue(MORPHO.market(wstEth).pauseStatuses.isRepayPaused);
         assertTrue(MORPHO.market(dai).pauseStatuses.isRepayPaused);
         assertTrue(MORPHO.market(usdc).pauseStatuses.isRepayPaused);
