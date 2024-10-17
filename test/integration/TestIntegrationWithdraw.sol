@@ -239,10 +239,10 @@ contract TestIntegrationWithdraw is IntegrationTest {
         assertEq(test.scaledCollateral, 0, "scaledCollateral != 0");
         assertApproxLeAbs(test.withdrawn, amount, 2, "withdrawn != amount");
         assertEq(
-            morpho.scaledPoolBorrowBalance(market.underlying, address(promoter1)), 0, "promoter1ScaledP2PBorrow != 0"
+            morpho.scaledPoolBorrowBalance(market.underlying, address(promoter1)), 0, "promoter1ScaledPoolBorrow != 0"
         );
         assertEq(
-            morpho.scaledPoolBorrowBalance(market.underlying, address(promoter2)), 0, "promoter2ScaledPoolBorrow != 0"
+            morpho.scaledPoolSupplyBalance(market.underlying, address(promoter2)), 0, "promoter2ScaledPoolSupply != 0"
         );
 
         assertEq(test.collaterals.length, 0, "collaterals.length");
