@@ -11,7 +11,7 @@ install:
 	forge install
 
 contracts:
-	FOUNDRY_TEST=/dev/null FOUNDRY_SCRIPT=/dev/null forge build --via-ir --extra-output-files irOptimized --sizes --force
+	FOUNDRY_PROFILE=build FOUNDRY_TEST=/dev/null FOUNDRY_SCRIPT=/dev/null forge build --via-ir --extra-output-files irOptimized --sizes --force
 
 
 test-invariant:
@@ -80,7 +80,7 @@ lcov-html:
 	genhtml lcov.info -o coverage
 
 gas-report:
-	forge test --match-contract TestIntegration --gas-report
+	@FORGE_GAS_REPORT=true make test-integration
 
 deploy-emode-%:
 	FOUNDRY_TEST=/dev/null forge script script/$*/EthEModeDeploy.s.sol:EthEModeDeploy --via-ir --broadcast --slow -vvvvv --rpc-url mainnet --ledger

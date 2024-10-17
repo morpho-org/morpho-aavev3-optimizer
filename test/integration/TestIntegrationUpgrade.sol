@@ -143,7 +143,7 @@ contract TestIntegrationUpgrade is IntegrationTest {
         u.userBorrows = morpho.userBorrows(user);
     }
 
-    function _assertStorageEq(StorageToCheck memory s1, StorageToCheck memory s2) internal {
+    function _assertStorageEq(StorageToCheck memory s1, StorageToCheck memory s2) internal pure {
         assertEq(s1.owner, s2.owner, "owner");
         assertEq(s1.pool, s2.pool, "pool");
         assertEq(s1.addressesProvider, s2.addressesProvider, "addressesProvider");
@@ -248,7 +248,7 @@ contract TestIntegrationUpgrade is IntegrationTest {
         _assertUserStorageEq(s1.borrower2, s2.borrower2);
     }
 
-    function _assertUserStorageEq(UserStorageToCheck memory u1, UserStorageToCheck memory u2) internal {
+    function _assertUserStorageEq(UserStorageToCheck memory u1, UserStorageToCheck memory u2) internal pure {
         assertEq(u1.scaledPoolSupplyBalance, u2.scaledPoolSupplyBalance, "scaledPoolSupplyBalance");
         assertEq(u1.scaledPoolBorrowBalance, u2.scaledPoolBorrowBalance, "scaledPoolBorrowBalance");
         assertEq(u1.scaledP2PSupplyBalance, u2.scaledP2PSupplyBalance, "scaledP2PSupplyBalance");

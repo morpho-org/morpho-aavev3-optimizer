@@ -77,7 +77,7 @@ contract TestInvariantMorpho is InvariantTest {
         onBehalf = _randomSender(onBehalf);
         maxIterations = _boundMaxIterations(maxIterations);
 
-        _deal(market.underlying, msg.sender, amount);
+        deal(market.underlying, msg.sender, amount);
 
         vm.prank(msg.sender); // Cannot startPrank because `morpho.supply` may revert and not call stopPrank.
         ERC20(market.underlying).safeApprove(address(morpho), amount);
@@ -106,7 +106,7 @@ contract TestInvariantMorpho is InvariantTest {
         amount = _boundNotZero(amount);
         onBehalf = _randomSender(onBehalf);
 
-        _deal(market.underlying, msg.sender, amount);
+        deal(market.underlying, msg.sender, amount);
 
         vm.prank(msg.sender); // Cannot startPrank because `morpho.repay` may revert and not call stopPrank.
         ERC20(market.underlying).safeApprove(address(morpho), amount);
@@ -144,7 +144,7 @@ contract TestInvariantMorpho is InvariantTest {
 
     /* INVARIANTS */
 
-    function invariantBalanceOf() public {
+    function invariantBalanceOf() public view {
         for (uint256 i; i < allUnderlyings.length; ++i) {
             address underlying = allUnderlyings[i];
             Types.Market memory market = morpho.market(underlying);
@@ -153,13 +153,13 @@ contract TestInvariantMorpho is InvariantTest {
         }
     }
 
-    function invariantHealthFactor() public {
+    function invariantHealthFactor() public view {
         (,,,,, uint256 healthFactor) = pool.getUserAccountData(address(morpho));
 
         assertGt(healthFactor, Constants.DEFAULT_LIQUIDATION_MAX_HF, "healthFactor");
     }
 
-    function invariantCollateralsAndBorrows() public {
+    function invariantCollateralsAndBorrows() public view {
         address[] memory senders = targetSenders();
 
         for (uint256 i; i < senders.length; i++) {

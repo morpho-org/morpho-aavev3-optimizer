@@ -377,7 +377,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         TestMarket storage borrowedMarket,
         TestMarket storage collateralMarket,
         address borrower
-    ) internal {
+    ) internal view {
         assertLe(test.seized, test.collateralBalanceBefore, "seized > collateral");
         assertLe(
             test.repaid,
@@ -404,7 +404,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         TestMarket storage borrowedMarket,
         TestMarket storage collateralMarket,
         address borrower
-    ) internal {
+    ) internal view {
         assertLe(test.seized, test.collateralBalanceBefore, "seized > collateral");
         assertLe(
             test.repaid,

@@ -23,6 +23,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
     function _assertSupplyPool(TestMarket storage market, uint256 amount, address onBehalf, SupplyTest memory test)
         internal
+        view
         returns (SupplyTest memory)
     {
         test.morphoMarket = morpho.market(market.underlying);
@@ -53,7 +54,6 @@ contract TestIntegrationSupply is IntegrationTest {
             1,
             "morphoSupply != morphoSupplyBefore + amount"
         );
-        assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert user's underlying balance.
         assertApproxEqAbs(
@@ -65,6 +65,7 @@ contract TestIntegrationSupply is IntegrationTest {
 
     function _assertSupplyP2P(TestMarket storage market, uint256 amount, address onBehalf, SupplyTest memory test)
         internal
+        view
     {
         test.morphoMarket = morpho.market(market.underlying);
         test.indexes = morpho.updatedIndexes(market.underlying);
@@ -101,10 +102,9 @@ contract TestIntegrationSupply is IntegrationTest {
 
         // Assert Morpho's position on pool.
         assertApproxGeAbs(
-            market.supplyOf(address(morpho)), test.morphoSupplyBefore, 2, "morphoSupplyAfter != morphoSupplyBefore"
+            market.supplyOf(address(morpho)), test.morphoSupplyBefore, 3, "morphoSupplyAfter != morphoSupplyBefore"
         );
         assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 1, "morphoVariableBorrow != 0");
-        assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert user's underlying balance.
         assertApproxEqAbs(

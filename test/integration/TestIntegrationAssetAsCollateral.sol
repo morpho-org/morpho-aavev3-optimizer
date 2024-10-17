@@ -37,7 +37,7 @@ contract TestIntegrationAssetAsCollateral is IntegrationTest {
         morpho.setAssetIsCollateral(dai, isCollateral);
     }
 
-    function invariantAssetAsCollateral() public {
+    function invariantAssetAsCollateral() public view {
         if (morpho.market(dai).isCollateral) assertTrue(_isUsingAsCollateral(dai));
         if (!_isUsingAsCollateral(dai)) assertFalse(morpho.market(dai).isCollateral);
     }

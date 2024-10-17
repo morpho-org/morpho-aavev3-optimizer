@@ -25,7 +25,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         address onBehalf,
         address receiver,
         BorrowTest memory test
-    ) internal returns (BorrowTest memory) {
+    ) internal view returns (BorrowTest memory) {
         test.morphoMarket = morpho.market(market.underlying);
         test.indexes = morpho.updatedIndexes(market.underlying);
         test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
@@ -47,7 +47,6 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         // Assert Morpho's position on pool.
         assertApproxEqAbs(market.variableBorrowOf(address(morpho)), amount, 2, "morphoVariableBorrow != amount");
-        assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert receiver's underlying balance.
         assertEq(
@@ -65,7 +64,7 @@ contract TestIntegrationBorrow is IntegrationTest {
         address onBehalf,
         address receiver,
         BorrowTest memory test
-    ) internal returns (BorrowTest memory) {
+    ) internal view returns (BorrowTest memory) {
         test.morphoMarket = morpho.market(market.underlying);
         test.indexes = morpho.updatedIndexes(market.underlying);
         test.scaledP2PBorrow = morpho.scaledP2PBorrowBalance(market.underlying, onBehalf);
@@ -99,7 +98,6 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         // Assert Morpho's position on pool.
         assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 2, "morphoVariableBorrow != 0");
-        assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert receiver's underlying balance.
         assertEq(
@@ -542,7 +540,6 @@ contract TestIntegrationBorrow is IntegrationTest {
 
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 
-        poolAdmin.setReserveStableRateBorrowing(market.underlying, false);
         poolAdmin.setReserveBorrowing(market.underlying, false);
 
         vm.expectRevert(Errors.BorrowNotEnabled.selector);

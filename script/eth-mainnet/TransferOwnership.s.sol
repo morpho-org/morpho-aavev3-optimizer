@@ -43,7 +43,7 @@ contract TransferOwnership is Script, Test, Configured {
         ProxyAdmin(CURRENT_PROXY_ADMIN).changeProxyAdmin(TransparentUpgradeableProxy(payable(MORPHO)), DAO_PROXY_ADMIN);
     }
 
-    function _checkAssertions() internal {
+    function _checkAssertions() internal view {
         assertEq(Ownable2StepUpgradeable(MORPHO).owner(), MORPHO_DAO);
         assertEq(
             ProxyAdmin(DAO_PROXY_ADMIN).getProxyAdmin(TransparentUpgradeableProxy(payable(MORPHO))), DAO_PROXY_ADMIN

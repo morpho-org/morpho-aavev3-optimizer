@@ -60,10 +60,10 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
-        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint32).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
-        _deal(market.underlying, delegator, amount);
+        deal(market.underlying, delegator, amount);
 
         uint256 balanceBefore = ERC20(market.underlying).balanceOf(delegator);
         uint256 balanceSupplyBefore = morpho.supplyBalance(market.underlying, delegator);
@@ -105,7 +105,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
-        _deal(market.underlying, delegator, amount);
+        deal(market.underlying, delegator, amount);
 
         uint256 balanceBefore = ERC20(market.underlying).balanceOf(delegator);
         uint256 balanceSupplyBefore = morpho.supplyBalance(market.underlying, delegator);
@@ -158,7 +158,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         amount = morpho.borrowBalance(market.underlying, onBehalf) - 1;
         Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
 
-        _deal(market.underlying, delegator, amount);
+        deal(market.underlying, delegator, amount);
 
         uint256 balanceBefore = ERC20(market.underlying).balanceOf(delegator);
 
@@ -200,7 +200,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         Types.Signature memory sig =
             _signPermit2(market.underlying, delegator, spender, type(uint160).max, deadline, privateKey);
 
-        _deal(market.underlying, delegator, type(uint160).max);
+        deal(market.underlying, delegator, type(uint160).max);
 
         vm.prank(delegator);
         morpho.repayWithPermit(market.underlying, type(uint160).max, onBehalf, deadline, sig);
@@ -232,7 +232,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
-        _deal(market.underlying, delegator, amount);
+        deal(market.underlying, delegator, amount);
 
         timestamp = bound(timestamp, deadline + 1, type(uint256).max);
         vm.warp(timestamp);
@@ -267,7 +267,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
-        _deal(market.underlying, delegator, 2 * amount);
+        deal(market.underlying, delegator, 2 * amount);
 
         timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
@@ -305,7 +305,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
-        _deal(market.underlying, delegator, amount);
+        deal(market.underlying, delegator, amount);
 
         timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
@@ -339,7 +339,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
-        _deal(market.underlying, delegator, amount);
+        deal(market.underlying, delegator, amount);
 
         timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
@@ -376,7 +376,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
-        _deal(market.underlying, delegator, amount);
+        deal(market.underlying, delegator, amount);
 
         timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);

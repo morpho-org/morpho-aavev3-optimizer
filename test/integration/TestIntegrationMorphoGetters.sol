@@ -8,7 +8,7 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
     using TestMarketLib for TestMarket;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    function testDomainSeparator() public {
+    function testDomainSeparator() public view {
         assertEq(
             morpho.DOMAIN_SEPARATOR(),
             keccak256(
@@ -23,31 +23,31 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
         );
     }
 
-    function testPool() public {
+    function testPool() public view {
         assertEq(morpho.pool(), address(pool));
     }
 
-    function testAddressesProvider() public {
+    function testAddressesProvider() public view {
         assertEq(morpho.addressesProvider(), address(addressesProvider));
     }
 
-    function testPositionsManager() public {
+    function testPositionsManager() public view {
         assertEq(morpho.positionsManager(), address(positionsManager));
     }
 
-    function testRewardsManager() public {
+    function testRewardsManager() public view {
         assertEq(morpho.rewardsManager(), address(rewardsManager));
     }
 
-    function testIsClaimRewardsPaused() public {
+    function testIsClaimRewardsPaused() public view {
         assertEq(morpho.isClaimRewardsPaused(), false);
     }
 
-    function testEModeCategoryId() public {
+    function testEModeCategoryId() public view {
         assertEq(morpho.eModeCategoryId(), pool.getUserEMode(address(morpho)));
     }
 
-    function testMarketsCreated() public {
+    function testMarketsCreated() public view {
         address[] memory markets = morpho.marketsCreated();
 
         for (uint256 i; i < markets.length; ++i) {
@@ -55,7 +55,7 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
         }
     }
 
-    function testDefaultIterations() public {
+    function testDefaultIterations() public view {
         Types.Iterations memory defaultIterations = morpho.defaultIterations();
 
         assertEq(defaultIterations.repay, DEFAULT_MAX_ITERATIONS);

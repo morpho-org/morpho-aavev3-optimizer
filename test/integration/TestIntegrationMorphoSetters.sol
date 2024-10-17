@@ -11,7 +11,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
     uint16 private constant DEFAULT_P2P_INDEX_CURSOR = 1_000;
     address private constant DEFAULT_PRANKER = address(uint160(uint256(keccak256(abi.encode(42069)))));
 
-    function testShouldBeInitialized() public {
+    function testShouldBeInitialized() public view {
         assertEq(Ownable2StepUpgradeable(address(morpho)).owner(), address(this), "owner");
         assertEq(morpho.pool(), address(pool), "pool");
         assertEq(morpho.addressesProvider(), address(addressesProvider), "addressesProvider");

@@ -234,7 +234,7 @@ contract IntegrationTest is ForkTest {
         internal
         bypassSupplyCap(underlying, amount)
     {
-        _deal(underlying, address(this), amount);
+        deal(underlying, address(this), amount);
         ERC20(underlying).safeApprove(address(pool), amount);
         pool.deposit(underlying, amount, onBehalf, 0);
     }
@@ -292,7 +292,7 @@ contract IntegrationTest is ForkTest {
     }
 
     /// @dev Bounds the fuzzing input to an arbitrary reasonable amount of iterations.
-    function _boundMaxIterations(uint256 maxIterations) internal view returns (uint256) {
+    function _boundMaxIterations(uint256 maxIterations) internal pure returns (uint256) {
         return bound(maxIterations, 0, 32);
     }
 
@@ -307,7 +307,7 @@ contract IntegrationTest is ForkTest {
         uint256 maxIterations
     ) internal returns (uint256 collateral, uint256 borrowed) {
         collateral = collateralMarket.minBorrowCollateral(borrowedMarket, amount, eModeCategoryId);
-        _deal(collateralMarket.underlying, borrower, collateral);
+        deal(collateralMarket.underlying, borrower, collateral);
 
         vm.startPrank(borrower);
         ERC20(collateralMarket.underlying).safeApprove(address(morpho), collateral);
@@ -482,6 +482,10 @@ contract IntegrationTest is ForkTest {
         output = _boundAddressValid(input);
 
         vm.assume(output != address(this));
+        vm.assume(output != address(morpho));
+        // The following addresses are blacklisted on USDT.
+        vm.assume(output != address(0));
+        vm.assume(output != address(1));
 
         for (uint256 i; i < allUnderlyings.length; ++i) {
             TestMarket storage market = testMarkets[allUnderlyings[i]];
@@ -500,7 +504,10 @@ contract IntegrationTest is ForkTest {
         }
     }
 
-    function _assertMarketUpdatedIndexes(Types.Market memory market, Types.Indexes256 memory futureIndexes) internal {
+    function _assertMarketUpdatedIndexes(Types.Market memory market, Types.Indexes256 memory futureIndexes)
+        internal
+        view
+    {
         assertEq(market.lastUpdateTimestamp, block.timestamp, "lastUpdateTimestamp != block.timestamp");
         assertEq(
             market.indexes.supply.poolIndex, futureIndexes.supply.poolIndex, "poolSupplyIndex != futurePoolSupplyIndex"
@@ -516,7 +523,7 @@ contract IntegrationTest is ForkTest {
         );
     }
 
-    function _assertMarketAccountingZero(Types.Market memory market) internal {
+    function _assertMarketAccountingZero(Types.Market memory market) internal pure {
         assertEq(market.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
         assertEq(market.deltas.supply.scaledP2PTotal, 0, "scaledTotalSupplyP2P != 0");
         assertEq(market.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");

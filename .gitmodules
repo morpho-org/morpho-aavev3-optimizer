@@ -1,7 +1,7 @@
 [submodule "lib/forge-std"]
 	path = lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
-	branch = v1.5.2
+	branch = 4f57c59f066a03d13de8c65bb34fca8247f5fcb2
 [submodule "lib/solmate"]
 	path = lib/solmate
 	url = https://github.com/Rari-Capital/solmate
