@@ -39,15 +39,6 @@ contract ForkTest is BaseTest, Configured {
     using ReserveDataTestLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
 
-    /* STRUCTS */
-
-    struct StableDebtSupplyData {
-        uint256 currPrincipalStableDebt;
-        uint256 currTotalStableDebt;
-        uint256 currAvgStableBorrowRate;
-        uint40 stableDebtLastUpdateTimestamp;
-    }
-
     /* CONSTANTS */
 
     address internal constant POOL_ADMIN = address(0xB055);
