@@ -23,14 +23,19 @@ library ReserveDataTestLib {
         return ERC20(reserve.aTokenAddress).totalSupply();
     }
 
-    /// @dev Returns the quantity currently borrowed (with variable only, stable being deprecated) on the market on AaveV3.
+    /// @dev Returns the quantity currently borrowed (with variable & stable rates) on the market on AaveV3.
     function totalBorrow(DataTypes.ReserveDataLegacy memory reserve) internal view returns (uint256) {
-        return totalVariableBorrow(reserve);
+        return totalVariableBorrow(reserve) + totalStableBorrow(reserve);
     }
 
     /// @dev Returns the quantity currently borrowed with variable rate from the market on AaveV3.
     function totalVariableBorrow(DataTypes.ReserveDataLegacy memory reserve) internal view returns (uint256) {
         return ERC20(reserve.variableDebtTokenAddress).totalSupply();
+    }
+
+    /// @dev Returns the quantity currently borrowed with stable rate from the market on AaveV3.
+    function totalStableBorrow(DataTypes.ReserveDataLegacy memory reserve) internal view returns (uint256) {
+        return ERC20(reserve.stableDebtTokenAddress).totalSupply();
     }
 
     /// @dev Returns the quantity currently supplied on behalf of the user, on the market on AaveV3.

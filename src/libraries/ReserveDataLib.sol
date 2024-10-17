@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
+import {IStableDebtTokenLegacy} from "src/interfaces/aave/IStableDebtTokenLegacy.sol";
 import {IVariableDebtToken} from "@aave-v3-origin/interfaces/IVariableDebtToken.sol";
 
 import {Types} from "./Types.sol";
@@ -11,8 +12,6 @@ import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
 import {MathUtils} from "@aave-v3-origin/protocol/libraries/math/MathUtils.sol";
 import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
 import {ReserveConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/ReserveConfiguration.sol";
-
-import {IStableDebtTokenLegacy} from "src/interfaces/aave/IStableDebtTokenLegacy.sol";
 
 /// @title ReserveDataLib
 /// @author Morpho Labs
