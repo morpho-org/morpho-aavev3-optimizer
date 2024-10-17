@@ -24,7 +24,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
     }
 
     function testShouldNotCreateSiloedBorrowMarket(uint16 reserveFactor, uint16 p2pIndexCursor) public {
-        DataTypes.ReserveData memory reserve = pool.getReserveData(link);
+        DataTypes.ReserveDataLegacy memory reserve = pool.getReserveData(link);
         reserve.configuration.setSiloedBorrowing(true);
         vm.mockCall(address(pool), abi.encodeCall(pool.getReserveData, (link)), abi.encode(reserve));
 
@@ -94,7 +94,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         morpho.createMarket(link, reserveFactor, p2pIndexCursor);
 
         Types.Market memory market = morpho.market(link);
-        DataTypes.ReserveData memory reserveData = pool.getReserveData(link);
+        DataTypes.ReserveDataLegacy memory reserveData = pool.getReserveData(link);
 
         assertEq(market.indexes.supply.poolIndex, expectedPoolSupplyIndex, "supply pool index");
         assertEq(market.indexes.supply.p2pIndex, WadRayMath.RAY, "supply p2p index");

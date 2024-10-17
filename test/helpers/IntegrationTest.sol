@@ -27,6 +27,7 @@ contract IntegrationTest is ForkTest {
     using PercentageMath for uint256;
     using ReserveDataTestLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
     using TestMarketLib for TestMarket;
 
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
@@ -122,7 +123,7 @@ contract IntegrationTest is ForkTest {
     function _initMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor)
         internal
         virtual
-        returns (TestMarket storage market, DataTypes.ReserveData memory reserve)
+        returns (TestMarket storage market, DataTypes.ReserveDataLegacy memory reserve)
     {
         market = testMarkets[underlying];
         reserve = pool.getReserveData(underlying);
@@ -136,7 +137,7 @@ contract IntegrationTest is ForkTest {
         market.p2pIndexCursor = p2pIndexCursor;
         market.price = oracle.getAssetPrice(underlying); // Price is constant, equal to price at fork block number.
 
-        (market.ltv, market.lt, market.liquidationBonus, market.decimals,,) = reserve.configuration.getParams();
+        (market.ltv, market.lt, market.liquidationBonus, market.decimals,) = reserve.configuration.getParams();
 
         market.minAmount = (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price;
         market.maxAmount = (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price;
