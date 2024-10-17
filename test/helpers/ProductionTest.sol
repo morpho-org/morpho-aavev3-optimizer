@@ -5,7 +5,6 @@ import "./IntegrationTest.sol";
 
 contract ProductionTest is IntegrationTest {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
     using TestMarketLib for TestMarket;
     using ConfigLib for Config;
 
@@ -44,12 +43,13 @@ contract ProductionTest is IntegrationTest {
     function _createTestMarket(address underlying, uint16, uint16) internal override {
         TestMarket storage market = testMarkets[underlying];
         Types.Market memory morphoMarket = morpho.market(underlying);
-        DataTypes.ReserveConfigurationMap memory configuration = pool.getConfiguration(underlying);
+        DataTypes.ReserveDataLegacy memory reserveData = pool.getReserveData(underlying);
+        DataTypes.ReserveConfigurationMap memory configuration = reserveData.configuration;
 
         market.underlying = underlying;
+        market.reserveIndex = reserveData.id;
         market.aToken = morphoMarket.aToken;
         market.variableDebtToken = morphoMarket.variableDebtToken;
-        market.stableDebtToken = morphoMarket.stableDebtToken;
         market.symbol = ERC20(underlying).symbol();
         market.reserveFactor = morphoMarket.reserveFactor;
         market.p2pIndexCursor = morphoMarket.p2pIndexCursor;
@@ -66,24 +66,23 @@ contract ProductionTest is IntegrationTest {
         market.supplyCap = type(uint256).max;
         market.borrowCap = type(uint256).max;
 
-        market.eModeCategoryId = uint8(configuration.getEModeCategory());
-        market.eModeCategory = pool.getEModeCategoryData(market.eModeCategoryId);
+        market.eModeCollateralConfig = pool.getEModeCategoryCollateralConfig(eModeCategoryId);
+        market.eModeCollateralBitmap = pool.getEModeCategoryCollateralBitmap(eModeCategoryId);
+        market.eModeBorrowableBitmap = pool.getEModeCategoryBorrowableBitmap(eModeCategoryId);
 
-        market.isInEMode = eModeCategoryId == 0 || eModeCategoryId == market.eModeCategoryId;
         market.isCollateral =
             market.getLt(eModeCategoryId) > 0 && configuration.getDebtCeiling() == 0 && morphoMarket.isCollateral;
         market.isBorrowable = configuration.getBorrowingEnabled() && !configuration.getSiloedBorrowing();
 
         vm.label(morphoMarket.aToken, string.concat("a", market.symbol));
         vm.label(morphoMarket.variableDebtToken, string.concat("vd", market.symbol));
-        vm.label(morphoMarket.stableDebtToken, string.concat("sd", market.symbol));
 
         if (market.isCollateral) {
             collateralUnderlyings.push(underlying);
         }
 
         if (market.isBorrowable) {
-            if (market.isInEMode) borrowableInEModeUnderlyings.push(underlying);
+            if (market.getIsBorrowableInEMode(eModeCategoryId)) borrowableInEModeUnderlyings.push(underlying);
             else borrowableNotInEModeUnderlyings.push(underlying);
         }
     }
