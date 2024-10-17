@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IStableDebtTokenLegacy} from "src/interfaces/aave/IStableDebtTokenLegacy.sol";
 import {IVariableDebtToken} from "@aave-v3-origin/interfaces/IVariableDebtToken.sol";
 
 import {Types} from "./Types.sol";
