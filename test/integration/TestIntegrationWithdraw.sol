@@ -206,8 +206,9 @@ contract TestIntegrationWithdraw is IntegrationTest {
         user.approve(market.underlying, test.supplied);
         user.supply(market.underlying, test.supplied, onBehalf);
 
-        _increaseIdleSupply(promoter2, market, test.supplied);
-        amount = bound(amount, 1, morpho.market(market.underlying).idleSupply);
+        uint256 idleSupplyBefore = _increaseIdleSupply(promoter2, market, test.supplied);
+        amount = bound(amount, 1, idleSupplyBefore);
+        assertApproxEqAbs(idleSupplyBefore, morpho.market(market.underlying).idleSupply, 1, "idleSupply");
 
         borrowCap = _boundBorrowCapExceeded(market, test.supplied, borrowCap);
         _setBorrowCap(market, borrowCap);
@@ -254,7 +255,9 @@ contract TestIntegrationWithdraw is IntegrationTest {
         assertApproxEqAbs(
             morpho.borrowBalance(market.underlying, address(promoter1)), test.supplied, 1, "promoter1Borrow != supplied"
         );
-        assertApproxEqAbs(morpho.supplyBalance(market.underlying, address(promoter2)), promoter2Supply, 2);
+        assertApproxEqAbs(
+            morpho.supplyBalance(market.underlying, address(promoter2)), promoter2Supply, 2, "promoter2Supply"
+        );
 
         // Assert Morpho's position on pool.
         assertApproxEqAbs(
@@ -274,9 +277,9 @@ contract TestIntegrationWithdraw is IntegrationTest {
         assertEq(test.morphoMarket.deltas.supply.scaledDelta, 0, "scaledSupplyDelta != 0");
         assertApproxEqAbs(
             test.morphoMarket.deltas.supply.scaledP2PTotal.rayMul(test.indexes.supply.p2pIndex),
-            test.supplied,
+            test.supplied + test.morphoMarket.idleSupply,
             2,
-            "totalSupplyP2P != supplied"
+            "totalSupplyP2P != supplied + idleSupplyAfter"
         );
         assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
         assertApproxEqAbs(
@@ -285,7 +288,9 @@ contract TestIntegrationWithdraw is IntegrationTest {
             2,
             "totalBorrowP2P != supplied"
         );
-        assertApproxEqAbs(test.morphoMarket.idleSupply, 0, 2, "idleSupply != 0");
+        assertApproxEqAbs(
+            test.morphoMarket.idleSupply, idleSupplyBefore - amount, 2, "idleSupplyAfter != idleSupplyBefore - amount"
+        );
     }
 
     function testShouldWithdrawAllP2PSupplyWhenDemotedZero(
