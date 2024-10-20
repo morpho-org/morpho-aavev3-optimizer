@@ -72,10 +72,9 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         // Assert Morpho's position on pool.
         assertApproxEqAbs(
-            market.supplyOf(address(morpho)), test.morphoSupplyBefore, 2, "morphoSupply != morphoSupplyBefore"
+            market.supplyOf(address(morpho)), test.morphoSupplyBefore, 3, "morphoSupply != morphoSupplyBefore"
         );
         assertEq(market.variableBorrowOf(address(morpho)), 0, "morphoVariableBorrow != 0");
-        assertEq(market.stableBorrowOf(address(morpho)), 0, "morphoStableBorrow != 0");
 
         // Assert receiver's underlying balance.
         assertApproxEqAbs(

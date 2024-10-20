@@ -162,7 +162,7 @@ contract EthEModeDeploy is Script, Test, Configured {
         morpho.setIsBorrowPaused(wbtc, true);
     }
 
-    function _checkAssertions() internal {
+    function _checkAssertions() internal view {
         assertEq(pool.getUserEMode(address(morpho)), E_MODE_CATEGORY_ID);
 
         assertFalse(morpho.market(weth).pauseStatuses.isSupplyPaused);

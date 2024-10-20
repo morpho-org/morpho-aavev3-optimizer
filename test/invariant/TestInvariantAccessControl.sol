@@ -50,7 +50,7 @@ contract TestInvariantAccessControl is InvariantTest {
         onBehalf = _randomSender(onBehalf);
         maxIterations = _boundMaxIterations(maxIterations);
 
-        _deal(market.underlying, msg.sender, amount);
+        deal(market.underlying, msg.sender, amount);
 
         vm.prank(msg.sender); // Cannot startPrank because `morpho.supply` may revert and not call stopPrank.
         ERC20(market.underlying).safeApprove(address(morpho), amount);
@@ -64,7 +64,7 @@ contract TestInvariantAccessControl is InvariantTest {
         amount = _boundSupply(market, amount);
         onBehalf = _randomSender(onBehalf);
 
-        _deal(market.underlying, msg.sender, amount);
+        deal(market.underlying, msg.sender, amount);
 
         vm.prank(msg.sender); // Cannot startPrank because `morpho.supplyCollateral` may revert and not call stopPrank.
         ERC20(market.underlying).safeApprove(address(morpho), amount);
@@ -115,7 +115,7 @@ contract TestInvariantAccessControl is InvariantTest {
 
     /* INVARIANTS */
 
-    function invariantInitialized() public {
+    function invariantInitialized() public view {
         assertEq(initialized, 0, "initialized");
     }
 
@@ -131,13 +131,14 @@ contract TestInvariantAccessControl is InvariantTest {
             for (uint256 j; j < borrowableInEModeUnderlyings.length; ++j) {
                 TestMarket storage market = testMarkets[borrowableInEModeUnderlyings[j]];
 
-                uint256 borrowable = (liquidityData.borrowable * 1 ether * 10 ** market.decimals).percentAdd(5) // Inflate borrowable because of WBTC decimals precision.
-                    / (market.price * 1 ether);
-                if (borrowable == 0 || borrowable > market.liquidity()) continue;
+                // Inflate borrowable because of WBTC decimals precision.
+                uint256 borrowableInUnderlying =
+                    (liquidityData.borrowable * 10 ** market.decimals).divUp(market.price).percentAdd(10);
+                if (borrowableInUnderlying == 0 || borrowableInUnderlying > market.liquidity()) continue;
 
                 vm.prank(sender);
                 vm.expectRevert(Errors.UnauthorizedBorrow.selector);
-                morpho.borrow(market.underlying, borrowable, sender, sender, 0);
+                morpho.borrow(market.underlying, borrowableInUnderlying, sender, sender, 0);
             }
         }
     }

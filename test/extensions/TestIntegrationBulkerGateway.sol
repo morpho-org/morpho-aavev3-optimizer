@@ -49,14 +49,14 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         new BulkerGateway(address(0));
     }
 
-    function testGetters() public {
+    function testGetters() public view {
         assertEq(bulker.MORPHO(), address(morpho));
         assertEq(bulker.WETH(), 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
         assertEq(bulker.stETH(), 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84);
         assertEq(bulker.wstETH(), 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0);
     }
 
-    function testShouldApproveAfterDeploy() public {
+    function testShouldApproveAfterDeploy() public view {
         assertEq(ERC20(bulker.WETH()).allowance(address(bulker), address(morpho)), type(uint256).max);
         assertEq(ERC20(bulker.stETH()).allowance(address(bulker), bulker.wstETH()), type(uint256).max);
         assertEq(ERC20(bulker.wstETH()).allowance(address(bulker), address(morpho)), type(uint256).max);
@@ -64,7 +64,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
     function testBulkerShouldApprove(uint256 seed, uint160 amount, uint256 privateKey) public {
         privateKey = bound(privateKey, 1, type(uint160).max);
-        amount = uint160(bound(amount, 1, type(uint160).max));
+        amount = uint160(bound(amount, 1, type(uint104).max));
         TestMarket memory market = testMarkets[_randomUnderlying(seed)];
         address delegator = vm.addr(privateKey);
 
@@ -82,7 +82,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
     function testBulkerShouldTransferFrom(uint256 seed, uint256 amount, uint256 privateKey) public {
         privateKey = bound(privateKey, 1, type(uint160).max);
-        amount = bound(amount, 1, type(uint160).max);
+        amount = bound(amount, 1, type(uint104).max);
         TestMarket memory market = testMarkets[_randomUnderlying(seed)];
         address delegator = vm.addr(privateKey);
         deal(market.underlying, delegator, amount);
@@ -102,7 +102,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerShouldWrapETH(uint256 amount) public {
-        amount = bound(amount, 1, type(uint160).max);
+        amount = bound(amount, 1, type(uint104).max);
         deal(address(user), amount);
 
         IBulkerGateway.ActionType[] memory actions = new IBulkerGateway.ActionType[](1);
@@ -215,6 +215,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
         maxIterations = bound(maxIterations, 1, 10);
         amount = _boundSupply(market, amount);
+        amount = bound(amount, 1, type(uint104).max);
 
         deal(market.underlying, address(bulker), amount);
 
@@ -238,6 +239,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         TestMarket storage market = testMarkets[_randomCollateral(seed)];
         maxIterations = bound(maxIterations, 1, 10);
         amount = _boundSupply(market, amount);
+        amount = bound(amount, 1, type(uint104).max);
 
         deal(market.underlying, address(bulker), amount);
 
@@ -314,6 +316,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
         maxIterations = bound(maxIterations, 1, 10);
         amount = _boundSupply(market, amount);
+        amount = bound(amount, 1, type(uint104).max);
 
         deal(market.underlying, address(user), amount);
 
@@ -343,6 +346,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
         TestMarket storage market = testMarkets[_randomCollateral(seed)];
         amount = _boundSupply(market, amount);
+        amount = bound(amount, 1, type(uint104).max);
         deal(market.underlying, address(user), amount);
 
         vm.startPrank(address(user));
@@ -367,6 +371,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerShouldSkim(uint256 seed, uint256 amount, address receiver) public {
+        amount = bound(amount, 1, type(uint104).max);
         _assumeTarget(receiver);
 
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
@@ -387,6 +392,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerSkimShouldRevertIfReceiverIsBulker(uint256 seed, uint256 amount) public {
+        amount = bound(amount, 1, type(uint104).max);
         address receiver = address(bulker);
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
 

@@ -5,6 +5,7 @@ on:
     paths:
       - .github/actions/**
       - .github/workflows/**
+      - config/**
       - lib/**
       - src/**
       - test/**

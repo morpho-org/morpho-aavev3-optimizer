@@ -34,7 +34,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         _createMarket(usdc, 0, 3_333);
         _createMarket(wNative, 0, 3_333);
 
-        _setBalances(address(this), type(uint256).max);
+        _setBalances(address(this), MAX_AMOUNT);
 
         _pool.supplyToPool(dai, 100 ether, _pool.getReserveNormalizedIncome(dai));
         _pool.supplyToPool(wbtc, 1e8, _pool.getReserveNormalizedIncome(wbtc));
@@ -69,7 +69,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         Types.Market storage market = _market[dai];
         Types.Indexes256 memory indexes = _computeIndexes(dai);
 
-        uint256 poolDebt = ERC20(market.variableDebtToken).totalSupply() + ERC20(market.stableDebtToken).totalSupply();
+        uint256 poolDebt = ERC20(market.variableDebtToken).totalSupply();
 
         // Borrow cap should be exceeded.
         borrowCap = bound(

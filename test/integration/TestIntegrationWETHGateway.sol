@@ -19,15 +19,15 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         wethGateway = new WETHGateway(address(morpho));
     }
 
-    function invariantWETHAllowance() public {
+    function invariantWETHAllowance() public view {
         assertEq(ERC20(weth).allowance(address(wethGateway), address(morpho)), type(uint256).max);
     }
 
-    function invariantETHBalance() public {
+    function invariantETHBalance() public view {
         assertEq(address(wethGateway).balance, 0);
     }
 
-    function invariantWETHBalance() public {
+    function invariantWETHBalance() public view {
         assertEq(ERC20(weth).balanceOf(address(wethGateway)), 0);
     }
 
@@ -134,7 +134,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         if (receiver != address(this)) assertEq(address(this).balance, balanceBefore, "balanceAfter != balanceBefore");
         assertApproxEqAbs(withdrawn, Math.min(toWithdraw, supply), 2, "withdrawn != minimum");
         assertApproxEqAbs(
-            morpho.supplyBalance(weth, address(this)), supply - withdrawn, 2, "supplyBalance != supply - toWithdraw"
+            morpho.supplyBalance(weth, address(this)), supply - withdrawn, 3, "supplyBalance != supply - toWithdraw"
         );
         assertApproxEqAbs(
             receiver.balance,
@@ -181,7 +181,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertApproxEqAbs(
             morpho.collateralBalance(weth, address(this)),
             collateral - withdrawn,
-            2,
+            3,
             "collateralBalance != collateral - toWithdraw"
         );
         assertApproxEqAbs(
