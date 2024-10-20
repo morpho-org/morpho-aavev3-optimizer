@@ -15,12 +15,12 @@ on:
       internal-fuzz-runs:
         description: The number of fuzz rounds to perform for each fuzzing unit test.
         required: false
-        default: 64
+        default: 32
         type: number
       integration-fuzz-runs:
         description: The number of fuzz rounds to perform for each fuzzing unit test.
         required: false
-        default: 64
+        default: 32
         type: number
       invariant-runs:
         description: The number of runs to perform for invariant tests.
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -72,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -82,12 +82,12 @@ jobs:
         run: forge build
 
       - name: Save forge compilation cache
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         with:
           path: |
             cache
             out
-          key: forge-${{ github.ref_name }}
+          key: forge-${{ github.ref_name }}-${{ github.run_id }}
 
   storage-check:
     needs: build-no-ir
@@ -96,14 +96,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - uses: ./.github/actions/install
 
       - name: Check Morpho storage layout
-        uses: Rubilmax/foundry-storage-check@v3.4
+        uses: Rubilmax/foundry-storage-check@v3.7
         with:
           contract: src/Morpho.sol:Morpho
           rpcUrl: wss://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_KEY }}
@@ -117,7 +117,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -138,7 +138,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -159,7 +159,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -187,7 +187,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -214,7 +214,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 

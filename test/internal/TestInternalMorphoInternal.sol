@@ -219,7 +219,7 @@ contract TestInternalMorphoInternal is InternalTest {
         uint256 scaledPoolBorrow,
         uint256 scaledP2PBorrow,
         uint256 scaledCollateral
-    ) internal {
+    ) internal view {
         assertEq(marketBalances.scaledPoolSupplyBalance(user), scaledPoolSupply, "scaledPoolSupply");
         assertEq(marketBalances.scaledP2PSupplyBalance(user), scaledP2PSupply, "scaledP2PSupply");
         assertEq(marketBalances.scaledPoolBorrowBalance(user), scaledPoolBorrow, "scaledPoolBorrow");
@@ -378,7 +378,7 @@ contract TestInternalMorphoInternal is InternalTest {
         assertEq(balance, onPool.rayMulUp(poolBorrowIndex) + inP2P.rayMulUp(p2pBorrowIndex));
     }
 
-    function testAssetLiquidityData() public {
+    function testAssetLiquidityData() public view {
         DataTypes.EModeCategory memory eModeCategory = _pool.getEModeCategoryData(0);
         (uint256 poolLtv, uint256 poolLt,, uint256 poolDecimals,,) = _pool.getConfiguration(dai).getParams();
 

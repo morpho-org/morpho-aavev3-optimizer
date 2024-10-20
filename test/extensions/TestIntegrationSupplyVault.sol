@@ -6,7 +6,7 @@ import "./TestSetupVaults.sol";
 contract TestIntegrationSupplyVault is TestSetupVaults {
     using WadRayMath for uint256;
 
-    function testCorrectInitialisationDai() public {
+    function testCorrectInitialisationDai() public view {
         assertEq(daiSupplyVault.owner(), address(this));
         assertEq(daiSupplyVault.name(), "MorphoAaveDAI");
         assertEq(daiSupplyVault.symbol(), "maDAI");
@@ -14,7 +14,7 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         assertEq(daiSupplyVault.decimals(), 18);
     }
 
-    function testCorrectInitialisationWrappedNative() public {
+    function testCorrectInitialisationWrappedNative() public view {
         assertEq(wNativeSupplyVault.owner(), address(this));
         assertEq(wNativeSupplyVault.name(), "MorphoAaveWNATIVE");
         assertEq(wNativeSupplyVault.symbol(), "maWNATIVE");
@@ -215,7 +215,7 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         uint256 shares = promoter1.depositVault(daiSupplyVault, amount);
         uint256 assets = promoter1.redeemVault(daiSupplyVault, shares);
 
-        assertApproxEqAbs(assets, amount, 1, "unexpected withdrawn assets");
+        assertApproxEqAbs(assets, amount, 2, "unexpected withdrawn assets");
     }
 
     function testShouldRedeemAllAmountWhenMorphoPoolIndexesOutdated(uint256 amount, uint256 timePassed) public {

@@ -12,6 +12,7 @@ import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationRewardsManager is IntegrationTest {
     using ConfigLib for Config;
+    using Math for uint256;
 
     // From the rewards manager
     event Accrued(
@@ -27,6 +28,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
     address[] internal assets;
     address[NB_REWARDS] internal expectedRewardTokens;
+    mapping(address => uint256) expectedRewardTokenRank;
     uint256[NB_REWARDS] internal noAccruedRewards = [0, 0];
     RewardsDataTypes.RewardsConfigInput[] rewardsConfig;
 
@@ -39,12 +41,18 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         vUsdc = testMarkets[usdc].variableDebtToken;
         assets = [aDai, vDai, aUsdc, vUsdc];
         expectedRewardTokens = [wNative, link];
+        expectedRewardTokenRank[wNative] = 1;
+        expectedRewardTokenRank[link] = 2;
 
         _setUpRewardsConfig();
     }
 
     function _setUpRewardsConfig() internal {
         ITransferStrategyBase transferStrategy = new PullRewardsTransferStrategyMock();
+
+        uint256 endRewards = block.timestamp + 365 days;
+        require(endRewards <= type(uint32).max, "rewards end too far in the future");
+
         for (uint256 i; i < expectedRewardTokens.length; ++i) {
             address rewardToken = expectedRewardTokens[i];
 
@@ -56,7 +64,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
                 RewardsDataTypes.RewardsConfigInput({
                     emissionPerSecond: 0.001 ether,
                     totalSupply: 0,
-                    distributionEnd: 1711944000,
+                    distributionEnd: uint32(endRewards),
                     asset: assets[i * 2],
                     reward: rewardToken,
                     transferStrategy: transferStrategy,
@@ -67,7 +75,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
                 RewardsDataTypes.RewardsConfigInput({
                     emissionPerSecond: 0.001 ether,
                     totalSupply: 0,
-                    distributionEnd: 1711944000,
+                    distributionEnd: uint32(endRewards),
                     asset: assets[i * 2 + 1],
                     reward: rewardToken,
                     transferStrategy: transferStrategy,
@@ -83,34 +91,44 @@ contract TestIntegrationRewardsManager is IntegrationTest {
     function _assertClaimRewards(
         address[] memory rewardTokens,
         uint256[] memory amounts,
-        uint256[] memory rewardBalancesBefore,
+        uint256[NB_REWARDS] memory rewardBalancesBefore,
         uint256[NB_REWARDS] memory expectedAccruedRewards,
         string memory suffix
-    ) internal {
-        assertEq(rewardTokens.length, NB_REWARDS, string.concat("rewardTokens length", " ", suffix));
-        assertEq(amounts.length, NB_REWARDS, string.concat("amounts length", " ", suffix));
+    ) internal view {
+        assertEq(
+            amounts.length, rewardTokens.length, string.concat("rewardTokens.length <>  amount.length", " ", suffix)
+        );
 
-        for (uint256 i; i < NB_REWARDS; ++i) {
-            address rewardToken = expectedRewardTokens[i];
-            uint256 accruedRewards = expectedAccruedRewards[i];
+        for (uint256 i; i < rewardTokens.length; ++i) {
+            if (amounts[i] == 0) continue;
 
-            string memory index = string.concat("[", vm.toString(i), "]");
+            address rewardToken = rewardTokens[i];
+            string memory str = string.concat("(", vm.toString(rewardToken), ")");
 
-            assertEq(rewardTokens[i], rewardToken, string.concat("rewardTokens", index, " ", suffix));
-            assertEq(amounts[i], accruedRewards, string.concat("amounts", index, " ", suffix));
+            uint256 rankReward = expectedRewardTokenRank[rewardToken];
+            assertTrue(rankReward != 0, string.concat("unexpected reward token", str, " ", suffix));
+
+            uint256 accruedRewards = expectedAccruedRewards[rankReward - 1];
+            assertEq(amounts[i], accruedRewards, string.concat("amounts", str, " ", suffix));
             assertEq(
                 ERC20(rewardToken).balanceOf(address(user)),
-                rewardBalancesBefore[i] + accruedRewards,
-                string.concat("balance", index, " ", suffix)
+                rewardBalancesBefore[rankReward - 1] + accruedRewards,
+                string.concat("balance", str, " ", suffix)
             );
         }
     }
 
-    function testGetMorpho() public {
+    function _rewardBalances() internal view returns (uint256[NB_REWARDS] memory rewardBalances) {
+        for (uint256 i; i < NB_REWARDS; i++) {
+            rewardBalances[i] = ERC20(expectedRewardTokens[i]).balanceOf(address(user));
+        }
+    }
+
+    function testGetMorpho() public view {
         assertEq(rewardsManager.MORPHO(), address(morpho));
     }
 
-    function testGetRewardsController() public {
+    function testGetRewardsController() public view {
         assertEq(rewardsManager.REWARDS_CONTROLLER(), address(rewardsController));
     }
 
@@ -303,7 +321,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         currentTimestamp = block.timestamp;
 
         currentTimestamp = currentTimestamp > distributionEnd ? distributionEnd : currentTimestamp;
-        totalEmitted = emissionPerSecond * (currentTimestamp - lastUpdateTimestamp) * assetUnit
+        totalEmitted = emissionPerSecond * currentTimestamp.zeroFloorSub(lastUpdateTimestamp) * assetUnit
             / IScaledBalanceToken(aDai).scaledTotalSupply();
 
         assertEq(rewardsManager.getAssetIndex(aDai, wNative), rewardIndex + totalEmitted, "index 2");
@@ -336,9 +354,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         assertGt(accruedRewards, 0, "accruedRewards > 0");
 
-        uint256[] memory rewardBalancesBefore = new uint256[](NB_REWARDS);
-        rewardBalancesBefore[0] = ERC20(wNative).balanceOf(address(user));
-        rewardBalancesBefore[1] = ERC20(link).balanceOf(address(user));
+        uint256[NB_REWARDS] memory rewardBalancesBefore = _rewardBalances();
 
         vm.expectEmit(true, true, true, true);
         emit Accrued(
@@ -359,7 +375,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         assertEq(accruedRewards, 0, "accruedRewards == 0");
 
-        rewardBalancesBefore[0] = ERC20(wNative).balanceOf(address(user));
+        rewardBalancesBefore = _rewardBalances();
 
         (rewardTokens, amounts) = morpho.claimRewards(assets, address(user));
 
@@ -379,9 +395,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         assertGt(accruedRewards, 0, "accruedRewards > 0");
 
-        uint256[] memory rewardBalancesBefore = new uint256[](NB_REWARDS);
-        rewardBalancesBefore[0] = ERC20(wNative).balanceOf(address(user));
-        rewardBalancesBefore[1] = ERC20(link).balanceOf(address(user));
+        uint256[NB_REWARDS] memory rewardBalancesBefore = _rewardBalances();
 
         vm.expectEmit(true, true, true, true);
         emit Accrued(aDai, wNative, address(user), rewardsManager.getAssetIndex(aDai, wNative), accruedRewards);
@@ -400,7 +414,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         assertEq(accruedRewards, 0, "accruedRewards == 0");
 
-        rewardBalancesBefore[0] = ERC20(wNative).balanceOf(address(user));
+        rewardBalancesBefore = _rewardBalances();
 
         (rewardTokens, amounts) = morpho.claimRewards(assets, address(user));
 
@@ -421,9 +435,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         assertGt(accruedRewards, 0, "accruedRewards > 0");
 
-        uint256[] memory rewardBalancesBefore = new uint256[](NB_REWARDS);
-        rewardBalancesBefore[0] = ERC20(wNative).balanceOf(address(user));
-        rewardBalancesBefore[1] = ERC20(link).balanceOf(address(user));
+        uint256[NB_REWARDS] memory rewardBalancesBefore = _rewardBalances();
 
         vm.expectEmit(true, true, true, true);
         emit Accrued(vDai, wNative, address(user), rewardsManager.getAssetIndex(vDai, wNative), accruedRewards);
@@ -443,7 +455,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         assertEq(accruedRewards, 0, "accruedRewards == 0");
 
-        rewardBalancesBefore[0] = ERC20(wNative).balanceOf(address(user));
+        rewardBalancesBefore = _rewardBalances();
 
         (rewardTokens, amounts) = morpho.claimRewards(assets, address(user));
 
@@ -467,27 +479,26 @@ contract TestIntegrationRewardsManager is IntegrationTest {
         (address[] memory rewardsList, uint256[] memory unclaimed) =
             rewardsManager.getAllUserRewards(assets, address(user));
 
-        assertEq(rewardsList[0], wNative, "rewardsList[0]");
-        assertEq(rewardsList[1], link, "rewardsList[1]");
-        assertGt(unclaimed[0], 0, "unclaimed[0] > 0");
-        assertGt(unclaimed[1], 0, "unclaimed[1] > 0");
+        uint256 unclaimedWNative = unclaimed[unclaimed.length - 2];
+        uint256 unclaimedLink = unclaimed[unclaimed.length - 1];
 
-        uint256[] memory rewardBalancesBefore = new uint256[](NB_REWARDS);
-        rewardBalancesBefore[0] = ERC20(wNative).balanceOf(address(user));
-        rewardBalancesBefore[1] = ERC20(link).balanceOf(address(user));
+        assertGt(unclaimedWNative, 0, "unclaimedWNative > 0");
+        assertGt(unclaimedLink, 0, "unclaimedLink > 0");
+
+        uint256[NB_REWARDS] memory rewardBalancesBefore = _rewardBalances();
 
         vm.expectEmit(true, true, true, true);
-        emit Accrued(vDai, wNative, address(user), rewardsManager.getAssetIndex(vDai, wNative), unclaimed[0]);
+        emit Accrued(vDai, wNative, address(user), rewardsManager.getAssetIndex(vDai, wNative), unclaimedWNative);
         vm.expectEmit(true, true, true, true);
-        emit Accrued(aUsdc, link, address(user), rewardsManager.getAssetIndex(aUsdc, link), unclaimed[1]);
+        emit Accrued(aUsdc, link, address(user), rewardsManager.getAssetIndex(aUsdc, link), unclaimedLink);
         vm.expectEmit(true, true, true, true);
-        emit Events.RewardsClaimed(address(this), address(user), wNative, unclaimed[0]);
+        emit Events.RewardsClaimed(address(this), address(user), wNative, unclaimedWNative);
         vm.expectEmit(true, true, true, true);
-        emit Events.RewardsClaimed(address(this), address(user), link, unclaimed[1]);
+        emit Events.RewardsClaimed(address(this), address(user), link, unclaimedLink);
 
         (address[] memory rewardTokens, uint256[] memory amounts) = morpho.claimRewards(assets, address(user));
 
-        _assertClaimRewards(rewardTokens, amounts, rewardBalancesBefore, [unclaimed[0], unclaimed[1]], "(1)");
+        _assertClaimRewards(rewardTokens, amounts, rewardBalancesBefore, [unclaimedWNative, unclaimedLink], "(1)");
 
         user.approve(dai, type(uint256).max);
         user.repay(dai, type(uint256).max);
@@ -497,11 +508,12 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         (rewardsList, unclaimed) = rewardsManager.getAllUserRewards(assets, address(user));
 
-        assertEq(unclaimed[0], 0, "unclaimed[0] == 0");
-        assertEq(unclaimed[1], 0, "unclaimed[1] == 0");
+        for (uint256 i; i < unclaimed.length; i++) {
+            string memory errorString = string.concat("unclaimed[", vm.toString(i), "] > 0");
+            assertEq(unclaimed[i], 0, errorString);
+        }
 
-        rewardBalancesBefore[0] = ERC20(wNative).balanceOf(address(user));
-        rewardBalancesBefore[1] = ERC20(link).balanceOf(address(user));
+        rewardBalancesBefore = _rewardBalances();
 
         (rewardTokens, amounts) = morpho.claimRewards(assets, address(user));
 
@@ -537,9 +549,7 @@ contract TestIntegrationRewardsManager is IntegrationTest {
 
         assertEq(rewardsAfter, rewardsBefore, "rewardsAfter != rewardsBefore (2)");
 
-        uint256[] memory rewardBalancesBefore = new uint256[](NB_REWARDS);
-        rewardBalancesBefore[0] = ERC20(wNative).balanceOf(address(user));
-        rewardBalancesBefore[1] = ERC20(link).balanceOf(address(user));
+        uint256[NB_REWARDS] memory rewardBalancesBefore = _rewardBalances();
 
         vm.expectEmit(true, true, true, true);
         emit Accrued(aDai, wNative, address(user), rewardsManager.getAssetIndex(aDai, wNative), rewardsAfter);
