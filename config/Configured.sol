@@ -25,11 +25,7 @@ contract Configured is StdChains {
     address[] internal allUnderlyings;
 
     function _network() internal view virtual returns (string memory) {
-        try vm.envString("NETWORK") returns (string memory configNetwork) {
-            return configNetwork;
-        } catch {
-            return "ethereum-mainnet";
-        }
+        return "ethereum-mainnet";
     }
 
     function _rpcAlias() internal virtual returns (string memory) {
