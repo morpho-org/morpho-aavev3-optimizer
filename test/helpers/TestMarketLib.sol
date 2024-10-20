@@ -5,7 +5,7 @@ import {Constants} from "src/libraries/Constants.sol";
 
 import {Math} from "@morpho-utils/math/Math.sol";
 import {PercentageMath} from "@morpho-utils/math/PercentageMath.sol";
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
 import {collateralValue, rawCollateralValue} from "test/helpers/Utils.sol";
 
 import {ERC20} from "@solmate/tokens/ERC20.sol";
@@ -32,7 +32,7 @@ struct TestMarket {
     uint256 maxAmount;
     //
     uint8 eModeCategoryId;
-    DataTypes.EModeCategory eModeCategory;
+    DataTypes.EModeCategoryLegacy eModeCategory;
     //
     bool isInEMode;
     bool isCollateral;

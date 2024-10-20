@@ -5,6 +5,7 @@ import "./IntegrationTest.sol";
 
 contract ProductionTest is IntegrationTest {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
     using TestMarketLib for TestMarket;
     using ConfigLib for Config;
 
@@ -54,7 +55,7 @@ contract ProductionTest is IntegrationTest {
         market.p2pIndexCursor = morphoMarket.p2pIndexCursor;
         market.price = oracle.getAssetPrice(underlying); // Price is constant, equal to price at fork block number.
 
-        (market.ltv, market.lt, market.liquidationBonus, market.decimals,,) = configuration.getParams();
+        (market.ltv, market.lt, market.liquidationBonus, market.decimals,) = configuration.getParams();
 
         market.minAmount = (MIN_USD_AMOUNT * 10 ** market.decimals) / market.price;
         market.maxAmount = (MAX_USD_AMOUNT * 10 ** market.decimals) / market.price;
