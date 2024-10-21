@@ -41,10 +41,6 @@ contract Deploy is Script, Configured {
         vm.stopBroadcast();
     }
 
-    function _network() internal pure virtual override returns (string memory) {
-        return "ethereum-mainnet";
-    }
-
     function _loadConfig() internal virtual override {
         super._loadConfig();
 
