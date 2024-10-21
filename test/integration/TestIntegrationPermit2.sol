@@ -70,7 +70,6 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         vm.prank(delegator);
         morpho.supplyWithPermit(market.underlying, amount, delegator, DEFAULT_MAX_ITERATIONS, deadline, sig);
-        /// The maximum gap needs to be 4 because sometimes the timestamp is very big, otherwise the test reverts.
         assertApproxEqAbs(
             morpho.supplyBalance(market.underlying, delegator), balanceSupplyBefore + amount, 7, "Incorrect Supply"
         );
