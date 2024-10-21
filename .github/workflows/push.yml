@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  forge-ethereum-mainnet:
-    name: Forge
+  test:
+    name: Forge tests
 
     uses: ./.github/workflows/forge-test.yml
     with:
