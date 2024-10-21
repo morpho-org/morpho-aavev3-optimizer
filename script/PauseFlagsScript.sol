@@ -27,10 +27,6 @@ contract PauseFlags is Script, Test, Configured {
         _checkAssertions();
     }
 
-    function _network() internal pure virtual override returns (string memory) {
-        return "ethereum-mainnet";
-    }
-
     function _loadConfig() internal virtual override {
         super._loadConfig();
 

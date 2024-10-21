@@ -31,10 +31,6 @@ contract TransferOwnership is Script, Test, Configured {
         _checkAssertions();
     }
 
-    function _network() internal pure virtual override returns (string memory) {
-        return "ethereum-mainnet";
-    }
-
     function _transferOwnership() internal {
         // Transfer ownership of Morpho-AaveV3 to the DAO multisig.
         Ownable2StepUpgradeable(MORPHO).transferOwnership(MORPHO_DAO);

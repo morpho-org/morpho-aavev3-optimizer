@@ -45,7 +45,7 @@ contract BaseTest is Test {
     /// @dev Rolls & warps the given number of blocks forward the blockchain.
     function _forward(uint256 blocks) internal {
         vm.roll(block.number + blocks);
-        vm.warp(block.timestamp + blocks * BLOCK_TIME); // Block speed should depend on test network.
+        vm.warp(block.timestamp + blocks * BLOCK_TIME);
     }
 
     /// @dev Bounds the fuzzing input to a realistic number of blocks.

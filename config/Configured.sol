@@ -24,14 +24,6 @@ contract Configured is StdChains {
     address[] internal lsdNatives;
     address[] internal allUnderlyings;
 
-    function _network() internal view virtual returns (string memory) {
-        try vm.envString("NETWORK") returns (string memory configNetwork) {
-            return configNetwork;
-        } catch {
-            return "ethereum-mainnet";
-        }
-    }
-
     function _rpcAlias() internal virtual returns (string memory) {
         return config.getRpcAlias();
     }
@@ -39,7 +31,7 @@ contract Configured is StdChains {
     function _initConfig() internal returns (Config storage) {
         if (bytes(config.json).length == 0) {
             string memory root = vm.projectRoot();
-            string memory path = string.concat(root, "/config/", _network(), ".json");
+            string memory path = string.concat(root, "/config/ethereum-mainnet.json");
 
             config.json = vm.readFile(path);
         }

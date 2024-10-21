@@ -83,7 +83,7 @@ forge install morpho-dao/morpho-aave-v3
 
 ### Testing with [Foundry](https://github.com/foundry-rs/foundry) 🔨
 
-Tests are run against a fork of real networks, which allows us to interact directly with the liquidity pools of AaveV3. Note that you need an RPC provider with access to Ethereum or Avalanche.
+Tests are run against a fork of Ethereum, which allows us to interact directly with AaveV3. Note that you need an RPC provider with access to Ethereum.
 
 For testing, make sure `foundry` is installed and install dependencies (git submodules) with:
 
