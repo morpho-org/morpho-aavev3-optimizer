@@ -8,7 +8,6 @@ import {IACLManager} from "@aave-v3-core/interfaces/IACLManager.sol";
 import {IPoolConfigurator} from "test/helpers/IPoolConfigurator.sol";
 import {IPoolDataProvider} from "@aave-v3-core/interfaces/IPoolDataProvider.sol";
 import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
-import {IStableDebtToken} from "@aave-v3-core/interfaces/IStableDebtToken.sol";
 import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
 import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewardsController.sol";
 
