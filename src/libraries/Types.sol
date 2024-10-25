@@ -83,7 +83,7 @@ library Types {
         // SLOT 8
         address aToken; // 160 bits
         // SLOT 9
-        address _deprecated_stableDebtToken; // 160 bits
+        address _deprecated_stableDebtToken; // 160 bits (deprecated: will be empty for new markets)
         // SLOT 10
         uint256 idleSupply; // 256 bits
     }
