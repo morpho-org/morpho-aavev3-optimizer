@@ -40,15 +40,6 @@ contract ForkTest is BaseTest, Configured {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
 
-    /* STRUCTS */
-
-    struct StableDebtSupplyData {
-        uint256 currPrincipalStableDebt;
-        uint256 currTotalStableDebt;
-        uint256 currAvgStableBorrowRate;
-        uint40 stableDebtLastUpdateTimestamp;
-    }
-
     /* CONSTANTS */
 
     address internal constant POOL_ADMIN = address(0xB055);
@@ -56,7 +47,6 @@ contract ForkTest is BaseTest, Configured {
 
     /* STORAGE */
 
-    string internal network;
     uint256 internal forkId;
 
     IPool internal pool;

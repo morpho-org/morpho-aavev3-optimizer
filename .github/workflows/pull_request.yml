@@ -5,6 +5,7 @@ on:
     paths:
       - .github/actions/**
       - .github/workflows/**
+      - config/**
       - lib/**
       - src/**
       - test/**
@@ -12,17 +13,15 @@ on:
       - remappings.txt
 
 jobs:
-  forge-fmt:
+  fmt:
     name: Forge format
 
     uses: ./.github/workflows/forge-fmt.yml
     secrets: inherit
-  test-ethereum-mainnet:
+  test:
     if: github.head_ref != 'main' && github.head_ref != 'dev' # already triggered by push
 
     name: Forge tests
 
     uses: ./.github/workflows/forge-test.yml
-    with:
-      network: ethereum-mainnet
     secrets: inherit
