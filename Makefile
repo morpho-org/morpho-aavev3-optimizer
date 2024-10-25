@@ -2,9 +2,6 @@
 .EXPORT_ALL_VARIABLES:
 MAKEFLAGS += --no-print-directory
 
-NETWORK ?= ethereum-mainnet
-
-
 install:
 	yarn
 	foundryup
@@ -82,7 +79,7 @@ lcov-html:
 gas-report:
 	@FORGE_GAS_REPORT=true make test-integration
 
-deploy-emode-%:
-	FOUNDRY_TEST=/dev/null forge script script/$*/EthEModeDeploy.s.sol:EthEModeDeploy --via-ir --broadcast --slow -vvvvv --rpc-url mainnet --ledger
+deploy-emode:
+	FOUNDRY_TEST=/dev/null forge script script/EthEModeDeployScript.sol:EthEModeDeploy --via-ir --broadcast --slow -vvvvv --rpc-url mainnet --ledger
 
 .PHONY: contracts test coverage

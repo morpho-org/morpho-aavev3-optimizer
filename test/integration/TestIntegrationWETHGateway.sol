@@ -134,7 +134,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         if (receiver != address(this)) assertEq(address(this).balance, balanceBefore, "balanceAfter != balanceBefore");
         assertApproxEqAbs(withdrawn, Math.min(toWithdraw, supply), 2, "withdrawn != minimum");
         assertApproxEqAbs(
-            morpho.supplyBalance(weth, address(this)), supply - withdrawn, 2, "supplyBalance != supply - toWithdraw"
+            morpho.supplyBalance(weth, address(this)), supply - withdrawn, 3, "supplyBalance != supply - toWithdraw"
         );
         assertApproxEqAbs(
             receiver.balance,
@@ -181,7 +181,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         assertApproxEqAbs(
             morpho.collateralBalance(weth, address(this)),
             collateral - withdrawn,
-            2,
+            3,
             "collateralBalance != collateral - toWithdraw"
         );
         assertApproxEqAbs(

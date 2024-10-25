@@ -3,10 +3,6 @@ name: Forge tests
 on:
   workflow_call:
     inputs:
-      network:
-        description: The network on which to run the forge test suite.
-        required: true
-        type: string
       unit-fuzz-runs:
         description: The number of fuzz rounds to perform for each fuzzing unit test.
         required: false
@@ -92,7 +88,7 @@ jobs:
   storage-check:
     needs: build-no-ir
 
-    name: Storage upgrade check (${{ inputs.network }})
+    name: Storage upgrade check
     runs-on: ubuntu-latest
 
     steps:
@@ -103,7 +99,7 @@ jobs:
       - uses: ./.github/actions/install
 
       - name: Check Morpho storage layout
-        uses: Rubilmax/foundry-storage-check@v3.7
+        uses: Rubilmax/foundry-storage-check@v3
         with:
           contract: src/Morpho.sol:Morpho
           rpcUrl: wss://eth-mainnet.g.alchemy.com/v2/${{ secrets.ALCHEMY_KEY }}
@@ -113,7 +109,7 @@ jobs:
   test-unit:
     needs: build-no-ir
 
-    name: Unit tests (${{ inputs.network }})
+    name: Unit tests
     runs-on: ubuntu-latest
 
     steps:
@@ -126,7 +122,6 @@ jobs:
       - name: Run unit tests
         run: make test-unit
         env:
-          NETWORK: ${{ inputs.network }}
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
           FOUNDRY_FUZZ_RUNS: ${{ inputs.unit-fuzz-runs }}
           FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
@@ -134,7 +129,7 @@ jobs:
   test-internal:
     needs: build-no-ir
 
-    name: Internal tests (${{ inputs.network }})
+    name: Internal tests
     runs-on: ubuntu-latest
 
     steps:
@@ -147,7 +142,6 @@ jobs:
       - name: Run internal tests
         run: make test-internal
         env:
-          NETWORK: ${{ inputs.network }}
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
           FOUNDRY_FUZZ_RUNS: ${{ inputs.internal-fuzz-runs }}
           FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
@@ -155,7 +149,7 @@ jobs:
   test-integration:
     needs: build-no-ir
 
-    name: Integration tests (${{ inputs.network }})
+    name: Integration tests
     runs-on: ubuntu-latest
 
     steps:
@@ -166,24 +160,23 @@ jobs:
       - uses: ./.github/actions/install
 
       - name: Run integration tests & create gas report
-        run: set -o pipefail && make gas-report | tee ${{ inputs.network }}.gasreport.ansi
+        run: set -o pipefail && make gas-report | tee gasreport.ansi
         env:
-          NETWORK: ${{ inputs.network }}
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
           FOUNDRY_FUZZ_RUNS: ${{ inputs.integration-fuzz-runs }}
           FOUNDRY_FUZZ_SEED: 0x${{ github.event.pull_request.base.sha || github.sha }}
 
       - name: Compare gas reports
-        uses: Rubilmax/foundry-gas-diff@v3.13.4
+        uses: Rubilmax/foundry-gas-diff@v3
         id: gas_diff
         with:
           match: src/Morpho.sol
-          report: ${{ inputs.network }}.gasreport.ansi
+          report: gasreport.ansi
 
   test-invariant:
     needs: build-no-ir
 
-    name: Invariant tests (${{ inputs.network }})
+    name: Invariant tests
     runs-on: ubuntu-latest
 
     steps:
@@ -196,7 +189,6 @@ jobs:
       - name: Run invariant tests
         run: make test-invariant
         env:
-          NETWORK: ${{ inputs.network }}
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
           FOUNDRY_INVARIANT_RUNS: ${{ inputs.invariant-runs }}
           FOUNDRY_INVARIANT_DEPTH: ${{ inputs.invariant-depth }}
@@ -210,7 +202,7 @@ jobs:
       - test-invariant
     if: inputs.coverageThreshold != ''
 
-    name: Coverage (${{ inputs.network }})
+    name: Coverage
     runs-on: ubuntu-latest
 
     steps:
@@ -227,7 +219,6 @@ jobs:
       - name: Generate lcov coverage report
         run: make coverage
         env:
-          NETWORK: ${{ inputs.network }}
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
 
       - name: Check coverage threshold
@@ -237,5 +228,5 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          name: morpho-aave-v3-${{ inputs.network }}
+          name: morpho-aave-v3
           files: lcov.info

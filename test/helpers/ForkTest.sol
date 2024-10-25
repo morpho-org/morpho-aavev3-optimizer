@@ -45,7 +45,6 @@ contract ForkTest is BaseTest, Configured {
 
     /* STORAGE */
 
-    string internal network;
     uint256 internal forkId;
 
     IPool internal pool;
