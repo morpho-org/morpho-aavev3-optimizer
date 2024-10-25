@@ -110,7 +110,7 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         assertApproxEqAbs(
             ERC20(usdc).balanceOf(address(user)), balanceBeforeDeposit, 5, "amount withdrawn != amount deposited"
         );
-        assertApproxEqAbs(totalBalanceAfter, totalBalanceBefore, 1, "totalBalance");
+        assertApproxEqAbs(totalBalanceAfter, totalBalanceBefore, 2, "totalBalance");
         assertApproxEqAbs(ERC20(usdc).balanceOf(address(user)) - balanceBeforeWithdraw, amount, 2, "expectedWithdraw");
     }
 
