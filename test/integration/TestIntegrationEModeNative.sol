@@ -8,6 +8,7 @@ import {WETHGateway} from "src/extensions/WETHGateway.sol";
 import "test/helpers/IntegrationTest.sol";
 
 contract TestIntegrationEModeNative is IntegrationTest {
+    using Math for uint256;
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
@@ -44,7 +45,9 @@ contract TestIntegrationEModeNative is IntegrationTest {
 
         user.withdrawCollateral(
             lsdNative,
-            (rawCollateral - lsdNativeMarket.minCollateral(wNativeMarket, borrowed, eModeCategoryId)) / 2,
+            rawCollateral.zeroFloorSub(
+                lsdNativeMarket.minCollateral(wNativeMarket, borrowed, eModeCategoryId).percentAdd(5)
+            ),
             onBehalf,
             receiver
         );

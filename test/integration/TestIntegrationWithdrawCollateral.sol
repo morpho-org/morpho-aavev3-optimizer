@@ -115,7 +115,9 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         );
         withdrawn = bound(
             withdrawn,
-            rawCollateral.zeroFloorSub(collateralMarket.minCollateral(borrowedMarket, borrowed, eModeCategoryId)),
+            rawCollateral.zeroFloorSub(
+                collateralMarket.minCollateral(borrowedMarket, borrowed, eModeCategoryId).percentSub(5)
+            ),
             type(uint256).max
         );
 
