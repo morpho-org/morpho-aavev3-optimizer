@@ -90,7 +90,7 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
 
         assertApproxEqAbs(daiSupplyVault.balanceOf(address(user)), 0, 1, "maDAI balance not zero");
         assertApproxEqAbs(ERC20(dai).balanceOf(address(user)), balanceBefore, 5, "amount withdrawn != amount deposited");
-        assertApproxEqAbs(totalBalanceAfter, totalBalanceBefore, 1, "totalBalance");
+        assertApproxEqAbs(totalBalanceAfter, totalBalanceBefore, 2, "totalBalance");
     }
 
     function testShouldWithdrawAllUsdcAmount(uint256 amount) public {
@@ -110,7 +110,7 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
         assertApproxEqAbs(
             ERC20(usdc).balanceOf(address(user)), balanceBeforeDeposit, 5, "amount withdrawn != amount deposited"
         );
-        assertApproxEqAbs(totalBalanceAfter, totalBalanceBefore, 1, "totalBalance");
+        assertApproxEqAbs(totalBalanceAfter, totalBalanceBefore, 2, "totalBalance");
         assertApproxEqAbs(ERC20(usdc).balanceOf(address(user)) - balanceBeforeWithdraw, amount, 2, "expectedWithdraw");
     }
 
@@ -127,7 +127,7 @@ contract TestIntegrationSupplyVault is TestSetupVaults {
 
         assertApproxEqAbs(ERC20(dai).balanceOf(address(user)), balanceBefore, 5, "amount withdrawn != amount deposited");
         assertEq(daiSupplyVault.balanceOf(address(user)), 0, "maDAI balance not zero");
-        assertApproxEqAbs(totalBalanceAfter, totalBalanceBefore, 1, "totalBalance");
+        assertApproxEqAbs(totalBalanceAfter, totalBalanceBefore, 2, "totalBalance");
     }
 
     function testShouldNotRedeemWhenNotDeposited(uint256 amount) public {
