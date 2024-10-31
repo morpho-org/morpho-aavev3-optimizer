@@ -101,7 +101,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
-        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint32).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
         deal(market.underlying, delegator, amount);
@@ -116,7 +116,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
             morpho.collateralBalance(market.underlying, onBehalf),
             balanceSupplyBefore + amount,
             7,
-            "collateralBalanceAfter - collateralBalanceBefore != amouunt"
+            "collateralBalanceAfter - collateralBalanceBefore != amount"
         );
 
         assertEq(
@@ -151,7 +151,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
-        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint32).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
         amount = morpho.borrowBalance(market.underlying, onBehalf) - 1;
@@ -193,7 +193,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
-        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint48).max) - block.timestamp);
+        timestamp = bound(timestamp, 0, Math.min(deadline, type(uint32).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
         Types.Signature memory sig =
