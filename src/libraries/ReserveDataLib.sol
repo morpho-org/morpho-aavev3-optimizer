@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IStableDebtTokenLegacy} from "src/interfaces/aave/IStableDebtTokenLegacy.sol";
 import {IVariableDebtToken} from "@aave-v3-origin/interfaces/IVariableDebtToken.sol";
 
 import {Types} from "./Types.sol";
@@ -36,24 +35,12 @@ library ReserveDataLib {
         uint256 reserveFactor = reserve.configuration.getReserveFactor();
         if (reserveFactor == 0) return reserve.accruedToTreasury;
 
-        (
-            uint256 currPrincipalStableDebt,
-            uint256 currTotalStableDebt,
-            uint256 currAvgStableBorrowRate,
-            uint40 stableDebtLastUpdateTimestamp
-        ) = IStableDebtTokenLegacy(reserve.stableDebtTokenAddress).getSupplyData();
         uint256 scaledTotalVariableDebt = IVariableDebtToken(reserve.variableDebtTokenAddress).scaledTotalSupply();
 
         uint256 currTotalVariableDebt = scaledTotalVariableDebt.rayMul(indexes.borrow.poolIndex);
         uint256 prevTotalVariableDebt = scaledTotalVariableDebt.rayMul(reserve.variableBorrowIndex);
-        uint256 prevTotalStableDebt = currPrincipalStableDebt.rayMul(
-            MathUtils.calculateCompoundedInterest(
-                currAvgStableBorrowRate, stableDebtLastUpdateTimestamp, reserve.lastUpdateTimestamp
-            )
-        );
 
-        uint256 accruedTotalDebt =
-            currTotalVariableDebt + currTotalStableDebt - prevTotalVariableDebt - prevTotalStableDebt;
+        uint256 accruedTotalDebt = currTotalVariableDebt - prevTotalVariableDebt;
         if (accruedTotalDebt == 0) return reserve.accruedToTreasury;
 
         uint256 newAccruedToTreasury = accruedTotalDebt.percentMul(reserveFactor).rayDiv(indexes.supply.poolIndex);

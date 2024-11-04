@@ -83,7 +83,7 @@ library Types {
         // SLOT 8
         address aToken; // 160 bits
         // SLOT 9
-        address stableDebtToken; // 160 bits
+        address _deprecated_stableDebtToken; // 160 bits (deprecated: will be empty for new markets)
         // SLOT 10
         uint256 idleSupply; // 256 bits
     }
@@ -169,7 +169,7 @@ library Types {
     struct LiquidityVars {
         address user; // The user address.
         IAaveOracle oracle; // The oracle used by Aave.
-        DataTypes.EModeCategoryLegacy eModeCategory; // The data related to the eMode category (could be empty if not in any e-mode).
+        DataTypes.CollateralConfig eModeCollateralConfig; // The data related to the eMode category (could be empty if not in any e-mode).
     }
 
     /// @notice Variables used during a borrow or withdraw.

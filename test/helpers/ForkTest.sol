@@ -18,7 +18,6 @@ import {MathUtils} from "@aave-v3-origin/protocol/libraries/math/MathUtils.sol";
 import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
 import {Errors as AaveErrors} from "@aave-v3-origin/protocol/libraries/helpers/Errors.sol";
 import {ReserveConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/ReserveConfiguration.sol";
-import {ReserveConfigurationLegacy} from "src/libraries/ReserveConfigurationLegacy.sol";
 
 import {PermitHash} from "@permit2/libraries/PermitHash.sol";
 import {IAllowanceTransfer, AllowanceTransfer} from "@permit2/AllowanceTransfer.sol";
@@ -38,7 +37,6 @@ contract ForkTest is BaseTest, Configured {
     using ReserveDataLib for DataTypes.ReserveDataLegacy;
     using ReserveDataTestLib for DataTypes.ReserveDataLegacy;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
 
     /* CONSTANTS */
 
@@ -221,36 +219,23 @@ contract ForkTest is BaseTest, Configured {
         return reserve.totalSupplyToCap(poolSupplyIndex, poolBorrowIndex);
     }
 
-    /// @dev Computes the valid lower bound for ltv and lt for a given CategoryEModeId, conditions required by Aave's code.
-    /// https://github.com/aave/aave-v3-core/blob/94e571f3a7465201881a59555314cd550ccfda57/contracts/protocol/pool/PoolConfigurator.sol#L369-L376
-    function _getLtvLt(address underlying, uint8 eModeCategoryId)
-        internal
-        view
-        returns (uint256 ltvBound, uint256 ltBound, uint256 ltvConfig, uint256 ltConfig)
-    {
-        address[] memory reserves = pool.getReservesList();
-        for (uint256 i = 0; i < reserves.length; ++i) {
-            DataTypes.ReserveConfigurationMap memory currentConfig = pool.getConfiguration(reserves[i]);
-            if (eModeCategoryId == currentConfig.getEModeCategory() || underlying == reserves[i]) {
-                ltvBound = uint16(Math.max(ltvBound, currentConfig.getLtv()));
-
-                ltBound = uint16(Math.max(ltBound, currentConfig.getLiquidationThreshold()));
-
-                if (underlying == reserves[i]) {
-                    ltvConfig = uint16(currentConfig.getLtv());
-                    ltConfig = uint16(currentConfig.getLiquidationThreshold());
-                }
-            }
-        }
+    function _getLtvLt(address underlying) internal view returns (uint256 ltvConfig, uint256 ltConfig) {
+        DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(underlying);
+        ltvConfig = config.getLtv();
+        ltConfig = config.getLiquidationThreshold();
     }
 
     function _setEModeCategoryAsset(
-        DataTypes.EModeCategoryLegacy memory eModeCategory,
+        DataTypes.CollateralConfig memory eModeCollateralConfig,
         address underlying,
         uint8 eModeCategoryId
     ) internal {
         poolAdmin.setEModeCategory(
-            eModeCategoryId, eModeCategory.ltv, eModeCategory.liquidationThreshold, eModeCategory.liquidationBonus, ""
+            eModeCategoryId,
+            eModeCollateralConfig.ltv,
+            eModeCollateralConfig.liquidationThreshold,
+            eModeCollateralConfig.liquidationBonus,
+            ""
         );
         poolAdmin.setAssetBorrowableInEMode(underlying, eModeCategoryId, true);
         poolAdmin.setAssetCollateralInEMode(underlying, eModeCategoryId, true);

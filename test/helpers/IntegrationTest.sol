@@ -27,7 +27,6 @@ contract IntegrationTest is ForkTest {
     using PercentageMath for uint256;
     using ReserveDataTestLib for DataTypes.ReserveData;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
-    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
     using TestMarketLib for TestMarket;
 
     uint256 internal constant INITIAL_BALANCE = 10_000_000_000 ether;
@@ -129,9 +128,9 @@ contract IntegrationTest is ForkTest {
         reserve = pool.getReserveData(underlying);
 
         market.underlying = underlying;
+        market.reserveIndex = reserve.id;
         market.aToken = reserve.aTokenAddress;
         market.variableDebtToken = reserve.variableDebtTokenAddress;
-        market.stableDebtToken = reserve.stableDebtTokenAddress;
         market.symbol = ERC20(underlying).symbol();
         market.reserveFactor = reserveFactor;
         market.p2pIndexCursor = p2pIndexCursor;
@@ -148,16 +147,15 @@ contract IntegrationTest is ForkTest {
         market.supplyCap = type(uint256).max;
         market.borrowCap = type(uint256).max;
 
-        market.eModeCategoryId = uint8(reserve.configuration.getEModeCategory());
-        market.eModeCategory = pool.getEModeCategoryData(market.eModeCategoryId);
+        market.eModeCollateralConfig = pool.getEModeCategoryCollateralConfig(eModeCategoryId);
+        market.eModeCollateralBitmap = pool.getEModeCategoryCollateralBitmap(eModeCategoryId);
+        market.eModeBorrowableBitmap = pool.getEModeCategoryBorrowableBitmap(eModeCategoryId);
 
-        market.isInEMode = eModeCategoryId == 0 || eModeCategoryId == market.eModeCategoryId;
         market.isCollateral = market.getLt(eModeCategoryId) > 0 && reserve.configuration.getDebtCeiling() == 0;
         market.isBorrowable = reserve.configuration.getBorrowingEnabled() && !reserve.configuration.getSiloedBorrowing();
 
         vm.label(reserve.aTokenAddress, string.concat("a", market.symbol));
         vm.label(reserve.variableDebtTokenAddress, string.concat("vd", market.symbol));
-        vm.label(reserve.stableDebtTokenAddress, string.concat("sd", market.symbol));
     }
 
     function _createTestMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal virtual {
@@ -177,7 +175,7 @@ contract IntegrationTest is ForkTest {
         }
 
         if (market.isBorrowable) {
-            if (market.isInEMode) borrowableInEModeUnderlyings.push(underlying);
+            if (market.getIsBorrowableInEMode(eModeCategoryId)) borrowableInEModeUnderlyings.push(underlying);
             else borrowableNotInEModeUnderlyings.push(underlying);
         }
     }
@@ -494,7 +492,6 @@ contract IntegrationTest is ForkTest {
             vm.assume(output != market.underlying);
             vm.assume(output != market.aToken);
             vm.assume(output != market.variableDebtToken);
-            vm.assume(output != market.stableDebtToken);
         }
     }
 

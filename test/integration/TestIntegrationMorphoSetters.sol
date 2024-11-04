@@ -120,7 +120,7 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
         assertEq(market.reserveFactor, reserveFactor, "reserve factor");
         assertEq(market.p2pIndexCursor, p2pIndexCursor, "p2p index cursor");
         assertEq(market.aToken, reserveData.aTokenAddress, "aToken");
-        assertEq(market.stableDebtToken, reserveData.stableDebtTokenAddress, "stable debt token");
+        assertEq(market._deprecated_stableDebtToken, address(0), "stable debt token");
         assertEq(market.idleSupply, 0, "idle supply");
 
         assertEq(ERC20(link).allowance(address(morpho), address(pool)), type(uint256).max);
