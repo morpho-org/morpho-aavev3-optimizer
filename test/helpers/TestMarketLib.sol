@@ -90,7 +90,11 @@ library TestMarketLib {
             (amount * baseMarket.price * 10 ** quoteMarket.decimals) / (quoteMarket.price * 10 ** baseMarket.decimals);
     }
 
-    function getIsCollateralInEMode(TestMarket storage market, uint8 eModeCategoryId) internal view returns (bool) {
+    function getHasTailoredParametersInEMode(TestMarket storage market, uint8 eModeCategoryId)
+        internal
+        view
+        returns (bool)
+    {
         if (eModeCategoryId == 0) return false;
 
         return market.eModeCollateralBitmap.isReserveEnabledOnBitmap(market.reserveIndex);
@@ -103,7 +107,7 @@ library TestMarketLib {
     }
 
     function getLtv(TestMarket storage collateralMarket, uint8 eModeCategoryId) internal view returns (uint256) {
-        return getIsCollateralInEMode(collateralMarket, eModeCategoryId)
+        return getHasTailoredParametersInEMode(collateralMarket, eModeCategoryId)
             ? collateralMarket.eModeCollateralConfig.ltv
             : collateralMarket.ltv;
     }
@@ -112,7 +116,7 @@ library TestMarketLib {
         uint256 ltv = getLtv(collateralMarket, eModeCategoryId);
         if (ltv == 0) return 0;
 
-        return getIsCollateralInEMode(collateralMarket, eModeCategoryId)
+        return getHasTailoredParametersInEMode(collateralMarket, eModeCategoryId)
             ? collateralMarket.eModeCollateralConfig.liquidationThreshold
             : collateralMarket.lt;
     }

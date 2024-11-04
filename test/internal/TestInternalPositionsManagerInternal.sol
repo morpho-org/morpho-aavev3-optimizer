@@ -402,7 +402,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         (vars.borrowedPrice, vars.borrowedTokenUnit) = _assetData(wbtc, oracle, borrowConfig);
         (vars.collateralPrice, vars.collateralTokenUnit) = _assetData(dai, oracle, collateralConfig);
 
-        if (_isCollateralInEMode(dai)) vars.liquidationBonus = eModeCollateralConfig.liquidationBonus;
+        if (_hasTailoredParametersInEmode(dai)) vars.liquidationBonus = eModeCollateralConfig.liquidationBonus;
 
         TestSeizeVars memory expected;
         TestSeizeVars memory actual;

@@ -606,7 +606,7 @@ abstract contract PositionsManagerInternal is MatchingEngine {
         (vars.borrowedPrice, vars.borrowedTokenUnit) = _assetData(underlyingBorrowed, oracle, borrowedConfig);
         (vars.collateralPrice, vars.collateralTokenUnit) = _assetData(underlyingCollateral, oracle, collateralConfig);
 
-        vars.liquidationBonus = _isCollateralInEMode(underlyingCollateral)
+        vars.liquidationBonus = _hasTailoredParametersInEmode(underlyingCollateral)
             ? eModeCollateralConfig.liquidationBonus
             : collateralConfig.getLiquidationBonus();
 

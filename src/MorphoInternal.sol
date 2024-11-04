@@ -336,7 +336,7 @@ abstract contract MorphoInternal is MorphoStorage {
         // to 0 and the governance should warn users to repay their debt.
         if (config.getLtv() == 0) return (underlyingPrice, 0, 0, underlyingUnit);
 
-        if (_isCollateralInEMode(underlying)) {
+        if (_hasTailoredParametersInEmode(underlying)) {
             ltv = vars.eModeCollateralConfig.ltv;
             liquidationThreshold = vars.eModeCollateralConfig.liquidationThreshold;
         } else {
@@ -504,7 +504,7 @@ abstract contract MorphoInternal is MorphoStorage {
     }
 
     /// @dev Returns whether the underlying asset is enabled as an e-mode collateral on the specific Morpho e-mode.
-    function _isCollateralInEMode(address underlying) internal view returns (bool) {
+    function _hasTailoredParametersInEmode(address underlying) internal view returns (bool) {
         if (_eModeCategoryId == 0) return false;
 
         uint256 reserveIndex = _pool.getReserveData(underlying).id;

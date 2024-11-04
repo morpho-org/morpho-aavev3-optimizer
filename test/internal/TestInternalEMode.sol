@@ -115,7 +115,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
             DataTypes.CollateralConfig({ltv: ltv, liquidationThreshold: lt, liquidationBonus: liquidationBonus});
         _setEModeCategoryAsset(eModeCollateralConfig, underlying, eModeCategoryId);
 
-        bool isInEModeCollateral = _isCollateralInEMode(underlying);
+        bool isInEModeCollateral = _hasTailoredParametersInEmode(underlying);
         bool sameCategory = _eModeCategoryId == eModeCategoryId;
 
         assert(!isInEModeCollateral || sameCategory);
