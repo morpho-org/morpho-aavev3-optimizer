@@ -143,7 +143,7 @@ library TestMarketLib {
         return rawCollateralValue(
             quote(collateralMarket, borrowedMarket, amount)
                 // The quantity of collateral required to open a borrow is over-estimated because of decimals precision (especially for the pair WBTC/WETH).
-                .percentDiv(ltv - 10)
+                .percentDiv(ltv - 15)
         );
     }
 
