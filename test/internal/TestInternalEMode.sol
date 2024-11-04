@@ -2,16 +2,16 @@
 pragma solidity ^0.8.0;
 
 import {IMorpho} from "src/interfaces/IMorpho.sol";
-import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
+import {IPool} from "@aave-v3-origin/interfaces/IPool.sol";
 
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
+import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
 import {Types} from "src/libraries/Types.sol";
 import {PoolLib} from "src/libraries/PoolLib.sol";
 
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
+import {ReserveConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/ReserveConfiguration.sol";
 
 import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 
@@ -27,6 +27,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     using ConfigLib for Config;
     using SafeTransferLib for ERC20;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
 
     struct AssetData {
         uint256 underlyingPrice;
@@ -68,7 +69,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         vm.assume(uint256(assetData.ltEMode).percentMul(uint256(liquidationBonus)) <= PercentageMath.PERCENTAGE_FACTOR);
         vm.assume(assetData.underlyingPrice != assetData.underlyingPriceEMode);
 
-        DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
+        DataTypes.EModeCategoryLegacy memory eModeCategory = DataTypes.EModeCategoryLegacy({
             ltv: assetData.ltvEMode,
             liquidationThreshold: assetData.ltEMode,
             liquidationBonus: liquidationBonus,
@@ -121,7 +122,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
         liquidationBonus = uint16(bound(liquidationBonus, PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max));
         vm.assume(uint256(lt).percentMul(liquidationBonus) <= PercentageMath.PERCENTAGE_FACTOR);
 
-        DataTypes.EModeCategory memory eModeCategory = DataTypes.EModeCategory({
+        DataTypes.EModeCategoryLegacy memory eModeCategory = DataTypes.EModeCategoryLegacy({
             ltv: ltv,
             liquidationThreshold: lt,
             liquidationBonus: liquidationBonus,
@@ -250,7 +251,7 @@ contract TestInternalEMode is InternalTest, PositionsManagerInternal {
     function testShouldNotAuthorizeBorrowInconsistentEmode(
         uint8 eModeCategoryId,
         Types.Indexes256 memory indexes,
-        DataTypes.EModeCategory memory eModeCategory
+        DataTypes.EModeCategoryLegacy memory eModeCategory
     ) public {
         eModeCategoryId = uint8(bound(uint256(eModeCategoryId), 1, type(uint8).max));
         (uint256 ltvBound, uint256 ltBound,,) = _getLtvLt(dai, eModeCategoryId);

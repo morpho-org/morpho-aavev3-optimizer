@@ -2,22 +2,23 @@
 pragma solidity ^0.8.0;
 
 import {IAToken} from "src/interfaces/aave/IAToken.sol";
-import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
-import {IPriceOracleGetter} from "@aave-v3-core/interfaces/IPriceOracleGetter.sol";
-import {IACLManager} from "@aave-v3-core/interfaces/IACLManager.sol";
-import {IPoolConfigurator} from "test/helpers/IPoolConfigurator.sol";
-import {IPoolDataProvider} from "@aave-v3-core/interfaces/IPoolDataProvider.sol";
-import {IPool, IPoolAddressesProvider} from "@aave-v3-core/interfaces/IPool.sol";
-import {IVariableDebtToken} from "@aave-v3-core/interfaces/IVariableDebtToken.sol";
+import {IAaveOracle} from "@aave-v3-origin/interfaces/IAaveOracle.sol";
+import {IPriceOracleGetter} from "@aave-v3-origin/interfaces/IPriceOracleGetter.sol";
+import {IACLManager} from "@aave-v3-origin/interfaces/IACLManager.sol";
+import {IPoolConfigurator} from "@aave-v3-origin/interfaces/IPoolConfigurator.sol";
+import {IPoolDataProvider} from "@aave-v3-origin/interfaces/IPoolDataProvider.sol";
+import {IPool, IPoolAddressesProvider} from "@aave-v3-origin/interfaces/IPool.sol";
+import {IVariableDebtToken} from "@aave-v3-origin/interfaces/IVariableDebtToken.sol";
 import {IRewardsController} from "@aave-v3-periphery/rewards/interfaces/IRewardsController.sol";
 
 import {ReserveDataLib} from "src/libraries/ReserveDataLib.sol";
 import {ReserveDataTestLib} from "test/helpers/ReserveDataTestLib.sol";
 import {Config, ConfigLib} from "config/ConfigLib.sol";
-import {MathUtils} from "@aave-v3-core/protocol/libraries/math/MathUtils.sol";
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
-import {Errors as AaveErrors} from "@aave-v3-core/protocol/libraries/helpers/Errors.sol";
-import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
+import {MathUtils} from "@aave-v3-origin/protocol/libraries/math/MathUtils.sol";
+import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
+import {Errors as AaveErrors} from "@aave-v3-origin/protocol/libraries/helpers/Errors.sol";
+import {ReserveConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/ReserveConfiguration.sol";
+import {ReserveConfigurationLegacy} from "src/libraries/ReserveConfigurationLegacy.sol";
 
 import {PermitHash} from "@permit2/libraries/PermitHash.sol";
 import {IAllowanceTransfer, AllowanceTransfer} from "@permit2/AllowanceTransfer.sol";
@@ -34,9 +35,10 @@ contract ForkTest is BaseTest, Configured {
     using PercentageMath for uint256;
     using SafeTransferLib for ERC20;
     using ConfigLib for Config;
-    using ReserveDataLib for DataTypes.ReserveData;
-    using ReserveDataTestLib for DataTypes.ReserveData;
+    using ReserveDataLib for DataTypes.ReserveDataLegacy;
+    using ReserveDataTestLib for DataTypes.ReserveDataLegacy;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
 
     /* CONSTANTS */
 
@@ -212,7 +214,7 @@ contract ForkTest is BaseTest, Configured {
 
     /// @dev Returns the total supply used towards the supply cap.
     function _totalSupplyToCap(address underlying) internal view returns (uint256) {
-        DataTypes.ReserveData memory reserve = pool.getReserveData(underlying);
+        DataTypes.ReserveDataLegacy memory reserve = pool.getReserveData(underlying);
         uint256 poolSupplyIndex = pool.getReserveNormalizedIncome(underlying);
         uint256 poolBorrowIndex = pool.getReserveNormalizedVariableDebt(underlying);
 
@@ -243,7 +245,7 @@ contract ForkTest is BaseTest, Configured {
     }
 
     function _setEModeCategoryAsset(
-        DataTypes.EModeCategory memory eModeCategory,
+        DataTypes.EModeCategoryLegacy memory eModeCategory,
         address underlying,
         uint8 eModeCategoryId
     ) internal {

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
+import {IPool} from "@aave-v3-origin/interfaces/IPool.sol";
 import {IRewardsManager} from "./interfaces/IRewardsManager.sol";
-import {IAaveOracle} from "@aave-v3-core/interfaces/IAaveOracle.sol";
+import {IAaveOracle} from "@aave-v3-origin/interfaces/IAaveOracle.sol";
 
 import {Types} from "./libraries/Types.sol";
 import {Events} from "./libraries/Events.sol";
@@ -24,9 +24,10 @@ import {ERC20, SafeTransferLib} from "@solmate/utils/SafeTransferLib.sol";
 import {LogarithmicBuckets} from "@morpho-data-structures/LogarithmicBuckets.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {DataTypes} from "@aave-v3-core/protocol/libraries/types/DataTypes.sol";
-import {UserConfiguration} from "@aave-v3-core/protocol/libraries/configuration/UserConfiguration.sol";
-import {ReserveConfiguration} from "@aave-v3-core/protocol/libraries/configuration/ReserveConfiguration.sol";
+import {DataTypes} from "@aave-v3-origin/protocol/libraries/types/DataTypes.sol";
+import {UserConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/UserConfiguration.sol";
+import {ReserveConfiguration} from "@aave-v3-origin/protocol/libraries/configuration/ReserveConfiguration.sol";
+import {ReserveConfigurationLegacy} from "./libraries/ReserveConfigurationLegacy.sol";
 
 import {MorphoStorage} from "./MorphoStorage.sol";
 
@@ -51,6 +52,7 @@ abstract contract MorphoInternal is MorphoStorage {
 
     using UserConfiguration for DataTypes.UserConfigurationMap;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
 
     /* INTERNAL */
 
@@ -71,7 +73,7 @@ abstract contract MorphoInternal is MorphoStorage {
     function _createMarket(address underlying, uint16 reserveFactor, uint16 p2pIndexCursor) internal {
         if (underlying == address(0)) revert Errors.AddressIsZero();
 
-        DataTypes.ReserveData memory reserve = _pool.getReserveData(underlying);
+        DataTypes.ReserveDataLegacy memory reserve = _pool.getReserveData(underlying);
         if (!reserve.configuration.getActive()) revert Errors.MarketIsNotListedOnAave();
         if (reserve.configuration.getSiloedBorrowing()) revert Errors.SiloedBorrowMarket();
 

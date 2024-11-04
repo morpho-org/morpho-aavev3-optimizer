@@ -12,6 +12,7 @@ contract TestIntegrationEModeNative is IntegrationTest {
     using PercentageMath for uint256;
     using TestMarketLib for TestMarket;
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
+    using ReserveConfigurationLegacy for DataTypes.ReserveConfigurationMap;
 
     function setUp() public virtual override {
         DataTypes.ReserveConfigurationMap memory lsdConfig = pool.getConfiguration(stNative);
