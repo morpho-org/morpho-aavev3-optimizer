@@ -93,7 +93,6 @@ abstract contract MorphoInternal is MorphoStorage {
         market.aToken = reserve.aTokenAddress;
         market.variableDebtToken = reserve.variableDebtTokenAddress;
         // Note that reserve.stableDebtTokenAddress is deprecated in v3.2.0.
-        market.stableDebtToken = reserve.stableDebtTokenAddress;
 
         _marketsCreated.push(underlying);
 
