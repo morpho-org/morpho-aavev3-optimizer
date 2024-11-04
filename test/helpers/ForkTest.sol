@@ -221,8 +221,8 @@ contract ForkTest is BaseTest, Configured {
 
     function _getLtvLt(address underlying) internal view returns (uint256 ltvConfig, uint256 ltConfig) {
         DataTypes.ReserveConfigurationMap memory config = pool.getConfiguration(underlying);
-        ltvConfig = uint16(config.getLtv());
-        ltConfig = uint16(config.getLiquidationThreshold());
+        ltvConfig = config.getLtv();
+        ltConfig = config.getLiquidationThreshold();
     }
 
     function _setEModeCategoryAsset(

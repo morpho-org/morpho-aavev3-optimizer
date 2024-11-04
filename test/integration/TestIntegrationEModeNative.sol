@@ -16,7 +16,7 @@ contract TestIntegrationEModeNative is IntegrationTest {
     using EModeConfiguration for uint128;
 
     function setUp() public virtual override {
-        uint256 lsdNativeIndex = pool.getReserveData(stNative).id;
+        uint256 stNativeIndex = pool.getReserveData(stNative).id;
 
         // Guess the eModeCategoryId for LSD to be 1.
         eModeCategoryId = 1;
@@ -24,7 +24,7 @@ contract TestIntegrationEModeNative is IntegrationTest {
         DataTypes.CollateralConfig memory collateralConfig = pool.getEModeCategoryCollateralConfig(eModeCategoryId);
         require(collateralConfig.liquidationThreshold != 0, "not activated e-mode");
         require(
-            pool.getEModeCategoryCollateralBitmap(eModeCategoryId).isReserveEnabledOnBitmap(lsdNativeIndex),
+            pool.getEModeCategoryCollateralBitmap(eModeCategoryId).isReserveEnabledOnBitmap(stNativeIndex),
             "wrong e-mode category"
         );
 
