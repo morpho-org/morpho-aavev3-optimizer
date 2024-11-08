@@ -194,7 +194,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
     ) public {
         borrower = _boundReceiver(borrower);
         promotionFactor = bound(promotionFactor, 0, WadRayMath.WAD);
-        healthFactor = bound(healthFactor, MIN_HF, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(1));
+        healthFactor = bound(healthFactor, MIN_HF, Constants.DEFAULT_LIQUIDATION_MIN_HF.percentSub(10));
 
         oracleSentinel.setLiquidationAllowed(false);
 

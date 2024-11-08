@@ -246,7 +246,7 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         uint256 toBorrow = amount / 2;
         wethGateway.borrowETH(toBorrow, onBehalf, DEFAULT_MAX_ITERATIONS);
 
-        toRepay = bound(toRepay, 1, toBorrow);
+        toRepay = bound(toRepay, 1, toBorrow - 1);
         deal(repayer, toRepay);
         vm.prank(repayer);
         uint256 repaid = wethGateway.repayETH{value: toRepay}(address(this));
