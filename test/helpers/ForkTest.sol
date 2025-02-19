@@ -35,6 +35,7 @@ import {
     IPoolAddressesProvider as IPoolAddr
 } from "lib/aave-v3-origin/src/contracts/instances/PoolInstance.sol";
 import {PoolConfiguratorInstance} from "lib/aave-v3-origin/src/contracts/instances/PoolConfiguratorInstance.sol";
+import {AaveProtocolDataProvider} from "lib/aave-v3-origin/src/contracts/helpers/AaveProtocolDataProvider.sol";
 
 interface IAllowanceTransferExtended is IAllowanceTransfer {
     function DOMAIN_SEPARATOR() external view returns (bytes32);
@@ -126,6 +127,10 @@ contract ForkTest is BaseTest, Configured {
         address newPoolConfiguratorImpl = address(new PoolConfiguratorInstance());
         vm.prank(aclAdmin);
         addressesProvider.setPoolConfiguratorImpl(newPoolConfiguratorImpl);
+
+        address newDataProvider = address(new AaveProtocolDataProvider(IPoolAddr(address(addressesProvider))));
+        vm.prank(aclAdmin);
+        addressesProvider.setPoolDataProvider(newDataProvider);
     }
 
     function _label() internal virtual {
