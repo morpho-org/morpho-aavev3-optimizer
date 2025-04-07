@@ -29,9 +29,9 @@ contract InvariantTest is IntegrationTest {
         }
     }
 
-    function _randomSender(address seed) internal view returns (address) {
+    function _randomSender(address seed) internal view returns (address sender) {
         address[] memory senders = targetSenders();
 
-        return senders[uint256(uint160(seed)) % senders.length];
+        sender = senders[uint256(uint160(seed)) % senders.length];
     }
 }

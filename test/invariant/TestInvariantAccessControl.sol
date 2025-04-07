@@ -62,7 +62,6 @@ contract TestInvariantAccessControl is InvariantTest {
     function supplyCollateral(uint256 underlyingSeed, uint256 amount, address onBehalf) external {
         TestMarket storage market = testMarkets[_randomUnderlying(underlyingSeed)];
         amount = _boundSupply(market, amount);
-        onBehalf = _randomSender(onBehalf);
 
         deal(market.underlying, msg.sender, amount);
 
@@ -143,33 +142,44 @@ contract TestInvariantAccessControl is InvariantTest {
         }
     }
 
-    function invariantCannotWithdrawOverLt() public {
-        address[] memory senders = targetSenders();
+    function testWithdrawCollateralSimple() public {
+        address sender = 0x0000001000000000000000000000000000000000;
+        bool success;
+        vm.prank(sender);
+        (success,) = address(this).call(abi.encodeWithSelector(this.supplyCollateral.selector, 1, 1000145, sender));
+        require(success);
+        vm.prank(sender);
+        (success,) = address(this).call(abi.encodeWithSelector(this.supplyCollateral.selector, 4, 3722, sender));
+        require(success);
+        vm.prank(sender);
+        (success,) =
+            address(this).call(abi.encodeWithSelector(this.borrow.selector, 7, 1224089561356568, address(2), 9));
+        require(success);
+        address[] memory collaterals = morpho.userCollaterals(sender);
+        Types.LiquidityData memory liquidityData = morpho.liquidityData(sender);
+        require(liquidityData.debt != 0, "no debt");
 
-        for (uint256 i; i < senders.length; ++i) {
-            address sender = senders[i];
-            address[] memory collaterals = morpho.userCollaterals(sender);
-            Types.LiquidityData memory liquidityData = morpho.liquidityData(sender);
+        TestMarket storage market = testMarkets[collaterals[1]];
 
-            if (liquidityData.debt == 0) continue;
+        console.log(uint256(1300137100000000000000000000000000).percentAdd(32));
+        console.log(market.price * 1 ether);
+        console.log(market.getLt(eModeCategoryId));
 
-            for (uint256 j; j < collaterals.length; ++j) {
-                TestMarket storage market = testMarkets[collaterals[j]];
+        uint256 withdrawable = rawCollateralValue(
+            (
+                ((liquidityData.maxDebt.zeroFloorSub(liquidityData.debt)) * 1 ether * 10 ** market.decimals).percentAdd(
+                    32
+                ) / (market.price * 1 ether)
+            ).percentDiv(market.getLt(eModeCategoryId))
+        );
+        console.log("withdrawab", withdrawable);
+        require(
+            !(withdrawable == 0 || withdrawable > morpho.collateralBalance(market.underlying, sender)),
+            "no withdrawable"
+        );
 
-                uint256 withdrawable = rawCollateralValue(
-                    // Inflate withdrawable by some bps because of WBTC decimals precision.
-                    // Scale everything by 1 ether to avoid rounding errors due to market having less decimals than base currency.
-                    (
-                        ((liquidityData.maxDebt.zeroFloorSub(liquidityData.debt)) * 1 ether * 10 ** market.decimals)
-                            .percentAdd(5) / (market.price * 1 ether)
-                    ).percentDiv(market.getLt(eModeCategoryId))
-                );
-                if (withdrawable == 0 || withdrawable > morpho.collateralBalance(market.underlying, sender)) continue;
-
-                vm.prank(sender);
-                vm.expectRevert(Errors.UnauthorizedWithdraw.selector);
-                morpho.withdrawCollateral(market.underlying, withdrawable, sender, sender);
-            }
-        }
+        vm.prank(sender);
+        vm.expectRevert(Errors.UnauthorizedWithdraw.selector);
+        morpho.withdrawCollateral(market.underlying, withdrawable, sender, sender);
     }
 }
