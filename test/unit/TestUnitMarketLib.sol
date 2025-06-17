@@ -5,6 +5,7 @@ import {MarketLib} from "src/libraries/MarketLib.sol";
 
 import "test/helpers/BaseTest.sol";
 
+/// forge-config: default.allow_internal_expect_revert = true
 contract TestUnitMarketLib is BaseTest {
     using MarketLib for Types.Market;
     using WadRayMath for uint256;
