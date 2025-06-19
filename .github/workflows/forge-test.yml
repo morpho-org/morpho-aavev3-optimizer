@@ -157,8 +157,8 @@ jobs:
 
       - uses: ./.github/actions/install
 
-      - name: Run integration tests & create gas report
-        run: set -o pipefail && make gas-report | tee gasreport.ansi
+      - name: Run integration tests
+        run: set -o pipefail && make test-integration
         env:
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
           FOUNDRY_FUZZ_RUNS: ${{ inputs.integration-fuzz-runs }}
