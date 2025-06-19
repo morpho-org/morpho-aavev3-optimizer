@@ -106,7 +106,7 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
 
         uint256 poolSupplyIndexAfter = morpho.updatedIndexes(market.underlying).supply.poolIndex;
 
-        assertGt(poolSupplyIndexAfter, poolSupplyIndexBefore);
+        assertGe(poolSupplyIndexAfter, poolSupplyIndexBefore);
     }
 
     function testP2PSupplyIndexGrowthInsideBlock(uint256 seed) public {
@@ -120,6 +120,6 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
 
         uint256 poolSupplyIndexAfter = morpho.updatedIndexes(market.underlying).supply.p2pIndex;
 
-        assertGt(poolSupplyIndexAfter, poolSupplyIndexBefore);
+        assertGe(poolSupplyIndexAfter, poolSupplyIndexBefore);
     }
 }

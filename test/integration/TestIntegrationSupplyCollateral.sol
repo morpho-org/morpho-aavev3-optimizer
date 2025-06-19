@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "test/helpers/IntegrationTest.sol";
+import "test/helpers/AaveErrors.sol";
 
 contract TestIntegrationSupplyCollateral is IntegrationTest {
     using WadRayMath for uint256;
@@ -95,7 +96,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
 
         user.approve(market.underlying, amount);
 
-        vm.expectRevert(bytes(AaveErrors.SUPPLY_CAP_EXCEEDED));
+        vm.expectRevert(SupplyCapExceeded.selector);
         user.supplyCollateral(market.underlying, amount, onBehalf);
     }
 
