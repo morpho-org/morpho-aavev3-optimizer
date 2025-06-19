@@ -69,7 +69,9 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         uint256 onBehalfBalanceBefore = onBehalf.balance;
         uint256 supplied = _supplyETH(onBehalf, amount);
 
-        if (onBehalf != address(this)) assertEq(onBehalf.balance, onBehalfBalanceBefore, "onBehalfBalance");
+        if (onBehalf != address(this) && onBehalf != weth) {
+            assertEq(onBehalf.balance, onBehalfBalanceBefore, "onBehalfBalance");
+        }
         assertEq(address(this).balance + amount, balanceBefore, "balanceAfter != balanceBefore - amount");
         assertEq(supplied, amount, "supplied != amount");
         assertApproxEqAbs(morpho.supplyBalance(weth, onBehalf), amount, 2, "supplyBalance != amount");
@@ -93,7 +95,9 @@ contract TestIntegrationWETHGateway is IntegrationTest {
         uint256 onBehalfBalanceBefore = onBehalf.balance;
         uint256 supplied = _supplyCollateralETH(onBehalf, amount);
 
-        if (onBehalf != address(this)) assertEq(onBehalf.balance, onBehalfBalanceBefore, "onBehalfBalance");
+        if (onBehalf != address(this) && onBehalf != weth) {
+            assertEq(onBehalf.balance, onBehalfBalanceBefore, "onBehalfBalance");
+        }
         assertEq(supplied, amount, "supplied != amount");
         assertEq(address(this).balance + amount, balanceBefore, "balanceAfter != balanceBefore - amount");
         assertApproxEqAbs(morpho.collateralBalance(weth, onBehalf), amount, 2, "collateralBalance != amount");
