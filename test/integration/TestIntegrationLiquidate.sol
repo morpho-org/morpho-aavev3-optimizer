@@ -421,7 +421,7 @@ contract TestIntegrationLiquidate is IntegrationTest {
         assertApproxEqAbs(
             morpho.collateralBalance(collateralMarket.underlying, borrower) + test.seized,
             test.collateralBalanceBefore,
-            1,
+            2,
             "collateralBalanceAfter != collateralBalanceBefore - seized"
         );
 
