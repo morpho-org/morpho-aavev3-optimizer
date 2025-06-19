@@ -95,6 +95,12 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
         );
     }
 
+    function testNoFlashloanPremiumToLP() public view {
+        uint256 premiumTotal = pool.FLASHLOAN_PREMIUM_TOTAL();
+        uint256 premiumToProtocol = pool.FLASHLOAN_PREMIUM_TOTAL();
+        assertEq(premiumToProtocol, premiumTotal, "all premium goes to protocol");
+    }
+
     function testPoolSupplyIndexGrowthInsideBlock(uint256 seed) public {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
         vm.assume(pool.getConfiguration(market.underlying).getFlashLoanEnabled());
