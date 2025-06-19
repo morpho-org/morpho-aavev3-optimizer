@@ -688,6 +688,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         uint48 nonceOffset
     ) internal view returns (IBulkerGateway.ActionType action, bytes memory data) {
         address delegator = vm.addr(privateKey);
+        vm.assume(delegator.code.length == 0);
         action = IBulkerGateway.ActionType.APPROVE2;
 
         (,, uint48 nonce) = PERMIT2.allowance(delegator, underlying, address(bulker));
@@ -721,6 +722,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
         returns (IBulkerGateway.ActionType action, bytes memory data)
     {
         address delegator = vm.addr(privateKey);
+        vm.assume(delegator.code.length == 0);
         action = IBulkerGateway.ActionType.APPROVE_MANAGER;
 
         uint256 nonce = morpho.userNonce(delegator);

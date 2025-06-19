@@ -14,14 +14,13 @@ contract TestIntegrationPermit2 is IntegrationTest {
     using WadRayMath for uint256;
     using PermitHash for IAllowanceTransfer.PermitSingle;
 
-    function _signPermit2(
-        address underlying,
-        address delegator,
-        address spender,
-        uint256 amount,
-        uint256 deadline,
-        uint256 privateKey
-    ) internal view returns (Types.Signature memory sig) {
+    function _signPermit2(address underlying, address spender, uint256 amount, uint256 deadline, uint256 privateKey)
+        internal
+        view
+        returns (Types.Signature memory sig)
+    {
+        address delegator = vm.addr(privateKey);
+        vm.assume(delegator.code.length == 0);
         (,, uint48 nonce) = PERMIT2.allowance(delegator, address(underlying), spender);
         IAllowanceTransfer.PermitDetails memory details = IAllowanceTransfer.PermitDetails({
             token: address(underlying),
@@ -56,7 +55,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         address spender = address(morpho);
 
-        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, spender, amount, deadline, privateKey);
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
 
@@ -96,7 +95,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         address spender = address(morpho);
 
-        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
@@ -155,7 +154,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         vm.warp(block.timestamp + timestamp);
 
         amount = morpho.borrowBalance(market.underlying, onBehalf) - 1;
-        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, spender, amount, deadline, privateKey);
 
         deal(market.underlying, delegator, amount);
 
@@ -196,8 +195,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         timestamp = bound(timestamp, 0, Math.min(deadline, type(uint32).max) - block.timestamp);
         vm.warp(block.timestamp + timestamp);
 
-        Types.Signature memory sig =
-            _signPermit2(market.underlying, delegator, spender, type(uint160).max, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, spender, type(uint160).max, deadline, privateKey);
 
         deal(market.underlying, delegator, type(uint160).max);
 
@@ -226,7 +224,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         amount = _boundSupply(market, amount);
 
         address spender = address(morpho);
-        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
@@ -261,7 +259,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         address spender = address(morpho);
 
-        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
@@ -299,7 +297,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         address spender = address(morpho);
 
-        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
@@ -333,7 +331,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         address spender = address(morpho);
 
-        Types.Signature memory sig = _signPermit2(market.underlying, delegator, spender, amount, deadline, privateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, spender, amount, deadline, privateKey);
 
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
@@ -359,6 +357,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
         deadline = bound(deadline, block.timestamp, type(uint32).max);
         privateKey = bound(privateKey, 1, type(uint160).max);
         address delegator = vm.addr(privateKey);
+        vm.assume(delegator.code.length == 0);
 
         wrongPrivateKey = bound(wrongPrivateKey, 1, type(uint160).max);
         vm.assume(wrongPrivateKey != privateKey);
@@ -369,8 +368,7 @@ contract TestIntegrationPermit2 is IntegrationTest {
 
         address spender = address(morpho);
 
-        Types.Signature memory sig =
-            _signPermit2(market.underlying, delegator, spender, amount, deadline, wrongPrivateKey);
+        Types.Signature memory sig = _signPermit2(market.underlying, spender, amount, deadline, wrongPrivateKey);
 
         vm.prank(delegator);
         ERC20(market.underlying).safeApprove(address(PERMIT2), type(uint256).max);
