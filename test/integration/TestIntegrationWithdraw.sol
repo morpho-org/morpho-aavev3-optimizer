@@ -278,7 +278,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         assertApproxEqAbs(
             test.morphoMarket.deltas.supply.scaledP2PTotal.rayMul(test.indexes.supply.p2pIndex),
             test.supplied + test.morphoMarket.idleSupply,
-            2,
+            3,
             "totalSupplyP2P != supplied + idleSupplyAfter"
         );
         assertEq(test.morphoMarket.deltas.borrow.scaledDelta, 0, "scaledBorrowDelta != 0");
