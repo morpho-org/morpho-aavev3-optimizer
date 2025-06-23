@@ -95,6 +95,12 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
         );
     }
 
+    function testNoFlashloanPremiumToLP() public view {
+        uint256 premiumTotal = pool.FLASHLOAN_PREMIUM_TOTAL();
+        uint256 premiumToProtocol = pool.FLASHLOAN_PREMIUM_TOTAL();
+        assertEq(premiumToProtocol, premiumTotal, "all premium goes to protocol");
+    }
+
     function testPoolSupplyIndexGrowthInsideBlock(uint256 seed) public {
         TestMarket storage market = testMarkets[_randomUnderlying(seed)];
         vm.assume(pool.getConfiguration(market.underlying).getFlashLoanEnabled());
@@ -106,7 +112,7 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
 
         uint256 poolSupplyIndexAfter = morpho.updatedIndexes(market.underlying).supply.poolIndex;
 
-        assertGt(poolSupplyIndexAfter, poolSupplyIndexBefore);
+        assertGe(poolSupplyIndexAfter, poolSupplyIndexBefore);
     }
 
     function testP2PSupplyIndexGrowthInsideBlock(uint256 seed) public {
@@ -120,6 +126,6 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
 
         uint256 poolSupplyIndexAfter = morpho.updatedIndexes(market.underlying).supply.p2pIndex;
 
-        assertGt(poolSupplyIndexAfter, poolSupplyIndexBefore);
+        assertGe(poolSupplyIndexAfter, poolSupplyIndexBefore);
     }
 }

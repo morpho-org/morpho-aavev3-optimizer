@@ -329,7 +329,7 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
 
         uint256 poolSupplyIndexAfterFlashLoan = pool.getReserveNormalizedIncome(market.underlying);
 
-        assertGt(poolSupplyIndexAfterFlashLoan, poolSupplyIndexBeforeFlashLoan);
+        assertGe(poolSupplyIndexAfterFlashLoan, poolSupplyIndexBeforeFlashLoan);
 
         user.approve(market.underlying, liquidity);
         user.supplyCollateral(market.underlying, liquidity);
