@@ -29,6 +29,8 @@ test-unit:
 test:
 	forge test -vvv
 
+rerun:
+	forge test --rerun
 
 test-invariant-%:
 	@FOUNDRY_MATCH_TEST=$* make test-invariant
@@ -75,9 +77,6 @@ coverage:
 lcov-html:
 	@echo Transforming the lcov coverage report into html
 	genhtml lcov.info -o coverage
-
-gas-report:
-	@FORGE_GAS_REPORT=true make test-integration
 
 deploy-emode:
 	FOUNDRY_TEST=/dev/null forge script script/EthEModeDeployScript.sol:EthEModeDeploy --via-ir --broadcast --slow -vvvvv --rpc-url mainnet --ledger

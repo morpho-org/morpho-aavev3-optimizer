@@ -5,6 +5,8 @@ libs = ["node_modules", "lib"]
 fs_permissions = [{ access = "read", path = "./config/" }]
 gas_limit = "18446744073709551615"
 evm_version = "shanghai"
+optimizer = true
+optimizer_runs = 200
 
 [profile.build]
 evm_version = "paris"

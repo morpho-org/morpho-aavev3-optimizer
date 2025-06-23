@@ -9,6 +9,7 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {PositionsManagerInternal} from "src/PositionsManagerInternal.sol";
 import "test/helpers/InternalTest.sol";
 
+/// forge-config: default.allow_internal_expect_revert = true
 contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerInternal {
     using ReserveConfiguration for DataTypes.ReserveConfigurationMap;
     using EnumerableSet for EnumerableSet.AddressSet;
