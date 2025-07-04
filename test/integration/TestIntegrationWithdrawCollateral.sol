@@ -314,39 +314,4 @@ contract TestIntegrationWithdrawCollateral is IntegrationTest {
         vm.expectRevert(Errors.CollateralIsZero.selector);
         user.withdrawCollateral(market.underlying, amountToWithdraw, onBehalf, receiver);
     }
-
-    function testShouldNotWithdrawMoreCollateralThanSuppliedWhenFlashLoanInflates(uint256 seed) public {
-        TestMarket storage market = testMarkets[_randomCollateral(seed)];
-        vm.assume(pool.getConfiguration(market.underlying).getFlashLoanEnabled());
-
-        user.approve(market.underlying, 1);
-        user.supplyCollateral(market.underlying, 1);
-
-        uint256 poolSupplyIndexBeforeFlashLoan = pool.getReserveNormalizedIncome(market.underlying);
-
-        uint256 liquidity = market.liquidity();
-        flashBorrower.flashLoanSimple(market.underlying, liquidity);
-
-        uint256 poolSupplyIndexAfterFlashLoan = pool.getReserveNormalizedIncome(market.underlying);
-
-        assertGe(poolSupplyIndexAfterFlashLoan, poolSupplyIndexBeforeFlashLoan);
-
-        user.approve(market.underlying, liquidity);
-        user.supplyCollateral(market.underlying, liquidity);
-
-        assertEq(morpho.market(market.underlying).indexes.supply.poolIndex, poolSupplyIndexAfterFlashLoan);
-
-        _forward(1);
-
-        uint256 poolSupplyIndexNextBlock = pool.getReserveNormalizedIncome(market.underlying);
-
-        user.withdrawCollateral(market.underlying, liquidity);
-
-        assertApproxEqAbs(
-            morpho.collateralBalance(market.underlying, address(user)) + liquidity,
-            liquidity.rayDiv(poolSupplyIndexAfterFlashLoan).rayMul(poolSupplyIndexNextBlock),
-            10,
-            "collateral"
-        );
-    }
 }

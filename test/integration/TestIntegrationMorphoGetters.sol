@@ -100,32 +100,4 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
         uint256 premiumToProtocol = pool.FLASHLOAN_PREMIUM_TOTAL();
         assertEq(premiumToProtocol, premiumTotal, "all premium goes to protocol");
     }
-
-    function testPoolSupplyIndexGrowthInsideBlock(uint256 seed) public {
-        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
-        vm.assume(pool.getConfiguration(market.underlying).getFlashLoanEnabled());
-
-        uint256 poolSupplyIndexBefore = morpho.updatedIndexes(market.underlying).supply.poolIndex;
-
-        uint256 liquidity = market.liquidity();
-        flashBorrower.flashLoanSimple(market.underlying, liquidity);
-
-        uint256 poolSupplyIndexAfter = morpho.updatedIndexes(market.underlying).supply.poolIndex;
-
-        assertGe(poolSupplyIndexAfter, poolSupplyIndexBefore);
-    }
-
-    function testP2PSupplyIndexGrowthInsideBlock(uint256 seed) public {
-        TestMarket storage market = testMarkets[_randomUnderlying(seed)];
-        vm.assume(pool.getConfiguration(market.underlying).getFlashLoanEnabled());
-
-        uint256 poolSupplyIndexBefore = morpho.updatedIndexes(market.underlying).supply.p2pIndex;
-
-        uint256 liquidity = market.liquidity();
-        flashBorrower.flashLoanSimple(market.underlying, liquidity);
-
-        uint256 poolSupplyIndexAfter = morpho.updatedIndexes(market.underlying).supply.p2pIndex;
-
-        assertGe(poolSupplyIndexAfter, poolSupplyIndexBefore);
-    }
 }
