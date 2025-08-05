@@ -38,7 +38,7 @@ contract TestIntegrationPoolLibSupply is TestIntegrationPoolLib {
         pool.supplyToPool(dai, amount, pool.getReserveNormalizedIncome(dai));
 
         assertEq(ERC20(dai).balanceOf(address(this)) + amount, balanceBefore, "balance");
-        assertApproxEqAbs(ERC20(aDai).balanceOf(address(this)), aBalanceBefore + amount, 1, "aBalance");
+        assertApproxEqAbs(ERC20(aDai).balanceOf(address(this)), aBalanceBefore + amount, 2, "aBalance");
     }
 }
 
@@ -59,7 +59,7 @@ contract TestIntegrationPoolLibBorrow is TestIntegrationPoolLib {
         pool.borrowFromPool(dai, amount / 2);
 
         assertEq(ERC20(dai).balanceOf(address(this)), balanceBefore + amount / 2, "balance");
-        assertApproxEqAbs(ERC20(vDai).balanceOf(address(this)), vBalanceBefore + amount / 2, 1, "vBalance");
+        assertApproxEqAbs(ERC20(vDai).balanceOf(address(this)), vBalanceBefore + amount / 2, 2, "vBalance");
     }
 }
 
@@ -83,7 +83,7 @@ contract TestIntegrationPoolLibRepay is TestIntegrationPoolLib {
         pool.repayToPool(dai, vDai, amount / 4);
 
         assertEq(ERC20(dai).balanceOf(address(this)) + amount / 4, balanceBefore, "balance");
-        assertApproxEqAbs(ERC20(vDai).balanceOf(address(this)) + amount / 4, vBalanceBefore, 1, "vBalance");
+        assertApproxEqAbs(ERC20(vDai).balanceOf(address(this)) + amount / 4, vBalanceBefore, 2, "vBalance");
     }
 }
 

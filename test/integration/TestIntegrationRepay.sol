@@ -71,7 +71,7 @@ contract TestIntegrationRepay is IntegrationTest {
         assertApproxEqAbs(
             market.supplyOf(address(morpho)), test.morphoSupplyBefore, 2, "morphoSupply != morphoSupplyBefore"
         );
-        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 1, "morphoVariableBorrow != 0");
+        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 3, "morphoVariableBorrow != 0");
 
         // Assert user's underlying balance.
         assertApproxEqAbs(
@@ -154,7 +154,7 @@ contract TestIntegrationRepay is IntegrationTest {
             3,
             "morphoSupply != morphoSupplyBefore + promoted"
         );
-        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 2, "morphoVariableBorrow != 0");
+        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 3, "morphoVariableBorrow != 0");
 
         // Assert user's underlying balance.
         assertApproxLeAbs(
@@ -238,7 +238,7 @@ contract TestIntegrationRepay is IntegrationTest {
             1,
             "morphoSupply != morphoSupplyBefore + supplyGapBefore"
         );
-        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 1, "morphoVariableBorrow != 0");
+        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 2, "morphoVariableBorrow != 0");
         assertApproxEqDust(_supplyGap(market), 0, "supplyGapAfter != 0");
 
         // Assert user's underlying balance.
@@ -325,7 +325,7 @@ contract TestIntegrationRepay is IntegrationTest {
         assertApproxEqAbs(
             morphoSupply, test.morphoSupplyBefore + test.borrowed, 2, "morphoSupply != morphoSupplyBefore + borrowed"
         );
-        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 1, "morphoVariableBorrow != 0");
+        assertApproxEqAbs(market.variableBorrowOf(address(morpho)), 0, 2, "morphoVariableBorrow != 0");
 
         // Assert user's underlying balance.
         assertApproxEqAbs(

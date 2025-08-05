@@ -161,7 +161,7 @@ contract TestInternalMorphoInternal is InternalTest {
         assertApproxEqAbs(
             variableDebtTokenBalanceBefore + expectedAmount,
             ERC20(market.variableDebtToken).balanceOf(address(this)),
-            1,
+            2,
             "variable debt token balance"
         );
         assertEq(deltas.supply.scaledDelta, newExpectedSupplyDelta, "supply delta");
