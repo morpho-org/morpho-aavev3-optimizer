@@ -100,4 +100,11 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
         uint256 premiumToProtocol = pool.FLASHLOAN_PREMIUM_TOTAL();
         assertEq(premiumToProtocol, premiumTotal, "all premium goes to protocol");
     }
+
+    function testPoolRevision() public view {
+        (bool success, bytes memory data) = address(pool).staticcall(abi.encodeWithSignature("POOL_REVISION()", hex""));
+        uint256 fetchedRevision = abi.decode(data, (uint256));
+        assertTrue(success, "pool revision failed");
+        assertEq(fetchedRevision, 9, "wrong revision");
+    }
 }
