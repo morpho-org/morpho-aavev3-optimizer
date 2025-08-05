@@ -274,4 +274,11 @@ contract ForkTest is BaseTest, Configured {
     function _randomLsdNative(uint256 seed) internal view returns (address) {
         return lsdNatives[seed % lsdNatives.length];
     }
+
+    function testPoolRevision() public view {
+        (bool success, bytes memory data) = address(pool).staticcall(abi.encodeWithSignature("POOL_REVISION()", hex""));
+        uint256 fetchedRevision = abi.decode(data, (uint256));
+        assertTrue(success, "pool revision failed");
+        assertEq(fetchedRevision, 9, "wrong revision");
+    }
 }
