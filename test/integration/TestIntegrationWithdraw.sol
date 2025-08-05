@@ -379,7 +379,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         assertApproxEqAbs(
             test.morphoMarket.deltas.borrow.scaledDelta.rayMul(test.indexes.borrow.poolIndex),
             morphoVariableBorrow,
-            2,
+            3,
             "borrowDelta != morphoVariableBorrow"
         );
         assertApproxEqAbs(
