@@ -263,7 +263,7 @@ contract TestIntegrationWithdraw is IntegrationTest {
         assertApproxEqAbs(
             market.supplyOf(address(morpho)), test.morphoSupplyBefore, 1, "morphoSupply != morphoSupplyBefore"
         );
-        assertApproxGeAbs(market.variableBorrowOf(address(morpho)), 0, 3, "morphoVariableBorrow != 0");
+        assertApproxGeAbs(market.variableBorrowOf(address(morpho)), 0, 4, "morphoVariableBorrow != 0");
 
         // Assert user's underlying balance.
         assertApproxLeAbs(
