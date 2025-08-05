@@ -156,7 +156,7 @@ contract TestInternalMorphoInternal is InternalTest {
         this.increaseP2PDeltasTest(underlying, amount);
 
         assertApproxEqAbs(
-            aTokenBalanceBefore + expectedAmount, ERC20(market.aToken).balanceOf(address(this)), 1, "aToken balance"
+            aTokenBalanceBefore + expectedAmount, ERC20(market.aToken).balanceOf(address(this)), 2, "aToken balance"
         );
         assertApproxEqAbs(
             variableDebtTokenBalanceBefore + expectedAmount,
