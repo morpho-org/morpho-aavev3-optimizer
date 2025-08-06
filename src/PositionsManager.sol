@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.17;
 
-import "forge-std/console.sol";
 import {IPool} from "@aave-v3-core/interfaces/IPool.sol";
 import {IPositionsManager} from "./interfaces/IPositionsManager.sol";
 
@@ -60,7 +59,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
 
         Types.SupplyRepayVars memory vars = _executeSupply(underlying, amount, from, onBehalf, maxIterations, indexes);
 
-        _pool.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
+        _pool.repayToPool(underlying, market.variableDebtToken, vars.toRepay, indexes.borrow.poolIndex);
         _pool.supplyToPool(underlying, vars.toSupply, indexes.supply.poolIndex);
 
         return amount;
@@ -144,7 +143,7 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
         Types.SupplyRepayVars memory vars =
             _executeRepay(underlying, amount, repayer, onBehalf, _defaultIterations.repay, indexes);
 
-        _pool.repayToPool(underlying, market.variableDebtToken, vars.toRepay);
+        _pool.repayToPool(underlying, market.variableDebtToken, vars.toRepay, indexes.borrow.poolIndex);
         _pool.supplyToPool(underlying, vars.toSupply, indexes.supply.poolIndex);
 
         return amount;
@@ -260,10 +259,13 @@ contract PositionsManager is IPositionsManager, PositionsManagerInternal {
             underlyingCollateral, vars.seized, borrower, liquidator, collateralIndexes.supply.poolIndex
         );
 
-        _pool.repayToPool(underlyingBorrowed, _market[underlyingBorrowed].variableDebtToken, repayVars.toRepay);
-        console.log("before supply");
+        _pool.repayToPool(
+            underlyingBorrowed,
+            _market[underlyingBorrowed].variableDebtToken,
+            repayVars.toRepay,
+            borrowIndexes.borrow.poolIndex
+        );
         _pool.supplyToPool(underlyingBorrowed, repayVars.toSupply, borrowIndexes.supply.poolIndex);
-        console.log("after supply");
         _pool.withdrawFromPool(underlyingCollateral, _market[underlyingCollateral].aToken, vars.seized);
 
         ERC20(underlyingCollateral).safeTransfer(liquidator, vars.seized);

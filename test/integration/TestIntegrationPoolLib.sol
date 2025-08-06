@@ -80,7 +80,7 @@ contract TestIntegrationPoolLibRepay is TestIntegrationPoolLib {
         uint256 balanceBefore = ERC20(dai).balanceOf(address(this));
         uint256 vBalanceBefore = ERC20(vDai).balanceOf(address(this));
 
-        pool.repayToPool(dai, vDai, amount / 4);
+        pool.repayToPool(dai, vDai, amount / 4, 1e27);
 
         assertEq(ERC20(dai).balanceOf(address(this)) + amount / 4, balanceBefore, "balance");
         assertApproxEqAbs(ERC20(vDai).balanceOf(address(this)) + amount / 4, vBalanceBefore, 2, "vBalance");
