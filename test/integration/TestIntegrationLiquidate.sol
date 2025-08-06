@@ -183,18 +183,6 @@ contract TestIntegrationLiquidate is IntegrationTest {
         user.liquidate(borrowedMarket.underlying, collateralMarket.underlying, borrower, toRepay);
     }
 
-    function testSimple() public {
-        testFullLiquidateUnhealthyUserWhenSentinelDisallowsButHealthFactorVeryLow(
-            148781269303923,
-            37144597616483937449086105006138368083,
-            0x3eDA3Fd76DF776Ac2B7dAA807f67E98A84B0337e,
-            0,
-            19890,
-            149277332045977176825554090418223558553869621238539350701936287769979,
-            6953
-        );
-    }
-
     function testFullLiquidateUnhealthyUserWhenSentinelDisallowsButHealthFactorVeryLow(
         uint256 collateralSeed,
         uint256 borrowableSeed,
