@@ -21,7 +21,7 @@ library PoolLib {
     /// @dev The pool supply `index` must be passed as a parameter to skip the supply on pool
     ///      if it were to revert due to the amount being too small.
     function supplyToPool(IPool pool, address underlying, uint256 amount, uint256 index) internal {
-        if ((amount * 1e27) / index == 0) return;
+        if (amount.rayDivDown(index) == 0) return;
 
         pool.supply(underlying, amount, address(this), Constants.NO_REFERRAL_CODE);
     }
@@ -41,7 +41,7 @@ library PoolLib {
         uint256 scaledBalance = IVariableDebtToken(variableDebtToken).scaledBalanceOf(address(this));
         uint256 paybackAmount = amount < scaledBalance ? amount : scaledBalance;
 
-        if ((paybackAmount * 1e27) / index == 0) return;
+        if (paybackAmount.rayDivDown(index) == 0) return;
 
         pool.repay(underlying, amount, Constants.VARIABLE_INTEREST_MODE, address(this)); // Reverts if debt is 0.
     }
