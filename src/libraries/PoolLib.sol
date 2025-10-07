@@ -21,7 +21,7 @@ library PoolLib {
     /// @dev The pool supply `index` must be passed as a parameter to skip the supply on pool
     ///      if it were to revert due to the amount being too small.
     function supplyToPool(IPool pool, address underlying, uint256 amount, uint256 index) internal {
-        if (amount.rayDiv(index) == 0) return;
+        if (amount.rayDivDown(index) == 0) return;
 
         pool.supply(underlying, amount, address(this), Constants.NO_REFERRAL_CODE);
     }
