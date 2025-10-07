@@ -35,8 +35,13 @@ library PoolLib {
 
     /// @notice Repays `amount` of `underlying` to `pool`.
     /// @dev If the debt has been fully repaid already, the function will return early.
-    function repayToPool(IPool pool, address underlying, address variableDebtToken, uint256 amount) internal {
-        if (amount == 0 || IVariableDebtToken(variableDebtToken).scaledBalanceOf(address(this)) == 0) return;
+    function repayToPool(IPool pool, address underlying, address variableDebtToken, uint256 amount, uint256 index)
+        internal
+    {
+        if (amount.rayDivDown(index) == 0 || IVariableDebtToken(variableDebtToken).scaledBalanceOf(address(this)) == 0)
+        {
+            return;
+        }
 
         pool.repay(underlying, amount, Constants.VARIABLE_INTEREST_MODE, address(this)); // Reverts if debt is 0.
     }
