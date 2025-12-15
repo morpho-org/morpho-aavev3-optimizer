@@ -274,10 +274,12 @@ contract IntegrationTest is ForkTest {
             collateralMarket.minBorrowCollateral(borrowedMarket, borrowedMarket.minAmount, eModeCategoryId),
             Math.min(
                 collateralMarket.minBorrowCollateral(
-                    borrowedMarket,
-                    Math.min(borrowedMarket.maxAmount, Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap())),
-                    eModeCategoryId
-                ),
+                        borrowedMarket,
+                        Math.min(
+                            borrowedMarket.maxAmount, Math.min(borrowedMarket.liquidity(), borrowedMarket.borrowGap())
+                        ),
+                        eModeCategoryId
+                    ),
                 _supplyGap(collateralMarket)
             )
         );
@@ -286,9 +288,10 @@ contract IntegrationTest is ForkTest {
     /// @dev Bounds the input between the minimum USD amount expected in tests
     ///      and the maximum borrowable quantity, without exceeding the market's liquidity nor its borrow cap.
     function _boundBorrow(TestMarket storage market, uint256 amount) internal view returns (uint256) {
-        return bound(
-            amount, market.minAmount, Math.min(market.maxAmount, Math.min(market.liquidity(), market.borrowGap()))
-        );
+        return
+            bound(
+                amount, market.minAmount, Math.min(market.maxAmount, Math.min(market.liquidity(), market.borrowGap()))
+            );
     }
 
     /// @dev Bounds the fuzzing input to an arbitrary reasonable amount of iterations.

@@ -91,10 +91,10 @@ contract TestUnitInterestRatesLib is BaseTest {
         uint256 p2pGrowthFactor = PercentageMath.weightedAvg(
             expectedGrowthFactors.poolSupplyGrowthFactor, expectedGrowthFactors.poolBorrowGrowthFactor, p2pIndexCursor
         );
-        expectedGrowthFactors.p2pSupplyGrowthFactor =
-            p2pGrowthFactor - (p2pGrowthFactor - expectedGrowthFactors.poolSupplyGrowthFactor).percentMul(reserveFactor);
-        expectedGrowthFactors.p2pBorrowGrowthFactor =
-            p2pGrowthFactor + (expectedGrowthFactors.poolBorrowGrowthFactor - p2pGrowthFactor).percentMul(reserveFactor);
+        expectedGrowthFactors.p2pSupplyGrowthFactor = p2pGrowthFactor
+            - (p2pGrowthFactor - expectedGrowthFactors.poolSupplyGrowthFactor).percentMul(reserveFactor);
+        expectedGrowthFactors.p2pBorrowGrowthFactor = p2pGrowthFactor
+            + (expectedGrowthFactors.poolBorrowGrowthFactor - p2pGrowthFactor).percentMul(reserveFactor);
 
         Types.GrowthFactors memory actualGrowthFactors = InterestRatesLib.computeGrowthFactors(
             newPoolSupplyIndex,

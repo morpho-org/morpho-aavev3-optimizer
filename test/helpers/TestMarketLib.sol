@@ -112,9 +112,9 @@ library TestMarketLib {
     ) internal view returns (uint256) {
         uint256 ltv = getLtv(collateralMarket, eModeCategoryId);
 
-        return quote(borrowedMarket, collateralMarket, collateralValue(rawCollateral))
+        return quote(borrowedMarket, collateralMarket, collateralValue(rawCollateral)).
             // The borrowable quantity is under-estimated because of decimals precision (especially for the pair WBTC/WETH).
-            .percentMul(ltv - 10);
+            percentMul(ltv - 10);
     }
 
     /// @dev Calculates the maximum borrowable quantity collateralized by the given quantity of collateral.
@@ -126,9 +126,9 @@ library TestMarketLib {
     ) internal view returns (uint256) {
         uint256 lt = getLt(collateralMarket, eModeCategoryId);
 
-        return quote(borrowedMarket, collateralMarket, collateralValue(rawCollateral))
+        return quote(borrowedMarket, collateralMarket, collateralValue(rawCollateral)).
             // The collateralized quantity is under-estimated because of decimals precision (especially for the pair WBTC/WETH).
-            .percentMul(lt - 10);
+            percentMul(lt - 10);
     }
 
     /// @dev Calculates the minimum collateral quantity necessary to collateralize the given quantity of debt while still being able to borrow.
@@ -141,9 +141,9 @@ library TestMarketLib {
         uint256 ltv = getLtv(collateralMarket, eModeCategoryId);
 
         return rawCollateralValue(
-            quote(collateralMarket, borrowedMarket, amount)
+            quote(collateralMarket, borrowedMarket, amount).
                 // The quantity of collateral required to open a borrow is over-estimated because of decimals precision (especially for the pair WBTC/WETH).
-                .percentDiv(ltv - 15)
+                percentDiv(ltv - 15)
         );
     }
 

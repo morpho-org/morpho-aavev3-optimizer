@@ -177,8 +177,9 @@ contract RewardsManager is IRewardsManager, Initializable {
         // Add unrealized rewards from user to unclaimed rewards.
         for (uint256 i; i < userAssetBalances.length; ++i) {
             for (uint256 j; j < rewardsListLength; ++j) {
-                unclaimedAmounts[j] +=
-                    _localAssetData[userAssetBalances[i].asset][rewardsList[j]].usersData[user].accrued;
+                unclaimedAmounts[
+                    j
+                ] += _localAssetData[userAssetBalances[i].asset][rewardsList[j]].usersData[user].accrued;
 
                 if (userAssetBalances[i].scaledBalance == 0) continue;
 

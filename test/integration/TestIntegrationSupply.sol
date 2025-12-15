@@ -317,9 +317,7 @@ contract TestIntegrationSupply is IntegrationTest {
         user.supply(market.underlying, amount, onBehalf);
     }
 
-    function testShouldUpdateIndexesAfterSupply(uint256 seed, uint256 blocks, uint256 amount, address onBehalf)
-        public
-    {
+    function testShouldUpdateIndexesAfterSupply(uint256 seed, uint256 blocks, uint256 amount, address onBehalf) public {
         blocks = _boundBlocks(blocks);
         onBehalf = _boundOnBehalf(onBehalf);
 

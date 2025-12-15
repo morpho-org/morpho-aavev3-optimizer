@@ -88,9 +88,8 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256) {
-        ERC20Permit2(underlying).simplePermit2(
-            msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
-        );
+        ERC20Permit2(underlying)
+            .simplePermit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         return _supply(underlying, amount, msg.sender, onBehalf, maxIterations);
     }
 
@@ -119,9 +118,8 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256) {
-        ERC20Permit2(underlying).simplePermit2(
-            msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
-        );
+        ERC20Permit2(underlying)
+            .simplePermit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         return _supplyCollateral(underlying, amount, msg.sender, onBehalf);
     }
 
@@ -164,9 +162,8 @@ contract Morpho is IMorpho, MorphoGetters, MorphoSetters {
         uint256 deadline,
         Types.Signature calldata signature
     ) external returns (uint256) {
-        ERC20Permit2(underlying).simplePermit2(
-            msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
-        );
+        ERC20Permit2(underlying)
+            .simplePermit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
         return _repay(underlying, amount, msg.sender, onBehalf);
     }
 

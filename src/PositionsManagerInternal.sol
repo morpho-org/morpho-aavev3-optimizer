@@ -553,11 +553,12 @@ abstract contract PositionsManagerInternal is MatchingEngine {
 
         uint256 toProcess = Math.min(onPool.rayMul(poolIndex), amount);
 
-        return (
-            amount - toProcess,
-            toProcess,
-            onPool.zeroFloorSub(toProcess.rayDivUp(poolIndex)) // In scaled balance.
-        );
+        return
+            (
+                amount - toProcess,
+                toProcess,
+                onPool.zeroFloorSub(toProcess.rayDivUp(poolIndex)) // In scaled balance.
+            );
     }
 
     /// @notice Given variables from a market side, promotes users and calculates the amount to repay/withdraw from promote,
@@ -614,19 +615,17 @@ abstract contract PositionsManagerInternal is MatchingEngine {
             collateralIsInEMode ? eModeCategory.liquidationBonus : collateralConfig.getLiquidationBonus();
 
         amountToRepay = maxToRepay;
-        amountToSeize = (
-            (amountToRepay * vars.borrowedPrice * vars.collateralTokenUnit)
-                / (vars.borrowedTokenUnit * vars.collateralPrice)
-        ).percentMul(vars.liquidationBonus);
+        amountToSeize = ((amountToRepay * vars.borrowedPrice * vars.collateralTokenUnit)
+                / (vars.borrowedTokenUnit * vars.collateralPrice))
+        .percentMul(vars.liquidationBonus);
 
         uint256 collateralBalance = _getUserCollateralBalanceFromIndex(underlyingCollateral, borrower, poolSupplyIndex);
 
         if (amountToSeize > collateralBalance) {
             amountToSeize = collateralBalance;
-            amountToRepay = (
-                (collateralBalance * vars.collateralPrice * vars.borrowedTokenUnit)
-                    / (vars.borrowedPrice * vars.collateralTokenUnit)
-            ).percentDiv(vars.liquidationBonus);
+            amountToRepay = ((collateralBalance * vars.collateralPrice * vars.borrowedTokenUnit)
+                    / (vars.borrowedPrice * vars.collateralTokenUnit))
+            .percentDiv(vars.liquidationBonus);
         }
     }
 }

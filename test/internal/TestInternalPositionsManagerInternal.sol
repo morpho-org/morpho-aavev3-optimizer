@@ -411,18 +411,16 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         TestSeizeVars memory actual;
 
         expected.amountToSeize = Math.min(
-            (
-                (maxToLiquidate * vars.borrowedPrice * vars.collateralTokenUnit)
-                    / (vars.borrowedTokenUnit * vars.collateralPrice)
-            ).percentMul(vars.liquidationBonus),
+            ((maxToLiquidate * vars.borrowedPrice * vars.collateralTokenUnit)
+                    / (vars.borrowedTokenUnit * vars.collateralPrice))
+            .percentMul(vars.liquidationBonus),
             collateralAmount
         );
         expected.amountToLiquidate = Math.min(
             maxToLiquidate,
-            (
-                (collateralAmount * vars.collateralPrice * vars.borrowedTokenUnit)
-                    / (vars.borrowedPrice * vars.collateralTokenUnit)
-            ).percentDiv(vars.liquidationBonus)
+            ((collateralAmount * vars.collateralPrice * vars.borrowedTokenUnit)
+                    / (vars.borrowedPrice * vars.collateralTokenUnit))
+            .percentDiv(vars.liquidationBonus)
         );
 
         (actual.amountToLiquidate, actual.amountToSeize) =
@@ -463,10 +461,7 @@ contract TestInternalPositionsManagerInternal is InternalTest, PositionsManagerI
         _validateWithdrawCollateral(underlying, amount, supplier, receiver);
     }
 
-    function validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower)
-        public
-        view
-    {
+    function validateLiquidate(address underlyingBorrowed, address underlyingCollateral, address borrower) public view {
         _validateLiquidate(underlyingBorrowed, underlyingCollateral, borrower);
     }
 

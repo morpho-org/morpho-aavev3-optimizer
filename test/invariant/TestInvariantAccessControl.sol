@@ -159,10 +159,9 @@ contract TestInvariantAccessControl is InvariantTest {
                 uint256 withdrawable = rawCollateralValue(
                     // Inflate withdrawable by some bps because of WBTC decimals precision.
                     // Scale everything by 1 ether to avoid rounding errors due to market having less decimals than base currency.
-                    (
-                        ((liquidityData.maxDebt.zeroFloorSub(liquidityData.debt)) * 1 ether * 10 ** market.decimals)
-                            .percentAdd(5) / (market.price * 1 ether)
-                    ).percentDiv(market.getLt(eModeCategoryId))
+                    (((liquidityData.maxDebt.zeroFloorSub(liquidityData.debt)) * 1 ether * 10 ** market.decimals)
+                        .percentAdd(5) / (market.price * 1 ether))
+                    .percentDiv(market.getLt(eModeCategoryId))
                 );
                 if (withdrawable == 0 || withdrawable > morpho.collateralBalance(market.underlying, sender)) continue;
 

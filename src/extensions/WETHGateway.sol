@@ -109,10 +109,7 @@ contract WETHGateway is IWETHGateway {
     /// @notice Withdraws WETH up to `amount` on behalf of `msg.sender`, unwraps it to WETH and sends it to `receiver`.
     ///         Note: `msg.sender` must have approved this contract to be its manager.
     /// @return withdrawn The actual amount withdrawn (in wei).
-    function withdrawETH(uint256 amount, address receiver, uint256 maxIterations)
-        external
-        returns (uint256 withdrawn)
-    {
+    function withdrawETH(uint256 amount, address receiver, uint256 maxIterations) external returns (uint256 withdrawn) {
         withdrawn = _MORPHO.withdraw(_WETH, amount, msg.sender, address(this), maxIterations);
         _unwrapAndTransferETH(withdrawn, receiver);
     }

@@ -49,9 +49,8 @@ contract TestUnitMarketLibIdle is ForkTest {
 
         poolAdmin.setSupplyCap(
             dai,
-            (reserve.totalSupplyToCap(poolSupplyIndex, poolBorrowIndex) + supplyGap).divUp(
-                10 ** reserve.configuration.getDecimals()
-            )
+            (reserve.totalSupplyToCap(poolSupplyIndex, poolBorrowIndex) + supplyGap)
+            .divUp(10 ** reserve.configuration.getDecimals())
         );
 
         supplyGap = reserve.supplyGap(poolSupplyIndex, poolBorrowIndex);

@@ -138,9 +138,8 @@ contract BulkerGateway is IBulkerGateway {
             abi.decode(data, (address, uint256, uint256, Types.Signature));
         if (amount == 0) revert AmountIsZero();
 
-        ERC20Permit2(asset).simplePermit2(
-            msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s
-        );
+        ERC20Permit2(asset)
+            .simplePermit2(msg.sender, address(this), amount, deadline, signature.v, signature.r, signature.s);
     }
 
     /// @dev Transfers the given `amount` of `asset` from sender to this contract via ERC20 transfer with Permit2 fallback.

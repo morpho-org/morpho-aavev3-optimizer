@@ -208,9 +208,8 @@ contract TestProdLifecycle is ProductionTest {
         if (borrow.market.pauseStatuses.isP2PDisabled) {
             assertEq(borrow.position.scaledP2P, 0, string.concat(market.symbol, " supply delta matched"));
         } else {
-            uint256 availableSupply = borrow.market.deltas.supply.scaledDelta.rayMul(
-                borrow.updatedIndexes.supply.poolIndex
-            ) + borrow.market.idleSupply;
+            uint256 availableSupply = borrow.market.deltas.supply.scaledDelta
+            .rayMul(borrow.updatedIndexes.supply.poolIndex) + borrow.market.idleSupply;
             if (availableSupply <= borrow.amount) {
                 assertGe(
                     borrow.position.p2p, availableSupply, string.concat(market.symbol, " supply delta minimum match")

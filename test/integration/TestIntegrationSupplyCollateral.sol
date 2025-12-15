@@ -167,9 +167,7 @@ contract TestIntegrationSupplyCollateral is IntegrationTest {
         user.supplyCollateral(market.underlying, amount, onBehalf);
     }
 
-    function testShouldSupplyCollateralWhenEverythingElsePaused(uint256 seed, uint256 amount, address onBehalf)
-        public
-    {
+    function testShouldSupplyCollateralWhenEverythingElsePaused(uint256 seed, uint256 amount, address onBehalf) public {
         onBehalf = _boundOnBehalf(onBehalf);
 
         morpho.setIsPausedForAllMarkets(true);

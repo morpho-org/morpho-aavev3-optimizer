@@ -122,11 +122,7 @@ contract TestIntegrationApproval is IntegrationTest {
         vm.assume(nonce != morpho.userNonce(DELEGATOR));
 
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
-            delegator: DELEGATOR,
-            manager: MANAGER,
-            isAllowed: true,
-            nonce: nonce,
-            deadline: block.timestamp + 1 days
+            delegator: DELEGATOR, manager: MANAGER, isAllowed: true, nonce: nonce, deadline: block.timestamp + 1 days
         });
 
         bytes32 digest = sigUtils.getTypedDataHash(authorization);

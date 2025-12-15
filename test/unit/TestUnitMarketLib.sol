@@ -333,9 +333,8 @@ contract TestUnitMarketLib is BaseTest {
         market.deltas.supply.scaledDelta = supplyDelta;
         market.idleSupply = idleSupply;
 
-        uint256 expectedP2PSupply = scaledP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-            supplyDelta.rayMul(indexes.supply.poolIndex)
-        ).zeroFloorSub(idleSupply);
+        uint256 expectedP2PSupply = scaledP2PSupply.rayMul(indexes.supply.p2pIndex)
+            .zeroFloorSub(supplyDelta.rayMul(indexes.supply.poolIndex)).zeroFloorSub(idleSupply);
         uint256 trueP2PSupply = market.trueP2PSupply(indexes);
 
         assertEq(trueP2PSupply, expectedP2PSupply, "true p2p supply");
@@ -396,11 +395,11 @@ contract TestUnitMarketLib is BaseTest {
 
         uint256 expectedFee = Math.min(
             amount,
-            scaledP2PBorrow.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                scaledP2PSupply.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                    supplyDelta.rayMul(indexes.supply.poolIndex)
-                ).zeroFloorSub(idleSupply)
-            )
+            scaledP2PBorrow.rayMul(indexes.borrow.p2pIndex)
+                .zeroFloorSub(
+                    scaledP2PSupply.rayMul(indexes.supply.p2pIndex)
+                        .zeroFloorSub(supplyDelta.rayMul(indexes.supply.poolIndex)).zeroFloorSub(idleSupply)
+                )
         );
         uint256 toProcess = market.repayFee(amount, indexes);
 

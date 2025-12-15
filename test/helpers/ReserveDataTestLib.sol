@@ -59,16 +59,15 @@ library ReserveDataTestLib {
         view
         returns (uint256)
     {
-        return (
-            IAToken(reserve.aTokenAddress).scaledTotalSupply()
+        return (IAToken(reserve.aTokenAddress).scaledTotalSupply()
                 + ReserveDataLib.getAccruedToTreasury(
                     reserve,
                     Types.Indexes256({
                         supply: Types.MarketSideIndexes256({p2pIndex: 0, poolIndex: poolSupplyIndex}),
                         borrow: Types.MarketSideIndexes256({p2pIndex: 0, poolIndex: poolBorrowIndex})
                     })
-                )
-        ).rayMul(poolSupplyIndex);
+                ))
+        .rayMul(poolSupplyIndex);
     }
 
     /// @dev Calculates the underlying amount that can be supplied on the given market on AaveV3, reaching the supply cap.
@@ -77,15 +76,13 @@ library ReserveDataTestLib {
         view
         returns (uint256)
     {
-        return (reserve.configuration.getSupplyCap() * 10 ** reserve.configuration.getDecimals()).zeroFloorSub(
-            totalSupplyToCap(reserve, poolSupplyIndex, poolBorrowIndex)
-        );
+        return (reserve.configuration.getSupplyCap() * 10 ** reserve.configuration.getDecimals())
+        .zeroFloorSub(totalSupplyToCap(reserve, poolSupplyIndex, poolBorrowIndex));
     }
 
     /// @dev Calculates the underlying amount that can be borrowed on the given market on AaveV3, reaching the borrow cap.
     function borrowGap(DataTypes.ReserveData memory reserve) internal view returns (uint256) {
-        return (reserve.configuration.getBorrowCap() * 10 ** reserve.configuration.getDecimals()).zeroFloorSub(
-            totalBorrow(reserve)
-        );
+        return (reserve.configuration.getBorrowCap() * 10 ** reserve.configuration.getDecimals())
+        .zeroFloorSub(totalBorrow(reserve));
     }
 }

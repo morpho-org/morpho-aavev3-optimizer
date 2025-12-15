@@ -131,12 +131,11 @@ contract TestInternalMorphoInternal is InternalTest {
         uint256 expectedAmount = Math.min(
             amount,
             Math.min(
-                deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                    deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
-                ).zeroFloorSub(market.idleSupply),
-                deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                    deltas.borrow.scaledDelta.rayMul(indexes.borrow.poolIndex)
-                )
+                deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex)
+                    .zeroFloorSub(deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex))
+                    .zeroFloorSub(market.idleSupply),
+                deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex)
+                    .zeroFloorSub(deltas.borrow.scaledDelta.rayMul(indexes.borrow.poolIndex))
             )
         );
         vm.assume(expectedAmount > 0);
@@ -423,9 +422,9 @@ contract TestInternalMorphoInternal is InternalTest {
         (uint256 underlyingPrice, uint256 ltv, uint256 liquidationThreshold, uint256 underlyingUnit) =
             _assetLiquidityData(dai, vars);
 
-        uint256 rawCollateral = (
-            _getUserCollateralBalanceFromIndex(dai, address(1), _market[dai].indexes.supply.poolIndex)
-        ) * underlyingPrice / underlyingUnit;
+        uint256 rawCollateral =
+            (_getUserCollateralBalanceFromIndex(dai, address(1), _market[dai].indexes.supply.poolIndex))
+                * underlyingPrice / underlyingUnit;
         uint256 expectedCollateral = collateralValue(rawCollateral);
         assertEq(borrowable, expectedCollateral.percentMulDown(ltv), "borrowable not equal to expected");
         assertEq(maxDebt, expectedCollateral.percentMulDown(liquidationThreshold), "maxDebt not equal to expected");

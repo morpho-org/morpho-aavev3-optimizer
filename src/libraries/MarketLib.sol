@@ -248,9 +248,8 @@ library MarketLib {
         if (supplyCap == 0) return (amount, 0);
 
         uint256 suppliable = supplyCap.zeroFloorSub(
-            (IAToken(market.aToken).scaledTotalSupply() + reserve.getAccruedToTreasury(indexes)).rayMul(
-                indexes.supply.poolIndex
-            )
+            (IAToken(market.aToken).scaledTotalSupply() + reserve.getAccruedToTreasury(indexes))
+            .rayMul(indexes.supply.poolIndex)
         );
         if (amount <= suppliable) return (amount, 0);
 
@@ -296,9 +295,8 @@ library MarketLib {
         returns (uint256)
     {
         Types.MarketSideDelta storage supplyDelta = market.deltas.supply;
-        return supplyDelta.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-            supplyDelta.scaledDelta.rayMul(indexes.supply.poolIndex)
-        ).zeroFloorSub(market.idleSupply);
+        return supplyDelta.scaledP2PTotal.rayMul(indexes.supply.p2pIndex)
+            .zeroFloorSub(supplyDelta.scaledDelta.rayMul(indexes.supply.poolIndex)).zeroFloorSub(market.idleSupply);
     }
 
     /// @notice Calculates the total quantity of underlyings truly borrowed peer-to-peer on the given market.
@@ -310,9 +308,8 @@ library MarketLib {
         returns (uint256)
     {
         Types.MarketSideDelta storage borrowDelta = market.deltas.borrow;
-        return borrowDelta.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-            borrowDelta.scaledDelta.rayMul(indexes.borrow.poolIndex)
-        );
+        return borrowDelta.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex)
+            .zeroFloorSub(borrowDelta.scaledDelta.rayMul(indexes.borrow.poolIndex));
     }
 
     /// @notice Calculates & deducts the reserve fee to repay from the given amount, updating the total peer-to-peer amount.

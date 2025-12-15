@@ -118,7 +118,7 @@ contract TestInternalPositionsManagerInternalCaps is InternalTest, PositionsMana
         Types.Indexes256 memory indexes = _computeIndexes(dai);
         DataTypes.ReserveData memory reserve = pool.getReserveData(market.underlying);
         uint256 totalPoolSupply = (IAToken(market.aToken).scaledTotalSupply() + reserve.getAccruedToTreasury(indexes))
-            .rayMul(indexes.supply.poolIndex);
+        .rayMul(indexes.supply.poolIndex);
         supplyCap = bound(
             supplyCap,
             // Should be at least 1, but also cover some cases where supply cap is less than the current supplied.

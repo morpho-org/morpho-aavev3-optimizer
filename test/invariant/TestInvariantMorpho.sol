@@ -47,12 +47,10 @@ contract TestInvariantMorpho is InvariantTest {
         Types.Indexes256 memory indexes = morpho.updatedIndexes(underlying);
 
         uint256 minP2P = Math.min(
-            market.deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex).zeroFloorSub(
-                market.deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)
-            ),
-            market.deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex).zeroFloorSub(
-                market.deltas.borrow.scaledDelta.rayMul(indexes.borrow.poolIndex)
-            )
+            market.deltas.supply.scaledP2PTotal.rayMul(indexes.supply.p2pIndex)
+                .zeroFloorSub(market.deltas.supply.scaledDelta.rayMul(indexes.supply.poolIndex)),
+            market.deltas.borrow.scaledP2PTotal.rayMul(indexes.borrow.p2pIndex)
+                .zeroFloorSub(market.deltas.borrow.scaledDelta.rayMul(indexes.borrow.poolIndex))
         );
         if (minP2P == 0) return;
 
