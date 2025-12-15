@@ -174,6 +174,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
     }
 
     function testBulkerShouldUnwrapStETH(uint256 amount, address receiver) public {
+        vm.assume(receiver != stETH);
         _assumeTarget(receiver);
 
         amount = bound(amount, 1, IWSTETH(stNative).totalSupply());
@@ -727,11 +728,7 @@ contract TestIntegrationBulkerGateway is IntegrationTest {
 
         uint256 nonce = morpho.userNonce(delegator);
         SigUtils.Authorization memory authorization = SigUtils.Authorization({
-            delegator: delegator,
-            manager: address(bulker),
-            isAllowed: isAllowed,
-            nonce: nonce,
-            deadline: deadline
+            delegator: delegator, manager: address(bulker), isAllowed: isAllowed, nonce: nonce, deadline: deadline
         });
 
         bytes32 hashed = sigUtils.getTypedDataHash(authorization);
