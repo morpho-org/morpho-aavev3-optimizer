@@ -1,0 +1,41 @@
+{
+  "lib/aave-v3-core": {
+    "branch": {
+      "name": "v1.17.2",
+      "rev": "a00f28e3ad7c0e4a369d8e06e0ac9fd0acabcab7"
+    }
+  },
+  "lib/aave-v3-periphery": {
+    "branch": {
+      "name": "v2.0.1",
+      "rev": "222c1c678a2a8968eb8ee31404e3eef098a6f447"
+    }
+  },
+  "lib/forge-std": {
+    "branch": {
+      "name": "4f57c59f066a03d13de8c65bb34fca8247f5fcb2",
+      "rev": "1de6eecf821de7fe2c908cc48d3ab3dced20717f"
+    }
+  },
+  "lib/morpho-data-structures": {
+    "branch": {
+      "name": "v0.3",
+      "rev": "4d9d9a2634c0d56a4885a07e93444030ebfc4746"
+    }
+  },
+  "lib/morpho-utils": {
+    "rev": "a3ed65bcda0a2a3caec2e0fa3dedb99a167cdbfe"
+  },
+  "lib/permit2": {
+    "branch": {
+      "name": "f3349109ed405970a7fb3bb7e9ac9574c822a90d",
+      "rev": "4382d768fb549af29f71e02e2c638fb3928d3b4b"
+    }
+  },
+  "lib/solmate": {
+    "branch": {
+      "name": "v6",
+      "rev": "a9e3ea26a2dc73bfa87f0cb189687d029028e0c5"
+    }
+  }
+}

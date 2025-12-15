@@ -117,8 +117,8 @@ contract TestIntegrationUpgrade is IntegrationTest {
 
     function _populateStorageToCheck() internal view returns (StorageToCheck memory s) {
         s.owner = Ownable(address(morpho)).owner();
-        s.pool = morpho.pool();
-        s.addressesProvider = morpho.addressesProvider();
+        s.pool = morpho.getPool();
+        s.addressesProvider = morpho.getAddressesProvider();
         s.domainSeparator = morpho.DOMAIN_SEPARATOR();
         s.eModeCategoryId = morpho.eModeCategoryId();
         s.market = morpho.market(dai);

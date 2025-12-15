@@ -17,7 +17,7 @@ contract UserMock {
 
     constructor(address _morpho) {
         morpho = IMorpho(_morpho);
-        pool = IPool(morpho.pool());
+        pool = IPool(morpho.getPool());
     }
 
     receive() external payable {}

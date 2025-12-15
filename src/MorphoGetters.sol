@@ -32,12 +32,12 @@ abstract contract MorphoGetters is IMorphoGetters, MorphoInternal {
     }
 
     /// @notice Returns the pool address.
-    function pool() external view returns (address) {
+    function getPool() external view returns (address) {
         return address(_pool);
     }
 
     /// @notice Returns the addresses provider address.
-    function addressesProvider() external view returns (address) {
+    function getAddressesProvider() external view returns (address) {
         return address(_addressesProvider);
     }
 

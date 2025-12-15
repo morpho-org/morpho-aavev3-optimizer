@@ -18,6 +18,18 @@ runs = 32
 runs = 4
 depth = 64
 
+[lint]
+exclude_lints = [
+    "unsafe-typecast",
+    "erc20-unchecked-transfer",
+    "mixed-case-function",
+    "mixed-case-variable",
+    "unaliased-plain-import",
+    "unused-import",
+    "unwrapped-modifier-logic",
+    "asm-keccak256",
+]
+
 [rpc_endpoints]
 mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}"
 avalanche = "https://rpc.ankr.com/avalanche"

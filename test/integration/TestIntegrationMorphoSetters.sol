@@ -13,8 +13,8 @@ contract TestIntegrationMorphoSetters is IntegrationTest {
 
     function testShouldBeInitialized() public view {
         assertEq(Ownable2StepUpgradeable(address(morpho)).owner(), address(this), "owner");
-        assertEq(morpho.pool(), address(pool), "pool");
-        assertEq(morpho.addressesProvider(), address(addressesProvider), "addressesProvider");
+        assertEq(morpho.getPool(), address(pool), "pool");
+        assertEq(morpho.getAddressesProvider(), address(addressesProvider), "addressesProvider");
         assertEq(morpho.eModeCategoryId(), eModeCategoryId, "eModeCategoryId");
         Types.Iterations memory iterations = morpho.defaultIterations();
         assertEq(iterations.repay, 10, "defaultIterations.repay");

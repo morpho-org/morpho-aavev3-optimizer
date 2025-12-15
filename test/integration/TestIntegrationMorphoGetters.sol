@@ -24,11 +24,11 @@ contract TestIntegrationMorphoGetters is IntegrationTest {
     }
 
     function testPool() public view {
-        assertEq(morpho.pool(), address(pool));
+        assertEq(morpho.getPool(), address(pool));
     }
 
     function testAddressesProvider() public view {
-        assertEq(morpho.addressesProvider(), address(addressesProvider));
+        assertEq(morpho.getAddressesProvider(), address(addressesProvider));
     }
 
     function testPositionsManager() public view {

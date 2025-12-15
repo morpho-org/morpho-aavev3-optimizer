@@ -5,8 +5,8 @@ import {Types} from "../libraries/Types.sol";
 
 interface IMorphoGetters {
     function DOMAIN_SEPARATOR() external view returns (bytes32);
-    function pool() external view returns (address);
-    function addressesProvider() external view returns (address);
+    function getPool() external view returns (address);
+    function getAddressesProvider() external view returns (address);
     function eModeCategoryId() external view returns (uint256);
 
     function market(address underlying) external view returns (Types.Market memory);
