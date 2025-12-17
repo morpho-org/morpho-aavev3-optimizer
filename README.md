@@ -1,7 +1,7 @@
 # Morpho-AaveV3 Optimizer
 
 > [!WARNING]
-> The Morpho Optimizers were deprecated on 2025-12-17. As a result, this repository is no longer maintained.
+> The Morpho Optimizers were deprecated on 2025-12-17. As a result, **this repository is no longer maintained**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://i.imgur.com/uLq5V14.png">
